@@ -4,7 +4,7 @@ DECLARE @CompanyId INT;
 DECLARE @CompanyTimeZone INT;
 DECLARE @ServerTimeZone INT;
 SET @CompanyId = 3;
-SET @ServerTimeZone =  -DATEPART(TZOFFSET, SYSDATETIMEOFFSET()) / 60;
+SET @ServerTimeZone =  DATEPART(TZOFFSET, SYSDATETIMEOFFSET()) / 60;
 SET @CompanyTimeZone = 7;
 DECLARE @EmployeeMapping TABLE (
     EmpId INT,
@@ -130,33 +130,6 @@ INSERT INTO [dbo].[WorkingTimeRequestHistory]
 	LEFT JOIN @EmployeeMapping AS empHr  ON wrh.HRId = empHr.OldEmpId 
 	LEFT JOIN @EmployeeMapping AS empCreated ON wrh.CreatedBy = empCreated.OldEmpId 
 	LEFT JOIN @EmployeeMapping AS empModified  ON wrh.ModifiedBy = empModified.OldEmpId;
-
-
-
-	/*INSERT INTO [dbo].[ChangeShiftRequest]
-				(RequestId
-				,EmpId
-				,FromDate
-				,ToDate
-				,TypeId
-				,CompanyId
-				,oldRequestId
-				,SyncDate)
-			SELECT
-				cs.RequestId /* edit wk.RequestId change to new id after*/
-				,cs.EmpId /* edit change emp.EmpId to new id after*/
-				,cs.FromDate
-				,cs.ToDate
-				,cs.TypeId
-				,@CompanyId
-				,cs.RequestId
-				,GETDATE()
-		FROM SMSHRM.dbo.ChangeShiftRequest AS cs WITH (NOLOCK)
-		LEFT JOIN dbo.ChangeShiftRequest AS ncs WITH (NOLOCK) ON cs.RequestId = ncs.oldRequestId 
-		LEFT JOIN dbo.WorkingTimeRequest AS wk WITH (NOLOCK) ON cs.RequestId = wk.RequestId /* change wk.OldRequestId to map oldId to new*/
-		LEFT JOIN dbo.Employee AS emp WITH (NOLOCK) ON cs.EmpId = emp.EmpId /* change emp.OldEmpId to map oldId to new*/
-		WHERE ncs.SyncDate IS NULL;*/
-
 
 GO
 
