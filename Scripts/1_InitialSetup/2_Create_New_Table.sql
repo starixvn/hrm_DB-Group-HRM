@@ -16,20 +16,3 @@ CREATE TABLE CompanyEmployee (
     EmpId INT,
     CompanyId INT
 );
-
--- MAP COMPANY TỪ UIC
-SET IDENTITY_INSERT bodb_HRM.dbo.Company ON; 
-
-INSERT INTO bodb_HRM.dbo.Company (CompanyId, Name, CountryCode, IsActive)
-SELECT 
-    CompanyId, 
-    Name, 
-    CASE 
-        WHEN Country = 'Vietnam' THEN 'VN'
-        WHEN Country = 'Philippines' THEN 'PH'
-        ELSE NULL 
-    END AS CountryCode,
-    IsActive
-FROM bodb_IUC.dbo.Company;
-
-SET IDENTITY_INSERT bodb_HRM.dbo.Company OFF;
