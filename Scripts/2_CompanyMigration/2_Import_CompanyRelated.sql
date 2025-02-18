@@ -2,6 +2,21 @@ DECLARE @NewCompanyId INT = 3;
 DECLARE @CurrentTimeZone NVARCHAR(50) = 'UTC'; 
 DECLARE @TargetTimeZone NVARCHAR(50) = 'SE Asia Standard Time'; 
 
+-- #region TẠO MAPPING EMPLOYEE
+DECLARE @EmployeeMapping TABLE (
+    EmpId INT,
+    OldEmpId INT,
+    CompanyId INT
+);
+
+-- Lưu danh sách Employee có trong công ty hiện tại
+INSERT INTO @EmployeeMapping (EmpId, OldEmpId, CompanyId)
+SELECT DISTINCT e.EmpId, e.OldEmpId, ce.CompanyId  
+FROM dbo.Employee AS e WITH (NOLOCK)
+INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId 
+WHERE ce.CompanyId = @NewCompanyId;
+-- #endregion
+
 -- #region SHIFT TABLE
 
 INSERT INTO bodb_HRM.dbo.Shift (
@@ -17,14 +32,14 @@ SELECT Code, Name, BeginCheckInTime, EndCheckInTime, BeginCheckOutTime, EndCheck
 FROM SMSHRM.dbo.Shift;
 
 UPDATE S
-SET S.CreatedBy = E.EmpId
+SET S.CreatedBy = EM.EmpId
 FROM bodb_HRM.dbo.Shift S
-JOIN bodb_HRM.dbo.Employee E ON S.CreatedBy = E.OldEmpId;
+INNER JOIN @EmployeeMapping AS EM ON S.CreatedBy = EM.OldEmpId;
 
 UPDATE S
-SET S.ModifiedBy = E.EmpId
+SET S.ModifiedBy = EM.EmpId
 FROM bodb_HRM.dbo.Shift S
-JOIN bodb_HRM.dbo.Employee E ON S.ModifiedBy = E.OldEmpId;
+INNER JOIN @EmployeeMapping AS EM ON S.ModifiedBy = EM.OldEmpId;
 
 UPDATE bodb_HRM.dbo.Shift
 SET 
