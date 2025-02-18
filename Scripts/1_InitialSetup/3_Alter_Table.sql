@@ -1,7 +1,10 @@
+ALTER TABLE bodb_HRM.dbo.Unit ADD CompanyId INT NOT NULL; -- Temp CompanyId for mapping
 ALTER TABLE bodb_HRM.dbo.Unit ADD OldUnitId INT NOT NULL;
 
+ALTER TABLE bodb_HRM.dbo.Department ADD CompanyId INT NOT NULL; -- Temp CompanyId for mapping
 ALTER TABLE bodb_HRM.dbo.Department ADD OldDepartmentId INT NOT NULL;
 
+ALTER TABLE bodb_HRM.dbo.Section ADD CompanyId INT NOT NULL; -- Temp CompanyId for mapping
 ALTER TABLE bodb_HRM.dbo.Section ADD OldSectionId INT NOT NULL;
 
 ALTER TABLE bodb_HRM.dbo.[Group] ADD CompanyId INT NOT NULL;

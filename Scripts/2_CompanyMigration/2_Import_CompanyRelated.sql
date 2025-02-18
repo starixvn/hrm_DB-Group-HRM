@@ -25,28 +25,35 @@ INSERT INTO bodb_HRM.dbo.Shift (
     IsDisabled, CreatedBy, CreatedDate, ModifiedBy, ModifiedDate, OWPModifiedDate, OWPSyncDate, 
     CompanyId, OldShiftId
 )
-SELECT Code, Name, BeginCheckInTime, EndCheckInTime, BeginCheckOutTime, EndCheckOutTime, BreakTimeMins, 
-    OrderNo, BeginBreakTime, EndBreakTime, CrossDay, Color, TotalHours, IsInAfterDay, IsOutAfterDay, 
-    IsDisabled, CreatedBy, CreatedDate, ModifiedBy, ModifiedDate, OWPModifiedDate, OWPSyncDate, 
-    @NewCompanyId, ShiftID 
-FROM SMSHRM.dbo.Shift;
+SELECT 
+    s.Code, 
+    s.Name, 
+    s.BeginCheckInTime, 
+    s.EndCheckInTime, 
+    s.BeginCheckOutTime, 
+    s.EndCheckOutTime, 
+    s.BreakTimeMins, 
+    s.OrderNo, 
+    s.BeginBreakTime, 
+    s.EndBreakTime, 
+    s.CrossDay, 
+    s.Color, 
+    s.TotalHours, 
+    s.IsInAfterDay, 
+    s.IsOutAfterDay, 
+    s.IsDisabled, 
+    em_created.EmpId, 
+    s.CreatedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone, 
+    em_modified.EmpId, 
+    s.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone, 
+    s.OWPModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone, 
+    s.OWPSyncDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone, 
+    @NewCompanyId, 
+    s.ShiftID 
+FROM SMSHRM.dbo.Shift s
+LEFT JOIN @EmployeeMapping em_created ON s.CreatedBy = em_created.OldEmpId
+LEFT JOIN @EmployeeMapping em_modified ON s.ModifiedBy = em_modified.OldEmpId;
 
-UPDATE S
-SET S.CreatedBy = EM.EmpId
-FROM bodb_HRM.dbo.Shift S
-INNER JOIN @EmployeeMapping AS EM ON S.CreatedBy = EM.OldEmpId;
-
-UPDATE S
-SET S.ModifiedBy = EM.EmpId
-FROM bodb_HRM.dbo.Shift S
-INNER JOIN @EmployeeMapping AS EM ON S.ModifiedBy = EM.OldEmpId;
-
-UPDATE bodb_HRM.dbo.Shift
-SET 
-    CreatedDate = CreatedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone,
-    ModifiedDate = ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone,
-    OWPModifiedDate = OWPModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone,
-    OWPSyncDate = OWPSyncDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone;
     
 -- #endregion
 
