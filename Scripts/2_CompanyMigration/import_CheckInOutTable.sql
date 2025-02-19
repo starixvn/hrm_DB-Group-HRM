@@ -65,6 +65,4 @@ INSERT INTO [dbo].[CheckInOutRequestHistory]
 GO
 
 
-GO
-
 
