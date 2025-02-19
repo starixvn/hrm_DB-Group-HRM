@@ -93,3 +93,16 @@ INSERT INTO bodb_HRM.dbo.SystemConfigs ([Key], [Value], CompanyId)
 SELECT [Key], [Value], @NewCompanyId 
 FROM SMSHRM.dbo.SystemConfigs;
 -- #endregion
+
+-- #region LOOKUP DATA TABLE
+INSERT INTO bodb_HRM.dbo.LookupData (
+    LookupId, Code, Name, Value, CompanyId, OldId
+)
+SELECT 
+    ld.Code, 
+    ld.Name, 
+    ld.Value, 
+    @NewCompanyId,
+    ld.Id AS OldId 
+FROM SMSHRM.dbo.LookupData ld
+-- #endregion

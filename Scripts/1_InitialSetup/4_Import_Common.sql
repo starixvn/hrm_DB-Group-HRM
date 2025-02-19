@@ -19,8 +19,12 @@ FROM SMSHRM.dbo.DisciplineType;
 --     END AS CountryCode,
 --     IsActive
 -- FROM bodb_IUC.dbo.Company;
-
 -- SET IDENTITY_INSERT bodb_HRM.dbo.Company OFF;
+
+-- -- Reset lại IDENTITY để đảm bảo ID tự tăng đúng
+-- DECLARE @MaxId INT;
+-- SELECT @MaxId = MAX(Id) FROM bodb_HRM.dbo.Company;
+-- DBCC CHECKIDENT ('bodb_HRM.dbo.Company', RESEED, @MaxId);
 
 -- #endregion
 
@@ -49,13 +53,14 @@ FROM SMSHRM.dbo.LogAction la;
 -- #endregion
 
 -- #region LOOKUP TABLE
-INSERT INTO bodb_HRM.dbo.Lookup (
-    Id, Code, Name
-)
-SELECT 
-    l.Id, 
-    l.Code, 
-    l.Name
-FROM SMSHRM.dbo.Lookup l;
+SET IDENTITY_INSERT bodb_HRM.dbo.Lookup ON;
 
+INSERT INTO bodb_HRM.dbo.Lookup (Id, Code, Name)
+SELECT Id, Code, Name FROM SMSHRM.dbo.Lookup;
+
+SET IDENTITY_INSERT bodb_HRM.dbo.Lookup OFF;
+
+DECLARE @MaxId INT;
+SELECT @MaxId = MAX(Id) FROM bodb_HRM.dbo.Lookup;
+DBCC CHECKIDENT ('bodb_HRM.dbo.Lookup', RESEED, @MaxId);
 -- #endregion

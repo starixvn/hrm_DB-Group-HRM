@@ -20,7 +20,7 @@ WHERE ce.CompanyId = @NewCompanyId;
 -- #region MESSAGE TABLE
 INSERT INTO bodb_HRM.dbo.[Message] (
     [Subject], Contents, Category, FromDate, ToDate, 
-    IsDisabled, CreatedBy, CreatedDate, ModifiedBy, ModifiedDate, OldMessageId
+    IsDisabled, CreatedBy, CreatedDate, ModifiedBy, ModifiedDate, CompanyId, OldMessageId
 )
 SELECT 
     m.Subject,
@@ -33,6 +33,7 @@ SELECT
     m.CreatedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone,
     e_modified.EmpId,
     m.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone,
+    @NewCompanyId,
     m.MessageId
 FROM SMSHRM.dbo.Message AS m
 LEFT JOIN bodb_HRM.dbo.Employee AS e_created ON m.CreatedBy = e_created.OldEmpId
