@@ -52,7 +52,8 @@ SELECT
     me.IsRead
 FROM SMSHRM.dbo.MessageEmployee AS me
 INNER JOIN bodb_HRM.dbo.[Message] AS m ON me.MessageId = m.OldMessageId AND m.CompanyId = @NewCompanyId
-INNER JOIN bodb_HRM.dbo.Employee AS em ON me.EmployeeId = em.OldEmpId;
+INNER JOIN bodb_HRM.dbo.Employee AS em ON me.EmployeeId = em.OldEmpId
+WHERE em.EmpId IS NOT NULL;
 -- #endregion
 
 -- #region MESSAGE GROUP TABLE

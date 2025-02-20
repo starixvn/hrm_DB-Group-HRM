@@ -104,5 +104,13 @@ SELECT
     ld.Value, 
     @NewCompanyId,
     ld.Id AS OldId 
-FROM SMSHRM.dbo.LookupData ld
+FROM SMSHRM.dbo.LookupData ld;
+
+-- Update JobTitleId in Employee table
+UPDATE emp
+SET 
+    emp.JobTitleId = ld.Id
+FROM bodb_HRM.dbo.Employee emp
+LEFT JOIN bodb_HRM.dbo.LookupData ld ON emp.JobTitleId = ld.OldId and ld.CompanyId = @NewCompanyId
+
 -- #endregion

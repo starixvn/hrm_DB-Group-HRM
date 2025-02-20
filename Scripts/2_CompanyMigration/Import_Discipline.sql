@@ -48,7 +48,7 @@ SELECT
 FROM SMSHRM.dbo.Discipline d
 LEFT JOIN @EmployeeMapping em ON d.EmpId = em.OldEmpId
 LEFT JOIN @EmployeeMapping em_modified ON d.ModifiedBy = em_modified.OldEmpId
-WHERE d.IsDeleted != 1;
+WHERE d.IsDeleted != 1 and em.EmpId IS NOT NULL;
 -- #endregion
 
 -- #region DISCIPLINE GROUP RULE TABLE
@@ -87,7 +87,8 @@ SELECT
     di.IsIgnoredWeekendLeave, 
     di.IsIgnoredSevenDaysLeave
 FROM SMSHRM.dbo.DisciplineIgnore di
-LEFT JOIN @EmployeeMapping em ON di.EmpId = em.OldEmpId;
+LEFT JOIN @EmployeeMapping em ON di.EmpId = em.OldEmpId
+WHERE em.EmpId IS NOT NULL;
 
 -- #endregion
 
@@ -103,7 +104,8 @@ SELECT
     di.IgnoreDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
 FROM SMSHRM.dbo.DisciplineIgnoreDetail di
 LEFT JOIN @EmployeeMapping em ON di.EmpId = em.OldEmpId
-LEFT JOIN @EmployeeMapping em_ignore ON di.IgnoreBy = em_ignore.OldEmpId;
+LEFT JOIN @EmployeeMapping em_ignore ON di.IgnoreBy = em_ignore.OldEmpId
+WHERE em.EmpId IS NOT NULL AND em_ignore.EmpId IS NOT NULL;
 
 -- #endregion
 
@@ -129,7 +131,8 @@ SELECT
     doc.IsOutOfControlWeekendLeave, 
     doc.IsOutOfControlSevenDaysLeave
 FROM SMSHRM.dbo.DisciplineOutOfControl doc
-LEFT JOIN @EmployeeMapping em ON doc.EmpId = em.OldEmpId;
+LEFT JOIN @EmployeeMapping em ON doc.EmpId = em.OldEmpId
+WHERE em.EmpId IS NOT NULL;
 
 -- #endregion
 
@@ -150,6 +153,7 @@ SELECT
     em_modified.EmpId
 FROM SMSHRM.dbo.DisciplineRequestTrans drt
 LEFT JOIN @EmployeeMapping em ON drt.EmpId = em.OldEmpId
-LEFT JOIN @EmployeeMapping em_modified ON drt.ModifiedBy = em_modified.OldEmpId;
+LEFT JOIN @EmployeeMapping em_modified ON drt.ModifiedBy = em_modified.OldEmpId
+WHERE em.EmpId IS NOT NULL;
 
 -- #endregion

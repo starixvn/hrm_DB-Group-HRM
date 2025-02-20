@@ -25,7 +25,9 @@ SELECT
     eg.isMainGroup    
 FROM SMSHRM.dbo.EmployeeGroup AS eg
 INNER JOIN bodb_HRM.dbo.[Group] AS g ON eg.GroupId = g.OldGroupId AND g.CompanyId = @NewCompanyId
-INNER JOIN @EmployeeMapping AS em ON eg.EmpID = em.OldEmpId;
+INNER JOIN @EmployeeMapping AS em ON eg.EmpID = em.OldEmpId
+WHERE em.EmpId IS NOT NULL;
+
 -- #endregion
 
 -- #region GROUP MANAGER TABLE
@@ -36,7 +38,8 @@ SELECT
     gm.RoleId 
 FROM SMSHRM.dbo.GroupManager AS gm
 INNER JOIN bodb_HRM.dbo.[Group] AS g ON gm.GroupId = g.OldGroupId AND g.CompanyId = @NewCompanyId
-INNER JOIN @EmployeeMapping AS em ON gm.EmpID = em.OldEmpId;
+INNER JOIN @EmployeeMapping AS em ON gm.EmpID = em.OldEmpId
+WHERE em.EmpId IS NOT NULL;
 -- #endregion
 
 -- #region GROUP SUPERVISOR TABLE
@@ -55,7 +58,8 @@ SELECT
 FROM SMSHRM.dbo.GroupSupervisor AS gs
 INNER JOIN bodb_HRM.dbo.[Group] AS g ON gs.GroupId = g.OldGroupId AND g.CompanyId = @NewCompanyId
 INNER JOIN @EmployeeMapping AS em ON gs.OwnerId = em.OldEmpId
-LEFT JOIN @EmployeeMapping AS em_mod ON gs.ModifiedBy = em_mod.OldEmpId; 
+LEFT JOIN @EmployeeMapping AS em_mod ON gs.ModifiedBy = em_mod.OldEmpId
+WHERE em.EmpId IS NOT NULL; 
 -- #endregion
 
 -- #region EXTENSION NUMBER TABLE

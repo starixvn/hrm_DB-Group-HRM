@@ -39,4 +39,4 @@ ALTER TABLE bodb_HRM.dbo.[Message] ADD OldMessageId INT NOT NULL;
 ALTER TABLE bodb_HRM.dbo.LookupData ADD CompanyId INT NOT NULL;
 ALTER TABLE bodb_HRM.dbo.LookupData ADD OldId INT NOT NULL;
 
-
+ALTER TABLE bodb_HRM.dbo.Employee ADD OldEmpId INT NOT NULL;

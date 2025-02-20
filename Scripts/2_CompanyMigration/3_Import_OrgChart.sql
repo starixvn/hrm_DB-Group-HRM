@@ -110,6 +110,11 @@ LEFT JOIN bodb_HRM.dbo.Section s ON g.SectionId = s.OldSectionId AND s.CompanyId
 LEFT JOIN @EmployeeMapping em_created ON g.CreatedBy = em_created.OldEmpId
 LEFT JOIN @EmployeeMapping em_modified ON g.ModifiedBy = em_modified.OldEmpId;
 
+-- Map lại GroupId của Employee
+UPDATE emp
+SET emp.GroupId = g_new.GroupId
+FROM bodb_HRM.dbo.Employee emp
+LEFT JOIN bodb_HRM.dbo.[Group] g_new ON emp.GroupId = g_new.OldGroupId AND g_new.CompanyId = @NewCompanyId; 
 
 -- #endregion
 
