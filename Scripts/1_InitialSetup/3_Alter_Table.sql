@@ -40,3 +40,22 @@ ALTER TABLE bodb_HRM.dbo.LookupData ADD CompanyId INT NOT NULL;
 ALTER TABLE bodb_HRM.dbo.LookupData ADD OldId INT NOT NULL;
 
 ALTER TABLE bodb_HRM.dbo.Employee ADD OldEmpId INT NOT NULL;
+
+
+
+ALTER TABLE [bodb_HRM].[dbo].[WorkingTimeRequest]
+ADD CompanyId INT NULL, --temp for query
+OldRequestId INT NULL;
+
+ALTER TABLE [bodb_HRM].[dbo].[WorkingTimeRequestHistory]
+ADD OldHistoryId INT NULL
+
+
+ALTER TABLE [bodb_HRM].[dbo].[HospitalizationLeaveTrans]
+ADD OldTransId INT NULL
+
+
+ALTER TABLE [bodb_HRM].[dbo].[LeaveTrans]
+ADD OldLeaveTransId INT NULL
+
+
