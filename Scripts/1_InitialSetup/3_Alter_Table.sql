@@ -41,7 +41,10 @@ ALTER TABLE bodb_HRM.dbo.LookupData ADD OldId INT NOT NULL;
 
 ALTER TABLE bodb_HRM.dbo.Employee ADD OldEmpId INT NOT NULL;
 
-
+ALTER TABLE bodb_HRM.dbo.EmployeePaternity ADD OldPaternityId INT NOT NULL;
+ALTER TABLE bodb_HRM.dbo.EmployeePostnatal ADD OldPostnatalId INT NOT NULL;
+ALTER TABLE bodb_HRM.dbo.EmployeeRelationship ADD OldId INT NOT NULL;
+ALTER TABLE bodb_HRM.dbo.EmployeeWorkFromHome ADD OldEmployeeWorkFromHomeId INT NOT NULL;
 
 ALTER TABLE [bodb_HRM].[dbo].[WorkingTimeRequest]
 ADD CompanyId INT NULL, --temp for query

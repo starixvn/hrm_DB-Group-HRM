@@ -87,6 +87,7 @@ WHERE em.EmpId IS NOT NULL;
 -- #endregion
 
 -- #region EMPLOYEE CONTRACT TABLE
+
 INSERT INTO bodb_HRM.dbo.EmployeeContract (
     EmpID, BankAccount, TaxCode, SocialInsuranceNo, RegisteredHospital, 
     Contract1, FromDate1, ToDate1, Contract2, FromDate2, ToDate2, 
@@ -118,4 +119,197 @@ SELECT
 FROM SMSHRM.dbo.EmployeeContract ec
 LEFT JOIN @EmployeeMapping em ON ec.EmpID = em.OldEmpId
 WHERE em.EmpId IS NOT NULL; 
+-- #endregion
+
+-- #region EMPLOYEE DEFAULT SHIFT TABLE
+INSERT INTO bodb_HRM.dbo.EmployeeDefaultShift (
+    EmpID, MonShift, TueShift, WedShift, ThuShift, FriShift, SatShift, SunShift
+)
+SELECT 
+    em.EmpId,
+    s_mon.ShiftId, 
+    s_tue.ShiftId, 
+    s_wed.ShiftId, 
+    s_thu.ShiftId, 
+    s_fri.ShiftId, 
+    s_sat.ShiftId, 
+    s_sun.ShiftId
+FROM SMSHRM.dbo.EmployeeDefaultShift eds
+LEFT JOIN @EmployeeMapping em ON eds.EmpID = em.OldEmpId 
+LEFT JOIN bodb_HRM.dbo.Shift s_mon ON eds.MonShift = s_mon.OldShiftId AND s_mon.CompanyId = @NewCompanyId
+LEFT JOIN bodb_HRM.dbo.Shift s_tue ON eds.TueShift = s_tue.OldShiftId AND s_tue.CompanyId = @NewCompanyId
+LEFT JOIN bodb_HRM.dbo.Shift s_wed ON eds.WedShift = s_wed.OldShiftId AND s_wed.CompanyId = @NewCompanyId
+LEFT JOIN bodb_HRM.dbo.Shift s_thu ON eds.ThuShift = s_thu.OldShiftId AND s_thu.CompanyId = @NewCompanyId
+LEFT JOIN bodb_HRM.dbo.Shift s_fri ON eds.FriShift = s_fri.OldShiftId AND s_fri.CompanyId = @NewCompanyId
+LEFT JOIN bodb_HRM.dbo.Shift s_sat ON eds.SatShift = s_sat.OldShiftId AND s_sat.CompanyId = @NewCompanyId
+LEFT JOIN bodb_HRM.dbo.Shift s_sun ON eds.SunShift = s_sun.OldShiftId AND s_sun.CompanyId = @NewCompanyId
+WHERE em.EmpId IS NOT NULL;
+
+-- #endregion
+
+-- #region EMPLOYEE PATERNITY TABLE
+INSERT INTO bodb_HRM.dbo.EmployeePaternity (
+    EmpId, ChildBornDate, CreatedBy, CreatedDate, ModifiedBy, ModifiedDate, 
+    LeaveDay, Remark, BalanceDay, OldPaternityId
+)
+SELECT 
+    em.EmpId, 
+    ep.ChildBornDate, 
+    em_created.EmpId, 
+    ep.CreatedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone,
+    em_modified.EmpId, 
+    ep.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone,
+    ep.LeaveDay, 
+    ep.Remark, 
+    ep.BalanceDay, 
+    ep.PaternityId
+FROM SMSHRM.dbo.EmployeePaternity ep
+LEFT JOIN @EmployeeMapping em ON ep.EmpId = em.OldEmpId
+LEFT JOIN @EmployeeMapping em_created ON ep.CreatedBy = em_created.OldEmpId
+LEFT JOIN @EmployeeMapping em_modified ON ep.ModifiedBy = em_modified.OldEmpId
+WHERE em.EmpId IS NOT NULL;
+
+-- #endregion
+
+-- #region EMPLOYEE POSTNATAL TABLE
+INSERT INTO bodb_HRM.dbo.EmployeePostnatal (
+    EmpId, FromDate, ToDate, WorkingHours, NormalWorkingHours, Remark, 
+    CreatedBy, CreatedDate, ModifiedBy, ModifiedDate, OldPostnatalId
+)
+SELECT 
+    em.EmpId, 
+    ep.FromDate, 
+    ep.ToDate, 
+    ep.WorkingHours, 
+    ep.NormalWorkingHours, 
+    ep.Remark, 
+    em_created.EmpId, 
+    ep.CreatedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone,
+    em_modified.EmpId, 
+    ep.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone,
+    ep.PostnatalId
+FROM SMSHRM.dbo.EmployeePostnatal ep
+LEFT JOIN @EmployeeMapping em ON ep.EmpId = em.OldEmpId
+LEFT JOIN @EmployeeMapping em_created ON ep.CreatedBy = em_created.OldEmpId
+LEFT JOIN @EmployeeMapping em_modified ON ep.ModifiedBy = em_modified.OldEmpId
+WHERE em.EmpId IS NOT NULL;
+
+-- #endregion
+
+-- #region EMPLOYEE RELATIONSHIP TABLE
+INSERT INTO bodb_HRM.dbo.EmployeeRelationship (
+    EmpId, FullName, Phone, Relationship, DateOfBirth, Gender, IsEmergency, 
+    CreatedDate, CreatedBy, ModifiedDate, ModifiedBy, OldId
+)
+SELECT 
+    em.EmpId, 
+    er.FullName, 
+    er.Phone, 
+    er.Relationship, 
+    er.DateOfBirth, 
+    er.Gender, 
+    er.IsEmergency, 
+    er.CreatedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone,
+    em_created.EmpId, 
+    er.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone,
+    em_modified.EmpId,
+    er.Id 
+FROM SMSHRM.dbo.EmployeeRelationship er
+LEFT JOIN @EmployeeMapping em ON er.EmpId = em.OldEmpId
+LEFT JOIN @EmployeeMapping em_created ON er.CreatedBy = em_created.OldEmpId
+LEFT JOIN @EmployeeMapping em_modified ON er.ModifiedBy = em_modified.OldEmpId
+WHERE em.EmpId IS NOT NULL;
+
+-- #endregion
+
+-- #region EMPLOYEE ROLE TABLE
+INSERT INTO bodb_HRM.dbo.EmployeeRole (
+    EmployeeId, RoleId, ModifiedBy, ModifiedDate
+)
+SELECT 
+    em.EmpId, 
+    er.RoleId, 
+    em_modified.EmpId, 
+    er.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
+FROM SMSHRM.dbo.EmployeeRole er
+LEFT JOIN @EmployeeMapping em ON er.EmployeeId = em.OldEmpId
+LEFT JOIN @EmployeeMapping em_modified ON er.ModifiedBy = em_modified.OldEmpId
+WHERE em.EmpId IS NOT NULL;
+-- #endregion
+
+-- #region EMPLOYEE SUMMARY TABLE
+INSERT INTO bodb_HRM.dbo.EmployeeSummary (
+    EmpId, AnnualLeaveBalance, KeepInViewBalance, CanOT, IsLocal, WorkingDays, 
+    WorkingHours, IsDefaultSchedule, CompanyDate, CountryCode, IsTopManager, 
+    OffDaysbyWeek, Unit, IsExpatUseHoliday, MilitaryFromDate, MilitaryToDate, 
+    Remark, SpecialOT, HospitalizationLeaveBalance, SickLeaveBalance, WorkingHoursByWeek
+)
+SELECT 
+    em.EmpId,
+    es.AnnualLeaveBalance, 
+    es.KeepInViewBalance, 
+    es.CanOT, 
+    es.IsLocal, 
+    es.WorkingDays, 
+    es.WorkingHours, 
+    es.IsDefaultSchedule, 
+    es.CompanyDate, 
+    es.CountryCode, 
+    es.IsTopManager, 
+    es.OffDaysbyWeek, 
+    es.Unit, 
+    es.IsExpatUseHoliday, 
+    es.MilitaryFromDate, 
+    es.MilitaryToDate, 
+    es.Remark, 
+    es.SpecialOT, 
+    es.HospitalizationLeaveBalance, 
+    es.SickLeaveBalance, 
+    es.WorkingHoursByWeek
+FROM SMSHRM.dbo.EmployeeSummary es
+LEFT JOIN @EmployeeMapping em ON es.EmpId = em.OldEmpId
+WHERE em.EmpId IS NOT NULL;
+
+-- TODO: CHECK UNIT ?
+-- #endregion
+
+-- #region EMPLOYEE SUPERVISOR TABLE
+INSERT INTO bodb_HRM.dbo.EmployeeSupervisor (
+    OwnerId, EmpId, ActionType, RequestType, ModifiedBy, ModifiedDate, 
+    OrderNo, OrderCode, IsDeleted
+)
+SELECT 
+    em_owner.EmpId,
+    em.EmpId,
+    es.ActionType, 
+    es.RequestType, 
+    em_modified.EmpId,
+    es.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone, 
+    es.OrderNo, 
+    es.OrderCode, 
+    es.IsDeleted
+FROM SMSHRM.dbo.EmployeeSupervisor es
+LEFT JOIN @EmployeeMapping em ON es.EmpId = em.OldEmpId
+LEFT JOIN @EmployeeMapping em_owner ON es.OwnerId = em_owner.OldEmpId
+LEFT JOIN @EmployeeMapping em_modified ON es.ModifiedBy = em_modified.OldEmpId
+WHERE em.EmpId IS NOT NULL AND em_owner.EmpId IS NOT NULL;
+-- #endregion
+
+-- #region EMPLOYEE WORK FROM HOME TABLE
+INSERT INTO bodb_HRM.dbo.EmployeeWorkFromHome (
+    EmpId, FromDate, ToDate, Remark, ModifiedBy, ModifiedDate, OldEmployeeWorkFromHomeId
+)
+SELECT 
+    em.EmpId, 
+    ewfh.FromDate, 
+    ewfh.ToDate, 
+    ewfh.Remark, 
+    em_modified.EmpId, 
+    ewfh.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone,
+    ewfh.EmployeeWorkFromHomeId
+FROM SMSHRM.dbo.EmployeeWorkFromHome ewfh
+LEFT JOIN @EmployeeMapping em ON ewfh.EmpId = em.OldEmpId
+LEFT JOIN @EmployeeMapping em_modified ON ewfh.ModifiedBy = em_modified.OldEmpId
+WHERE em.EmpId IS NOT NULL; 
+
 -- #endregion
