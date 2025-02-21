@@ -157,3 +157,26 @@ LEFT JOIN @EmployeeMapping em_modified ON drt.ModifiedBy = em_modified.OldEmpId
 WHERE em.EmpId IS NOT NULL;
 
 -- #endregion
+
+INSERT INTO bodb_HRM.dbo.OtherDiscipline
+           (EmpId
+           ,WorkDate
+           ,DisciplineTypeId
+           ,Score
+           ,Comment
+           ,IsDeleted
+           ,ModifiedBy
+           ,ModifiedDate)
+     SELECT
+           em.EmpId
+           ,od.WorkDate
+           ,od.DisciplineTypeId
+           ,od.Score
+           ,od.Comment
+           ,od.IsDeleted
+           ,em_modified.EmpId
+           ,od.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone 
+	FROM SMSHRM.dbo.OtherDiscipline od
+	LEFT JOIN @EmployeeMapping em ON od.EmpId = em.OldEmpId
+	LEFT JOIN @EmployeeMapping em_modified ON od.ModifiedBy = em_modified.OldEmpId;
+
