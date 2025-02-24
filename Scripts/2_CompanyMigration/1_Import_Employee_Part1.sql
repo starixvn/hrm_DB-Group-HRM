@@ -1,6 +1,9 @@
+USE bodb_HRM
+GO
+
 DECLARE @NewCompanyId INT = 3;
-DECLARE @CurrentTimeZone NVARCHAR(50) = 'UTC'; 
-DECLARE @TargetTimeZone NVARCHAR(50) = 'SE Asia Standard Time'; 
+DECLARE @CurrentTimeZone NVARCHAR(50) = 'SE Asia Standard Time',
+    @TargetTimeZone NVARCHAR(50) = 'SE Asia Standard Time' -- hong_kong: China Standard Time 
 
 DECLARE @EmployeeMapping TABLE (
     EmpId INT,
@@ -9,10 +12,7 @@ DECLARE @EmployeeMapping TABLE (
 );
 
 -- #region EMPLOYEE TABLE
-
-SET IDENTITY_INSERT bodb_HRM.dbo.Employee ON;
-
-INSERT INTO bodb_HRM.dbo.Employee (
+INSERT INTO dbo.Employee (
     EmpId, Code, DomainUsername, FullName, NickName, DOB, Email, JobTitleId, 
     Enabled, Phone, Gender, GroupId, Roles, ManagerId, JoinedDate, ConfirmedDate, 
     ResignedDate, Skype, Yahoo, Marriage, LastLogin, CreatedDate, CreatedBy, 
@@ -42,21 +42,15 @@ SELECT
 FROM SMSHRM.dbo.Employee
 
 -- Insert into CompanyEmployee using NewEmpId and CompanyId
-INSERT INTO bodb_HRM.dbo.CompanyEmployee (EmpId, CompanyId)
+INSERT INTO dbo.CompanyEmployee (EmpId, CompanyId)
 SELECT EmpId, @NewCompanyId FROM @EmployeeMapping;
-
-SET IDENTITY_INSERT bodb_HRM.dbo.Employee OFF;
-
-DECLARE @MaxId INT;
-SELECT @MaxId = MAX(EmpId) FROM bodb_HRM.dbo.Employee;
-DBCC CHECKIDENT ('bodb_HRM.dbo.Employee', RESEED, @MaxId);
 
 UPDATE emp
 SET 
     emp.CreatedBy = em_created.EmpId,
     emp.ModifiedBy = em_modified.EmpId,
     emp.ManagerId = em_manager.EmpId
-FROM bodb_HRM.dbo.Employee emp
+FROM dbo.Employee emp
 LEFT JOIN @EmployeeMapping em_created ON emp.CreatedBy = em_created.OldEmpId AND em_created.CompanyId = @NewCompanyId
 LEFT JOIN @EmployeeMapping em_modified ON emp.ModifiedBy = em_modified.OldEmpId AND em_modified.CompanyId = @NewCompanyId
 LEFT JOIN @EmployeeMapping em_manager ON emp.ManagerId = em_manager.OldEmpId AND em_manager.CompanyId = @NewCompanyId;

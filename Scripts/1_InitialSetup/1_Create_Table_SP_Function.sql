@@ -3069,7 +3069,7 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[Employee](
-	[EmpId] [int] IDENTITY(1,1) NOT NULL,
+	[EmpId] [int] NOT NULL,
 	[Code] [varchar](20) NOT NULL,
 	[DomainUsername] [varchar](50) NULL,
 	[FullName] [nvarchar](50) NOT NULL,

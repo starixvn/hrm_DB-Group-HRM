@@ -1,6 +1,9 @@
+USE bodb_HRM
+GO
+
 DECLARE @NewCompanyId INT = 3;
-DECLARE @CurrentTimeZone NVARCHAR(50) = 'UTC'; 
-DECLARE @TargetTimeZone NVARCHAR(50) = 'SE Asia Standard Time'; 
+DECLARE @CurrentTimeZone NVARCHAR(50) = 'SE Asia Standard Time',
+    @TargetTimeZone NVARCHAR(50) = 'SE Asia Standard Time' -- hong_kong: China Standard Time 
 
 -- #region TẠO MAPPING EMPLOYEE
 DECLARE @EmployeeMapping TABLE (
@@ -19,7 +22,7 @@ WHERE ce.CompanyId = @NewCompanyId;
 
 -- #region SHIFT TABLE
 
-INSERT INTO bodb_HRM.dbo.Shift (
+INSERT INTO dbo.Shift (
     Code, Name, BeginCheckInTime, EndCheckInTime, BeginCheckOutTime, EndCheckOutTime, BreakTimeMins, 
     OrderNo, BeginBreakTime, EndBreakTime, CrossDay, Color, TotalHours, IsInAfterDay, IsOutAfterDay, 
     IsDisabled, CreatedBy, CreatedDate, ModifiedBy, ModifiedDate, OWPModifiedDate, OWPSyncDate, 
@@ -52,14 +55,11 @@ SELECT
     s.ShiftID 
 FROM SMSHRM.dbo.Shift s
 LEFT JOIN @EmployeeMapping em_created ON s.CreatedBy = em_created.OldEmpId
-LEFT JOIN @EmployeeMapping em_modified ON s.ModifiedBy = em_modified.OldEmpId;
-
-    
+LEFT JOIN @EmployeeMapping em_modified ON s.ModifiedBy = em_modified.OldEmpId;    
 -- #endregion
 
 -- #region LEAVE TYPE TABLE
-
-INSERT INTO bodb_HRM.dbo.LeaveType (
+INSERT INTO dbo.LeaveType (
     LeaveTypeId, Code, Name, IsAnnualQuota, IsDefault, IsSalaryDeduction, IsALDeduction, 
     IsHoliday, isShown, IsLeaveDuringWorking, IsCalculateWoking, Color, 
     OrderNo, Description, CompanyId
@@ -68,18 +68,16 @@ SELECT LeaveTypeId, Code, Name, IsAnnualQuota, IsDefault, IsSalaryDeduction, IsA
     IsHoliday, isShown, IsLeaveDuringWorking, IsCalculateWoking, Color, 
     OrderNo, Description, @NewCompanyId 
 FROM SMSHRM.dbo.LeaveType;
-
 -- #endregion
 
 -- #region HOLIDAY TABLE
-INSERT INTO bodb_HRM.dbo.Holiday (HolidayName, FromDate, ToDate, TypeId, CompanyId, OldHolidayId)
+INSERT INTO dbo.Holiday (HolidayName, FromDate, ToDate, TypeId, CompanyId, OldHolidayId)
 SELECT HolidayName, FromDate, ToDate, TypeId, @NewCompanyId, Id 
 FROM SMSHRM.dbo.Holiday;
 -- #endregion
 
 -- #region MEMO TABLE
-
-INSERT INTO bodb_HRM.dbo.Memo (
+INSERT INTO dbo.Memo (
     RefNo, Contents, Subject, SentTo, SentFrom, ForInfo, TotalPages, 
     SentDate, Category, Type, Enabled, CompanyId, OldId
 )
@@ -89,15 +87,13 @@ FROM SMSHRM.dbo.Memo;
 -- #endregion
 
 -- #region SYSTEM CONFIGS TABLE
-INSERT INTO bodb_HRM.dbo.SystemConfigs ([Key], [Value], CompanyId)
+INSERT INTO dbo.SystemConfigs ([Key], [Value], CompanyId)
 SELECT [Key], [Value], @NewCompanyId 
 FROM SMSHRM.dbo.SystemConfigs;
 -- #endregion
 
 -- #region LOOKUP DATA TABLE
-INSERT INTO bodb_HRM.dbo.LookupData (
-    LookupId, Code, Name, Value, CompanyId, OldId
-)
+INSERT INTO dbo.LookupData (LookupId, Code, Name, Value, CompanyId, OldId)
 SELECT 
     ld.Code, 
     ld.Name, 
@@ -108,9 +104,8 @@ FROM SMSHRM.dbo.LookupData ld;
 
 -- Update JobTitleId in Employee table
 UPDATE emp
-SET 
-    emp.JobTitleId = ld.Id
-FROM bodb_HRM.dbo.Employee emp
-LEFT JOIN bodb_HRM.dbo.LookupData ld ON emp.JobTitleId = ld.OldId and ld.CompanyId = @NewCompanyId
+SET emp.JobTitleId = ld.Id
+FROM dbo.Employee emp
+LEFT JOIN dbo.LookupData ld ON emp.JobTitleId = ld.OldId and ld.CompanyId = @NewCompanyId
 
 -- #endregion
