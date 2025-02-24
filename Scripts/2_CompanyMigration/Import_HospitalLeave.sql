@@ -65,6 +65,31 @@ INSERT INTO [dbo].[HospitalLeave]
 	FROM [SMSHRM].[dbo].[HospitalLeave] AS hl WITH (NOLOCK)
 	INNER JOIN dbo.WorkingTimeRequest AS wkr WITH (NOLOCK) ON hl.RequestId = wkr.OldRequestId AND wkr.CompanyId = @companyId
 
+
+INSERT INTO [dbo].[WeekendLeaveTrans]
+           (EmpId
+           ,WorkDate
+           ,LeaveTypeId
+           ,LeaveDay
+           ,RequestId
+           ,IsDiscipline
+           ,InsertedDate)
+     SELECT
+          emp.EmpId
+           ,wl.WorkDate
+           ,wl.LeaveTypeId
+           ,wl.LeaveDay
+           ,wkr.RequestId
+           ,wl.IsDiscipline
+           ,DATEADD(HOUR, @ServerTimeZone - @CompanyTimeZone,wl.InsertedDate)
+	FROM [SMSHRM].[dbo].[WeekendLeaveTrans] AS wl WITH (NOLOCK)
+	INNER JOIN @EmployeeMapping AS emp ON wl.EmpId = emp.OldEmpId
+	LEFT JOIN dbo.WorkingTimeRequest AS wkr WITH (NOLOCK) ON wl.RequestId = wkr.OldRequestId AND wkr.CompanyId = @companyId
+	
+
+
+
+
 GO
 
 

@@ -63,7 +63,7 @@ ADD OldLeaveTransId INT NULL
 
 
 ALTER TABLE [bodb_HRM].[dbo].[OTMonthlyRequest]
-ADD OldRequestId INT NULL -- this new id type not related to WorkingTimeRequest table
+ADD OldRequestId INT NULL -- this new id type not related to RequestId from WorkingTimeRequest table
 
 
 ALTER TABLE [bodb_HRM].[dbo].[RefResource]

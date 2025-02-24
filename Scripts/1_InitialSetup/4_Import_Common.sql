@@ -1,3 +1,9 @@
+
+DECLARE @CompanyId INT = 3;
+DECLARE @CompanyTimeZone INT = 7;
+DECLARE @ServerTimeZone INT = DATEPART(TZOFFSET, SYSDATETIMEOFFSET()) / 60;
+
+
 -- #region DISCIPLINE TYPE TABLE
 INSERT INTO bodb_HRM.dbo.DisciplineType (DisciplineTypeId, Name, Score, IsActive)
 SELECT DisciplineTypeId, Name, Score, IsActive 
@@ -51,6 +57,27 @@ SELECT
     la.SpName
 FROM SMSHRM.dbo.LogAction la;
 -- #endregion
+
+
+-- #region JobLevel TABLE
+SET IDENTITY_INSERT bodb_HRM.dbo.JobLevel ON;
+INSERT INTO [bodb_HRM].[dbo].[JobLevel]
+           (JobLevelId
+		   ,Name
+           ,IsDeleted
+           ,ModifiedBy
+           ,ModifiedDate)
+     SELECT
+			jl.JobLevelId
+           ,jl.Name
+           ,jl.IsDeleted
+           ,NULL
+           ,DATEADD(HOUR, @ServerTimeZone - @CompanyTimeZone,jl.ModifiedDate)
+	FROM SMSHRM.dbo.JobLevel AS jl WITH (NOLOCK)
+SET IDENTITY_INSERT bodb_HRM.dbo.JobLevel OFF;
+
+-- #endregion
+
 
 -- #region LOOKUP TABLE
 SET IDENTITY_INSERT bodb_HRM.dbo.Lookup ON;
