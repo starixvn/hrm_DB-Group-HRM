@@ -1,11 +1,10 @@
 USE [bodb_HRM]
 GO
 DECLARE @CompanyId INT;
-DECLARE @CompanyTimeZone INT;
-DECLARE @ServerTimeZone INT;
+DECLARE @CurrentTimeZone NVARCHAR(50) = 'UTC'; 
+DECLARE @TargetTimeZone NVARCHAR(50) = 'SE Asia Standard Time'; 
 SET @CompanyId = 3;
-SET @ServerTimeZone =  DATEPART(TZOFFSET, SYSDATETIMEOFFSET()) / 60;
-SET @CompanyTimeZone = 7;
+
 DECLARE @EmployeeMapping TABLE (
     EmpId INT,
     OldEmpId INT,
@@ -36,7 +35,7 @@ INSERT INTO [dbo].[KeepInViewByDayTrans]
            ,kivd.CreditDays
            ,kivd.DeductDays
            ,kivd.InYear
-           ,DATEADD(HOUR, @ServerTimeZone - @CompanyTimeZone,kivd.InsertedDate)
+           ,kivd.InsertedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
 	FROM [SMSHRM].[dbo].[KeepInViewByDayTrans] AS kivd WITH (NOLOCK)
 	INNER JOIN dbo.WorkingTimeRequest AS wkr WITH (NOLOCK) ON kivd.RequestId = wkr.OldRequestId AND wkr.CompanyId = @companyId
 	INNER JOIN @EmployeeMapping AS emp ON kivd.EmpId = emp.OldEmpId
@@ -57,7 +56,7 @@ INSERT INTO [dbo].[KeepInViewByHourTrans]
            ,wkr.RequestId
            ,kivh.CreditMinutes
            ,kivh.DeductMinutes
-           ,DATEADD(HOUR, @ServerTimeZone - @CompanyTimeZone,kivh.InsertedDate)
+           ,kivh.InsertedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
            ,kivh.MinutesBalance
 	FROM [SMSHRM].[dbo].[KeepInViewByHourTrans] AS kivh WITH (NOLOCK)
 	INNER JOIN dbo.WorkingTimeRequest AS wkr WITH (NOLOCK) ON kivh.RequestId = wkr.OldRequestId AND wkr.CompanyId = @companyId

@@ -1,11 +1,10 @@
 USE [bodb_HRM]
 GO
 DECLARE @CompanyId INT;
-DECLARE @CompanyTimeZone INT;
-DECLARE @ServerTimeZone INT;
+DECLARE @CurrentTimeZone NVARCHAR(50) = 'UTC'; 
+DECLARE @TargetTimeZone NVARCHAR(50) = 'SE Asia Standard Time'; 
 SET @CompanyId = 3;
-SET @ServerTimeZone =  DATEPART(TZOFFSET, SYSDATETIMEOFFSET()) / 60;
-SET @CompanyTimeZone = 7;
+
 DECLARE @EmployeeMapping TABLE (
     EmpId INT,
     OldEmpId INT,
@@ -44,9 +43,9 @@ INSERT INTO [dbo].[HospitalizationLeaveTrans]
            ,hpl.DeductDays
            ,hpl.CreditDays
            ,hpl.IsDeleted
-           ,DATEADD(HOUR, @ServerTimeZone - @CompanyTimeZone,hpl.CreatedDate)
+           ,hpl.CreatedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
            ,empCreated.EmpId
-           ,DATEADD(HOUR, @ServerTimeZone - @CompanyTimeZone,hpl.ModifiedDate)
+           ,hpl.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
            ,empModified.EmpId
 		   ,hpl.TransId
 	FROM [SMSHRM].[dbo].[HospitalizationLeaveTrans] AS hpl WITH (NOLOCK)
@@ -81,7 +80,7 @@ INSERT INTO [dbo].[WeekendLeaveTrans]
            ,wl.LeaveDay
            ,wkr.RequestId
            ,wl.IsDiscipline
-           ,DATEADD(HOUR, @ServerTimeZone - @CompanyTimeZone,wl.InsertedDate)
+           ,wl.InsertedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
 	FROM [SMSHRM].[dbo].[WeekendLeaveTrans] AS wl WITH (NOLOCK)
 	INNER JOIN @EmployeeMapping AS emp ON wl.EmpId = emp.OldEmpId
 	LEFT JOIN dbo.WorkingTimeRequest AS wkr WITH (NOLOCK) ON wl.RequestId = wkr.OldRequestId AND wkr.CompanyId = @companyId

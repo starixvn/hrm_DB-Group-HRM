@@ -1,11 +1,10 @@
 USE [bodb_HRM]
 GO
 DECLARE @CompanyId INT;
-DECLARE @CompanyTimeZone INT;
-DECLARE @ServerTimeZone INT;
+DECLARE @CurrentTimeZone NVARCHAR(50) = 'UTC'; 
+DECLARE @TargetTimeZone NVARCHAR(50) = 'SE Asia Standard Time'; 
 SET @CompanyId = 3;
-SET @ServerTimeZone =  DATEPART(TZOFFSET, SYSDATETIMEOFFSET()) / 60;
-SET @CompanyTimeZone = 7;
+
 DECLARE @EmployeeMapping TABLE (
     EmpId INT,
     OldEmpId INT,
@@ -34,7 +33,7 @@ INSERT INTO [dbo].[ScheduleArrangement]
            ,sa.Remark
            ,sa.DisplayOrder
            ,empModified.EmpId
-           ,DATEADD(HOUR, @ServerTimeZone - @CompanyTimeZone, sa.ModifiedDate)
+           ,sa.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
 	FROM [SMSHRM].[dbo].[ScheduleArrangement] AS sa  WITH (NOLOCK)
 	INNER JOIN @EmployeeMapping AS emp ON sa.EmployeeId = emp.OldEmpId 
 	LEFT JOIN @EmployeeMapping AS empModified ON sa.ModifiedBy = empModified.OldEmpId;
@@ -50,7 +49,7 @@ INSERT INTO [dbo].[ScheduleArrangementDefaultShift]
            ,sas.FromDate
            ,s.ShiftId
            ,empModified.EmpId
-           ,DATEADD(HOUR, @ServerTimeZone - @CompanyTimeZone, sas.ModifiedDate)
+           ,sas.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
 	FROM [SMSHRM].[dbo].[ScheduleArrangementDefaultShift] AS sas  WITH (NOLOCK)
 	INNER JOIN @EmployeeMapping AS emp ON sas.EmployeeId = emp.OldEmpId 
 	LEFT JOIN @EmployeeMapping AS empModified ON sas.ModifiedBy = empModified.OldEmpId
@@ -67,7 +66,7 @@ INSERT INTO [dbo].[ScheduleArrangementGroupOrder]
            g.GroupId
            ,sag.DisplayOrder
            ,empModified.EmpId
-           ,DATEADD(HOUR, @ServerTimeZone - @CompanyTimeZone, sag.ModifiedDate)
+           ,sag.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
 	FROM [SMSHRM].[dbo].[ScheduleArrangementGroupOrder] AS sag  WITH (NOLOCK)
 	INNER JOIN dbo.[Group] AS g ON sag.GroupId = g.OldGroupId AND g.CompanyId = @CompanyId 
 	LEFT JOIN @EmployeeMapping AS empModified ON sag.ModifiedBy = empModified.OldEmpId;

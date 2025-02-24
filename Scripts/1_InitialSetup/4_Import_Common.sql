@@ -1,7 +1,7 @@
 
 DECLARE @CompanyId INT = 3;
-DECLARE @CompanyTimeZone INT = 7;
-DECLARE @ServerTimeZone INT = DATEPART(TZOFFSET, SYSDATETIMEOFFSET()) / 60;
+DECLARE @CurrentTimeZone NVARCHAR(50) = 'UTC'; 
+DECLARE @TargetTimeZone NVARCHAR(50) = 'SE Asia Standard Time'; 
 
 
 -- #region DISCIPLINE TYPE TABLE
@@ -72,7 +72,7 @@ INSERT INTO [bodb_HRM].[dbo].[JobLevel]
            ,jl.Name
            ,jl.IsDeleted
            ,NULL
-           ,DATEADD(HOUR, @ServerTimeZone - @CompanyTimeZone,jl.ModifiedDate)
+           ,jl.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
 	FROM SMSHRM.dbo.JobLevel AS jl WITH (NOLOCK)
 SET IDENTITY_INSERT bodb_HRM.dbo.JobLevel OFF;
 

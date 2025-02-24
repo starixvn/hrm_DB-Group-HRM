@@ -1,11 +1,10 @@
 USE [bodb_HRM]
 GO
 DECLARE @CompanyId INT;
-DECLARE @CompanyTimeZone INT;
-DECLARE @ServerTimeZone INT;
+DECLARE @CurrentTimeZone NVARCHAR(50) = 'UTC'; 
+DECLARE @TargetTimeZone NVARCHAR(50) = 'SE Asia Standard Time'; 
 SET @CompanyId = 3;
-SET @ServerTimeZone =  DATEPART(TZOFFSET, SYSDATETIMEOFFSET()) / 60;
-SET @CompanyTimeZone = 7;
+
 DECLARE @EmployeeMapping TABLE (
     EmpId INT,
     OldEmpId INT,
@@ -53,15 +52,15 @@ INSERT INTO [dbo].[OTMonthlyRequest]
            ,empVerify.EmpId
            ,empApprove.EmpId
            ,empHr.EmpId
-           ,DATEADD(HOUR, @ServerTimeZone - @CompanyTimeZone, otm.VerifiedDate)
-           ,DATEADD(HOUR, @ServerTimeZone - @CompanyTimeZone, otm.ApprovedDate)
-           ,DATEADD(HOUR, @ServerTimeZone - @CompanyTimeZone, otm.HRDate)
+           ,otm.VerifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
+           ,otm.ApprovedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
+           ,otm.HRDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
            ,otm.VerifiedStatus
            ,otm.ApprovedStatus
            ,otm.HRStatus
            ,empModified.EmpId
-           ,DATEADD(HOUR, @ServerTimeZone - @CompanyTimeZone, otm.ModifiedDate)
-           ,DATEADD(HOUR, @ServerTimeZone - @CompanyTimeZone, otm.CreatedDate)
+           ,otm.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
+           ,otm.CreatedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
            ,empCreated.EmpId
 		   ,otm.RequestId
 	FROM [SMSHRM].[dbo].[OTMonthlyRequest] as otm  WITH (NOLOCK)
@@ -106,7 +105,7 @@ INSERT INTO [dbo].[OTDailyRequest]
            ,otd.Remark
            ,otd.Status
            ,empCreated.EmpId
-           ,DATEADD(HOUR, @ServerTimeZone - @CompanyTimeZone, otd.CreatedDate)
+           ,otd.CreatedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
            ,otd.IsUpdated
 	FROM [SMSHRM].[dbo].[OTDailyRequest] as otd  WITH (NOLOCK)
 	INNER JOIN @EmployeeMapping AS emp ON otd.EmpId = emp.OldEmpId 

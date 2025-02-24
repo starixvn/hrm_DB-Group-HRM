@@ -1,11 +1,10 @@
 USE [bodb_HRM]
 GO
 DECLARE @CompanyId INT;
-DECLARE @CompanyTimeZone INT;
-DECLARE @ServerTimeZone INT;
+DECLARE @CurrentTimeZone NVARCHAR(50) = 'UTC'; 
+DECLARE @TargetTimeZone NVARCHAR(50) = 'SE Asia Standard Time'; 
 SET @CompanyId = 3;
-SET @ServerTimeZone =  DATEPART(TZOFFSET, SYSDATETIMEOFFSET()) / 60;
-SET @CompanyTimeZone = 7;
+
 DECLARE @EmployeeMapping TABLE (
     EmpId INT,
     OldEmpId INT,
@@ -144,9 +143,9 @@ INSERT INTO [dbo].[LeaveTrans]
            ,lt.DeductDays
            ,lt.CreditDays
            ,lt.Deleted
-           ,DATEADD(HOUR, @ServerTimeZone - @CompanyTimeZone, lt.CreatedDate)
+           ,lt.CreatedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone 
            ,empCreated.EmpId
-           ,DATEADD(HOUR, @ServerTimeZone - @CompanyTimeZone, lt.ModifiedDate)
+           ,lt.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
            ,empModified.EmpId
            ,lt.LeaveTransId
 	FROM [SMSHRM].[dbo].[LeaveTrans] AS lt WITH (NOLOCK)

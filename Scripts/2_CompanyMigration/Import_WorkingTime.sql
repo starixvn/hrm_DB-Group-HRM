@@ -1,11 +1,10 @@
 USE [bodb_HRM]
 GO
 DECLARE @CompanyId INT;
-DECLARE @CompanyTimeZone INT;
-DECLARE @ServerTimeZone INT;
+DECLARE @CurrentTimeZone NVARCHAR(50) = 'UTC'; 
+DECLARE @TargetTimeZone NVARCHAR(50) = 'SE Asia Standard Time'; 
 SET @CompanyId = 3;
-SET @ServerTimeZone =  DATEPART(TZOFFSET, SYSDATETIMEOFFSET()) / 60;
-SET @CompanyTimeZone = 7;
+
 DECLARE @EmployeeMapping TABLE (
     EmpId INT,
     OldEmpId INT,
@@ -51,16 +50,16 @@ INSERT INTO [dbo].[WorkingTimeRequest]
            ,empVerify.EmpId
            ,empApprove.EmpId
            ,empHr.EmpId
-           ,DATEADD(HOUR, @ServerTimeZone - @CompanyTimeZone, wr.VerifiedDate)
-           ,DATEADD(HOUR, @ServerTimeZone - @CompanyTimeZone, wr.ApprovedDate)
-           ,DATEADD(HOUR, @ServerTimeZone - @CompanyTimeZone, wr.HRDate)
+           ,wr.VerifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
+           ,wr.ApprovedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
+           ,wr.HRDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
            ,wr.VerifiedStatus
            ,wr.ApprovedStatus
            ,wr.HRStatus
            ,empCreated.EmpId
-           ,DATEADD(HOUR, @ServerTimeZone - @CompanyTimeZone, wr.CreatedDate)
+           ,wr.CreatedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
            ,empModified.EmpId
-           ,DATEADD(HOUR, @ServerTimeZone - @CompanyTimeZone, wr.ModifiedDate)
+           ,wr.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
            ,wr.ReworkCount
            ,wr.ApproverComment
 		   ,@CompanyId
@@ -107,20 +106,20 @@ INSERT INTO [dbo].[WorkingTimeRequestHistory]
            ,empVerify.EmpId
            ,empApprove.EmpId
            ,empHr.EmpId
-           ,DATEADD(HOUR, @ServerTimeZone - @CompanyTimeZone, wrh.VerifiedDate)
-           ,DATEADD(HOUR, @ServerTimeZone - @CompanyTimeZone, wrh.ApprovedDate)
-           ,DATEADD(HOUR, @ServerTimeZone - @CompanyTimeZone, wrh.HRDate)
+           ,wrh.VerifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
+           ,wrh.ApprovedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
+           ,wrh.HRDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
            ,wrh.VerifiedStatus
            ,wrh.ApprovedStatus
            ,wrh.HRStatus
-           ,DATEADD(HOUR, @ServerTimeZone - @CompanyTimeZone, wrh.InsertedDate)
-           ,DATEADD(HOUR, @ServerTimeZone - @CompanyTimeZone, wrh.ModifiedDate)
+           ,wrh.InsertedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
+           ,wrh.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
            ,empModified.EmpId
            ,empCreated.EmpId
-           ,DATEADD(HOUR, @ServerTimeZone - @CompanyTimeZone, wrh.CreatedDate)
+           ,wrh.CreatedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
            ,wrh.ReworkCount
            ,wrh.ApproverComment
-           ,DATEADD(HOUR, @ServerTimeZone - @CompanyTimeZone, wrh.LogDate)
+           ,wrh.LogDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
 		   ,wrh.HistoryId
 	FROM SMSHRM.dbo.WorkingTimeRequestHistory as wrh  WITH (NOLOCK)
 	INNER JOIN dbo.WorkingTimeRequest AS wr WITH (NOLOCK) ON wrh.RequestId = wr.OldRequestId AND wr.CompanyId = @CompanyId  --some requestId not exists in WR
