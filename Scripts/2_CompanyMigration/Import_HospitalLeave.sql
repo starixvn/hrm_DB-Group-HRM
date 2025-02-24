@@ -50,8 +50,8 @@ INSERT INTO [dbo].[HospitalizationLeaveTrans]
            ,empModified.EmpId
 		   ,hpl.TransId
 	FROM [SMSHRM].[dbo].[HospitalizationLeaveTrans] AS hpl WITH (NOLOCK)
-	INNER JOIN dbo.WorkingTimeRequest AS wkr WITH (NOLOCK) ON hpl.RequestId = wkr.OldRequestId AND wkr.CompanyId = @companyId
-	INNER JOIN @EmployeeMapping AS emp ON hpl.EmpId = emp.OldEmpId
+    INNER JOIN @EmployeeMapping AS emp ON hpl.EmpId = emp.OldEmpId
+	LEFT JOIN dbo.WorkingTimeRequest AS wkr WITH (NOLOCK) ON hpl.RequestId = wkr.OldRequestId AND wkr.CompanyId = @companyId
 	LEFT JOIN @EmployeeMapping AS empCreated ON hpl.CreatedBy = empCreated.OldEmpId
 	LEFT JOIN @EmployeeMapping AS empModified ON hpl.ModifiedBy = empModified.OldEmpId;
 

@@ -60,7 +60,7 @@ INSERT INTO [dbo].[CheckInOutRequestHistory]
            ,wkrh.HistoryId
 	FROM SMSHRM.dbo.CheckInOutRequestHistory AS cioh WITH (NOLOCK)
 	INNER JOIN dbo.WorkingTimeRequest AS wkr WITH (NOLOCK) ON cioh.RequestId = wkr.OldRequestId AND wkr.CompanyId = @companyId
-	INNER JOIN dbo.WorkingTimeRequestHistory AS wkrh WITH (NOLOCK) ON cioh.HistoryId = wkrh.OldHistoryId AND wkr.RequestId = wkrh.RequestId
+	LEFT JOIN dbo.WorkingTimeRequestHistory AS wkrh WITH (NOLOCK) ON cioh.HistoryId = wkrh.OldHistoryId AND wkr.RequestId = wkrh.RequestId
 	INNER JOIN @EmployeeMapping AS emp ON cioh.EmpId = emp.OldEmpId
 GO
 
