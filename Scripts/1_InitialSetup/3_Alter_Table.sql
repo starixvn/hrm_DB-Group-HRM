@@ -51,23 +51,25 @@ ADD CompanyId INT NULL, --temp for query
 OldRequestId INT NULL;
 
 ALTER TABLE [bodb_HRM].[dbo].[WorkingTimeRequestHistory]
-ADD OldHistoryId INT NULL
-
+ADD OldHistoryId INT NULL;
 
 ALTER TABLE [bodb_HRM].[dbo].[HospitalizationLeaveTrans]
-ADD OldTransId INT NULL
-
+ADD OldTransId INT NULL;
 
 ALTER TABLE [bodb_HRM].[dbo].[LeaveTrans]
-ADD OldLeaveTransId INT NULL
-
+ADD OldLeaveTransId INT NULL;
 
 ALTER TABLE [bodb_HRM].[dbo].[OTMonthlyRequest]
-ADD OldRequestId INT NULL -- this new id type not related to RequestId from WorkingTimeRequest table
-
+ADD OldRequestId INT NULL; -- this new id type not related to RequestId from WorkingTimeRequest table
 
 ALTER TABLE [bodb_HRM].[dbo].[RefResource]
 ADD CompanyId INT NULL;
 
+ALTER TABLE bodb_HRM.dbo.TimeRecord ADD CompanyId SMALLINT, OldId BIGINT;
+ALTER TABLE bodb_HRM.dbo.TimeRecord DROP CONSTRAINT PK_TimeRecord;
+ALTER TABLE bodb_HRM.dbo.TimeRecord ALTER COLUMN Id BIGINT;
+ALTER TABLE bodb_HRM.dbo.TimeRecord ADD CONSTRAINT PK_TimeRecord PRIMARY KEY (Id);
 
-
+ALTER TABLE bodb_HRM.dbo.TimeRecordExt DROP CONSTRAINT PK_TimeRecordExt;
+ALTER TABLE bodb_HRM.dbo.TimeRecordExt ALTER COLUMN Id BIGINT NOT NULL;
+ALTER TABLE bodb_HRM.dbo.TimeRecordExt ADD CONSTRAINT PK_TimeRecordExt PRIMARY KEY (Id);
