@@ -1439,10 +1439,6 @@ GO
 IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[tmpEmployeeAttendace]') AND type in (N'U'))
 DROP TABLE [dbo].[tmpEmployeeAttendace]
 GO
-/****** Object:  Table [dbo].[tmpCLBalance]    Script Date: 2/13/2025 1:39:30 PM ******/
-IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[tmpCLBalance]') AND type in (N'U'))
-DROP TABLE [dbo].[tmpCLBalance]
-GO
 /****** Object:  Table [dbo].[TimeRecordOld]    Script Date: 2/13/2025 1:39:30 PM ******/
 IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[TimeRecordOld]') AND type in (N'U'))
 DROP TABLE [dbo].[TimeRecordOld]
@@ -4977,16 +4973,6 @@ CREATE TABLE [dbo].[TimeRecordOld](
 	[InsertDate] [datetime] NULL,
 	[ModifiedBy] [int] NULL,
 	[ModifiedDate] [datetime] NULL
-) ON [PRIMARY]
-GO
-/****** Object:  Table [dbo].[tmpCLBalance]    Script Date: 2/13/2025 1:39:30 PM ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[tmpCLBalance](
-	[Code] [varchar](20) NULL,
-	[CreditDays] [tinyint] NULL
 ) ON [PRIMARY]
 GO
 /****** Object:  Table [dbo].[tmpEmployeeAttendace]    Script Date: 2/13/2025 1:39:30 PM ******/
