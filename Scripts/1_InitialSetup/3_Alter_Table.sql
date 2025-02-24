@@ -66,4 +66,8 @@ ALTER TABLE [bodb_HRM].[dbo].[OTMonthlyRequest]
 ADD OldRequestId INT NULL -- this new id type not related to WorkingTimeRequest table
 
 
+ALTER TABLE [bodb_HRM].[dbo].[RefResource]
+ADD CompanyId INT NULL;
+
+
 
