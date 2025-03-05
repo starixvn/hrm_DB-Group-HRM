@@ -31,8 +31,8 @@ INSERT INTO [dbo].[LeaveRequest]
      SELECT
            wkr.RequestId
            ,emp.EmpId
-           ,lr.FromDate
-           ,lr.ToDate
+           ,lr.FromDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
+           ,lr.ToDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
            ,lr.LeaveType
            ,lr.TotalDays
            ,lr.RefNo
@@ -60,8 +60,8 @@ INSERT INTO [dbo].LeaveRequestDetail
            ,s.ShiftId
            ,lrd.LeaveType
            ,lrd.IsHalfDay
-           ,lrd.FromTime
-           ,lrd.ToTime
+           ,lrd.FromTime AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
+           ,lrd.ToTime AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
            ,lrd.WorkType
 	FROM [SMSHRM].[dbo].[LeaveRequestDetail] AS lrd WITH (NOLOCK)
 	INNER JOIN dbo.WorkingTimeRequest AS wkr WITH (NOLOCK) ON lrd.RequestId = wkr.OldRequestId AND wkr.CompanyId = @companyId
@@ -87,8 +87,8 @@ INSERT INTO [dbo].[LeaveRequestDetailHistory]
            ,s.ShiftId
            ,lrdh.LeaveType
            ,lrdh.IsHalfDay
-           ,lrdh.FromTime
-           ,lrdh.ToTime
+           ,lrdh.FromTime AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
+           ,lrdh.ToTime AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
            ,lrdh.WorkType
            ,wkrh.HistoryId
 	FROM [SMSHRM].[dbo].[LeaveRequestDetailHistory] AS lrdh WITH (NOLOCK)
@@ -109,8 +109,8 @@ INSERT INTO [dbo].[LeaveRequestHistory]
      SELECT
            wkr.RequestId
            ,emp.EmpId
-           ,lrh.FromDate
-           ,lrh.ToDate
+           ,lrh.FromDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
+           ,lrh.ToDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
            ,lrh.LeaveType
            ,lrh.TotalDays
            ,wkrh.HistoryId

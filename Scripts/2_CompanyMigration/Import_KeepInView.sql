@@ -77,8 +77,8 @@ INSERT INTO [dbo].[KeepInViewRequest]
           wkr.RequestId
            ,emp.EmpId
            ,kiv.IsHalfDay
-           ,kiv.FromTime
-           ,kiv.ToTime
+           ,kiv.FromTime AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
+           ,kiv.ToTime AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
            ,kiv.RefNo
            ,kiv.OnDate
            ,kiv.KeepInViewType
@@ -104,8 +104,8 @@ INSERT INTO [dbo].[KeepInViewRequestHistory]
            ,emp.EmpId
            ,kivh.OnDate
            ,kivh.IsHalfDay
-           ,kivh.FromTime
-           ,kivh.ToTime
+           ,kivh.FromTime AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
+           ,kivh.ToTime AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
            ,wkrh.HistoryId
            ,kivh.KeepInViewType
 	FROM  [SMSHRM].[dbo].[KeepInViewRequestHistory] AS kivh WITH (NOLOCK)

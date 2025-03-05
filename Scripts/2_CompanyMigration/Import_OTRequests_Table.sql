@@ -95,8 +95,8 @@ INSERT INTO [dbo].[OTDailyRequest]
            ,emp.EmpId
            ,otm.RequestId
            ,s.ShiftID
-           ,otd.TimeIn
-           ,otd.TimeOut
+           ,otd.TimeIn AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
+           ,otd.TimeOut AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
            ,otd.TotalHours
            ,otd.NormalHours
            ,otd.OffHours
