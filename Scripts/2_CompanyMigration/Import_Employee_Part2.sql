@@ -2,8 +2,8 @@ USE bodb_HRM
 GO
 
 DECLARE @NewCompanyId INT = 3;
-DECLARE @CurrentTimeZone NVARCHAR(50) = 'SE Asia Standard Time',
-    @TargetTimeZone NVARCHAR(50) = 'SE Asia Standard Time'-- hong_kong: China Standard Time 
+DECLARE @CurrentTimeZone NVARCHAR(50) = 'SE Asia Standard Time', -- UTC+7
+        @TargetTimeZone NVARCHAR(50) = 'SA Western Standard Time'; -- UTC-4
 
 -- #region TẠO MAPPING EMPLOYEE
 DECLARE @EmployeeMapping TABLE (
