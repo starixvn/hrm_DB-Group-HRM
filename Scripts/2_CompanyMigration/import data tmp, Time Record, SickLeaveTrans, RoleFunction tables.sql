@@ -128,8 +128,8 @@ WHERE tc.CompanyId = @CompanyId
         WHERE tc.Id = tc_ext.Id
     )
 
-INSERT INTO dbo.SickLeaveTrans(EmpId, RequestId, [Description], FromDate, ToDate, DeductDays, IsDeleted, CreatedBy, CreatedDate, ModifiedBy, ModifiedDate)
-SELECT e.EmpId, rq.RequestId, st.[Description], st.FromDate, st.ToDate, st.DeductDays, st.IsDeleted, cr.EmpId,
+INSERT INTO dbo.SickLeaveTrans(EmpId, RequestId, [Description], FromDate, ToDate, DeductDays, CreditDays, IsDeleted, CreatedBy, CreatedDate, ModifiedBy, ModifiedDate)
+SELECT e.EmpId, rq.RequestId, st.[Description], st.FromDate, st.ToDate, st.DeductDays, st.CreditDays, st.IsDeleted, cr.EmpId,
     st.CreatedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone,
     md.EmpId, st.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
 FROM SMSHRM.dbo.SickLeaveTrans AS st WITH (NOLOCK)
