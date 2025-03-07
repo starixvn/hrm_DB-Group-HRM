@@ -2,19 +2,19 @@ USE bodb_HRM
 GO
 
 ALTER TABLE dbo.Unit ADD CompanyId INT NOT NULL; -- Temp CompanyId for mapping
-ALTER TABLE dbo.Unit ADD OldUnitId INT NOT NULL;
+ALTER TABLE dbo.Unit ADD OldUnitId INT NULL;
 
 ALTER TABLE dbo.Department ADD CompanyId INT NOT NULL; -- Temp CompanyId for mapping
-ALTER TABLE dbo.Department ADD OldDepartmentId INT NOT NULL;
+ALTER TABLE dbo.Department ADD OldDepartmentId INT NULL;
 
 ALTER TABLE dbo.Section ADD CompanyId INT NOT NULL; -- Temp CompanyId for mapping
-ALTER TABLE dbo.Section ADD OldSectionId INT NOT NULL;
+ALTER TABLE dbo.Section ADD OldSectionId INT NULL;
 
 ALTER TABLE dbo.[Group] ADD CompanyId INT NOT NULL;
-ALTER TABLE dbo.[Group] ADD OldGroupId INT NOT NULL;
+ALTER TABLE dbo.[Group] ADD OldGroupId INT NULL;
 
 ALTER TABLE dbo.Shift ADD CompanyId INT NOT NULL;
-ALTER TABLE dbo.Shift ADD OldShiftId INT NOT NULL;
+ALTER TABLE dbo.Shift ADD OldShiftId INT NULL;
 
 ALTER TABLE dbo.LeaveType ADD CompanyId INT NOT NULL;
 ALTER TABLE dbo.LeaveType DROP CONSTRAINT PK_LeaveType;
@@ -23,7 +23,7 @@ ALTER TABLE dbo.LeaveType ADD LeaveTypeId INT NOT NULL;
 ALTER TABLE dbo.LeaveType ADD CONSTRAINT PK_LeaveType PRIMARY KEY CLUSTERED (CompanyId, LeaveTypeId);
 
 ALTER TABLE dbo.Holiday ADD CompanyId INT NOT NULL;
-ALTER TABLE dbo.Holiday ADD OldHolidayId INT NOT NULL;
+ALTER TABLE dbo.Holiday ADD OldHolidayId INT NULL;
 
 -- ALTER TABLE dbo.DisciplineType ADD CompanyId INT;
 -- ALTER TABLE dbo.DisciplineType ADD OldDisciplineTypeId INT;
@@ -32,22 +32,22 @@ ALTER TABLE dbo.Holiday ADD OldHolidayId INT NOT NULL;
 -- ALTER TABLE dbo.DisciplineType ADD DisciplineTypeId INT IDENTITY(1,1) PRIMARY KEY;
 
 ALTER TABLE dbo.Memo ADD CompanyId INT NOT NULL;
-ALTER TABLE dbo.Memo ADD OldId INT NOT NULL;
+ALTER TABLE dbo.Memo ADD OldId INT NULL;
 
 ALTER TABLE dbo.SystemConfigs ADD CompanyId INT NOT NULL;
 
 ALTER TABLE dbo.[Message] ADD CompanyId INT NOT NULL; -- Temp CompanyId for mapping
-ALTER TABLE dbo.[Message] ADD OldMessageId INT NOT NULL;
+ALTER TABLE dbo.[Message] ADD OldMessageId INT NULL;
 
 ALTER TABLE dbo.LookupData ADD CompanyId INT NOT NULL;
-ALTER TABLE dbo.LookupData ADD OldId INT NOT NULL;
+ALTER TABLE dbo.LookupData ADD OldId INT NULL;
 
-ALTER TABLE dbo.Employee ADD OldEmpId INT NOT NULL;
+ALTER TABLE dbo.Employee ADD OldEmpId INT NULL;
 
-ALTER TABLE dbo.EmployeePaternity ADD OldPaternityId INT NOT NULL;
-ALTER TABLE dbo.EmployeePostnatal ADD OldPostnatalId INT NOT NULL;
-ALTER TABLE dbo.EmployeeRelationship ADD OldId INT NOT NULL;
-ALTER TABLE dbo.EmployeeWorkFromHome ADD OldEmployeeWorkFromHomeId INT NOT NULL;
+ALTER TABLE dbo.EmployeePaternity ADD OldPaternityId INT NULL;
+ALTER TABLE dbo.EmployeePostnatal ADD OldPostnatalId INT NULL;
+ALTER TABLE dbo.EmployeeRelationship ADD OldId INT NULL;
+ALTER TABLE dbo.EmployeeWorkFromHome ADD OldEmployeeWorkFromHomeId INT NULL;
 
 ALTER TABLE [bodb_HRM].[dbo].[WorkingTimeRequest]
 ADD CompanyId INT NULL, --temp for query
