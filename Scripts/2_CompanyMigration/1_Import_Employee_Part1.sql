@@ -2,8 +2,8 @@ USE bodb_HRM
 GO
 
 DECLARE @NewCompanyId INT = 3;
-DECLARE @CurrentTimeZone NVARCHAR(50) = 'SE Asia Standard Time',
-    @TargetTimeZone NVARCHAR(50) = 'SE Asia Standard Time' -- hong_kong: China Standard Time 
+DECLARE @CurrentTimeZone NVARCHAR(50) = 'SE Asia Standard Time'; 
+DECLARE @TargetTimeZone NVARCHAR(50) = 'SA Western Standard Time'; 
 
 DECLARE @EmployeeMapping TABLE (
     EmpId INT,
@@ -40,6 +40,7 @@ SELECT
     LetsTalk, JobLevelId, UserId, UC_ModifiedDate, UC_SyncDate, ResignedReason, 
     ExpertGradeId, EmpId AS OldEmpId  -- Keep track of old EmpId
 FROM SMSHRM.dbo.Employee
+WHERE UserId is not null
 
 -- Insert into CompanyEmployee using NewEmpId and CompanyId
 INSERT INTO dbo.CompanyEmployee (EmpId, CompanyId)

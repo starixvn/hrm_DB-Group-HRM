@@ -1,6 +1,6 @@
 DECLARE @NewCompanyId INT = 3;
-DECLARE @CurrentTimeZone NVARCHAR(50) = 'UTC'; 
-DECLARE @TargetTimeZone NVARCHAR(50) = 'SE Asia Standard Time';
+DECLARE @CurrentTimeZone NVARCHAR(50) = 'SE Asia Standard Time'; 
+DECLARE @TargetTimeZone NVARCHAR(50) = 'SA Western Standard Time'; 
 
 -- #region TẠO MAPPING EMPLOYEE
 DECLARE @EmployeeMapping TABLE (

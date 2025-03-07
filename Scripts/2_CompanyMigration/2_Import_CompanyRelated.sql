@@ -2,8 +2,8 @@ USE bodb_HRM
 GO
 
 DECLARE @NewCompanyId INT = 3;
-DECLARE @CurrentTimeZone NVARCHAR(50) = 'SE Asia Standard Time',
-    @TargetTimeZone NVARCHAR(50) = 'SE Asia Standard Time' -- hong_kong: China Standard Time 
+DECLARE @CurrentTimeZone NVARCHAR(50) = 'SE Asia Standard Time'; 
+DECLARE @TargetTimeZone NVARCHAR(50) = 'SA Western Standard Time'; 
 
 -- #region TẠO MAPPING EMPLOYEE
 DECLARE @EmployeeMapping TABLE (
@@ -11,6 +11,7 @@ DECLARE @EmployeeMapping TABLE (
     OldEmpId INT,
     CompanyId INT
 );
+
 
 -- Lưu danh sách Employee có trong công ty hiện tại
 INSERT INTO @EmployeeMapping (EmpId, OldEmpId, CompanyId)
@@ -95,6 +96,7 @@ FROM SMSHRM.dbo.SystemConfigs;
 -- #region LOOKUP DATA TABLE
 INSERT INTO dbo.LookupData (LookupId, Code, Name, Value, CompanyId, OldId)
 SELECT 
+	ld.LookupId,
     ld.Code, 
     ld.Name, 
     ld.Value, 

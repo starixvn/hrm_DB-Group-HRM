@@ -1,8 +1,8 @@
 USE [bodb_HRM]
 GO
 DECLARE @CompanyId INT;
-DECLARE @CurrentTimeZone NVARCHAR(50) = 'UTC'; 
-DECLARE @TargetTimeZone NVARCHAR(50) = 'SE Asia Standard Time'; 
+DECLARE @CurrentTimeZone NVARCHAR(50) = 'SE Asia Standard Time'; 
+DECLARE @TargetTimeZone NVARCHAR(50) = 'SA Western Standard Time'; 
 SET @CompanyId = 3;
 
 DECLARE @EmployeeMapping TABLE (

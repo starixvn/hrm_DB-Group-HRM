@@ -2,8 +2,8 @@ USE bodb_HRM
 GO
 
 DECLARE @CompanyId SMALLINT = 3
-    ,@CurrentTimeZone NVARCHAR(50) = 'SE Asia Standard Time'
-    ,@TargetTimeZone NVARCHAR(50) = 'SE Asia Standard Time' -- hong_kong: China Standard Time 
+DECLARE @CurrentTimeZone NVARCHAR(50) = 'SE Asia Standard Time'; 
+DECLARE @TargetTimeZone NVARCHAR(50) = 'SA Western Standard Time'; 
 
 INSERT INTO dbo.tmpSickLeaveBalance (EmpId, RequestId, TotalDays, [Month], [Year], [Status])
 SELECT e.EmpId, rq.RequestId, tmp.TotalDays, tmp.[Month], tmp.[Year], tmp.[Status]
