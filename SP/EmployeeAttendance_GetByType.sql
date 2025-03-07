@@ -6,8 +6,8 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-ALTER PROCEDURE [dbo].[EmployeeAttendance_GetByType] @fromtime DATE
-	,@totime DATE
+CREATE PROCEDURE [dbo].[EmployeeAttendance_GetByType_xtest] @fromtime DATETIME
+	,@totime DATETIME
 	,@EmpId INT = NULL
 	,@TeamIds VARCHAR(MAX) = ''
 	,@excludeUserDelete INT = 1
@@ -272,7 +272,8 @@ BEGIN
 			FROM dbo.LeaveRequestDetail AS ldt WITH (NOLOCK)
 			WHERE lr.RequestId = ldt.RequestId
 			)
-
+	
+	
 	-- Leave request
 	INSERT INTO #tmpDailyRequest (
 		RequestId
@@ -326,7 +327,7 @@ BEGIN
 			FROM #tmpEmployee AS emp WITH (NOLOCK)
 			WHERE r.EmpId = emp.EmpId
 			)
-
+		
 	-- change shift
 	INSERT INTO #tmpDailyRequest (
 		RequestId
@@ -444,7 +445,7 @@ BEGIN
 				OR cl.EmpId = @EmpId
 				)
 	END
-
+	
 	SELECT T.Code
 		,T.EmpId
 		,T.FullName
@@ -678,8 +679,8 @@ BEGIN
 			,de.Code AS DepartmentCode
 		FROM dbo.Employee AS e WITH (NOLOCK)
 			INNER JOIN dbo.tmpEmployeeCalendar AS c WITH (NOLOCK) ON c.EmpId = e.EmpId
-			AND c.WorkDate BETWEEN @fromtime
-				AND @totime
+			AND c.WorkDate BETWEEN DATEADD(HOUR, 11,  CAST(@fromtime AS DATETIME)) 
+               AND DATEADD(HOUR, 11, CAST(@totime AS DATETIME))
 			INNER JOIN #tmpEmployee AS tblemp ON e.EmpId = tblemp.EmpId
 			LEFT JOIN dbo.EmployeeSummary AS e_s WITH (NOLOCK) ON e_s.EmpId = e.EmpId
 			LEFT JOIN dbo.EmployeeCalendar AS c_CrossDay WITH (NOLOCK) ON c_CrossDay.WorkDate = DATEADD(D, - 1, c.WorkDate)
@@ -744,6 +745,8 @@ BEGIN
 		,TeamCode
 		,T.code
 
+
+
 	SELECT c.WorkDate
 		,rd.EmpId
 		,rd.RequestDate
@@ -775,8 +778,8 @@ BEGIN
 	FROM #tmpDailyRequest AS rd WITH (NOLOCK)
 		INNER JOIN dbo.tmpEmployeeCalendar AS c WITH (NOLOCK) ON (
 			(
-				rd.WorkDate IS NOT NULL AND rd.WorkDate = c.WorkDate) 
-				OR (rd.WorkDate IS NULL AND c.WorkDate BETWEEN CAST(rd.FromDate AS DATE) AND CAST(rd.ToDate AS DATE))
+				rd.WorkDate IS NOT NULL AND DATEADD(HOUR, 11, CAST(rd.WorkDate AS DATETIME)) = c.WorkDate) 
+				OR (rd.WorkDate IS NULL AND c.WorkDate BETWEEN CAST(DATEADD(HOUR, 11, CAST(rd.FromDate AS DATETIME)) AS DATE) AND CAST(DATEADD(HOUR, 11, CAST(rd.ToDate AS DATETIME)) AS DATE))
 			)
 		AND c.EmpId = rd.EmpId
 		AND (
