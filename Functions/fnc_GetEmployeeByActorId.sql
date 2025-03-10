@@ -4,6 +4,7 @@ ALTER FUNCTION [dbo].[fnc_GetEmployeeByActorId] (
 	@EmpId INT = NULL
 	,@ExcludeUserDelete INT = 1
 	,@IsShowUserInTeam BIT = 1
+	,@CompanyId
 	)
 RETURNS TABLE
 /*
@@ -20,6 +21,7 @@ AS
 RETURN WITH cteEmployee AS (
 		SELECT e.EmpId
 		FROM dbo.Employee AS e WITH (NOLOCK)
+		INNER JOIN dbo.CompanyEmployee ce WITH (NOLOCK) ON ce.EmpId = e.EmpId AND ce.CompanyId = @CompanyId
 		WHERE (
 				(
 					@ExcludeUserDelete = 1
@@ -43,6 +45,7 @@ RETURN WITH cteEmployee AS (
 		SELECT es.EmpId
 		FROM dbo.EmployeeSupervisor AS es WITH (NOLOCK)
 			INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON es.EmpId = e.EmpId
+			INNER JOIN dbo.CompanyEmployee ce WITH (NOLOCK) ON ce.EmpId = e.EmpId AND ce.CompanyId = @CompanyId
 		WHERE es.OwnerId = @EmpId
 			AND (
 				(
@@ -59,6 +62,7 @@ RETURN WITH cteEmployee AS (
 		SELECT es.EmpId
 		FROM dbo.EmployeeSupervisor AS es WITH (NOLOCK)
 			INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON es.EmpId = e.EmpId
+			INNER JOIN dbo.CompanyEmployee ce WITH (NOLOCK) ON ce.EmpId = e.EmpId AND ce.CompanyId = @CompanyId
 		WHERE es.EmpId = @EmpId
 			AND (
 				(
@@ -75,6 +79,7 @@ RETURN WITH cteEmployee AS (
 		SELECT e.EmpId
 		FROM dbo.GroupSupervisor AS gs WITH (NOLOCK)
 			INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON gs.GroupId = e.GroupId
+			INNER JOIN dbo.CompanyEmployee ce WITH (NOLOCK) ON ce.EmpId = e.EmpId AND ce.CompanyId = @CompanyId
 		WHERE OwnerId = @EmpId
 			AND (
 				(
@@ -98,6 +103,7 @@ RETURN WITH cteEmployee AS (
 		SELECT e.EmpId
 		FROM dbo.GroupSupervisor AS gs WITH (NOLOCK)
 			INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON gs.GroupId = e.GroupId
+			INNER JOIN dbo.CompanyEmployee ce WITH (NOLOCK) ON ce.EmpId = e.EmpId AND ce.CompanyId = @CompanyId
 		WHERE OwnerId = @EmpId
 			AND (
 				(
@@ -121,6 +127,7 @@ RETURN WITH cteEmployee AS (
 		SELECT ee.EmpId
 		FROM dbo.Employee AS e WITH (NOLOCK)
 			INNER JOIN dbo.Employee AS ee WITH (NOLOCK) ON ee.GroupId = e.GroupId
+			INNER JOIN dbo.CompanyEmployee ce WITH (NOLOCK) ON ce.EmpId = ee.EmpId AND ce.CompanyId = @CompanyId
 		WHERE e.EmpId = @EmpId
 			AND (
 				(
