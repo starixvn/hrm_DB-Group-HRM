@@ -12,6 +12,7 @@ ALTER PROCEDURE [dbo].[Report_LeaveSummary] @empid INT = NULL
 	,@isLocal BIT = NULL
 	,@SupervisorId INT = NULL
 	,@role VARCHAR(max) = ''
+	,@CompanyId INT
 AS
 /*
 Created: Tom.Vo@2013-11-21
@@ -67,7 +68,7 @@ BEGIN
 	BEGIN
 		INSERT INTO #EmployeeId (EmpId)
 		SELECT EmpId
-		FROM dbo.fnc_GetEmployeeByActorId(@SupervisorId, 1, 0)
+		FROM dbo.fnc_GetEmployeeByActorId_xtest(@SupervisorId, 1, 0, @CompanyId)
 	END
 	ELSE
 	BEGIN

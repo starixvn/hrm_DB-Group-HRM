@@ -1,6 +1,6 @@
 USE [bodb_HRM]
 GO
-/****** Object:  UserDefinedFunction [dbo].[fnc_GetEmployeeByActorId]    Script Date: 3/10/2025 1:03:31 PM ******/
+/****** Object:  UserDefinedFunction [dbo].[fnc_GetEmployeeByActorId]    Script Date: 3/10/2025 2:18:52 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
