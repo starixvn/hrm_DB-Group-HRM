@@ -1,13 +1,13 @@
 USE [bodb_HRM]
 GO
-/****** Object:  StoredProcedure [dbo].[EmployeeAttendance_GetByType]    Script Date: 3/7/2025 5:31:35 PM ******/
+/****** Object:  StoredProcedure [dbo].[EmployeeAttendance_GetByType]    Script Date: 3/10/2025 10:12:53 AM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE PROCEDURE [dbo].[EmployeeAttendance_GetByType_xtest] @fromtime DATETIME
-	,@totime DATETIME
+ALTER PROCEDURE [dbo].[EmployeeAttendance_GetByType] @fromtime DATE
+	,@totime DATE
 	,@EmpId INT = NULL
 	,@TeamIds VARCHAR(MAX) = ''
 	,@excludeUserDelete INT = 1
@@ -272,8 +272,7 @@ BEGIN
 			FROM dbo.LeaveRequestDetail AS ldt WITH (NOLOCK)
 			WHERE lr.RequestId = ldt.RequestId
 			)
-	
-	
+
 	-- Leave request
 	INSERT INTO #tmpDailyRequest (
 		RequestId
@@ -327,7 +326,7 @@ BEGIN
 			FROM #tmpEmployee AS emp WITH (NOLOCK)
 			WHERE r.EmpId = emp.EmpId
 			)
-		
+
 	-- change shift
 	INSERT INTO #tmpDailyRequest (
 		RequestId
@@ -445,7 +444,7 @@ BEGIN
 				OR cl.EmpId = @EmpId
 				)
 	END
-	
+
 	SELECT T.Code
 		,T.EmpId
 		,T.FullName
@@ -679,8 +678,8 @@ BEGIN
 			,de.Code AS DepartmentCode
 		FROM dbo.Employee AS e WITH (NOLOCK)
 			INNER JOIN dbo.tmpEmployeeCalendar AS c WITH (NOLOCK) ON c.EmpId = e.EmpId
-			AND c.WorkDate BETWEEN DATEADD(HOUR, 11,  CAST(@fromtime AS DATETIME)) 
-               AND DATEADD(HOUR, 11, CAST(@totime AS DATETIME))
+			AND c.WorkDate BETWEEN @fromtime
+				AND @totime
 			INNER JOIN #tmpEmployee AS tblemp ON e.EmpId = tblemp.EmpId
 			LEFT JOIN dbo.EmployeeSummary AS e_s WITH (NOLOCK) ON e_s.EmpId = e.EmpId
 			LEFT JOIN dbo.EmployeeCalendar AS c_CrossDay WITH (NOLOCK) ON c_CrossDay.WorkDate = DATEADD(D, - 1, c.WorkDate)
@@ -745,8 +744,6 @@ BEGIN
 		,TeamCode
 		,T.code
 
-
-
 	SELECT c.WorkDate
 		,rd.EmpId
 		,rd.RequestDate
@@ -778,8 +775,8 @@ BEGIN
 	FROM #tmpDailyRequest AS rd WITH (NOLOCK)
 		INNER JOIN dbo.tmpEmployeeCalendar AS c WITH (NOLOCK) ON (
 			(
-				rd.WorkDate IS NOT NULL AND DATEADD(HOUR, 11, CAST(rd.WorkDate AS DATETIME)) = c.WorkDate) 
-				OR (rd.WorkDate IS NULL AND c.WorkDate BETWEEN CAST(DATEADD(HOUR, 11, CAST(rd.FromDate AS DATETIME)) AS DATE) AND CAST(DATEADD(HOUR, 11, CAST(rd.ToDate AS DATETIME)) AS DATE))
+				rd.WorkDate IS NOT NULL AND rd.WorkDate = c.WorkDate) 
+				OR (rd.WorkDate IS NULL AND c.WorkDate BETWEEN CAST(rd.FromDate AS DATE) AND CAST(rd.ToDate AS DATE))
 			)
 		AND c.EmpId = rd.EmpId
 		AND (
