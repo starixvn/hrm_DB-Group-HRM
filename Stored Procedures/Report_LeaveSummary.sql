@@ -1,11 +1,4 @@
-USE [bodb_HRM]
-GO
-/****** Object:  StoredProcedure [dbo].[Report_LeaveSummary]    Script Date: 3/10/2025 8:38:02 AM ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-
+/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 ALTER PROCEDURE [dbo].[Report_LeaveSummary] @empid INT = NULL
 	,@TeamIds VARCHAR(max) = ''
 	,@year INT

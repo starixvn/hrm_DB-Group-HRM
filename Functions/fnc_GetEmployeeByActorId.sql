@@ -1,10 +1,4 @@
-USE [bodb_HRM]
-GO
-/****** Object:  UserDefinedFunction [dbo].[fnc_GetEmployeeByActorId]    Script Date: 3/10/2025 2:18:52 PM ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER FUNCTION [dbo].[fnc_GetEmployeeByActorId] (
 	@EmpId INT = NULL
