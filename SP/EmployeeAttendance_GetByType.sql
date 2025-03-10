@@ -1,6 +1,6 @@
 USE [bodb_HRM]
 GO
-/****** Object:  StoredProcedure [dbo].[EmployeeAttendance_GetByType]    Script Date: 3/10/2025 10:12:53 AM ******/
+/****** Object:  StoredProcedure [dbo].[EmployeeAttendance_GetByType]    Script Date: 3/10/2025 3:09:53 PM ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -15,6 +15,7 @@ ALTER PROCEDURE [dbo].[EmployeeAttendance_GetByType] @fromtime DATE
 	,@SupervisorId INT = NULL
 	,@type SMALLINT
 	,@isRealDate BIT = 0
+	,@companyId INT
 AS
 /*
 Created: Tom.Vo@2013-10-31
@@ -72,7 +73,7 @@ BEGIN
 	BEGIN
 		INSERT INTO #tmpEmployee (EmpId)
 		SELECT DISTINCT EmpId
-		FROM dbo.fnc_GetEmployeeByActorId(@SupervisorId, @excludeUserDelete, 1)
+		FROM dbo.fnc_GetEmployeeByActorId_xtest(@SupervisorId, @excludeUserDelete, 1, @companyId)
 	END
 	ELSE
 	BEGIN
