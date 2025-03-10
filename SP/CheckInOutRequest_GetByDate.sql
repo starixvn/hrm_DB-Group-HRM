@@ -68,9 +68,9 @@ BEGIN
 			@EmpId IS NULL
 			OR mis.EmpId = @EmpId
 			)
+		AND ce.CompanyId = @CompanyId
 		AND mis.OnDate BETWEEN @FromDate
 			AND @ToDate
-		AND ce.CompanyId = @CompanyId
 	ORDER BY wk.CreatedDate DESC
 END
 

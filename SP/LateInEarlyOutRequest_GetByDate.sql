@@ -75,9 +75,9 @@ BEGIN
 			@EmpId IS NULL
 			OR le.EmpId = @EmpId
 			)
+		AND ce.CompanyId = @CompanyId
 		AND le.OnDate BETWEEN @FromDate
 			AND @ToDate
-		AND ce.CompanyId = @CompanyId
 	ORDER BY wk.CreatedDate DESC
 END
 
