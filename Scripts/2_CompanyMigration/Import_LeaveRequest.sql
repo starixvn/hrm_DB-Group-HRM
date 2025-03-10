@@ -31,8 +31,8 @@ INSERT INTO [dbo].[LeaveRequest]
      SELECT
            wkr.RequestId
            ,emp.EmpId
-           ,lr.FromDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
-           ,lr.ToDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
+           ,lr.FromDate
+           ,lr.ToDate
            ,lr.LeaveType
            ,lr.TotalDays
            ,lr.RefNo
@@ -109,8 +109,8 @@ INSERT INTO [dbo].[LeaveRequestHistory]
      SELECT
            wkr.RequestId
            ,emp.EmpId
-           ,lrh.FromDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
-           ,lrh.ToDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
+           ,lrh.FromDate
+           ,lrh.ToDate
            ,lrh.LeaveType
            ,lrh.TotalDays
            ,wkrh.HistoryId
