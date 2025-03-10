@@ -1,10 +1,4 @@
-USE [bodb_HRM]
-GO
-/****** Object:  StoredProcedure [dbo].[Overtime_GetMonthlyRequestByEmpId]    Script Date: 3/10/2025 3:25:36 PM ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Overtime_GetMonthlyRequestByEmpId] @EmployeeId INT,
 	@FromDate DATE,

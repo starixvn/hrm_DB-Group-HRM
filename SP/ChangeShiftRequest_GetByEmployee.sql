@@ -1,12 +1,4 @@
-USE [bodb_HRM]
-GO
-/****** Object:  StoredProcedure [dbo].[ChangeShiftRequest_GetByEmployee]    Script Date: 3/10/2025 2:34:55 PM ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-
-
+/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[ChangeShiftRequest_GetByEmployee] @EmpId INT,
 	@FromDate DATE,

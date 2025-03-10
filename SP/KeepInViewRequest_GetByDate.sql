@@ -1,12 +1,4 @@
-USE [bodb_HRM]
-GO
-/****** Object:  StoredProcedure [dbo].[KeepInViewRequest_GetByDate]    Script Date: 3/10/2025 3:03:29 PM ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-
-
+/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[KeepInViewRequest_GetByDate] @EmpId INT,
 	@FromDate DATE,
