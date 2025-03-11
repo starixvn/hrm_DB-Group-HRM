@@ -38,8 +38,8 @@ INSERT INTO [dbo].[HospitalizationLeaveTrans]
            emp.EmpId
            ,wkr.RequestId
            ,hpl.Description
-           ,hpl.FromDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
-           ,hpl.ToDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
+           ,hpl.FromDate
+           ,hpl.ToDate
            ,hpl.DeductDays
            ,hpl.CreditDays
            ,hpl.IsDeleted
