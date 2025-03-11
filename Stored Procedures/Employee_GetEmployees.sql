@@ -49,7 +49,8 @@ BEGIN
 		,@bWhere BIT
 
 	SELECT @SQL = 'SELECT @totalRow = count(1) FROM  dbo.Employee AS e WITH (NOLOCK)
-				INNER JOIN dbo.EmployeeSummary AS s WITH (NOLOCK) ON s.EmpId = e.EmpId ' + CHAR(13)
+				INNER JOIN dbo.CompanyEmployee ce WITH (NOLOCK) ON ce.EmpId = e.EmpId AND ce.CompanyId = ' + CAST(@companyId AS VARCHAR(10))  + CHAR(13)
+				+ 'INNER JOIN dbo.EmployeeSummary AS s WITH (NOLOCK) ON s.EmpId = e.EmpId ' + CHAR(13)
 
 	SELECT @sWhere = ''
 		,@bWhere = 0
@@ -183,7 +184,7 @@ BEGIN
 	  + ',dep.Code AS DepartmentCode' + CHAR(13)
 	  + ',dep.[Name] AS DepartmentName' + CHAR(13)
 	  + 'FROM dbo.Employee AS e WITH (NOLOCK)' + CHAR(13)
-	  + 'INNER JOIN dbo.CompanyEmployee ce WITH (NOLOCK) ON ce.EmpId = e.EmpId AND ce.CompanyId = ' + @companyId  + CHAR(13)
+	  + 'INNER JOIN dbo.CompanyEmployee ce WITH (NOLOCK) ON ce.EmpId = e.EmpId AND ce.CompanyId = ' + CAST(@companyId AS VARCHAR(10))  + CHAR(13)
 	  + 'INNER JOIN dbo.EmployeeSummary AS s WITH (NOLOCK) ON s.EmpId = e.EmpId' + CHAR(13)
 	  + 'LEFT JOIN dbo.[Group] AS g WITH (NOLOCK) ON e.GroupID = g.GroupID' + CHAR(13)
 	  + 'INNER JOIN dbo.[Section] AS sec WITH (NOLOCK) ON g.SectionId = sec.SectionId' + CHAR(13)
