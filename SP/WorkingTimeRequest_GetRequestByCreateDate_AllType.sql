@@ -94,7 +94,7 @@ BEGIN
 		BEGIN
 			INSERT INTO #tblEmployeeId (EmpId)
 			SELECT EmpId
-			FROM dbo.fnc_GetEmployeeByActorId(@SupervisorId, 1, 1)
+			FROM dbo.fnc_GetEmployeeByActorId(@SupervisorId, 1, 1, @CompanyId)
 		END
 	END
 	ELSE
