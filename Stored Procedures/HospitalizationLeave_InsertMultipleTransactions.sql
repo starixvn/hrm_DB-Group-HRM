@@ -26,8 +26,8 @@ BEGIN
 	CREATE TABLE #tblEmployeeIds (EmployeeId INT)
 
 	INSERT INTO #tblEmployeeIds (EmployeeId)
-	SELECT val
-	FROM dbo.[fnc_strSplit](@EmployeeIds, ',')
+	SELECT value
+	FROM STRING_SPLIT(@EmployeeIds, ',')
 
 	INSERT INTO dbo.HospitalizationLeaveTrans (
 		EmpId
