@@ -4,7 +4,7 @@ ALTER FUNCTION [dbo].[fnc_GetEmployeeByActorId] (
 	@EmpId INT = NULL
 	,@ExcludeUserDelete INT = 1
 	,@IsShowUserInTeam BIT = 1
-	,@CompanyId
+	,@CompanyId INT
 	)
 RETURNS TABLE
 /*

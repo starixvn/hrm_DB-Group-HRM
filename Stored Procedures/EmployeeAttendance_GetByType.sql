@@ -51,8 +51,8 @@ BEGIN
 	IF ISNULL(@TeamIds, '') <> ''
 	BEGIN
 		INSERT INTO #tmpGroup (GroupId)
-		SELECT val
-		FROM dbo.fnc_strSplit(@TeamIds, ',')
+		SELECT value
+		FROM STRING_SPLIT(@TeamIds, ',')
 	END
 	ELSE
 	BEGIN
@@ -66,7 +66,7 @@ BEGIN
 	BEGIN
 		INSERT INTO #tmpEmployee (EmpId)
 		SELECT DISTINCT EmpId
-		FROM dbo.fnc_GetEmployeeByActorId_xtest(@SupervisorId, @excludeUserDelete, 1, @companyId)
+		FROM dbo.fnc_GetEmployeeByActorId(@SupervisorId, @excludeUserDelete, 1, @companyId)
 	END
 	ELSE
 	BEGIN

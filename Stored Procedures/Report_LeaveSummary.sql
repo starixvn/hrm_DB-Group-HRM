@@ -38,10 +38,10 @@ BEGIN
 	IF ISNULL(@TeamIds, '') <> ''
 	BEGIN
 		INSERT INTO #GroupsList (GroupId)
-		SELECT val
-		FROM fnc_strSplit(@TeamIds, ',')
+		SELECT value
+		FROM STRING_SPLIT(@TeamIds, ',')
 	END
-
+		
 	--ELSE
 	--BEGIN
 	--	IF EXISTS (
@@ -61,7 +61,7 @@ BEGIN
 	BEGIN
 		INSERT INTO #EmployeeId (EmpId)
 		SELECT EmpId
-		FROM dbo.fnc_GetEmployeeByActorId_xtest(@SupervisorId, 1, 0, @CompanyId)
+		FROM dbo.fnc_GetEmployeeByActorId(@SupervisorId, 1, 0, @CompanyId)
 	END
 	ELSE
 	BEGIN
