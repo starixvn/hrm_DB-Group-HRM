@@ -1,4 +1,4 @@
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="1"></info>*/
 
 ALTER FUNCTION [dbo].[fnc_GetEmployeeByActorId] (
 	@EmpId INT = NULL
