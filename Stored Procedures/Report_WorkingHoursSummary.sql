@@ -1,6 +1,7 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[Report_WorkingHoursSummary] @ActorId INT
+ALTER PROCEDURE [dbo].[Report_WorkingHoursSummary] @CompanyId SMALLINT
+    ,@ActorId INT
 	,@FromDate DATE
 	,@ToDate DATE
 	,@TeamIds VARCHAR(MAX) = NULL
@@ -15,7 +16,6 @@ DB: HRM
 Original:
 
 Revisions:
-    20250307@Tim: initial - [Redmine: #217976]
 */
 BEGIN
 	DECLARE @employeeIds VARCHAR(MAX)
@@ -59,7 +59,7 @@ BEGIN
 		AND empsum.IsTopManager = 0
 		INNER JOIN (
 		SELECT EmpId
-		FROM dbo.fnc_GetEmployeeByActorId(@ActorId, 0, 1)
+		FROM dbo.fnc_GetEmployeeByActorId(@ActorId, 0, 1, @CompanyId)
 		) AS [member] ON emp.EmpId = [member].EmpId
 	WHERE (
 			@EmployeeStatusId IS NULL
@@ -95,7 +95,8 @@ BEGIN
 	SELECT @employeeIds = COALESCE(@employeeIds + ',', '') + CAST(EmployeeId AS VARCHAR(20))
 	FROM #tblEmployeeIds WITH (NOLOCK)
 
-	EXEC dbo.tmpEmployeeCalendar_Insert @fromDate = @fromDate
+	EXEC dbo.tmpEmployeeCalendar_Insert @CompanyId = @CompanyId
+        ,@fromDate = @fromDate
 		,@toDate = @toDate
 		,@empIds = @employeeIds
 
@@ -104,8 +105,8 @@ BEGIN
 		,emp.FullName
 		,emp.NickName
 		,gr.[Name] AS Team
-		,dept.Code as DepartmentCode
-		,sec.Code as Section
+		,dept.Code AS DepartmentCode
+		,sec.Code AS Section
 		,empsum.WorkingDays
 		,empsum.WorkingHours
 		,SUM(ISNULL(empatt.TotalWorkHours, 0)) AS TotalWorkingHours

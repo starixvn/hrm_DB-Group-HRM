@@ -1,6 +1,7 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[Report_MonthlyOvertimeDetails] @EmployeeId INT
+ALTER PROCEDURE [dbo].[Report_MonthlyOvertimeDetails] @CompanyId SMALLINT
+    ,@EmpId INT
 	,@FromDate DATE
 	,@ToDate DATE
 AS
@@ -11,7 +12,6 @@ DB: HRM
 Original:
 
 Revisions:
-    20250307@Tim: initial - [Redmine: #217976]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -48,12 +48,15 @@ BEGIN
 		LEFT JOIN [dbo].OTDailyRequest AS ot WITH (NOLOCK) ON tmp.WorkDate = ot.OvertimeDate
 		AND ot.EmpId = emp.EmpId
 		LEFT JOIN dbo.[Shift] AS s WITH (NOLOCK) ON s.ShiftId = ot.[Schedule]
+        AND s.CompanyId = @CompanyId
 		LEFT JOIN dbo.EmployeeAttendance AS empatt WITH (NOLOCK) ON empatt.AttendanceDate = tmp.WorkDate
 		AND empatt.EmpId = emp.EmpId
 		LEFT JOIN dbo.[Shift] AS sc WITH (NOLOCK) ON sc.ShiftId = empatt.ShiftId
+        AND sc.CompanyId = @CompanyId
 		LEFT JOIN dbo.EmployeeCalendar AS empca WITH (NOLOCK) ON empca.WorkDate = tmp.WorkDate
 		AND empca.EmpId = emp.EmpId
 		LEFT JOIN dbo.[Shift] AS scl WITH (NOLOCK) ON scl.ShiftId = empca.ShiftId
-	WHERE emp.EmpId = @EmployeeId
+        AND scl.CompanyId = @CompanyId
+	WHERE emp.EmpId = @EmpId
 	ORDER BY tmp.WorkDate
 END

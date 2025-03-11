@@ -1,6 +1,7 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[Report_DailyOvertime] @ActorId INT
+ALTER PROCEDURE [dbo].[Report_DailyOvertime] @CompanyId SMALLINT
+    ,@ActorId INT
 	,@fromDate DATE
 	,@toDate DATE
 	,@TeamIds VARCHAR(MAX) = NULL
@@ -11,11 +12,10 @@ AS
 /*
 Created: 20250307@Tim
 Task: Get daily overtime details report 
-DB: HRM_SMS
+DB: HRM
 Original:
 
 Revisions:
-    20250307@Tim: initial - [Redmine: #217976]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -36,7 +36,7 @@ BEGIN
 
 	INSERT INTO #tmpMembers (EmpId)
 	SELECT DISTINCT EmpId
-	FROM dbo.fnc_GetEmployeeByActorId(@ActorId, 0, 1)
+	FROM dbo.fnc_GetEmployeeByActorId(@ActorId, 0, 1, @CompanyId)
 
 	SELECT emp.EmpId
 		,emp.NickName
@@ -63,13 +63,15 @@ BEGIN
 	FROM dbo.OTDailyRequest AS ot WITH (NOLOCK)
 		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON emp.EmpId = ot.EmpId
 		INNER JOIN #tmpMembers AS member WITH (NOLOCK) ON emp.EmpId = member.EmpId
-		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON empsum.EmpId = emp.EmpId AND empsum.IsTopManager = 0
+		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON empsum.EmpId = emp.EmpId
+        AND empsum.IsTopManager = 0
 		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId
 		INNER JOIN dbo.Section AS sec WITH (NOLOCK) ON gr.SectionId = sec.SectionId
 		INNER JOIN dbo.Department AS dept WITH (NOLOCK) ON sec.DepartmentId = dept.DepartmentId
 		LEFT JOIN dbo.EmployeeCalendar AS empca WITH (NOLOCK) ON emp.EmpId = empca.EmpId
 		AND ot.OvertimeDate = empca.WorkDate
 		LEFT JOIN dbo.[Shift] AS s WITH (NOLOCK) ON s.ShiftId = ot.[Schedule]
+        AND s.CompanyId = @CompanyId
 	WHERE ot.OvertimeDate BETWEEN @fromDate
 			AND @toDate
 		AND (

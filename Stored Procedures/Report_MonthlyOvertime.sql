@@ -1,6 +1,7 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[Report_MonthlyOvertime] @ActorId INT
+ALTER PROCEDURE [dbo].[Report_MonthlyOvertime] @CompanyId SMALLINT
+    ,@ActorId INT
 	,@FromDate DATE
 	,@ToDate DATE
 	,@Employee NVARCHAR(200) = NULL
@@ -15,7 +16,6 @@ DB: HRM
 Original:
 
 Revisions:
-    20250307@Tim: initial - [Redmine: #217976]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -55,7 +55,8 @@ BEGIN
 				WHEN EXISTS (
 						SELECT 1
 						FROM dbo.Holiday WITH (NOLOCK)
-						WHERE @fromDatetmp BETWEEN FromDate
+						WHERE CompanyId = @CompanyId
+                            AND @fromDatetmp BETWEEN FromDate
 								AND ToDate
 						) THEN 1
 				ELSE 0
@@ -73,12 +74,13 @@ BEGIN
 	INSERT INTO @tblEmployeeId (EmpId)
 	SELECT emp.EmpId
 	FROM dbo.Employee AS emp WITH (NOLOCK)
-		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId AND empsum.IsTopManager = 0
+		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
+        AND empsum.IsTopManager = 0
 		INNER JOIN @tblGroupIds AS tblgr ON emp.GroupId = tblgr.GroupId
 		INNER JOIN (
 		SELECT EmpId
-		FROM dbo.fnc_GetEmployeeByActorId(@ActorId, 0, 1)
-		) AS member ON emp.EmpId = member.EmpId
+		FROM dbo.fnc_GetEmployeeByActorId(@ActorId, 0, 1, @CompanyId)
+		) AS [member] ON emp.EmpId = [member].EmpId
 	WHERE (
 			@EmployeeStatusId IS NULL
 			OR (
@@ -128,7 +130,6 @@ BEGIN
 		,ot.[Status] AS StatusId
 	FROM @tblDate AS tmp
 		INNER JOIN dbo.OTDailyRequest AS ot WITH (NOLOCK) ON tmp.WorkDate = ot.OvertimeDate
-		AND ot.[Status] IN (@VerifyStatusId, @ApproveStatusId, @ProcessStatusId)
 		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON ot.EmpId = emp.EmpId
 		INNER JOIN @tblEmployeeId AS empid ON emp.EmpId = empid.EmpId
 		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId
@@ -137,6 +138,8 @@ BEGIN
 		LEFT JOIN dbo.EmployeeCalendar AS empca WITH (NOLOCK) ON emp.EmpId = empca.EmpId
 		AND ot.OvertimeDate = empca.WorkDate
 		LEFT JOIN dbo.[Shift] AS s WITH (NOLOCK) ON s.ShiftId = ot.[Schedule]
+        AND s.CompanyId = @CompanyId
+    WHERE ot.[Status] IN (@VerifyStatusId, @ApproveStatusId, @ProcessStatusId)
 	ORDER BY tmp.WorkDate
 		,emp.NickName
 END

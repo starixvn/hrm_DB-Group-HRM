@@ -1,6 +1,7 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[Report_EmployeeCalendarByDateRange] @ActorId INT
+ALTER PROCEDURE [dbo].[Report_EmployeeCalendarByDateRange] @CompanyId SMALLINT
+    ,@ActorId INT
 	,@FromDate DATE
 	,@ToDate DATE
 	,@TeamIds VARCHAR(MAX) = ''
@@ -15,7 +16,6 @@ DB: HRM
 Original:
 
 Revisions:
-    20250310@Tim: initial - [Redmine: #217976]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -41,7 +41,7 @@ BEGIN
 	FROM dbo.Employee AS emp WITH (NOLOCK)
 		INNER JOIN (
 		SELECT EmpId
-		FROM dbo.fnc_GetEmployeeByActorId(@ActorId, 0, 1)
+		FROM dbo.fnc_GetEmployeeByActorId(@ActorId, 0, 1, @CompanyId)
 		) AS [member] ON emp.EmpId = [member].EmpId
 		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId AND empsum.IsTopManager = 0
 	WHERE (
@@ -78,7 +78,8 @@ BEGIN
 	SELECT @employeeIds = COALESCE(@employeeIds + ',', '') + CAST(EmpId AS VARCHAR(20))
 	FROM @tblEmployeeIds
 
-	EXEC dbo.tmpEmployeeCalendar_Insert @fromDate = @fromDate
+	EXEC dbo.tmpEmployeeCalendar_Insert @CompanyId = @CompanyId
+        ,@fromDate = @fromDate
 		,@toDate = @toDate
 		,@empIds = @employeeIds
 
@@ -111,8 +112,11 @@ BEGIN
 		INNER JOIN dbo.Department AS dept WITH (NOLOCK) ON sec.DepartmentId = dept.DepartmentId
 		INNER JOIN dbo.tmpEmployeeCalendar AS empca WITH (NOLOCK) ON emp.EmpId = empca.EmpId
 		LEFT JOIN dbo.[Shift] AS [shift] WITH (NOLOCK) ON [shift].ShiftId = empca.ShiftId
+        AND [shift].CompanyId = @CompanyId
 		LEFT JOIN dbo.LeaveType AS lv1 WITH (NOLOCK) ON empca.LeaveTypeId = lv1.LeaveTypeId
+        AND lv1.CompanyId = @CompanyId
 		LEFT JOIN dbo.LeaveType AS lv2 WITH (NOLOCK) ON empca.LeaveTypeId2 = lv2.LeaveTypeId
+        AND lv2.CompanyId = @CompanyId
     WHERE empca.WorkDate BETWEEN @fromDate
 		AND @toDate
 	ORDER BY emp.NickName
