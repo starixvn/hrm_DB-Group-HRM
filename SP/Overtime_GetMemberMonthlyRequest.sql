@@ -17,7 +17,6 @@ DB: HRM
 Original:
 
 Revisions:
-	20250310@Mira: filter by CompanyId [Redmine: #217976]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -80,14 +79,14 @@ BEGIN
 	END
 
 	INSERT INTO @tblStatusIds (StatusId)
-	SELECT val
-	FROM dbo.fnc_strSplit(@StatusIds, ',')
+	SELECT value
+	FROM STRING_SPLIT(@StatusIds, ',')
 
 	IF ISNULL(@TeamIds, '') <> ''
 	BEGIN
 		INSERT INTO #tblGroupIds (GroupId)
-		SELECT val
-		FROM dbo.fnc_strSplit(@TeamIds, ',')
+		SELECT value
+		FROM STRING_SPLIT(@TeamIds, ',')
 	END
 	
 	SELECT req.RequestId

@@ -12,7 +12,7 @@ DB: HRMS
 Original:
 
 Revisions:
-	20250310@Mira: filter by CompanyId [Redmine: #217976]
+
 */
 BEGIN
 	SET NOCOUNT ON;
