@@ -101,7 +101,8 @@ BEGIN
 	SELECT @employeeIds = COALESCE(@employeeIds + ',', '') + CAST(EmpId AS VARCHAR(20))
 	FROM #tmpEmployee WITH (NOLOCK)
 
-	EXEC dbo.tmpEmployeeCalendar_Insert @fromDate = @fromtime
+	EXEC dbo.tmpEmployeeCalendar_Insert @CompanyId = @companyId
+		,@fromDate = @fromtime
 		,@toDate = @totime
 		,@empIds = @employeeIds
 
@@ -794,3 +795,4 @@ BEGIN
 
 	DROP TABLE #tmpDailyRequest
 END
+
