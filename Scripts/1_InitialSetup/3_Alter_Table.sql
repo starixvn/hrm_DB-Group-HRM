@@ -68,6 +68,9 @@ ADD OldRequestId INT NULL; -- this new id type not related to RequestId from Wor
 ALTER TABLE [bodb_HRM].[dbo].[RefResource]
 ADD CompanyId INT NULL;
 
+ALTER TABLE dbo.[ExtensionNumbers] ADD CompanyId INT NOT NULL;
+ALTER TABLE dbo.[ExtensionNumbers] ADD OldExtID INT NULL;
+
 ALTER TABLE dbo.TimeRecord ADD CompanyId SMALLINT, OldId BIGINT;
 ALTER TABLE dbo.TimeRecord DROP CONSTRAINT PK_TimeRecord;
 ALTER TABLE dbo.TimeRecord ALTER COLUMN Id BIGINT;

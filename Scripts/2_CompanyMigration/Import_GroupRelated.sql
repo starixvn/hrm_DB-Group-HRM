@@ -57,18 +57,27 @@ FROM SMSHRM.dbo.GroupSupervisor AS gs
 -- #endregion
 
 -- #region EXTENSION NUMBER TABLE
-INSERT INTO dbo.ExtensionNumbers (FullName, NickName, ExtensionNo, IsInternal, IsGroup, EmpId, GroupId, OrderNo)
+INSERT INTO dbo.ExtensionNumbers (FullName, NickName, ExtensionNo, IsInternal, IsGroup, EmpId, GroupId, OrderNo, CompanyId, OldExtID)
 SELECT en.FullName, 
     en.NickName, 
     en.ExtensionNo, 
     en.IsInternal, 
     en.IsGroup, 
     em.EmpId, 
-    g.GroupId,  
-    en.OrderNo
+    CASE WHEN en.IsInternal = 1 THEN g.GroupId ELSE  en.GroupID END,
+    en.OrderNo,
+	@NewCompanyId,
+	en.ExtID
 FROM SMSHRM.dbo.ExtensionNumbers AS en
     LEFT JOIN @EmployeeMapping AS em ON en.EmpID = em.OldEmpId
     LEFT JOIN dbo.[Group] AS g ON en.GroupID = g.OldGroupId AND g.CompanyId = @NewCompanyId;
+
+
+UPDATE en
+SET en.GroupId = exm_1.ExtID
+FROM dbo.ExtensionNumbers en
+LEFT JOIN dbo.ExtensionNumbers exm_1 ON en.GroupID = exm_1.OldExtID
+WHERE en.IsInternal = 0
 -- #endregion
 
 -- #region MAIL SETTINGS TABLE
