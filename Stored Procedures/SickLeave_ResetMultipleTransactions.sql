@@ -4,6 +4,7 @@ ALTER PROCEDURE [dbo].[SickLeave_ResetMultipleTransactions] @ActorId INT
 	,@Year INT
 	,@Description NVARCHAR(4000) = NULL
 	,@ResetDays NUMERIC(18, 1) = 0
+	,@CompanyId INT
 	,@ErrCode INT = 0 OUTPUT
 	,@ErrMsg VARCHAR(200) = '' OUTPUT
 AS
@@ -23,7 +24,7 @@ BEGIN
 
 	INSERT INTO #tblEmployeeId (EmpId)
 	SELECT EmpId
-	FROM dbo.fnc_GetEmployeeByActorId(@ActorId, 1, 0)
+	FROM dbo.fnc_GetEmployeeByActorId(@ActorId, 1, 0, @CompanyId)
 
 	DECLARE @fromdate DATETIME
 		,@todate DATETIME
@@ -61,6 +62,7 @@ BEGIN
 		,ISNULL(cb.CreditDays, 0) - ISNULL(cb.DeductDays, 0) AS Balance
 	INTO #tblRemainingBalance
 	FROM dbo.Employee AS emp WITH (NOLOCK)
+		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = emp.EmpId AND ce.CompanyId = @CompanyId
 		LEFT JOIN #tblCurrenBalace AS cb WITH (NOLOCK) ON emp.EmpId = cb.EmpId
 	WHERE ISNULL(emp.[Enabled], 0) = 1
 
@@ -95,5 +97,8 @@ BEGIN
 
 	DROP TABLE #tblRemainingBalance
 END
+
+
+
 
 

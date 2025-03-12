@@ -1,6 +1,5 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-
 ALTER PROCEDURE [dbo].[SickLeave_InsertMultipleTransactions] @EmployeeIds VARCHAR(MAX)
 	,@Description NVARCHAR(4000) = ''
 	,@FromDate DATE
@@ -26,8 +25,8 @@ BEGIN
 	CREATE TABLE #tblEmployeeIds (EmployeeId INT)
 
 	INSERT INTO #tblEmployeeIds (EmployeeId)
-	SELECT val
-	FROM dbo.[fnc_strSplit](@EmployeeIds, ',')
+	SELECT value
+	FROM STRING_SPLIT(@EmployeeIds, ',')
 
 	INSERT INTO dbo.SickLeaveTrans (
 		EmpId
@@ -59,6 +58,10 @@ BEGIN
 	
 	DROP TABLE #tblEmployeeIds
 END
+
+
+
+
 
 
 

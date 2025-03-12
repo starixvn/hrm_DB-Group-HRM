@@ -5,6 +5,7 @@ ALTER PROCEDURE [dbo].[SickLeave_SummaryReport] @EmpId INT = NULL
 	,@Year INT
 	,@isLocal BIT = NULL
 	,@SupervisorId INT = NULL
+	,@CompanyId INT
 AS
 /*
 Created: Tim.Trinh@2021-08-23
@@ -25,15 +26,15 @@ BEGIN
 	IF ISNULL(@TeamIds, '') <> ''
 	BEGIN
 		INSERT INTO #tblGroupId (GroupId)
-		SELECT val
-		FROM fnc_strSplit(@TeamIds, ',')
+		SELECT value
+		FROM STRING_SPLIT(@TeamIds, ',')
 	END
 
 	IF @empid IS NULL
 	BEGIN
 		INSERT INTO #tblEmployeeId (EmpId)
 		SELECT EmpId
-		FROM dbo.fnc_GetEmployeeByActorId(@SupervisorId, 1, 0)
+		FROM dbo.fnc_GetEmployeeByActorId(@SupervisorId, 1, 0, @CompanyId)
 	END
 	ELSE
 	BEGIN
@@ -170,5 +171,8 @@ BEGIN
 
 	DROP TABLE #tblCurrenBalace
 END
+
+
+
 
 
