@@ -2,6 +2,7 @@
 
 
 ALTER PROCEDURE [dbo].[ExtensionNO_Insert_GroupExternal] @FullName NVARCHAR(200)
+	,@CompanyId INT
 	,@ErrCode INT = 0 OUTPUT
 	,@ErrMsg VARCHAR(200) = '' OUTPUT
 AS
@@ -43,6 +44,7 @@ BEGIN
 		,EmpId
 		,GroupId
 		,OrderNo
+		,CompanyId
 		)
 	SELECT @FullName
 		,@FullName
@@ -52,6 +54,7 @@ BEGIN
 		,NULL AS EmpId
 		,NULL AS GroupId
 		,MAX(OrderNo)
+		,@CompanyId
 	FROM dbo.ExtensionNumbers WITH (NOLOCK)
 	WHERE GroupId <> @TeamId
 		AND IsInternal = 1

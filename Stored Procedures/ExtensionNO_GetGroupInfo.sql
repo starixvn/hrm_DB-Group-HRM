@@ -2,7 +2,8 @@
 
 ALTER PROCEDURE [dbo].[ExtensionNO_GetGroupInfo]
 	@isInternal BIT = NULL,
-	@TeamId INT = NULL
+	@TeamId INT = NULL,
+	@CompanyId INT
 AS
 /*
 Created: Tom.Vo@2014-01-04
@@ -30,7 +31,7 @@ IF @isInternal IS NULL
 				(exg.GroupID  = exm.GroupID AND exm.IsInternal = 1)
 				OR (exg.[ExtID]  = exm.GroupID AND exm.IsInternal = 0)
 			)
-	 WHERE exg.IsGroup =1 
+	 WHERE exg.IsGroup =1 AND exg.CompanyId = @CompanyId
 	 GROUP BY exg.[ExtID]
 		  ,COALESCE(g.[GroupID],exg.[ExtID])
 		  ,ISNULL(g.Code,'') 
@@ -54,8 +55,8 @@ IF @isInternal IS NULL
 				(exg.GroupID  = exm.GroupID AND exm.IsInternal = 1)
 				OR (exg.[ExtID]  = exm.GroupID AND exm.IsInternal = 0)
 			)
-	 WHERE exg.IsGroup =1 AND 
-			@isInternal =  exg.IsInternal
+	 WHERE exg.IsGroup =1 AND exg.CompanyId = @companyId AND 
+			@isInternal =  exg.IsInternal 
 	GROUP BY exg.[ExtID]
 		  ,COALESCE(g.[GroupID],exg.[ExtID]) 
 		  ,ISNULL(g.Code,'') 
@@ -78,7 +79,7 @@ IF @isInternal IS NULL
 				(exg.GroupID  = exm.GroupID AND exm.IsInternal = 1)
 				OR (exg.[ExtID]  = exm.GroupID AND exm.IsInternal = 0)
 			)
-	 WHERE exg.IsGroup =1 AND 
+	 WHERE exg.IsGroup =1 AND exg.CompanyId = @companyId AND 
 			@isInternal =  exg.IsInternal AND 
 			@TeamId = CASE WHEN @isInternal = 1 THEN exg.[GroupID]
 							WHEN @isInternal = 0 THEN exg.[ExtID]

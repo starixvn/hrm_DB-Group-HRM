@@ -1,6 +1,6 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[ExtensionNO_GetAll]
+ALTER PROCEDURE [dbo].[ExtensionNO_GetAll] @companyId INT
 AS
 /*
 Created: Tom.Vo@2014-01-04
@@ -25,6 +25,7 @@ SELECT * FROM
 		  ,exg.IsInternal
 		  ,exg.[OrderNo] [OrderNoGroup]
 		  ,ROW_NUMBER() OVER(ORDER BY exg.[ExtID]) AS [OrderNoMember]
+		  ,exg.CompanyId
 	  FROM [dbo].[ExtensionNumbers] exg WITH(NOLOCK)
 		LEFT JOIN dbo.[Group] g WITH(NOLOCK)
 			ON exg.GroupID = g.GroupID AND exg.IsInternal = 1 AND exg.IsGroup =1
@@ -34,7 +35,9 @@ SELECT * FROM
 			ON exm_1.EmpID = ee.EmpID 
 		LEFT JOIN [dbo].[ExtensionNumbers] exm_2 WITH(NOLOCK)
 			ON exg.ExtID = exm_2.GroupID AND exg.IsInternal = 0 AND exm_2.IsGroup =0 AND exg.IsGroup =1
-	 WHERE COALESCE(ee.EmpID,exm_1.EmpID,exm_2.EmpID,-1)> 0 OR (exg.IsInternal = 0 AND  exg.IsGroup =1 )
+	 WHERE (COALESCE(ee.EmpID, exm_1.EmpID, exm_2.EmpID, -1) > 0 
+            OR (exg.IsInternal = 0 AND exg.IsGroup = 1))
+            AND exg.CompanyId = @companyId
 	) TBL
 	WHERE EmployeeExtensionId IS NOT NULL
  ORDER BY [OrderNoGroup],[OrderNoMember]

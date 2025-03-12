@@ -10,6 +10,7 @@ ALTER PROCEDURE [dbo].[ExtensionNO_Update_EmployeeInfo]
     @EmpID int=NULL,
     @TeamId int,
     @OrderNo smallint=1,
+	@CompanyId INT,
 
 	@ErrCode int = 0 OUTPUT,
 	@ErrMsg varchar(200) = '' OUTPUT	
@@ -72,6 +73,7 @@ BEGIN
 			  ,[EmpID]
 			  ,[GroupID]
 			  ,[OrderNo]
+			  ,CompanyId
 			)
 		SELECT  N'' [FullName]
 			  ,'' [NickName]
@@ -80,7 +82,9 @@ BEGIN
 			  ,1 [IsGroup]
 			  ,NULL [EmpID]
 			  ,@TeamId [GroupID]
-			  ,MAX([OrderNo]) FROM [dbo].[ExtensionNumbers] exg WITH(NOLOCK) WHERE [GroupID] <> @TeamId AND [IsInternal] = 1
+			  ,MAX([OrderNo])
+			  ,@CompanyId
+		FROM [dbo].[ExtensionNumbers] exg WITH(NOLOCK) WHERE [GroupID] <> @TeamId AND [IsInternal] = 1
 	END
 END
 
@@ -96,6 +100,7 @@ SET [FullName]=@FullName
 WHERE ExtID = @ExtID AND [IsGroup]=0
 
 SET @ErrCode=0
+
 
 
 

@@ -2,6 +2,7 @@
 
 ALTER PROCEDURE [dbo].[ExtensionNO_GetEmployeeInfo] @isInternal BIT = NULL
 	,@EmpExtID INT = NULL
+	,@CompanyId INT
 AS
 /*
 Created: Tom.Vo@2014-01-04
@@ -43,11 +44,11 @@ BEGIN
 			AND exg.IsInternal = 0
 			AND exm_2.IsGroup = 0
 			AND exg.IsGroup = 1
-		WHERE COALESCE(ee.EmpID, exm_1.EmpID, exm_2.EmpID, - 1) > 0
+		WHERE exg.CompanyId = @CompanyId AND ( COALESCE(ee.EmpID, exm_1.EmpID, exm_2.EmpID, - 1) > 0
 			OR (
 				exg.IsInternal = 0
 				AND exg.IsGroup = 1
-				)
+				))
 		ORDER BY [OrderNoGroup]
 			,[OrderNoMember]
 	ELSE IF @EmpExtID IS NULL
@@ -71,7 +72,7 @@ BEGIN
 			AND exg.IsInternal = 0
 			AND exm_2.IsGroup = 0
 			AND exg.IsGroup = 1
-		WHERE (
+		WHERE exg.CompanyId = @CompanyId AND (
 				exg.IsInternal = 0
 				AND exg.IsGroup = 1
 				)
@@ -102,7 +103,7 @@ BEGIN
 			AND exm_1.IsGroup = 0
 			AND exg.IsGroup = 1
 			LEFT JOIN [dbo].Employee ee WITH (NOLOCK) ON exm_1.EmpID = ee.EmpID
-		WHERE COALESCE(ee.EmpID, exm_1.EmpID, - 1) > 0
+		WHERE exg.CompanyId = @CompanyId AND COALESCE(ee.EmpID, exm_1.EmpID, - 1) > 0
 		ORDER BY [OrderNoGroup]
 			,[OrderNoMember]
 	ELSE IF @EmpExtID IS NOT NULL
