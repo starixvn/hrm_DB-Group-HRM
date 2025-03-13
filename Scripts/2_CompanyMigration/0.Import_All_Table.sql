@@ -658,7 +658,7 @@ INSERT INTO [dbo].[CheckInOutRequestHistory]
 	INNER JOIN @EmployeeMapping AS emp ON cioh.EmpId = emp.OldEmpId
 
 -- #region DISCIPLINE TABLE
-INSERT INTO bodb_HRM.dbo.Discipline (
+INSERT INTO dbo.Discipline (
     EmpId, WorkDate, DisciplineScore, IsOutOfControlReason, EmployeeComment, ApproverComment, 
     IsMissingCheckInOut, IsLateIn, IsEarlyOut, IsWorkingUnderTime, IsChangeShift, IsAbsent, 
     IsUnpaidLeave, IsUnpaidLeaveAbsent, IsUnplannedLeave, IsWeekendLeave, IsDeleted, 
@@ -692,7 +692,7 @@ WHERE d.IsDeleted != 1 and em.EmpId IS NOT NULL;
 -- #endregion
 
 -- #region DISCIPLINE GROUP RULE TABLE
-INSERT INTO bodb_HRM.dbo.DisciplineGroupRule (
+INSERT INTO dbo.DisciplineGroupRule (
     GroupId, DisciplineTypeId, IsLocal, Value
 )
 SELECT 
@@ -701,12 +701,12 @@ SELECT
     dgr.IsLocal, 
     dgr.Value
 FROM HRM.dbo.DisciplineGroupRule dgr
-LEFT JOIN bodb_HRM.dbo.[Group] g ON dgr.GroupId = g.OldGroupId AND g.CompanyId = @CompanyId;
+LEFT JOIN dbo.[Group] g ON dgr.GroupId = g.OldGroupId AND g.CompanyId = @CompanyId;
 
 -- #endregion
 
 -- #region DISCIPLINE IGNORE TABLE
-INSERT INTO bodb_HRM.dbo.DisciplineIgnore (
+INSERT INTO dbo.DisciplineIgnore (
     EmpId, WorkDate, IsIgnoredMissingCheckInOut, IsIgnoredLateIn, IsIgnoredEarlyOut, 
     IsIgnoredWorkingUnderTime, IsIgnoredChangeShift, IsIgnoredAbsent, 
     IsIgnoredUnpaidLeave, IsIgnoredUnpaidLeaveAbsent, IsIgnoredUnplannedLeave, 
@@ -733,7 +733,7 @@ WHERE em.EmpId IS NOT NULL;
 -- #endregion
 
 -- #region DISCIPLINE IGNORE DETAIL TABLE
-INSERT INTO bodb_HRM.dbo.DisciplineIgnoreDetail (
+INSERT INTO dbo.DisciplineIgnoreDetail (
     WorkDate, EmpId, DisciplineTypeId, IgnoreBy, IgnoreDate
 )
 SELECT 
@@ -750,7 +750,7 @@ WHERE em.EmpId IS NOT NULL AND em_ignore.EmpId IS NOT NULL;
 -- #endregion
 
 -- #region DISCIPLINE OUT OF CONTROL TABLE
-INSERT INTO bodb_HRM.dbo.DisciplineOutOfControl (
+INSERT INTO dbo.DisciplineOutOfControl (
     EmpId, WorkDate, IsOutOfControlMissingCheckInOut, IsOutOfControlLateIn, 
     IsOutOfControlEarlyOut, IsOutOfControlWorkingUnderTime, IsOutOfControlChangeShift, 
     IsOutOfControlAbsent, IsOutOfControlUnpaidLeave, IsOutOfControlUnpaidLeaveAbsent, 
@@ -778,7 +778,7 @@ WHERE em.EmpId IS NOT NULL;
 
 -- #region DISCIPLINE REQUEST TRANS TABLE
 
-INSERT INTO bodb_HRM.dbo.DisciplineRequestTrans (
+INSERT INTO dbo.DisciplineRequestTrans (
     EmpId, WorkDate, RequestId, DisciplineTypeId, IsIgnored, 
     IsOutOfControl, ModifiedDate, ModifiedBy
 )
@@ -798,7 +798,7 @@ WHERE em.EmpId IS NOT NULL;
 
 -- #endregion
 
-INSERT INTO bodb_HRM.dbo.OtherDiscipline
+INSERT INTO dbo.OtherDiscipline
            (EmpId
            ,WorkDate
            ,DisciplineTypeId
@@ -1504,7 +1504,7 @@ INSERT INTO [dbo].[LeaveTrans]
 	LEFT JOIN @EmployeeMapping AS empModified ON lt.ModifiedBy = empModified.OldEmpId;
 
 -- #region MESSAGE TABLE
-INSERT INTO bodb_HRM.dbo.[Message] (
+INSERT INTO dbo.[Message] (
     [Subject], Contents, Category, FromDate, ToDate, 
     IsDisabled, CreatedBy, CreatedDate, ModifiedBy, ModifiedDate, CompanyId, OldMessageId
 )
@@ -1522,12 +1522,12 @@ SELECT
     @CompanyId,
     m.MessageId
 FROM HRM.dbo.Message AS m
-LEFT JOIN bodb_HRM.dbo.Employee AS e_created ON m.CreatedBy = e_created.OldEmpId
-LEFT JOIN bodb_HRM.dbo.Employee AS e_modified ON m.ModifiedBy = e_modified.OldEmpId;
+LEFT JOIN dbo.Employee AS e_created ON m.CreatedBy = e_created.OldEmpId
+LEFT JOIN dbo.Employee AS e_modified ON m.ModifiedBy = e_modified.OldEmpId;
 -- #endregion
 
 -- #region MESSAGE EMPLOYEE TABLE
-INSERT INTO bodb_HRM.dbo.MessageEmployee (
+INSERT INTO dbo.MessageEmployee (
     MessageId, EmployeeId, Email, IsDisabled, IsRead
 )
 SELECT 
@@ -1537,13 +1537,13 @@ SELECT
     me.IsDisabled,
     me.IsRead
 FROM HRM.dbo.MessageEmployee AS me
-INNER JOIN bodb_HRM.dbo.[Message] AS m ON me.MessageId = m.OldMessageId AND m.CompanyId = @CompanyId
-INNER JOIN bodb_HRM.dbo.Employee AS em ON me.EmployeeId = em.OldEmpId
+INNER JOIN dbo.[Message] AS m ON me.MessageId = m.OldMessageId AND m.CompanyId = @CompanyId
+INNER JOIN dbo.Employee AS em ON me.EmployeeId = em.OldEmpId
 WHERE em.EmpId IS NOT NULL;
 -- #endregion
 
 -- #region MESSAGE GROUP TABLE
-INSERT INTO bodb_HRM.dbo.MessageGroup (
+INSERT INTO dbo.MessageGroup (
     MessageId, GroupId, Email
 )
 SELECT 
@@ -1551,8 +1551,8 @@ SELECT
     g.GroupId, 
     mg.Email
 FROM HRM.dbo.MessageGroup AS mg
-INNER JOIN bodb_HRM.dbo.[Group] AS g ON mg.GroupId = g.OldGroupId AND g.CompanyId = @CompanyId
-INNER JOIN bodb_HRM.dbo.[Message] AS m ON mg.MessageId = m.OldMessageId AND m.CompanyId = @CompanyId;
+INNER JOIN dbo.[Group] AS g ON mg.GroupId = g.OldGroupId AND g.CompanyId = @CompanyId
+INNER JOIN dbo.[Message] AS m ON mg.MessageId = m.OldMessageId AND m.CompanyId = @CompanyId;
 -- #endregion
 
 
