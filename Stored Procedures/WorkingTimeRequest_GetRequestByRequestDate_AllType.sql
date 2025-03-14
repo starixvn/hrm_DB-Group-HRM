@@ -10,6 +10,7 @@ ALTER PROCEDURE [dbo].[WorkingTimeRequest_GetRequestByRequestDate_AllType] @Supe
 	,@isLocal BIT = NULL
 	,@requestType INT = NULL
 	,@leaveTypeId INT = NULL
+	,@CompanyId SMALLINT
 AS
 /*
 Created: Tom.Vo@2013-11-04
@@ -100,7 +101,7 @@ BEGIN
 		BEGIN
 			INSERT INTO #tblEmployeeId (EmpId)
 			SELECT EmpId
-			FROM dbo.fnc_GetEmployeeByActorId(@SupervisorId, 1, 1)
+			FROM dbo.fnc_GetEmployeeByActorId(@SupervisorId, 1, 1, @CompanyId)
 		END
 	END
 	ELSE
@@ -634,7 +635,7 @@ BEGIN
 								END AS IsHoliday
 						FROM dbo.LeaveRequestDetail AS ldt WITH (NOLOCK)
 							INNER JOIN #tblRequestId AS r ON r.RequestId = ldt.RequestId
-							LEFT JOIN dbo.LeaveType AS lt1 WITH (NOLOCK) ON lt1.LeaveTypeId = ldt.LeaveType
+							LEFT JOIN dbo.LeaveType AS lt1 WITH (NOLOCK) ON lt1.LeaveTypeId = ldt.LeaveType AND lt1.CompanyId = @CompanyId
 							LEFT JOIN dbo.EmployeeCalendar AS cl WITH (NOLOCK) ON ldt.OnDate = cl.WorkDate
 							AND ldt.EmpId = cl.EmpId
 						WHERE ldt.WorkType <> @Onduty
@@ -739,6 +740,7 @@ BEGIN
 	FROM dbo.WorkingTimeRequest AS r WITH (NOLOCK)
 		INNER JOIN #tblRequestId AS rq ON r.RequestId = rq.RequestId
 		INNER JOIN #tblRequestInDaily AS rd ON r.RequestId = rd.RequestID
+		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = r.EmpId
 		LEFT JOIN dbo.LateInEarlyOutRequest AS inout WITH (NOLOCK) ON r.RequestId = inout.RequestId
 		LEFT JOIN dbo.LeaveRequest AS lr WITH (NOLOCK) ON r.RequestId = lr.RequestId
 		LEFT JOIN dbo.CheckInOutRequest AS inoutmiss WITH (NOLOCK) ON r.RequestId = inoutmiss.RequestId
@@ -757,9 +759,10 @@ BEGIN
 		LEFT JOIN dbo.[Shift] AS s2 WITH (NOLOCK) ON s2.ShiftID = rd.ToShift
 		LEFT JOIN dbo.[Shift] AS s3 WITH (NOLOCK) ON s3.ShiftID = c.ShiftID
 		LEFT JOIN dbo.[Group] AS g WITH (NOLOCK) ON e.GroupID = g.GroupID
-		LEFT JOIN dbo.LeaveType AS lv WITH (NOLOCK) ON lv.LeaveTypeID = lr.LeaveType
+		LEFT JOIN dbo.LeaveType AS lv WITH (NOLOCK) ON lv.LeaveTypeID = lr.LeaveType AND lv.CompanyId = @CompanyId
 		LEFT JOIN dbo.Section AS sec WITH (NOLOCK) ON sec.SectionId = g.SectionId
 		LEFT JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId = sec.DepartmentId
+	WHERE ce.CompanyId = @CompanyId
 	ORDER BY r.CreatedDate DESC
 
 	SELECT csrd.RequestId
@@ -783,4 +786,6 @@ BEGIN
 
 	DROP TABLE #tblRequestId
 END
+
+
 
