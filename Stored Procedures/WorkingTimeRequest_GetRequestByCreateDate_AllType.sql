@@ -531,7 +531,7 @@ BEGIN
 									END) AS NVARCHAR(100)) + ' days ' + lt1.Code
 						)
 				FROM dbo.LeaveRequestDetail AS rd1 WITH (NOLOCK)
-					INNER JOIN dbo.LeaveType AS lt1 WITH (NOLOCK) ON lt1.LeaveTypeId = rd1.LeaveType
+					INNER JOIN dbo.LeaveType AS lt1 WITH (NOLOCK) ON lt1.LeaveTypeId = rd1.LeaveType AND lt1.CompanyId = @CompanyId
 				WHERE rd1.RequestId = rd.RequestId
 					AND rd1.LeaveType <> 0
 				GROUP BY rd1.RequestId
@@ -652,7 +652,7 @@ BEGIN
 		LEFT JOIN dbo.[Shift] AS s2 WITH (NOLOCK) ON s2.ShiftID = rd.ToShift
 		LEFT JOIN dbo.[Shift] AS s3 WITH (NOLOCK) ON s3.ShiftID = c.ShiftID
 		LEFT JOIN dbo.[Group] AS g WITH (NOLOCK) ON e.GroupID = g.GroupID
-		LEFT JOIN dbo.LeaveType AS lv WITH (NOLOCK) ON lv.LeaveTypeID = lr.LeaveType
+		LEFT JOIN dbo.LeaveType AS lv WITH (NOLOCK) ON lv.LeaveTypeID = lr.LeaveType AND lv.CompanyId = @CompanyId
 		LEFT JOIN dbo.Section AS sec WITH (NOLOCK) ON sec.SectionId = g.SectionId
 		LEFT JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId = sec.DepartmentId
 	WHERE ce.CompanyId = @CompanyId 
@@ -681,6 +681,8 @@ BEGIN
 
 	DROP TABLE #tblRequestId
 END
+
+
 
 
 
