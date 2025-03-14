@@ -1,4 +1,5 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+
 ALTER PROCEDURE [dbo].[EmployeeAttendance_GetByType] @fromtime DATE
 	,@totime DATE
 	,@EmpId INT = NULL
@@ -709,8 +710,8 @@ BEGIN
 		WHERE @isLocal IS NULL
 			OR e_s.IsLocal = @isLocal
 		) AS T
-		LEFT JOIN dbo.LeaveType AS lv WITH (NOLOCK) ON lv.LeaveTypeId = T.LeaveTypeId
-		LEFT JOIN dbo.LeaveType AS lv2 WITH (NOLOCK) ON lv2.LeaveTypeId = T.LeaveTypeId2
+		LEFT JOIN dbo.LeaveType AS lv WITH (NOLOCK) ON lv.LeaveTypeId = T.LeaveTypeId AND lv.CompanyId = @companyId
+		LEFT JOIN dbo.LeaveType AS lv2 WITH (NOLOCK) ON lv2.LeaveTypeId = T.LeaveTypeId2 AND lv.CompanyId = @companyId
 		LEFT JOIN @OutOffDay AS od ON t.AttendanceDate = od.WorkDate
 		AND t.EmpId = od.EmpId
 	WHERE @type = 0
@@ -784,7 +785,7 @@ BEGIN
 				)
 			OR rd.RequestType <> @LeaveRequestTypeId
 			)
-		LEFT JOIN dbo.LeaveType AS l WITH (NOLOCK) ON l.LeaveTypeId = rd.LeaveTypeId
+		LEFT JOIN dbo.LeaveType AS l WITH (NOLOCK) ON l.LeaveTypeId = rd.LeaveTypeId AND l.CompanyId = @companyId
 		LEFT JOIN dbo.[Shift] AS s1 WITH (NOLOCK) ON s1.ShiftId = rd.FromShift
 		LEFT JOIN dbo.[Shift] AS s2 WITH (NOLOCK) ON s2.ShiftId = rd.ToShift
 		LEFT JOIN dbo.[Shift] AS s3 WITH (NOLOCK) ON s3.ShiftId = c.ShiftId
@@ -795,4 +796,5 @@ BEGIN
 
 	DROP TABLE #tmpDailyRequest
 END
+
 
