@@ -442,9 +442,8 @@ FROM HRM.dbo.tmpEmployeeCalendar AS tmp WITH (NOLOCK)
     INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON tmp.EmpId = e.OldEmpId
     INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
     LEFT JOIN dbo.WorkingTimeRequest AS rq WITH (NOLOCK) ON tmp.RequestId = rq.OldRequestId
-    LEFT JOIN dbo.[Shift] AS s WITH (NOLOCK) ON tmp.ShiftId = s.OldShiftId
+    LEFT JOIN dbo.[Shift] AS s WITH (NOLOCK) ON tmp.ShiftId = s.OldShiftId AND s.CompanyId = @CompanyId
 WHERE ce.CompanyId = @CompanyId
-    AND s.CompanyId = @CompanyId
     AND NOT EXISTS (
         SELECT 1
         FROM dbo.tmpEmployeeCalendar AS tmpempca WITH (NOLOCK)
