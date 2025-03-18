@@ -11,6 +11,7 @@ ALTER PROCEDURE [dbo].[Memo_Insert] @RefNo NVARCHAR(50)
 	,@Category INT
 	,@Type INT
 	,@CompanyId INT
+	,@id INT OUTPUT
 	,@ErrCode INT = 0 OUTPUT
 	,@ErrMsg VARCHAR(200) = '' OUTPUT
 AS
@@ -56,11 +57,10 @@ BEGIN
 		,@CompanyId
 		)
 
-	DECLARE @id INT
 
 	IF @@ERROR <> 0
 	BEGIN
-		SET @ID = 0
+		SET @id = 0
 
 		SELECT @ErrCode = 1
 			,@ErrMsg = N'Create Memo failed.';
