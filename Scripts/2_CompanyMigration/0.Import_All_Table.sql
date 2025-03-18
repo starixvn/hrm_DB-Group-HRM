@@ -1153,16 +1153,18 @@ WHERE en.IsInternal = 0 AND en.CompanyId = @CompanyId
 -- #endregion
 
 -- #region MAIL SETTINGS TABLE
-INSERT INTO dbo.MailSettings (GroupId, Action, AllowSendUser, AllowSendVerifier, AllowSendApprover, AllowSendHR, AllowSendMailGroup)
-SELECT g.GroupId, 
+INSERT INTO dbo.MailSettings (GroupId, Action, AllowSendUser, AllowSendVerifier, AllowSendApprover, AllowSendHR, AllowSendMailGroup, CompanyId)
+SELECT 
+    CASE WHEN g.GroupId IS NOT NULL THEN g.GroupId ELSE ms.GroupId END, 
     ms.Action,
     ms.AllowSendUser,
     ms.AllowSendVerifier,
     ms.AllowSendApprover,
     ms.AllowSendHR,
-    ms.AllowSendMailGroup
+    ms.AllowSendMailGroup,
+    @companyId
 FROM HRM.dbo.MailSettings AS ms
-    INNER JOIN dbo.[Group] AS g ON ms.GroupId = g.OldGroupId AND g.CompanyId = @CompanyId;
+    LEFT JOIN dbo.[Group] AS g ON ms.GroupId = g.OldGroupId AND g.CompanyId = @CompanyId;
 -- #endregion
 
 
