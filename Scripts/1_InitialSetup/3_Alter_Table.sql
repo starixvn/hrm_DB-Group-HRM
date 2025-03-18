@@ -83,13 +83,3 @@ ALTER TABLE dbo.TimeRecordExt ADD CONSTRAINT PK_TimeRecordExt PRIMARY KEY (Id);
 ALTER TABLE dbo.RoleFunction DROP CONSTRAINT PK_RoleFunction;
 ALTER TABLE dbo.RoleFunction ADD CompanyId INT NOT NULL;
 ALTER TABLE dbo.RoleFunction ADD CONSTRAINT PK_RoleFunction PRIMARY KEY (CompanyId, RoleId, FunctionId);
-
-
-ALTER TABLE bodb_HRM.dbo.[MailSettings] ADD CompanyId INT NOT NULL;
-
-ALTER TABLE  bodb_HRM.[dbo].[MailSettings]
-DROP CONSTRAINT [PK_MailSettings];
-
-
- ALTER TABLE  bodb_HRM.[dbo].[MailSettings]
-ADD CONSTRAINT [PK_MailSettings] PRIMARY KEY (GroupId, [Action], CompanyId);
