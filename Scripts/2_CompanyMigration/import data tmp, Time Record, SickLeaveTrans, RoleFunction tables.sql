@@ -121,7 +121,7 @@ SELECT tc.Id, ext.IPAddress, ext.[Platform]
 FROM SMSHRM.dbo.TimeRecordExt AS ext WITH (NOLOCK)
     INNER JOIN dbo.TimeRecord AS tc WITH (NOLOCK) ON ext.Id = tc.OldId
 WHERE tc.CompanyId = @CompanyId
-    AND EXISTS (
+    AND NOT EXISTS (
         SELECT 1
         FROM dbo.TimeRecordExt AS tc_ext WITH (NOLOCK)
         WHERE tc.Id = tc_ext.Id
