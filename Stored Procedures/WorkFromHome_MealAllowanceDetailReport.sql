@@ -3,7 +3,7 @@
 ALTER PROCEDURE [dbo].[WorkFromHome_MealAllowanceDetailReport] @CompanyId SMALLINT
     ,@FromDate DATE
 	,@ToDate DATE
-	,@TeamId VARCHAR(MAX) = ''
+	,@TeamIds VARCHAR(MAX) = ''
 	,@EmployeeId INT = NULL
 	,@IsLocal BIT = NULL
 AS
@@ -33,11 +33,11 @@ BEGIN
 
 	CREATE TABLE #tmpTeam (GroupId INT)
 
-	IF ISNULL(@TeamId, '') <> ''
+	IF ISNULL(@TeamIds, '') <> ''
 	BEGIN
 		INSERT INTO #tmpTeam (GroupId)
 		SELECT DISTINCT value
-		FROM STRING_SPLIT(@TeamId, ',')
+		FROM STRING_SPLIT(@TeamIds, ',')
 	END
 
 	INSERT INTO #tmpEmployee (EmpId)
@@ -51,7 +51,7 @@ BEGIN
 			OR e.EmpId = @EmployeeId
 			)
 		AND (
-			ISNULL(@TeamId, '') = ''
+			ISNULL(@TeamIds, '') = ''
 			OR EXISTS (
 				SELECT 1
 				FROM #tmpTeam AS tbl WITH (NOLOCK)
