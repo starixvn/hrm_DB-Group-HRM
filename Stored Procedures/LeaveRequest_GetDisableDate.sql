@@ -4,8 +4,8 @@ ALTER PROCEDURE [dbo].[LeaveRequest_GetDisableDate] @empId INT
 	,@fromDate DATE
 	,@toDate DATE
 	,@requestId BIGINT = NULL
-	,@LeaveTypeId INT,
-	@CompanyId SMALLINT
+	,@LeaveTypeId INT
+	,@CompanyId SMALLINT
 AS
 /*
 Created: Tim.Trinh@2019-10-15
@@ -46,8 +46,7 @@ BEGIN
 		END
 	END
 
-	EXEC dbo.tmpEmployeeCalendar_Insert 
-		@CompanyId
+	EXEC dbo.tmpEmployeeCalendar_Insert @CompanyId = @CompanyId
 		,@fromDate = @fromDate
 		,@toDate = @toDate
 		,@empIds = @empId
@@ -64,11 +63,9 @@ BEGIN
 	INTO #tblEmployeeCalendar
 	FROM dbo.Employee AS emp WITH (NOLOCK)
 		INNER JOIN dbo.tmpEmployeeCalendar AS tmpca WITH (NOLOCK) ON emp.EmpId = tmpca.EmpId
-		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = emp.EmpId
+	WHERE emp.EmpId = @EmpId
 		AND tmpca.WorkDate BETWEEN @fromDate
 			AND @toDate
-	WHERE emp.EmpId = @EmpId
-		AND ce.CompanyId = @CompanyId
 
 	SELECT WorkDate
 	FROM #tblEmployeeCalendar AS empca WITH (NOLOCK)
@@ -91,6 +88,3 @@ BEGIN
 
 	DROP TABLE #tblEmployeeCalendar
 END
-
-
-

@@ -20,7 +20,7 @@ AS
 /*
 Created: Tom.Vo@2013-11-11
 Task: insert a Leave mutilple request form
-DB: HRM_SMS
+DB: HRM
 Original: 
 
 Revisions:
@@ -30,8 +30,6 @@ Param's Explanation:
 			1. off
 			2. leave
 			3. work
-
-Otis - 03062023: Change Logic Half Day by working hours per day of employee
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -246,22 +244,22 @@ BEGIN
 
 		INSERT INTO #tblLeaveRequestDetail (
 			OnDate
-			,ShiftID
+			,ShiftId
 			,LeaveType
 			,WorkType
 			,IsHalfDay
 			,FromTime
 			,ToTime
 			)
-		SELECT Data.OnDate
-			,ISNULL(Data.ShiftID, ec.ShiftId) ShiftID
-			,Data.LeaveType
-			,Data.WorkType
-			,Data.IsHalfDay
-			,Data.FromTime
-			,Data.ToTime
-		FROM OPENXML(@DocHandler, '/ROOT/Row', 1) WITH (OnDate DATETIME, ShiftId INT, LeaveType INT, IsHalfDay BIT, WorkType TINYINT, FromTime DATETIME, ToTime DATETIME) AS Data
-			LEFT JOIN dbo.EmployeeCalendar ec WITH (NOLOCK) ON ec.WorkDate = data.OnDate
+		SELECT d.OnDate
+			,ISNULL(d.ShiftId, ec.ShiftId) AS ShiftId
+			,d.LeaveType
+			,d.WorkType
+			,d.IsHalfDay
+			,d.FromTime
+			,d.ToTime
+		FROM OPENXML(@DocHandler, '/ROOT/Row', 1) WITH (OnDate DATETIME, ShiftId INT, LeaveType INT, IsHalfDay BIT, WorkType TINYINT, FromTime DATETIME, ToTime DATETIME) AS d
+			LEFT JOIN dbo.EmployeeCalendar ec WITH (NOLOCK) ON ec.WorkDate = d.OnDate
 			AND ec.EmpId = @EmpId
 
 		EXEC sp_xml_removedocument @DocHandler

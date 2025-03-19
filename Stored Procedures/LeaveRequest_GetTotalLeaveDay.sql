@@ -10,7 +10,7 @@ AS
 /*
 Created: Tim.Trinh@2021-08-03
 Task: get total leave days
-DB: HRM_SMS
+DB: HRM
 Original:
 
 Revisions:
@@ -71,9 +71,9 @@ BEGIN
 	INTO #tblEmployeeCalendar
 	FROM dbo.Employee AS emp WITH (NOLOCK)
 		INNER JOIN dbo.tmpEmployeeCalendar AS tmpca WITH (NOLOCK) ON emp.EmpId = tmpca.EmpId
+	WHERE emp.EmpId = @EmpId
 		AND tmpca.WorkDate BETWEEN @fromDate
 			AND @toDate
-	WHERE emp.EmpId = @EmpId
 
 	SELECT WorkDate
 	FROM #tblEmployeeCalendar AS empca WITH (NOLOCK)
@@ -96,5 +96,3 @@ BEGIN
 
 	DROP TABLE #tblEmployeeCalendar
 END
-
-
