@@ -1,7 +1,6 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[LeaveRequest_GetById] 
-	@RequestId BIGINT,
+ALTER PROCEDURE [dbo].[LeaveRequest_GetById] @RequestId BIGINT,
 	@CompanyId SMALLINT
 AS
 /*
@@ -53,6 +52,7 @@ BEGIN
 		LEFT JOIN dbo.Employee AS pr WITH (NOLOCK) ON wk.HRId = pr.EmpId
 		LEFT JOIN dbo.HospitalLeave AS hl WITH (NOLOCK) ON hl.RequestId = lr.RequestId
 	WHERE lr.RequestId = @RequestId
+        AND lv.CompanyId = @CompanyId
 
 	SELECT ldt.RequestId
 		,ldt.OnDate
@@ -64,7 +64,6 @@ BEGIN
 		,ldt.ToTime
 	FROM dbo.LeaveRequestDetail AS ldt WITH (NOLOCK)
 		INNER JOIN dbo.LeaveType AS lv WITH (NOLOCK) ON ldt.LeaveType = lv.LeaveTypeId
-		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = ldt.EmpId
 	WHERE ldt.RequestId = @RequestId
-		AND ce.CompanyId = @CompanyId
+        AND lv.CompanyId = @CompanyId
 END

@@ -2,13 +2,13 @@
 
 ALTER PROCEDURE [dbo].[LeaveRequest_GetCalendar] @empId INT
 	,@fromDate DATE
-	,@toDate DATE,
-	@CompanyId SMALLINT
+	,@toDate DATE
+	,@CompanyId SMALLINT
 AS
 /*
 Created: Tim.Trinh@2019-11-06
 Task: get calendar
-DB: HRM_SMS
+DB: HRM
 Original:
 
 Revisions:
@@ -17,8 +17,7 @@ Param's Explanation:
 BEGIN
 	SET NOCOUNT ON;
 	
-	EXEC dbo.tmpEmployeeCalendar_Insert 
-		@CompanyId
+	EXEC dbo.tmpEmployeeCalendar_Insert @CompanyId = @CompanyId
 		,@fromDate = @fromDate
 		,@toDate = @toDate
 		,@empIds = @empId
@@ -31,9 +30,9 @@ BEGIN
 		,empca.IsLeaveOffDay
 		,empca.IsLeaveDay
 		,empca.LeaveDay
-		,shift.ShiftId
-		,shift.Code
-		,shift.[Name]
+		,[shift].ShiftId
+		,[shift].Code
+		,[shift].[Name]
 		,lv1.LeaveTypeId
 		,lv1.Code
 		,lv1.[Name]
@@ -44,12 +43,12 @@ BEGIN
 		INNER JOIN dbo.tmpEmployeeCalendar AS empca WITH (NOLOCK) ON emp.EmpId = empca.EmpId
 		AND empca.WorkDate BETWEEN @fromDate
 			AND @toDate
-		LEFT JOIN dbo.Shift AS shift WITH (NOLOCK) ON shift.ShiftId = empca.ShiftId
+		LEFT JOIN dbo.[Shift] AS [shift] WITH (NOLOCK) ON [shift].ShiftId = empca.ShiftId
+        AND [shift].CompanyId = @CompanyId
 		LEFT JOIN dbo.LeaveType AS lv1 WITH (NOLOCK) ON empca.LeaveTypeId = lv1.LeaveTypeId
+        AND lv1.CompanyId = @CompanyId
 		LEFT JOIN dbo.LeaveType AS lv2 WITH (NOLOCK) ON empca.LeaveTypeId2 = lv2.LeaveTypeId
+        AND lv2.CompanyId = @CompanyId
 	WHERE emp.EmpId = @EmpId
 	ORDER BY empca.WorkDate
 END
-
-
-
