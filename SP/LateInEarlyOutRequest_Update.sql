@@ -1,10 +1,4 @@
-USE [bodb_HRM]
-GO
-/****** Object:  StoredProcedure [dbo].[LateInEarlyOutRequest_Update]    Script Date: 3/19/2025 8:43:15 AM ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[LateInEarlyOutRequest_Update] @RequestId BIGINT
 	,@EmpId INT
