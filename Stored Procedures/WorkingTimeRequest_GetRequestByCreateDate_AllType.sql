@@ -682,11 +682,3 @@ BEGIN
 	DROP TABLE #tblRequestId
 END
 
-
-
-
-
-
-
-
-
