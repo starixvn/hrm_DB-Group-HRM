@@ -25,6 +25,8 @@ BEGIN
 		,@Nickname_exist = Nickname
 	FROM dbo.Employee WITH (NOLOCK)
 	WHERE Code = @Code
+		AND (isDeleted = 0
+		OR [Enabled] = 1)
 
 	IF ISNULL(@EmpId_exist, 0) <> 0
 	BEGIN
