@@ -2,6 +2,7 @@
 
 
 CREATE PROCEDURE [dbo].[SyncEPA_JobTitle_Get]
+	@CompanyId INT
 AS
 /*
 Created: 20150827@Quinn.Vo
@@ -16,13 +17,14 @@ Param's Explanation:
 BEGIN
 	SET NOCOUNT ON;
 
-	SELECT Id
+	SELECT CASE WHEN OldId IS NOT NULL THEN OldId ELSE Id END AS Id
 		,LookupId
 		,Code
 		,NAME
 		,Value
 	FROM dbo.LookupData WITH (NOLOCK)
-	WHERE LookupId = 1
+	WHERE LookupId = 1 AND CompanyId = @CompanyId
+	ORDER BY Id
 END
 
 
