@@ -9,7 +9,7 @@ ALTER PROCEDURE [dbo].[Employee_Information_update] @EmpId INT
 	,@Email VARCHAR(50) = NULL
 	,@JobTitleId INT = NULL
 	,@JobLevelId INT = NULL
-	,@ExpertGradeId INT = NULL
+    ,@ManagementLevelId SMALLINT = NULL
 	,@Enabled BIT
 	,@Phone VARCHAR(50) = NULL
 	,@Gender TINYINT = NULL
@@ -63,11 +63,9 @@ AS
 Created: TOM
 Task: UPDATE an employee Information 
 DB: HRM
-Original:
 
 Revisions:
 Param's Explanation:
--Otis - 03062023: adding field ResignedReason
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -148,7 +146,7 @@ BEGIN
 				,Email AS '@Email'
 				,JobTitleId AS '@JobTitleId'
 				,JobLevelId AS '@JobLevelId'
-				,ExpertGradeId AS'@ExpertGradeId'
+				,ManagementLevelId AS'@ManagementLevelId'
 				,[Enabled] AS '@Enabled'
 				,emp.isDeleted AS '@IsDeleted'
 				,Phone AS '@Phone'
@@ -218,7 +216,7 @@ BEGIN
 		,Email = REPLACE(@Email, ' ', '')
 		,JobTitleId = @JobTitleId
 		,JobLevelId = @JobLevelId
-		,ExpertGradeId = @ExpertGradeId
+		,ManagementLevelId = @ManagementLevelId
 		,[Enabled] = @Enabled
 		,Phone = @Phone
 		,Gender = @Gender
@@ -286,7 +284,7 @@ BEGIN
 				,Email AS '@Email'
 				,JobTitleId AS '@JobTitleId'
 				,JobLevelId AS '@JobLevelId'
-				,ExpertGradeId AS '@ExpertGradeId'
+				,ManagementLevelId AS '@ManagementLevelId'
 				,[Enabled] AS '@Enabled'
 				,emp.isDeleted AS '@IsDeleted'
 				,Phone AS '@Phone'
@@ -348,11 +346,6 @@ BEGIN
 		,@ErrCode = @ErrCode OUTPUT
 		,@ErrMsg = @ErrMsg OUTPUT
 END
-
-
-
-
-
 
 
 

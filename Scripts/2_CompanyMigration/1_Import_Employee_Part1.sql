@@ -14,19 +14,19 @@ DECLARE @EmployeeMapping TABLE (
 -- #region EMPLOYEE TABLE
 INSERT INTO dbo.Employee (
     EmpId, Code, DomainUsername, FullName, NickName, DOB, Email, JobTitleId, 
-    Enabled, Phone, Gender, GroupId, Roles, ManagerId, JoinedDate, ConfirmedDate, 
+    [Enabled], Phone, Gender, GroupId, Roles, ManagerId, JoinedDate, ConfirmedDate, 
     ResignedDate, Skype, Yahoo, Marriage, LastLogin, CreatedDate, CreatedBy, 
     ModifiedDate, ModifiedBy, isDeleted, PermanentAddress, CurrentAddress, 
-    IdCardNumber, PassportNo, PassportExp, Password, ChineseName, PlaceOfbirth, 
-    Ethnic, Native, Religion, DateOfIDCard, PlaceOfIDCard, HomePhone, Qualification, 
+    IdCardNumber, PassportNo, PassportExp, [Password], ChineseName, PlaceOfbirth, 
+    Ethnic, [Native], Religion, DateOfIDCard, PlaceOfIDCard, HomePhone, Qualification, 
     Major, PasswordReset, EmployeeCard, PickupRemark, TeamDate, PromotionDate, 
-    LetsTalk, JobLevelId, UserId, UC_ModifiedDate, UC_SyncDate, ResignedReason, 
+    LetsTalk, JobLevelId, ManagementLevelId, UserId, UC_ModifiedDate, UC_SyncDate, ResignedReason, 
     ExpertGradeId, OldEmpId  -- Keep Old Employee ID
 )
 OUTPUT INSERTED.EmpId, INSERTED.OldEmpId, @NewCompanyId INTO @EmployeeMapping  -- Store new & old EmpId
 SELECT 
     UserId, Code, DomainUsername, FullName, NickName, DOB, Email, JobTitleId,
-    Enabled, Phone, Gender, GroupId, Roles, ManagerId, JoinedDate, ConfirmedDate, 
+    [Enabled], Phone, Gender, GroupId, Roles, ManagerId, JoinedDate, ConfirmedDate, 
     ResignedDate, Skype, Yahoo, Marriage, 
     LastLogin,
     CreatedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone,  
@@ -34,12 +34,12 @@ SELECT
     ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone, 
     ModifiedBy, 
     isDeleted, PermanentAddress, CurrentAddress, 
-    IdCardNumber, PassportNo, PassportExp, Password, ChineseName, PlaceOfbirth, 
-    Ethnic, Native, Religion, DateOfIDCard, PlaceOfIDCard, HomePhone, Qualification, 
+    IdCardNumber, PassportNo, PassportExp, [Password], ChineseName, PlaceOfbirth, 
+    Ethnic, [Native], Religion, DateOfIDCard, PlaceOfIDCard, HomePhone, Qualification, 
     Major, PasswordReset, EmployeeCard, PickupRemark, TeamDate, PromotionDate, 
-    LetsTalk, JobLevelId, UserId, UC_ModifiedDate, UC_SyncDate, ResignedReason, 
+    LetsTalk, JobLevelId, ManagementLevelId, UserId, UC_ModifiedDate, UC_SyncDate, ResignedReason, 
     ExpertGradeId, EmpId AS OldEmpId  -- Keep track of old EmpId
-FROM SMSHRM.dbo.Employee
+FROM HRM.dbo.Employee WITH (NOLOCK)
 WHERE UserId is not null
 
 -- Insert into CompanyEmployee using NewEmpId and CompanyId
