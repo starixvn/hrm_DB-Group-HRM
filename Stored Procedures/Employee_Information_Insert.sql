@@ -56,7 +56,7 @@ BEGIN
 		,@fullName
 		,@Nickname
         ,@DomainUsername
-		,'1900-01-01'
+		,NULL
 		,0
 		,1
 		,@TeamId

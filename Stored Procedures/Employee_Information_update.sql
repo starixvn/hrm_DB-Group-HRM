@@ -88,7 +88,7 @@ BEGIN
 	SELECT TOP 1 @EmpId_exist = e.EmpId
 		,@FullName_exist = e.FullName
 	FROM dbo.Employee e WITH (NOLOCK)
-	INNER JOIN dbo.CompanyEmployee c WITH(NOLOCK) ON c.EmpId = e.EmpId
+		INNER JOIN dbo.CompanyEmployee c WITH(NOLOCK) ON c.EmpId = e.EmpId
 	WHERE e.EmpId <> @EmpId
 		AND Code = @code
 		AND c.CompanyId = @CompanyId
@@ -102,12 +102,14 @@ BEGIN
 		RETURN
 	END
 
-	SELECT TOP 1 @EmpId_exist = EmpId
+	SELECT TOP 1 @EmpId_exist = e.EmpId
 		,@Nickname_exist = Nickname
 		,@FullName_exist = FullName
-	FROM dbo.Employee WITH (NOLOCK)
-	WHERE EmpId <> @EmpId
+	FROM dbo.Employee AS e WITH (NOLOCK)
+		INNER JOIN dbo.CompanyEmployee c WITH(NOLOCK) ON c.EmpId = e.EmpId
+	WHERE e.EmpId <> @EmpId
 		AND Nickname = @nickname
+		AND c.CompanyId = @CompanyId
 		AND (
 			isDeleted = 0
 			OR [Enabled] = 1

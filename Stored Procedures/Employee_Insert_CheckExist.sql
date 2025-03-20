@@ -20,13 +20,13 @@ BEGIN
 		,@Nickname_exist NVARCHAR(20)
 		,@FullName_exist NVARCHAR(50)
 
-	SELECT TOP 1 @EmpId_exist = EmpId
+	SELECT TOP 1 @EmpId_exist = e.EmpId
 		,@FullName_exist = FullName
 		,@Nickname_exist = Nickname
-	FROM dbo.Employee WITH (NOLOCK)
+	FROM dbo.Employee AS e WITH (NOLOCK)
+		INNER JOIN CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = e.EmpId 
 	WHERE Code = @Code
-		AND (isDeleted = 0
-		OR [Enabled] = 1)
+		AND ce.CompanyId = @CompanyId
 
 	IF ISNULL(@EmpId_exist, 0) <> 0
 	BEGIN
