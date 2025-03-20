@@ -2,6 +2,7 @@
 
 ALTER PROCEDURE [dbo].[Employee_Insert_CheckExist] @Nickname NVARCHAR(20)
 	,@Code VARCHAR(20)
+	,@CompanyId SMALLINT
 AS
 /*
 Created: 20250306@Tim
@@ -33,11 +34,13 @@ BEGIN
 		RETURN
 	END
 
-	SELECT TOP 1 @EmpId_exist = EmpId
+	SELECT TOP 1 @EmpId_exist = e.EmpId
 		,@FullName_exist = FullName
 		,@Nickname_exist = Nickname
-	FROM dbo.Employee WITH (NOLOCK)
+	FROM dbo.Employee AS e WITH (NOLOCK)
+		INNER JOIN CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = E.EmpId 
 	WHERE NickName = @Nickname
+		AND ce.CompanyId = @CompanyId
 		AND (
 			isDeleted = 0
 			OR [Enabled] = 1
