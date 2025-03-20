@@ -1,6 +1,6 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[Sync_Department] @FromDate DATETIME = NULL
+CREATE PROCEDURE [dbo].[SyncEPA_Department] @FromDate DATETIME = NULL
 	,@CompanyId INT
 AS
 /*

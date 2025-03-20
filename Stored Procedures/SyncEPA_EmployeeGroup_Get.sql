@@ -1,7 +1,7 @@
 
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[SyncEPA_EmployeeGroup_Get] 
+CREATE PROCEDURE [dbo].[SyncEPA_EmployeeGroup_Get] 
 	@FromDate DATETIME = NULL
 	,@CompanyId INT 
 AS
