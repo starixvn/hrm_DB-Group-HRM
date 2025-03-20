@@ -28,7 +28,7 @@ BEGIN
 	IF ISNULL(@EmpId_exist, 0) <> 0
 	BEGIN
 		SELECT 1 AS [Code]
-			,N'Code ' + @Code + ' has been assigned to ' + @FullName_exist AS [Message]
+			,N'Code ' + @Code + ' has been assigned' AS [Message]
 
 		RETURN
 	END
