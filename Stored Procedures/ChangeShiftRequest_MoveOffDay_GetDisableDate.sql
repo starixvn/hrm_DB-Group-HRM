@@ -9,8 +9,7 @@ AS
 /*
 Created: Tim.Trinh@2019-09-24
 Task: get disable date for request
-DB: HRM_SMS
-Original:
+DB: HRM
 
 Revisions:
 Param's Explanation:
@@ -56,6 +55,3 @@ BEGIN
 
 	DROP TABLE #tblEmployeeCalendar
 END
-
-
-

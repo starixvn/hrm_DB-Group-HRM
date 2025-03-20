@@ -18,7 +18,6 @@ AS
 Created: Quinn.Vo@20190624
 Task: create a change shift request
 DB: HRM
-Original: 
 
 Revisions:
 Param's Explanation:
@@ -393,9 +392,3 @@ BEGIN
 
 	DROP TABLE #tblChangeShiftDetail
 END
-
-
-
-
-
-

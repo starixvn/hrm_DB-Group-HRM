@@ -9,8 +9,7 @@ AS
 /*
 Created: Tim.Trinh@2019-09-17
 Task: delete change shift
-DB: HRM_SMS
-Original:
+DB: HRM
 
 Revisions:
 Param's Explanation:
@@ -92,6 +91,3 @@ BEGIN
 		,@ErrCode = @ErrCode OUTPUT
 		,@ErrMsg = @ErrMsg OUTPUT
 END
-
-
-

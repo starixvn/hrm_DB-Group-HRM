@@ -8,8 +8,7 @@ AS
 /*
 Created: Tim.Trinh@2019-09-27
 Task: get change shift request
-DB: HRM_SMS
-Original:
+DB: HRM
 
 Revisions:
 Param's Explanation:
@@ -58,16 +57,9 @@ BEGIN
 			)
 		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON cs.EmpId = emp.EmpId
 		AND emp.EmpId = @EmpId
-		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON wkr.EmpId = ce.EmpId
 		LEFT JOIN dbo.Employee AS verifier WITH (NOLOCK) ON verifier.EmpId = wkr.VerifierId
 		LEFT JOIN dbo.Employee AS approver WITH (NOLOCK) ON approver.EmpId = wkr.ApproverId
 		LEFT JOIN dbo.Employee AS hr WITH (NOLOCK) ON hr.EmpId = wkr.EmpId
 		LEFT JOIN dbo.Employee AS ap_AH WITH (NOLOCK) ON ap_AH.empid = (SELECT TOP 1 ModifiedBy FROM WorkingTimeRequestHistory WITH (NOLOCK) WHERE RequestId = cs.RequestId ORDER BY LogDate DESC)
-	WHERE ce.CompanyId = @CompanyId
 	ORDER BY wkr.CreatedDate DESC
 END
-
-
-
-
-

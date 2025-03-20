@@ -10,8 +10,7 @@ AS
 /*
 Created: Tim.Trinh@2019-09-19
 Task: get calendar for request
-DB: HRM_SMS
-Original:
+DB: HRM
 
 Revisions:
 Param's Explanation:
@@ -63,9 +62,9 @@ BEGIN
 		SELECT WorkDate
 			,IsOffDay
 			,tbl.ShiftId
-			,shift.[Name]
+			,[shift].[Name]
 		FROM #tblEmployeeCalendar AS tbl WITH (NOLOCK)
-			LEFT JOIN dbo.[Shift] AS shift WITH (NOLOCK) ON tbl.ShiftId = shift.ShiftId
+			LEFT JOIN dbo.[Shift] AS [shift] WITH (NOLOCK) ON tbl.ShiftId = [shift].ShiftId
 		WHERE IsKeepInView = 0
 			AND IsOvertime = 0
 			AND (
@@ -95,9 +94,9 @@ BEGIN
 		SELECT WorkDate
 			,IsOffDay
 			,tbl.ShiftId
-			,shift.[Name]
+			,[shift].[Name]
 		FROM #tblEmployeeCalendar AS tbl WITH (NOLOCK)
-			LEFT JOIN dbo.[Shift] AS shift WITH (NOLOCK) ON tbl.ShiftId = shift.ShiftId
+			LEFT JOIN dbo.[Shift] AS [shift] WITH (NOLOCK) ON tbl.ShiftId = [shift].ShiftId
 		WHERE ISNULL(tbl.ShiftId, -1) = -1
 			AND IsKeepInView = 0
 			AND IsLeaveDay = 0
@@ -109,4 +108,3 @@ BEGIN
 
 	DROP TABLE #tblEmployeeCalendar
 END
-
