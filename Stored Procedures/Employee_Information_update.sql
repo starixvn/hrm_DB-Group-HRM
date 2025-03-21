@@ -97,7 +97,7 @@ BEGIN
 	IF ISNULL(@EmpId_exist, 0) <> 0
 	BEGIN
 		SELECT @ErrCode = 100
-			,@ErrMsg = N'Code ' + @Code + ' has been assigned'
+			,@ErrMsg = N'Code ' + @Code + ' has been assigned to ' + @FullName_exist
 
 		RETURN
 	END
