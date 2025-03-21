@@ -103,9 +103,6 @@ BEGIN
 		VALUES (@empid)
 	END
 
-	SELECT @fromdate = CONVERT(VARCHAR(10), @fromdate, 111)
-		,@todate = DATEADD(ms, - 2, DATEADD(d, 1, CONVERT(VARCHAR(10), @todate, 111)))
-
 	INSERT INTO #tblRequestId (RequestId)
 	SELECT r.RequestId
 	FROM dbo.WorkingTimeRequest AS r WITH (NOLOCK)
