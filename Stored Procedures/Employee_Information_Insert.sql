@@ -11,6 +11,8 @@ ALTER PROCEDURE [dbo].[Employee_Information_Insert] @CompanyId SMALLINT
 	,@createBy INT
 	,@ErrCode INT = 0 OUTPUT
 	,@ErrMsg NVARCHAR(200) = '' OUTPUT
+	,@CreatedDate DATETIME
+	,@JoinDate DATETIME
 AS
 /*
 Created: 20250306@Tim
@@ -48,6 +50,7 @@ BEGIN
 		,[Password]
 		,CreatedDate
 		,CreatedBy
+        ,UserId
         ,OldEmpId
 		)
 	VALUES (
@@ -60,12 +63,16 @@ BEGIN
 		,0
 		,1
 		,@TeamId
-        ,GETDATE()
+        ,@JoinDate
 		,@password
-		,GETDATE()
+		,@CreatedDate
 		,@createBy
+        ,@UserId
         ,@OldEmpId
 		)
+
+    INSERT INTO dbo.CompanyEmployee (CompanyId, EmpId)
+    VALUES (@CompanyId, @UserId)
 
 	INSERT INTO dbo.EmployeeSummary (
 		EmpId

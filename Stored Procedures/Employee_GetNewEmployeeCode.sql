@@ -14,9 +14,11 @@ Revisions:
 BEGIN
 	SET NOCOUNT ON;
 
-	DECLARE @Code VARCHAR(20)
+	DECLARE @MaxCodeNumber VARCHAR(20)
 
-	SELECT @Code = MAX(CAST(
+	DECLARE @LastestPrefix VARCHAR(20)
+
+	SELECT @MaxCodeNumber = MAX(CAST(
 		RIGHT(Code, COALESCE(NULLIF(PATINDEX('%[^0-9]%', REVERSE(Code)), 0) - 1, LEN(Code)))
 		AS BIGINT))
 	FROM dbo.Employee AS e WITH(NOLOCK)
@@ -25,6 +27,14 @@ BEGIN
 		AND ISNULL(Code, '') != ''
 		AND ce.CompanyId = @CompanyId
 
-	IF @Code IS NOT NULL
-		SELECT @Code + 1 AS Code
+	IF @MaxCodeNumber IS NOT NULL
+		SELECT TOP 1 @LastestPrefix = LEFT(Code, LEN(Code) - LEN(CAST(@MaxCodeNumber AS VARCHAR(20))))
+			FROM dbo.Employee AS e WITH(NOLOCK)
+			INNER JOIN CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = e.EmpId 
+			WHERE [Enabled] = 1 
+				AND ISNULL(Code, '') != ''
+				AND ce.CompanyId = @CompanyId
+				AND RIGHT(Code, LEN(CAST(@MaxCodeNumber AS VARCHAR(20)))) = CAST(@MaxCodeNumber AS VARCHAR(20));
+
+		SELECT @LastestPrefix + CAST((@MaxCodeNumber + 1) AS VARCHAR(20)) AS Code
 END
