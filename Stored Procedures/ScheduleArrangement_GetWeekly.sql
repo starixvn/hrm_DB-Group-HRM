@@ -1,10 +1,4 @@
-USE [bodb_HRM]
-GO
-/****** Object:  StoredProcedure [dbo].[ScheduleArrangement_GetWeekly]    Script Date: 3/12/2025 1:23:16 PM ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
+/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[ScheduleArrangement_GetWeekly] @ActorId INT
 	,@fromtime DATE
@@ -14,12 +8,12 @@ ALTER PROCEDURE [dbo].[ScheduleArrangement_GetWeekly] @ActorId INT
 	,@IsIFrame BIT = 0
 	,@isLocal BIT = NULL
 	,@CompanyId SMALLINT
+    ,@IsEditScheduleUnlimited BIT = 0
 AS
 /*
 Created: Tim.Trinh@2019-04-12
 Task: Get weekly schedules
 DB: HRM
-Original:
 
 Revisions:
 Param's Explanation:
@@ -30,7 +24,6 @@ BEGIN
 
 	DECLARE @Today DATE = GETDATE()
 		,@EmployeeIds VARCHAR(MAX)
-		,@EditScheduleUnlimited VARCHAR(100) = 'EditScheduleUnlimited'
 		,@ShiftManagerRoleId TINYINT = 4
 		,@GeneralLeaveId TINYINT = 0
 		,@OffDayShiftId SMALLINT = - 1
@@ -96,16 +89,7 @@ BEGIN
 			)
 
 	IF @IsIFrame = 1
-		OR EXISTS (
-			SELECT 1
-			FROM dbo.RoleFunction AS rf WITH (NOLOCK)
-				INNER JOIN dbo.[Function] AS f WITH (NOLOCK) ON rf.FunctionId = f.FunctionId
-				AND f.FunctionKey = @EditScheduleUnlimited
-				AND f.IsActive = 1
-				INNER JOIN dbo.EmployeeRole AS erole WITH (NOLOCK) ON rf.RoleId = erole.RoleId
-				AND erole.EmployeeId = @ActorId
-			WHERE rf.IsRead = 1 OR rf.IsHost = 1
-			)
+		OR @IsEditScheduleUnlimited = 1
 	BEGIN
 		INSERT INTO #tblEmployeeIds (EmpId)
 		SELECT EmpId
@@ -244,13 +228,13 @@ BEGIN
 		,gr.GroupId AS TeamId
 		,gr.Code
 		,gr.[Name]
-		,shift.ShiftId AS DefaultShiftId
-		,shift.Code
-		,shift.[Name]
-		,shift.BeginCheckInTime AS CheckIn
-		,shift.BeginCheckOutTime AS CheckOut
-		,shift.IsInAfterDay
-		,shift.IsOutAfterDay
+		,[shift].ShiftId AS DefaultShiftId
+		,[shift].Code
+		,[shift].[Name]
+		,[shift].BeginCheckInTime AS CheckIn
+		,[shift].BeginCheckOutTime AS CheckOut
+		,[shift].IsInAfterDay
+		,[shift].IsOutAfterDay
 	FROM dbo.Employee AS emp WITH (NOLOCK)
 		INNER JOIN #tblEmployeeIds AS tblemp WITH (NOLOCK) ON emp.EmpId = tblemp.EmpId
 		LEFT JOIN dbo.EmployeeSummary AS esum WITH (NOLOCK) ON emp.EmpId = esum.EmpId
@@ -258,8 +242,8 @@ BEGIN
 		LEFT JOIN dbo.ScheduleArrangement AS arrange WITH (NOLOCK) ON emp.EmpId = arrange.EmployeeId
 		LEFT JOIN dbo.ScheduleArrangementGroupOrder AS gorder WITH (NOLOCK) ON gr.GroupId = gorder.GroupId
 		LEFT JOIN @tblDefaultShift AS defaultshift ON emp.EmpId = defaultshift.EmployeeId
-		LEFT JOIN dbo.Shift AS shift WITH (NOLOCK) ON defaultshift.ShiftId = shift.ShiftId
-		AND ISNULL(shift.IsDisabled, 0) = 0
+		LEFT JOIN dbo.[Shift] AS [shift] WITH (NOLOCK) ON defaultshift.ShiftId = [shift].ShiftId
+		AND ISNULL([shift].IsDisabled, 0) = 0
 		OUTER APPLY (
 		SELECT TOP 1 ec.ModifiedBy
 			,ec.ModifiedDate
@@ -308,13 +292,13 @@ BEGIN
 			WHEN @fromTime <= @Today THEN 1
 			ELSE 0 END
 			) AS IsModified
-		,shift.ShiftId
-		,shift.Code
-		,shift.[Name]
-		,shift.BeginCheckInTime AS CheckIn
-		,shift.BeginCheckOutTime AS CheckOut
-		,shift.IsInAfterDay
-		,shift.IsOutAfterDay
+		,[shift].ShiftId
+		,[shift].Code
+		,[shift].[Name]
+		,[shift].BeginCheckInTime AS CheckIn
+		,[shift].BeginCheckOutTime AS CheckOut
+		,[shift].IsInAfterDay
+		,[shift].IsOutAfterDay
 		,lv1.LeaveTypeId
 		,lv1.Code
 		,lv1.[Name]
@@ -328,7 +312,7 @@ BEGIN
 		INNER JOIN #tblEmployeeCalendar AS empca ON emp.EmpId = empca.EmpId
 		AND empca.WorkDate BETWEEN @fromTime
 			AND @toTime
-		LEFT JOIN dbo.Shift AS shift WITH (NOLOCK) ON shift.ShiftId = empca.ShiftId
+		LEFT JOIN dbo.[Shift] AS [shift] WITH (NOLOCK) ON [shift].ShiftId = empca.ShiftId
 		LEFT JOIN dbo.LeaveType AS lv1 WITH (NOLOCK) ON empca.LeaveTypeId = lv1.LeaveTypeId
 		LEFT JOIN dbo.LeaveType AS lv2 WITH (NOLOCK) ON empca.LeaveTypeId2 = lv2.LeaveTypeId
 	WHERE EXISTS (
@@ -348,26 +332,24 @@ BEGIN
 		,ISNULL(satshift.ShiftId, @OffDayShiftId) AS SatShiftId
 		,ISNULL(sunshift.ShiftId, @OffDayShiftId) AS SunShiftId
 	FROM #tblEmployeeIds AS emp WITH (NOLOCK)
-		LEFT JOIN dbo.EmployeeDefaultShift AS eds WITH (NOLOCK) ON eds.EmpId = emp.EmpId
 		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = emp.EmpId
-		LEFT JOIN dbo.Shift AS monshift WITH (NOLOCK) ON eds.MonShift = monshift.ShiftId
+		LEFT JOIN dbo.EmployeeDefaultShift AS eds WITH (NOLOCK) ON eds.EmpId = emp.EmpId
+		LEFT JOIN dbo.[Shift] AS monshift WITH (NOLOCK) ON eds.MonShift = monshift.ShiftId
 		AND ISNULL(monshift.IsDisabled, 0) = 0
-		LEFT JOIN dbo.Shift AS tueshift WITH (NOLOCK) ON eds.TueShift = tueshift.ShiftId
+		LEFT JOIN dbo.[Shift] AS tueshift WITH (NOLOCK) ON eds.TueShift = tueshift.ShiftId
 		AND ISNULL(tueshift.IsDisabled, 0) = 0
-		LEFT JOIN dbo.Shift AS wedshift WITH (NOLOCK) ON eds.WedShift = wedshift.ShiftId
+		LEFT JOIN dbo.[Shift] AS wedshift WITH (NOLOCK) ON eds.WedShift = wedshift.ShiftId
 		AND ISNULL(wedshift.IsDisabled, 0) = 0
-		LEFT JOIN dbo.Shift AS thushift WITH (NOLOCK) ON eds.ThuShift = thushift.ShiftId
+		LEFT JOIN dbo.[Shift] AS thushift WITH (NOLOCK) ON eds.ThuShift = thushift.ShiftId
 		AND ISNULL(thushift.IsDisabled, 0) = 0
-		LEFT JOIN dbo.Shift AS frishift WITH (NOLOCK) ON eds.FriShift = frishift.ShiftId
+		LEFT JOIN dbo.[Shift] AS frishift WITH (NOLOCK) ON eds.FriShift = frishift.ShiftId
 		AND ISNULL(frishift.IsDisabled, 0) = 0
-		LEFT JOIN dbo.Shift AS satshift WITH (NOLOCK) ON eds.SatShift = satshift.ShiftId
+		LEFT JOIN dbo.[Shift] AS satshift WITH (NOLOCK) ON eds.SatShift = satshift.ShiftId
 		AND ISNULL(satshift.IsDisabled, 0) = 0
-		LEFT JOIN dbo.Shift AS sunshift WITH (NOLOCK) ON eds.SunShift = sunshift.ShiftId
+		LEFT JOIN dbo.[Shift] AS sunshift WITH (NOLOCK) ON eds.SunShift = sunshift.ShiftId
 		AND ISNULL(sunshift.IsDisabled, 0) = 0
 	WHERE ce.CompanyId = @CompanyId
 
 	DROP TABLE #tblEmployeeIds
 	DROP TABLE #tblEmployeeCalendar
 END
-
-

@@ -12,7 +12,6 @@ AS
 Created: Tim.Trinh@2019-10-10
 Task: get employee calendar
 DB: HRM
-Original:
 
 Revisions:
 Param's Explanation:
@@ -101,8 +100,8 @@ BEGIN
 	SELECT empca.EmpId
 		,empca.WorkDate
 		,empca.ShiftId
-		,empca.IsOffDay
-		,empca.IsHoliday
+		,ISNULL(empca.IsOffDay, 0)
+		,ISNULL(empca.IsHoliday, 0)
 	FROM dbo.EmployeeCalendar AS empca WITH (NOLOCK)
 		INNER JOIN #tempEmployeeIds AS emp WITH (NOLOCK) ON empca.EmpId = emp.EmpId
 	WHERE empca.WorkDate BETWEEN @fromDate

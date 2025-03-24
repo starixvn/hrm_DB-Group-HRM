@@ -1,10 +1,10 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[EmployeeAttendance_ProcessingAndInsert] @CompanyId SMALLINT = NULL
-    ,@empId INT = NULL
+ALTER PROCEDURE [dbo].[EmployeeAttendance_ProcessingAndInsert] @empId INT = NULL
 	,@fromTime DATETIME
 	,@toTime DATETIME
 	,@onlyUpdate BIT = 0
+	,@CompanyId SMALLINT = NULL
 AS
 /*
 Created:
