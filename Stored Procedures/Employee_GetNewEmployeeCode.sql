@@ -11,6 +11,17 @@ Original:
 
 Revisions:
 */
+ALTER PROCEDURE [dbo].[Employee_GetNewEmployeeCode]
+	@CompanyId SMALLINT
+AS
+/*
+Created: Tom.Vo@2013-10-21
+Task: get employee by code
+DB: HRM
+Original:
+
+Revisions:
+*/
 BEGIN
 	SET NOCOUNT ON;
 
@@ -28,13 +39,14 @@ BEGIN
 		AND ce.CompanyId = @CompanyId
 
 	IF @MaxCodeNumber IS NOT NULL
-		SELECT TOP 1 @LastestPrefix = LEFT(Code, LEN(Code) - LEN(CAST(@MaxCodeNumber AS VARCHAR(20))))
-			FROM dbo.Employee AS e WITH(NOLOCK)
-			INNER JOIN CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = e.EmpId 
-			WHERE [Enabled] = 1 
-				AND ISNULL(Code, '') != ''
-				AND ce.CompanyId = @CompanyId
-				AND RIGHT(Code, LEN(CAST(@MaxCodeNumber AS VARCHAR(20)))) = CAST(@MaxCodeNumber AS VARCHAR(20));
+		SELECT TOP 1 @LastestPrefix = LEFT(Code, PATINDEX('%[0-9]%', Code) - 1)
+		FROM dbo.Employee AS e WITH(NOLOCK)
+		INNER JOIN CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = e.EmpId 
+		WHERE [Enabled] = 1 
+			AND ISNULL(Code, '') != ''
+			AND ce.CompanyId = @CompanyId
+		ORDER BY e.EmpId DESC
+
 
 		SELECT @LastestPrefix + CAST((@MaxCodeNumber + 1) AS VARCHAR(20)) AS Code
 END

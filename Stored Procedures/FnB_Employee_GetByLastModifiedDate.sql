@@ -1,18 +1,21 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE OR ALTER PROCEDURE FnB_Employee_GetByLastModifiedDate 
+ALTER   PROCEDURE [dbo].[FnB_Employee_GetByLastModifiedDate] 
+	@CompanyId SMALLINT,
 	@LastModifiedDate DATETIME
 AS
--- Author:		Jay
--- Create date: 14/03/2025
--- Description:	Sync Employee to F&B
+/*
+Created: 20140320@Quinn.Vo
+Task: Get all employee from change date
+DB: NexEPA
+Original: 
+
+Revisions:
+Param's Explanation:
+
+*/
 BEGIN
 	SET NOCOUNT ON;
-
-	IF @LastModifiedDate IS NOT NULL
-	BEGIN
-		SELECT @LastModifiedDate = DATEADD(HH, - 1, @LastModifiedDate)
-	END
 
 	SELECT e.UserId
 		,e.EmpId
@@ -37,11 +40,13 @@ BEGIN
 			END AS ModifiedDate
 		,es.Unit AS CostCenter
 		,e.JobLevelId
+		,e.OldEmpId
 	FROM dbo.Employee AS e WITH (NOLOCK)
 		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON e.EmpId = es.EmpId
-	WHERE @LastModifiedDate IS NULL
+		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = e.EmpId
+	WHERE ce.CompanyId = @CompanyId
+		AND @LastModifiedDate IS NULL
 		OR e.ModifiedDate > @LastModifiedDate
 		OR e.CreatedDate > @LastModifiedDate
 	ORDER BY e.ModifiedDate
 END
-GO

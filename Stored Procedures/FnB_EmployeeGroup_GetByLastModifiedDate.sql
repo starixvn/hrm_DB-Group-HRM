@@ -1,13 +1,40 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE OR ALTER PROCEDURE FnB_EmployeeGroup_GetByLastModifiedDate 
+CREATE OR ALTER   PROCEDURE [dbo].[FnB_EmployeeGroup_GetByLastModifiedDate] 
+	@CompanyId SMALLINT,
 	@LastModifiedDate DATETIME
 AS
--- Author:		Jay
--- Create date: 17/03/2025
--- Description:	Sync Employee Group to F&B
+/*
+Created: 20140320@Quinn.Vo
+Task: Get all groups from change date
+DB: HRM
+Original:
+
+Revisions:
+Param's Explanation:
+
+*/
+ALTER   PROCEDURE [dbo].[FnB_EmployeeGroup_GetByLastModifiedDate] 
+	@CompanyId SMALLINT,
+	@LastModifiedDate DATETIME
+AS
+/*
+Created: 20140320@Quinn.Vo
+Task: Get all groups from change date
+DB: HRM
+Original:
+
+Revisions:
+Param's Explanation:
+
+*/
 BEGIN
 	SET NOCOUNT ON;
+
+	IF @LastModifiedDate IS NOT NULL
+	BEGIN
+		SELECT @LastModifiedDate = DATEADD(HH, - 1, @LastModifiedDate)
+	END
 
 	SELECT g.GroupId AS TeamId
 		,g.SectionId AS DepartmentId
@@ -20,10 +47,12 @@ BEGIN
 			WHEN g.ModifiedDate IS NULL THEN g.CreatedDate
 			ELSE g.ModifiedDate
 			END AS ModifiedDate
+		,OldGroupId
 	FROM dbo.[Group] AS g WITH (NOLOCK)
 		LEFT JOIN dbo.GroupManager AS mng WITH (NOLOCK) ON g.GroupId = mng.GroupId
 		AND mng.RoleId = 1
-	WHERE @LastModifiedDate IS NULL
+	WHERE CompanyId = @CompanyId
+		AND @LastModifiedDate IS NULL
 		OR ISNULL(g.ModifiedDate, g.CreatedDate) > @LastModifiedDate
 	ORDER BY g.ModifiedDate
 END

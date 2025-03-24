@@ -1,23 +1,36 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE OR ALTER PROCEDURE [dbo].[FnB_Section_GetByLastModifiedDate]
+CREATE OR ALTER   PROCEDURE [dbo].[FnB_Section_GetByLastModifiedDate]
+	@CompanyId SMALLINT,
 	@LastModifiedDate DATETIME
 AS
 /*
-Created: Jay
-Task: Get section last modified date
+Created: 20230220@Quinn.Vo
+Task: Get section by last modified date.
 DB: HRM
-Original: 
+Original:
 
-Revisions:  
+Revisions:
 Param's Explanation:
 
 */
 BEGIN
 	SET NOCOUNT ON;
 
-	SELECT *
-	FROM dbo.Section WITH (NOLOCK)
-	WHERE @LastModifiedDate IS NOT NULL
-		AND ModifiedDate > @LastModifiedDate
+	IF @LastModifiedDate IS NULL
+	BEGIN
+		SELECT @LastModifiedDate = DATEADD(YYYY, -10, GETDATE())
+	END
+
+	SELECT [SectionId]
+      ,[Code]
+      ,[Name]
+      ,[DepartmentId]
+      ,[IsActive]
+      ,[ModifiedDate]
+      ,[IsDeleted]
+	FROM dbo.Section WITH (NOLOCK) 
+	WHERE ModifiedDate > @LastModifiedDate
+		AND CompanyId = @CompanyId
+	
 END
