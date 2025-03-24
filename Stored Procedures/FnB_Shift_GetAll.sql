@@ -17,8 +17,7 @@ Param's Explanation:
 BEGIN
 	SET NOCOUNT ON;
 
-	SELECT ShiftId
-	    ,Code
+	SELECT Code
 	    ,[Name]
 	    ,BeginCheckInTime
 	    ,EndCheckInTime
@@ -27,7 +26,10 @@ BEGIN
 	    ,IsInAfterDay
 	    ,IsOutAfterDay
 	    ,IsDisabled
-		,OldShiftId
+		,CASE 
+			WHEN OldShiftId IS NULL THEN ShiftId
+			ELSE OldShiftId
+		END AS ShiftId
 	FROM dbo.[Shift] WITH (NOLOCK)
 	WHERE CompanyId = @CompanyId
 END

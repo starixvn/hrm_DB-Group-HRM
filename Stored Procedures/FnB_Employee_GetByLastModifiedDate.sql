@@ -18,7 +18,6 @@ BEGIN
 	SET NOCOUNT ON;
 
 	SELECT e.UserId
-		,e.EmpId
 		,e.[Password]
 		,e.Code
 		,e.NickName
@@ -37,10 +36,13 @@ BEGIN
 		,CASE 
 			WHEN e.ModifiedDate IS NULL THEN e.CreatedDate
 			ELSE e.ModifiedDate
-			END AS ModifiedDate
+		END AS ModifiedDate
 		,es.Unit AS CostCenter
 		,e.JobLevelId
-		,e.OldEmpId
+		,CASE 
+			WHEN OldEmpId IS NULL THEN e.EmpId
+			ELSE OldEmpId
+		END AS EmpId
 	FROM dbo.Employee AS e WITH (NOLOCK)
 		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON e.EmpId = es.EmpId
 		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = e.EmpId
