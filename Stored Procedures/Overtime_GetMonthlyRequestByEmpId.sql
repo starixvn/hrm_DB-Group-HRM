@@ -8,8 +8,7 @@ AS
 /*
 Created: Tim.Trinh@2019-07-02
 Task: get monthly overtime
-DB: HRM_SMS
-Original:
+DB: HRM
 
 Revisions:
 Param's Explanation:
@@ -53,19 +52,15 @@ BEGIN
 		LEFT JOIN dbo.Employee AS emp WITH (NOLOCK) ON emp.EmpId = request.EmpId
 		LEFT JOIN dbo.Employee AS verifier WITH (NOLOCK) ON verifier.empid = request.VerifierId
 		LEFT JOIN dbo.Employee AS approver WITH (NOLOCK) ON approver.empid = request.ApproverId
-		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = request.EmpId
+		LEFT JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = request.EmpId
+	    AND ce.CompanyId = @CompanyId
 	WHERE EXISTS (
 			SELECT 1
 			FROM dbo.EmployeeSummary WITH (NOLOCK)
 			WHERE EmpId = @EmployeeId
 				AND CanOT = 1
 			)
-	AND ce.CompanyId = @CompanyId
 	ORDER BY cl.[Month] DESC
 
 	DROP TABLE #tblMonth
 END
-
-
-
-
