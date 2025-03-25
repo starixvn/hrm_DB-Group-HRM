@@ -17,7 +17,7 @@ BEGIN
 	SET NOCOUNT ON;
 
 	DECLARE @fromDate DATE = DATEADD(d, - 7, @Date)
-		,@toDate DATE = DATEADD(d, 1, @Date)
+		,@toDate DATE = @Date
 		,@TotalOvertimePendingByVerifier INT
 		,@TotalOvertimePendingByApprover INT
 		-- role
@@ -76,9 +76,11 @@ BEGIN
 	SELECT emprole.RoleId
 	FROM dbo.EmployeeRole AS emprole WITH (NOLOCK)
 		INNER JOIN dbo.LookupData AS lkdata WITH (NOLOCK) ON emprole.RoleId = lkdata.Value
+		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = emprole.EmployeeId
 		INNER JOIN dbo.[Lookup] AS lk WITH (NOLOCK) ON lk.Id = lkdata.LookupId
 		AND lk.Code = 'SR' -- System Role
 	WHERE emprole.EmployeeId = @EmployeeId
+		AND ce.CompanyId = @CompanyId
 		AND emprole.RoleId IN (@VerifierId, @ApproverId)
 
 	CREATE TABLE #tblData (
@@ -94,10 +96,12 @@ BEGIN
 	-- overtime
 	SELECT @TotalOvertimePendingByVerifier = COUNT(1)
 	FROM dbo.OTMonthlyRequest AS ot WITH (NOLOCK)
+		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = ot.EmpId
 		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON ot.EmpId = emp.EmpId
 		AND emp.[Enabled] = 1
 		AND emp.isDeleted = 0
 	WHERE ot.VerifierId = @EmployeeId
+		AND ce.CompanyId = @CompanyId
 		AND ot.CurrentStatus = @PendingStatusId
 		AND (
 			ISNULL(ot.NormalHours, 0) <> 0
@@ -176,12 +180,14 @@ BEGIN
 		,MAX(req.CreatedDate) AS ToDate
 	FROM dbo.WorkingTimeRequest AS req WITH (NOLOCK)
 		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON req.EmpId = emp.EmpId
+		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = req.EmpId
 		AND emp.[Enabled] = 1
 		AND emp.isDeleted = 0
 	WHERE (
 			req.VerifierId = @EmployeeId
 			OR req.ApproverId = @EmployeeId
 			)
+		AND ce.CompanyId = @CompanyId
 		AND CASE 
 			WHEN req.VerifierId = @EmployeeId
 				AND req.CurrentStatus = @PendingStatusId THEN 1
@@ -299,7 +305,7 @@ BEGIN
 		,@TotalOvertimePendingByApprover
 		,0
 		,0
-
+		
 	SELECT tblrole.RoleId
 		,tblrole.RequestTypeId
 		,tblrole.RequestType
