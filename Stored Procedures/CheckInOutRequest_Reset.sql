@@ -3,15 +3,14 @@
 ALTER PROCEDURE [dbo].[CheckInOutRequest_Reset] @RequestId BIGINT
 	,@ActorId INT
 	,@RoleId INT
+    ,@CompanyId SMALLINT
 	,@ErrCode INT = 0 OUTPUT
 	,@ErrMsg NVARCHAR(200) = '' OUTPUT
-	,@CompanyId SMALLINT
 AS
 /*
 Created: 20190522@Quinn.Vo
 Task: reset check in/out request
 DB: HRM
-Original:
 
 Revisions:
 Param's Explanation:
@@ -140,14 +139,14 @@ BEGIN
 			WHERE EmpId = @EmpId
 				AND datediff(d, WorkDate, @OnDate) = 0
 
-			EXEC dbo.EmployeeAttendance_ProcessingAndInsert @EmpId
-				,@OnDate
-				,@OnDate
-				,1
+            EXEC dbo.EmployeeAttendance_ProcessingAndInsert @CompanyId = @CompanyId
+                ,@EmpId = @EmpId
+				,@FromTime = @OnDate
+				,@ToTime = @OnDate
+				,@OnlyUpdate = 1
 		END
 	END
 
 	EXEC dbo.CheckInOutRequest_WriteLog @RequestId = @RequestId
 		,@Comment = ''
 END
-

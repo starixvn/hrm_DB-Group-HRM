@@ -3,15 +3,14 @@
 ALTER PROCEDURE [dbo].[LateInEarlyOutRequest_Reset] @RequestId BIGINT
 	,@RoleId TINYINT
 	,@ActorId INT
+    ,@CompanyId SMALLINT
 	,@ErrCode INT = 0 OUTPUT
 	,@ErrMsg NVARCHAR(200) = '' OUTPUT
-	,@CompanyId SMALLINT
 AS
 /*
 Created: Quinn.Vo@20190625
 Task: reset late in/early out request 
 DB: HRM
-Original:
 
 Revisions:
 Param's Explanation:
@@ -137,20 +136,14 @@ BEGIN
 			WHERE EmpId = @EmpId
 				AND WorkDate = @OnDate
 
-			EXEC dbo.EmployeeAttendance_ProcessingAndInsert @EmpId
-				,@OnDate
-				,@OnDate
-				,1
+			EXEC dbo.EmployeeAttendance_ProcessingAndInsert @CompanyId = @CompanyId
+                ,@EmpId = @EmpId
+				,@FromTime = @OnDate
+				,@ToTime = @OnDate
+				,@OnlyUpdate = 1
 		END
 	END
 
 	EXEC dbo.LateInEarlyOutRequest_WriteLog @RequestId = @RequestId
 		,@Comment = ''
 END
-
-
-
-
-
-
-
