@@ -80,6 +80,7 @@ BEGIN
 		INNER JOIN dbo.[Lookup] AS lk WITH (NOLOCK) ON lk.Id = lkdata.LookupId
 		AND lk.Code = 'SR' -- System Role
 	WHERE emprole.EmployeeId = @EmployeeId
+		AND lkdata.CompanyId = @CompanyId
 		AND ce.CompanyId = @CompanyId
 		AND emprole.RoleId IN (@VerifierId, @ApproverId)
 
