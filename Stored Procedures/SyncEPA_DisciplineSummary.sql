@@ -1,6 +1,7 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 CREATE PROCEDURE [dbo].[SyncEPA_DisciplineSummary] @LastModifiedDate DATETIME
+	,@CompanyId INT
 AS
 /*
 Created: 20171031@Tim.Trinh
@@ -74,7 +75,7 @@ BEGIN
 		,ModifiedDate
 		,IsDeleted
 		)
-	SELECT EmpId
+	SELECT CASE WHEN emp.OldEmpId IS NOT NULL THEN emp.OldEmpId ELSE d.EmpId END AS EmpId
 		,WorkDate
 		,0 AS ChangeShift
 		,0 AS MissingCheckInOut
@@ -89,12 +90,15 @@ BEGIN
 		,0 AS SevenDaysLeave
 		,0 AS OtherDisciplines
 		,0 AS SystemSubtractScore
-		,MAX(ModifiedDate) AS ModifiedDate
+		,MAX(d.ModifiedDate) AS ModifiedDate
 		,1
-	FROM dbo.Discipline WITH (NOLOCK)
-	WHERE ModifiedDate > @LastModifiedDate
-		AND IsDeleted = 1
-	GROUP BY EmpId
+	FROM dbo.Discipline AS d WITH (NOLOCK)
+	INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON d.EmpId = emp.EmpId
+	INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId AND ce.CompanyId = @CompanyId
+	WHERE d.ModifiedDate > @LastModifiedDate
+		AND d.IsDeleted = 1
+	GROUP BY d.EmpId
+		,emp.OldEmpId
 		,WorkDate
 	
 	INSERT INTO #tblDisciplineSummary (
@@ -116,7 +120,7 @@ BEGIN
 		,ModifiedDate
 		,IsDeleted
 		)
-	SELECT d.EmpId
+	SELECT CASE WHEN emp.OldEmpId IS NOT NULL THEN emp.OldEmpId ELSE d.EmpId END AS EmpId
 		,d.WorkDate
 		,SUM(CASE 
 				WHEN d.IsChangeShift = 1
@@ -227,8 +231,9 @@ BEGIN
 		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON d.EmpId = emp.EmpId
 		AND emp.[Enabled] = 1
 		AND ISNULL(emp.isDeleted, 0) = 0
+		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId AND ce.CompanyId = @CompanyId
 		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON emp.EmpId = es.EmpId
-		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId
+		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId AND gr.CompanyId = @CompanyId
 	-- change shift
 		LEFT JOIN dbo.DisciplineGroupRule AS cs WITH (NOLOCK) ON cs.DisciplineTypeId = 1
 		AND cs.GroupId = emp.GroupId
@@ -287,6 +292,7 @@ BEGIN
 	WHERE d.ModifiedDate > @LastModifiedDate
 		AND d.IsDeleted = 0
 	GROUP BY d.EmpId
+		,emp.OldEmpId
 		,d.WorkDate
 
 	INSERT INTO #tblDisciplineSummary (
@@ -308,7 +314,7 @@ BEGIN
 		,ModifiedDate
 		,IsDeleted
 		)
-	SELECT otherdis.EmpId
+	SELECT CASE WHEN emp.OldEmpId IS NOT NULL THEN emp.OldEmpId ELSE emp.EmpId END AS EmpId
 		,otherdis.WorkDate
 		,0 AS ChangeShift
 		,0 AS MissingCheckInOut
@@ -326,6 +332,8 @@ BEGIN
 		,otherdis.ModifiedDate
 		,otherdis.IsDeleted
 	FROM dbo.OtherDiscipline AS otherdis WITH (NOLOCK)
+	INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON otherdis.EmpId = emp.EmpId
+	INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId AND ce.CompanyId = @CompanyId
 	WHERE otherdis.ModifiedDate > @LastModifiedDate
 
 	INSERT INTO #tblDisciplineSummaryResult (
