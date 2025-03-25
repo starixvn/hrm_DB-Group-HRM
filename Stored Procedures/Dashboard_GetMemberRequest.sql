@@ -17,7 +17,7 @@ BEGIN
 	SET NOCOUNT ON;
 
 	DECLARE @fromDate DATE = DATEADD(d, - 7, @Date)
-		,@toDate DATE = @Date
+		,@toDate DATE = DATEADD(d, 1, @Date)
 		,@TotalOvertimePendingByVerifier INT
 		,@TotalOvertimePendingByApprover INT
 		-- role
