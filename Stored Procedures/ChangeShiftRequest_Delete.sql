@@ -2,9 +2,9 @@
 
 ALTER PROCEDURE [dbo].[ChangeShiftRequest_Delete] @RequestId BIGINT
 	,@ActorId INT
+	,@CompanyId SMALLINT
 	,@ErrCode INT = 0 OUTPUT
 	,@ErrMsg NVARCHAR(200) = '' OUTPUT
-	,@CompanyId SMALLINT
 AS
 /*
 Created: Tim.Trinh@2019-09-17
@@ -84,7 +84,8 @@ BEGIN
 		,@empIds = @EmpId
 		,@isUpdateRequestData = 1
 
-	EXEC dbo.ScheduleArrangement_UpdateOffDayReplacement @ActorId = @ActorId
+	EXEC dbo.ScheduleArrangement_UpdateOffDayReplacement @CompanyId = @CompanyId
+        ,@ActorId = @ActorId
 		,@FromDate = @FromDate
 		,@ToDate = @ToDate
 		,@EmployeeIds = @EmpId

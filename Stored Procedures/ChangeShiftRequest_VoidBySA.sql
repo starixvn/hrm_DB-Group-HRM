@@ -1,17 +1,16 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[ChangeShiftRequest_VoidBySA] @RequestId BIGINT
+	,@CompanyId SMALLINT
 	,@ActorId INT
 	,@Comment NVARCHAR(500) = ''
 	,@ErrCode INT = 0 OUTPUT
 	,@ErrMsg NVARCHAR(200) = '' OUTPUT
-	,@CompanyId SMALLINT 
 AS
 /*
 Created: Tim.Trinh@2019-09-17
 Task: void change shift
-DB: HRM_SMS
-Original:
+DB: HRM
 
 Revisions:
 Param's Explanation:
@@ -197,7 +196,8 @@ BEGIN
 		,@empIds = @EmpId
 		,@isUpdateRequestData = 1
 
-	EXEC dbo.ScheduleArrangement_UpdateOffDayReplacement @ActorId = @ActorId
+	EXEC dbo.ScheduleArrangement_UpdateOffDayReplacement @CompanyId = @CompanyId
+        ,@ActorId = @ActorId
 		,@FromDate = @FromDate
 		,@ToDate = @ToDate
 		,@EmployeeIds = @EmpId
@@ -207,9 +207,3 @@ BEGIN
 	EXEC dbo.ChangeShiftRequest_WriteLog @RequestId = @RequestId
 		,@Comment = @Comment
 END
-
-
-
-
-
-

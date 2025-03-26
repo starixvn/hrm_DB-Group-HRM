@@ -15,7 +15,7 @@ DB: HRM
 
 Revisions:
 Param's Explanation:
-    @DisciplineXml: 
+    @DisciplineXml:
         <Root>
             <Row WorkDate='' EmployeeId='' DisciplineTypeId='' IsIgnored='' IsConfirmed='' />
         </Root>
@@ -28,6 +28,7 @@ BEGIN
 		,@FromDate DATE
 		,@ToDate DATE
 		,@EmpId INT
+        ,@CompanyId SMALLINT
 		,@ProcessedDate DATETIME = GETDATE()
 		-- change shift type
 		,@ChangeShift TINYINT = 1
@@ -47,6 +48,11 @@ BEGIN
 		,@TypeId = TypeId
 	FROM dbo.ChangeShiftRequest WITH (NOLOCK)
 	WHERE RequestId = @RequestId
+
+    SELECT @CompanyId = ce.CompanyId
+    FROM dbo.Employee AS emp WITH (NOLOCK)
+        INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
+    WHERE emp.EmpId = @EmpId
 
 	IF EXISTS (
 			SELECT 1
@@ -287,7 +293,8 @@ BEGIN
 		WHERE RequestId = @RequestId
 	END
 
-	EXEC dbo.ScheduleArrangement_UpdateOffDayReplacement @ActorId = @ActorId
+	EXEC dbo.ScheduleArrangement_UpdateOffDayReplacement @CompanyId = @CompanyId
+        ,@ActorId = @ActorId
 		,@FromDate = @FromDate
 		,@ToDate = @ToDate
 		,@EmployeeIds = @EmpId

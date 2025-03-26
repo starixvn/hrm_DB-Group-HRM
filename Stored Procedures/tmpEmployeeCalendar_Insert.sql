@@ -1,6 +1,6 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[tmpEmployeeCalendar_Insert] @CompanyId SMALLINT
+ALTER PROCEDURE [dbo].[tmpEmployeeCalendar_Insert] @CompanyId SMALLINT = NULL
     ,@fromDate DATE
 	,@toDate DATE
 	,@empIds VARCHAR(MAX) = NULL
@@ -43,7 +43,7 @@ BEGIN
 
 	CREATE TABLE #tempEmployeeIds (
 		EmpId INT PRIMARY KEY
-		,JoinedDate DATE
+        ,JoinedDate DATE
 		,ResignedDate DATE
 		)
 
@@ -277,10 +277,12 @@ BEGIN
 	FROM dbo.tmpEmployeeCalendar AS empca WITH (ROWLOCK, UPDLOCK)
 		INNER JOIN #tempEmployeeIds AS tblemp WITH (NOLOCK) ON empca.EmpId = tblemp.EmpId
 		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON empca.EmpId = empsum.EmpId
-		LEFT JOIN dbo.Holiday AS holiday WITH (NOLOCK) ON holiday.CompanyId = @CompanyId
+        INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON tblemp.EmpId = ce.EmpId
+		LEFT JOIN dbo.Holiday AS holiday WITH (NOLOCK) ON holiday.CompanyId = ce.CompanyId
         AND empca.WorkDate BETWEEN holiday.FromDate
 			AND holiday.ToDate
-	WHERE empca.WorkDate BETWEEN @fromDate
+	WHERE (@CompanyId IS NULL OR ce.CompanyId = @CompanyId)
+        AND empca.WorkDate BETWEEN @fromDate
 			AND @toDate
 		AND (
 			(
@@ -672,17 +674,18 @@ BEGIN
 		,lrdt.WorkType
 		,0.5 AS LeaveDay
 	FROM dbo.WorkingTimeRequest AS r WITH (NOLOCK)
-		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON r.EmpId = emp.EmpId
-		INNER JOIN #tempEmployeeIds AS tblemp WITH (NOLOCK) ON emp.EmpId = tblemp.EmpId
+		INNER JOIN #tempEmployeeIds AS tblemp WITH (NOLOCK) ON r.EmpId = tblemp.EmpId
+        INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON tblemp.EmpId = ce.EmpId
 		INNER JOIN dbo.LeaveRequestDetail AS lrdt WITH (NOLOCK) ON r.RequestId = lrdt.RequestId
 		AND r.CurrentStatus NOT IN (@NotVerifiedStatusId, @RejectedStatusId, @VoidStatusId)
 		AND lrdt.IsHalfDay = 1
 		AND lrdt.WorkType = @LeaveDay
 		AND lrdt.OnDate BETWEEN @fromDate
 			AND @toDate
-		INNER JOIN dbo.LeaveType AS lv WITH (NOLOCK) ON lv.CompanyId = @CompanyId
+		INNER JOIN dbo.LeaveType AS lv WITH (NOLOCK) ON lv.CompanyId = ce.CompanyId
         AND lrdt.LeaveType = lv.LeaveTypeId
-	WHERE NOT EXISTS (
+	WHERE (@CompanyId IS NULL OR ce.CompanyId = @CompanyId)
+        AND NOT EXISTS (
 			SELECT 1
 			FROM dbo.tmpEmployeeCalendar AS empca WITH (NOLOCK)
 			WHERE r.EmpId = empca.EmpId
