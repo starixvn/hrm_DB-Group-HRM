@@ -10,7 +10,6 @@ AS
 Created: Tim.Trinh@2019-07-02
 Task: Get monthly overtime request details.
 DB: HRM
-Original:
 
 Revisions:
 Param's Explanation:
@@ -44,13 +43,11 @@ BEGIN
 		,approver.FullName
 	FROM dbo.Employee AS emp WITH (NOLOCK)
 		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
-		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
 		LEFT JOIN dbo.OTMonthlyRequest AS ot WITH (NOLOCK) ON ot.EmpId = emp.EmpId
 		AND ot.[Month] = @Month
 		LEFT JOIN dbo.Employee AS verifier WITH (NOLOCK) ON ot.VerifierId = verifier.EmpId
 		LEFT JOIN dbo.Employee AS approver WITH (NOLOCK) ON ot.ApproverId = approver.EmpId
 	WHERE emp.EmpId = @EmployeeId
-		AND ce.CompanyId = @CompanyId
 
 	SELECT empca.WorkDate
 		,COALESCE(sc.ShiftId, scl.ShiftId, s.ShiftId) ShiftId
@@ -68,7 +65,8 @@ BEGIN
 		,empca.IsKeepInView
 		,holiday.TypeId AS HolidayTypeId
 	FROM dbo.tmpEmployeeCalendar AS empca WITH (NOLOCK)
-		LEFT JOIN dbo.Holiday AS holiday WITH (NOLOCK) ON empca.WorkDate BETWEEN holiday.FromDate
+		LEFT JOIN dbo.Holiday AS holiday WITH (NOLOCK) ON holiday.CompanyId = @CompanyId
+        AND empca.WorkDate BETWEEN holiday.FromDate
 			AND holiday.ToDate
 		LEFT JOIN [dbo].OTDailyRequest AS ot WITH (NOLOCK) ON empca.WorkDate = ot.OvertimeDate
 		AND ot.EmpId = empca.EmpId
@@ -82,8 +80,3 @@ BEGIN
 			AND @toDate
 	ORDER BY empca.WorkDate
 END
-
-
-
-
-
