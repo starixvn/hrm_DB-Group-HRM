@@ -199,15 +199,16 @@ BEGIN
 	ORDER BY e.EmpId
 		,e.WorkDate
 
+    -- convert to server time zone
     UPDATE empca
-    SET BeginCheckInTime = CASE WHEN BeginCheckInTime IS NULL THEN NULL
-            ELSE DATEADD(HOUR, CASE WHEN config.[Value] IS NULL THEN 0 ELSE (-1 * config.[Value]) + @serverTimeZone END, BeginCheckInTime) END
-        ,EndCheckInTime = CASE WHEN EndCheckInTime IS NULL THEN NULL
-            ELSE DATEADD(HOUR, CASE WHEN config.[Value] IS NULL THEN 0 ELSE (-1 * config.[Value]) + @serverTimeZone END, EndCheckInTime) END
-        ,BeginCheckOutTime = CASE WHEN BeginCheckOutTime IS NULL THEN NULL
-            ELSE DATEADD(HOUR, CASE WHEN config.[Value] IS NULL THEN 0 ELSE (-1 * config.[Value]) + @serverTimeZone END, BeginCheckOutTime) END
-        ,EndCheckOutTime = CASE WHEN EndCheckOutTime IS NULL THEN NULL
-            ELSE DATEADD(HOUR, CASE WHEN config.[Value] IS NULL THEN 0 ELSE (-1 * config.[Value]) + @serverTimeZone END, EndCheckOutTime) END
+    SET empca.BeginCheckInTime = CASE WHEN empca.BeginCheckInTime IS NULL THEN NULL
+            ELSE DATEADD(MINUTE, CASE WHEN config.[Value] IS NULL THEN 0 ELSE (-1.0 * config.[Value]) + @serverTimeZone END * 60, empca.BeginCheckInTime) END
+        ,empca.EndCheckInTime = CASE WHEN empca.EndCheckInTime IS NULL THEN NULL
+            ELSE DATEADD(MINUTE, CASE WHEN config.[Value] IS NULL THEN 0 ELSE (-1.0 * config.[Value]) + @serverTimeZone END * 60, empca.EndCheckInTime) END
+        ,empca.BeginCheckOutTime = CASE WHEN empca.BeginCheckOutTime IS NULL THEN NULL
+            ELSE DATEADD(MINUTE, CASE WHEN config.[Value] IS NULL THEN 0 ELSE (-1.0 * config.[Value]) + @serverTimeZone END * 60, empca.BeginCheckOutTime) END
+        ,empca.EndCheckOutTime = CASE WHEN empca.EndCheckOutTime IS NULL THEN NULL
+            ELSE DATEADD(MINUTE, CASE WHEN config.[Value] IS NULL THEN 0 ELSE (-1.0 * config.[Value]) + @serverTimeZone END * 60, empca.EndCheckOutTime) END
     FROM #tmpEmpCalendar AS empca WITH (ROWLOCK)
         INNER JOIN #tmpEmployee AS emp WITH (NOLOCK) ON empca.EmpId = emp.EmpId
         LEFT JOIN dbo.SystemConfigs AS config WITH (NOLOCK) ON emp.CompanyId = config.CompanyId
@@ -237,9 +238,9 @@ BEGIN
 				,@TempWorkDate
 				,1
 
-			EXEC dbo.Discipline_Insert @TempWorkDate
-				,@TempWorkDate
-				,@TempEmpId
+			EXEC dbo.Discipline_Insert @FromDate = @TempWorkDate
+				,@ToDate = @TempWorkDate
+				,@EmpId = @TempEmpId
 
 			SET @i = @i + 1
 		END

@@ -11,7 +11,6 @@ AS
 Created: 20211109@Quinn.Vo
 Task: Get meal allowance report
 DB: HRM
-Original:
 
 Revisions:
 */
@@ -20,7 +19,7 @@ BEGIN
 
 	DECLARE @tmpToDate DATETIME = DATEADD(SECOND, -1, DATEADD(DAY, 2, CONVERT(DATETIME, @ToDate)))
         ,@serverTimeZone SMALLINT = -4
-        ,@clientTimeZone SMALLINT
+        ,@clientTimeZone REAL
 
     SELECT @clientTimeZone = [Value]
     FROM dbo.SystemConfigs WITH (NOLOCK)
@@ -44,7 +43,8 @@ BEGIN
 	SELECT e.EmpId
 	FROM dbo.Employee AS e WITH (NOLOCK)
 		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
-        INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON e.EmpId = es.EmpId AND es.IsTopManager = 0
+        INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON e.EmpId = es.EmpId
+        AND es.IsTopManager = 0
 	WHERE ce.CompanyId = @CompanyId
         AND (
 			@EmployeeId IS NULL
@@ -82,7 +82,7 @@ BEGIN
 	FROM dbo.TimeRecord AS tr WITH (NOLOCK)
 		INNER JOIN dbo.TimeRecordExt AS te WITH (NOLOCK) ON tr.ID = te.ID
 		INNER JOIN #tmpEmployee AS tmpemp WITH (NOLOCK) ON tr.EmpId = tmpemp.EmpId
-	WHERE DATEADD(HOUR, @clientTimeZone, DATEADD(HOUR, ABS(@serverTimeZone), tr.RecordTime)) BETWEEN DATEADD(DAY, - 1, @FromDate)
+	WHERE DATEADD(MINUTE, @clientTimeZone * 60, DATEADD(HOUR, ABS(@serverTimeZone), tr.RecordTime)) BETWEEN DATEADD(DAY, - 1, @FromDate)
 			AND @tmpToDate
 
 	CREATE TABLE #tmpEmpAttandance (

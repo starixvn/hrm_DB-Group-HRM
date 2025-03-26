@@ -265,13 +265,13 @@ BEGIN
     -- convert to server time zone
     UPDATE empca
     SET empca.BeginCheckInTime = CASE WHEN empca.BeginCheckInTime IS NULL THEN NULL
-            ELSE DATEADD(HOUR, CASE WHEN config.[Value] IS NULL THEN 0 ELSE (-1 * config.[Value]) + @serverTimeZone END, empca.BeginCheckInTime) END
+            ELSE DATEADD(MINUTE, CASE WHEN config.[Value] IS NULL THEN 0 ELSE (-1.0 * config.[Value]) + @serverTimeZone END * 60, empca.BeginCheckInTime) END
         ,empca.EndCheckInTime = CASE WHEN empca.EndCheckInTime IS NULL THEN NULL
-            ELSE DATEADD(HOUR, CASE WHEN config.[Value] IS NULL THEN 0 ELSE (-1 * config.[Value]) + @serverTimeZone END, empca.EndCheckInTime) END
+            ELSE DATEADD(MINUTE, CASE WHEN config.[Value] IS NULL THEN 0 ELSE (-1.0 * config.[Value]) + @serverTimeZone END * 60, empca.EndCheckInTime) END
         ,empca.BeginCheckOutTime = CASE WHEN empca.BeginCheckOutTime IS NULL THEN NULL
-            ELSE DATEADD(HOUR, CASE WHEN config.[Value] IS NULL THEN 0 ELSE (-1 * config.[Value]) + @serverTimeZone END, empca.BeginCheckOutTime) END
+            ELSE DATEADD(MINUTE, CASE WHEN config.[Value] IS NULL THEN 0 ELSE (-1.0 * config.[Value]) + @serverTimeZone END * 60, empca.BeginCheckOutTime) END
         ,empca.EndCheckOutTime = CASE WHEN empca.EndCheckOutTime IS NULL THEN NULL
-            ELSE DATEADD(HOUR, CASE WHEN config.[Value] IS NULL THEN 0 ELSE (-1 * config.[Value]) + @serverTimeZone END, empca.EndCheckOutTime) END
+            ELSE DATEADD(MINUTE, CASE WHEN config.[Value] IS NULL THEN 0 ELSE (-1.0 * config.[Value]) + @serverTimeZone END * 60, empca.EndCheckOutTime) END
     FROM #tmpEmpCalendar AS empca WITH (ROWLOCK)
         INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON empca.EmpId = emp.EmpId
         INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
