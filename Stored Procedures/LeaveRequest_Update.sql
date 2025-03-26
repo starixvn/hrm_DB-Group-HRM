@@ -81,6 +81,23 @@ BEGIN
 		,ToTime DATETIME
 		)
 
+	-- check join date
+	DECLARE @JoinedDate DATE = (
+		SELECT JoinedDate
+		FROM Employee AS e
+		INNER JOIN CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = e.EmpId
+		WHERE e.EmpId = @EmpId
+			AND ce.CompanyId = @CompanyId
+	);
+
+	IF CAST(@FromDate AS DATE) < @JoinedDate
+	BEGIN
+		SET @ErrCode = 120
+		SET @ErrMsg = 'You can not request leave earlier than your joined date.'
+
+		RETURN
+	END
+
 	SELECT @IsHalfDay = CASE 
 			WHEN @TotalDays = 0.5 THEN 1
 			ELSE 0
