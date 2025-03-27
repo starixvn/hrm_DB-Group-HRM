@@ -4,10 +4,9 @@ ALTER PROCEDURE [dbo].[CompanySite_GetByDomain] @Domain VARCHAR(100)
 /*
 Created: 20250305@Tim
 Task : Get site by domain
-DB: bodb_HRM
+DB: HRM
 
 Revisions:
-	20250305@Tim: initial - [Redmine: #217976]
 */
 AS
 BEGIN
@@ -18,5 +17,6 @@ BEGIN
         ,AccessToken
         ,Domain
     FROM dbo.CompanySite WITH (NOLOCK)
-    WHERE Domain = @Domain
+    WHERE REPLACE(Domain, 'https://', '') = REPLACE(@Domain, 'https://', '')
+        OR REPLACE(Domain, 'http://', '') = REPLACE(@Domain, 'http://', '')
 END
