@@ -36,6 +36,7 @@ BEGIN
 			WHEN OldGroupId IS NULL THEN g.GroupId
 			ELSE OldGroupId
 			END AS TeamId
+		,g.SectionId
 	FROM dbo.[Group] AS g WITH (NOLOCK)
 		LEFT JOIN dbo.GroupManager AS mng WITH (NOLOCK) ON g.GroupId = mng.GroupId
 		AND mng.RoleId = 1
