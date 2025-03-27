@@ -288,7 +288,7 @@ BEGIN
 		,empca.IsPublic
 		,empca.IsOffDayReplacement
 		,(CASE 
-			WHEN empca.ModifiedBy IS NOT NULL THEN 1
+			WHEN empca.ModifiedBy IS NOT NULL OR empca.IsPublic = 1 THEN 1
 			WHEN @fromTime <= @Today THEN 1
 			ELSE 0 END
 			) AS IsModified
