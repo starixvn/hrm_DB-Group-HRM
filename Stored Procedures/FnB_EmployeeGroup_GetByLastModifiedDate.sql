@@ -1,6 +1,6 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE OR  PROCEDURE [dbo].[FnB_EmployeeGroup_GetByLastModifiedDate] 
+CREATE OR ALTER   PROCEDURE [dbo].[FnB_EmployeeGroup_GetByLastModifiedDate] 
 	@CompanyId SMALLINT,
 	@LastModifiedDate DATETIME
 AS
@@ -43,8 +43,6 @@ BEGIN
 		LEFT JOIN dbo.Employee AS e WITH (NOLOCK) ON mng.EmpId = e.EmpId
 		AND mng.RoleId = 1
 	WHERE g.CompanyId = @CompanyId
-		AND @LastModifiedDate IS NULL
-		OR ISNULL(g.ModifiedDate, g.CreatedDate) > @LastModifiedDate
+		AND (@LastModifiedDate IS NULL OR ISNULL(g.ModifiedDate, g.CreatedDate) > @LastModifiedDate)
 	ORDER BY g.ModifiedDate
 END
-GO

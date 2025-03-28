@@ -1,6 +1,6 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER    PROCEDURE [dbo].[FnB_Employee_GetByLastModifiedDate] 
+ALTER   PROCEDURE [dbo].[FnB_Employee_GetByLastModifiedDate] 
 	@CompanyId SMALLINT,
 	@LastModifiedDate DATETIME
 AS
@@ -48,9 +48,9 @@ BEGIN
 		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = e.EmpId
 		LEFT JOIN dbo.LookupData AS ld WITH (NOLOCK) ON ld.Id = e.JobTitleId AND ld.CompanyId = @CompanyId
 		LEFT JOIN dbo.[Group] AS g WITH (NOLOCK) ON g.GroupId = e.GroupId AND g.CompanyId = @CompanyId
-	WHERE ce.CompanyId = @CompanyId
-		AND @LastModifiedDate IS NULL
+	WHERE ce.CompanyId = @CompanyId AND
+		(@LastModifiedDate IS NULL
 		OR e.ModifiedDate > @LastModifiedDate
-		OR e.CreatedDate > @LastModifiedDate
+		OR e.CreatedDate > @LastModifiedDate)
 	ORDER BY e.ModifiedDate
 END

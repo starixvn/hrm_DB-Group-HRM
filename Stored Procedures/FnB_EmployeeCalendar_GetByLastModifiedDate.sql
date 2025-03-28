@@ -1,6 +1,6 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE OR   PROCEDURE [dbo].[FnB_EmployeeCalendar_GetByLastModifiedDate]
+CREATE OR ALTER   PROCEDURE [dbo].[FnB_EmployeeCalendar_GetByLastModifiedDate]
 	@CompanyId SMALLINT,
 	@LastModifiedDate DATETIME
 AS
@@ -29,8 +29,7 @@ BEGIN
 	FROM dbo.EmployeeCalendar AS e WITH (NOLOCK)
 		INNER JOIN CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
 	WHERE ce.CompanyId = @CompanyId
-		AND @LastModifiedDate IS NULL
-		OR ModifiedDate > @LastModifiedDate
+		AND (@LastModifiedDate IS NULL OR ModifiedDate > @LastModifiedDate)
 	UNION 
 	SELECT ca.[EmpId]
 	   ,[WorkDate]
@@ -38,23 +37,20 @@ BEGIN
 		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON ca.EmpId = e.EmpId AND e.Enabled =1
 		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = ca.EmpId
 	WHERE ce.CompanyId = @CompanyId
-		AND @LastModifiedDate IS NULL
-		OR ca.ModifiedDate > @LastModifiedDate
+		AND (@LastModifiedDate IS NULL OR ca.ModifiedDate > @LastModifiedDate)
 	UNION
 	SELECT ea.EmpId, CAST(AttendanceDate AS DATE)
 	FROM dbo.EmployeeAttendance AS ea
 		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = ea.EmpId
 	WHERE ce.CompanyId = @CompanyId 
-		AND @LastModifiedDate IS NULL
-		OR InsertDate > @LastModifiedDate
+		AND (@LastModifiedDate IS NULL OR InsertDate > @LastModifiedDate)
 	UNION 
 	SELECT wfh.EmpId, [WorkDate]
 	FROM dbo.tmpEmployeeCalendar AS tmp WITH (NOLOCK)
 		INNER JOIN dbo.EmployeeWorkFromHome AS wfh WITH (NOLOCK) ON tmp.WorkDate BETWEEN wfh.FromDate AND wfh.ToDate
 		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = tmp.EmpId
 	WHERE ce.CompanyId = @CompanyId
-		AND @LastModifiedDate IS NULL
-		OR wfh.ModifiedDate > @LastModifiedDate
+		AND (@LastModifiedDate IS NULL OR wfh.ModifiedDate > @LastModifiedDate)
 
 	SELECT 
 	a.UserId,
