@@ -57,6 +57,7 @@ BEGIN
         ,@SyncDate
     FROM #tmpTimeRecord AS tmp WITH (NOLOCK)
         INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON tmp.EmpNo = emp.Code
+            OR ISNULL(TRY_PARSE(emp.Code AS INT), 0) = ISNULL(TRY_PARSE(tmp.EmpNo AS INT), -1)
         INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
     WHERE ce.CompanyId = @CompanyId
         AND NOT EXISTS (
@@ -76,6 +77,7 @@ BEGIN
 		,@SyncDate
 	FROM #tmpTimeRecord AS tmp WITH (NOLOCK)
         INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON tmp.EmpNo = emp.Code
+            OR ISNULL(TRY_PARSE(emp.Code AS INT), 0) = ISNULL(TRY_PARSE(tmp.EmpNo AS INT), -1)
         INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
 	WHERE ce.CompanyId = @CompanyId
         AND NOT EXISTS (
@@ -91,6 +93,7 @@ BEGIN
 		,@SyncDate
 	FROM #tmpTimeRecord AS tmp WITH (NOLOCK)
         INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON tmp.EmpNo = emp.Code
+            OR ISNULL(TRY_PARSE(emp.Code AS INT), 0) = ISNULL(TRY_PARSE(tmp.EmpNo AS INT), -1)
         INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
 	WHERE ce.CompanyId = @CompanyId
         AND NOT EXISTS (
