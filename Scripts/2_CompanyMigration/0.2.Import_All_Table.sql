@@ -1725,6 +1725,23 @@ INSERT INTO [dbo].[ScheduleArrangementOffDayReplacement]
 	INNER JOIN @EmployeeMapping AS emp ON sar.EmployeeId = emp.OldEmpId 
 
 
+    INSERT INTO [dbo].[RefResource]
+           (RefName
+           ,ResourceId
+           ,[Value]
+           ,[Description]
+           ,IsActive
+		   ,CompanyId)
+     SELECT
+           RefName
+           ,ResourceId
+           ,[Value]
+           ,[Description]
+           ,IsActive
+		   ,@CompanyId
+	FROM [HRM].[dbo].[RefResource] 
+
+
 GO
 
 
