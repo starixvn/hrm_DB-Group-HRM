@@ -1,6 +1,6 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER   PROCEDURE [dbo].[FnB_Employee_GetByLastModifiedDate] 
+ALTER    PROCEDURE [dbo].[FnB_Employee_GetByLastModifiedDate] 
 	@CompanyId SMALLINT,
 	@LastModifiedDate DATETIME
 AS
@@ -26,17 +26,17 @@ BEGIN
 		,e.DomainUsername AS DomainName
 		,e.Phone
 		,e.Email
-		,e.JobTitleId
+		,CASE WHEN ld.OldId IS NOT NULL THEN ld.OldId ELSE ld.Id END  as JobTitleId
 		,e.[Enabled] AS IsEnabled
 		,ISNULL(e.isDeleted, 0) AS IsDeleted
 		,e.JoinedDate
 		,e.ConfirmedDate
 		,es.IsLocal
-		,e.GroupId AS TeamId
+		,CASE WHEN g.OldGroupId IS NOT NULL THEN g.OldGroupId ELSE g.GroupId END AS TeamId
 		,CASE 
 			WHEN e.ModifiedDate IS NULL THEN e.CreatedDate
 			ELSE e.ModifiedDate
-		END AS ModifiedDate
+			END AS ModifiedDate
 		,es.Unit AS CostCenter
 		,e.JobLevelId
 		,CASE 
@@ -46,6 +46,8 @@ BEGIN
 	FROM dbo.Employee AS e WITH (NOLOCK)
 		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON e.EmpId = es.EmpId
 		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = e.EmpId
+		LEFT JOIN dbo.LookupData AS ld WITH (NOLOCK) ON ld.Id = e.JobTitleId AND ld.CompanyId = @CompanyId
+		LEFT JOIN dbo.[Group] AS g WITH (NOLOCK) ON g.GroupId = e.GroupId AND g.CompanyId = @CompanyId
 	WHERE ce.CompanyId = @CompanyId
 		AND @LastModifiedDate IS NULL
 		OR e.ModifiedDate > @LastModifiedDate

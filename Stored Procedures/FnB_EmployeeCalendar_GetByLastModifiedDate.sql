@@ -1,6 +1,6 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE OR ALTER PROCEDURE [dbo].[FnB_EmployeeCalendar_GetByLastModifiedDate]
+CREATE OR   PROCEDURE [dbo].[FnB_EmployeeCalendar_GetByLastModifiedDate]
 	@CompanyId SMALLINT,
 	@LastModifiedDate DATETIME
 AS
@@ -71,7 +71,7 @@ BEGIN
 	(
 	SELECT
 	  tcl.[WorkDate]
-      ,tcl.[EmpId] AS UserId
+      , CASE WHEN e.OldEmpId IS NOT NULL THEN e.OldEmpId ELSE e.EmpId END AS UserId
       ,tcl.[ShiftId]
       ,tcl.[IsHoliday]
       ,CAST(CASE WHEN (tcl.[IsOffDay] = 1 OR wfh.EmployeeWorkFromHomeId IS NOT NULL) THEN 1 ELSE 0 END AS BIT) AS IsOffDay
@@ -84,6 +84,7 @@ BEGIN
 	  ,CAST(CASE WHEN att.InFixed IS NULL THEN 0 ELSE 1 END AS BIT) AS HasCheckIn
 
 	FROM #tmpEmployeeCalendarChange AS tmp WITH (NOLOCK)
+		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON tmp.EmpId = e.EmpId
 		INNER JOIN dbo.EmployeeCalendar AS cl WITH (NOLOCK) ON tmp.EmpId = cl.EmpId AND tmp.WorkDate = cl.WorkDate
 		INNER JOIN dbo.tmpEmployeeCalendar as tcl  ON tcl.EmpId = tmp.EmpId AND tcl.WorkDate = tmp.WorkDate
 		LEFT JOIN dbo.EmployeeAttendance AS att ON tmp.EmpId = att.EmpId AND tmp.WorkDate = att.AttendanceDate
