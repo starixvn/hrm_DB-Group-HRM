@@ -71,7 +71,7 @@ INSERT INTO [dbo].[SystemConfigs] ([Key], [Value], [CompanyId])
         ('TimeZone', 8, 8),
         ('SyncWorkingShift', '{"Enable": true,"LocationCode": "WGI","Timezone": 8}', 8),
         ('TimeZone', 7, 9),
-        ('SyncWorkingShift', '{"Enable": true,"LocationCode": "CTS","Timezone": 7}', 9)
+        ('MailSetting', '{"Enable": true, "AppMailId": 1, "EmailSD": "", "EmailGo": ""}', 3)
 
 
 
@@ -106,5 +106,60 @@ INSERT [dbo].[Company] ([CompanyId], [Name], [CountryCode], [ModifiedBy], [Modif
 INSERT [dbo].[Company] ([CompanyId], [Name], [CountryCode], [ModifiedBy], [ModifiedDate], [IsActive], [IsDeleted]) VALUES (27, N'Thendermill', N'PH', NULL, NULL, 1, NULL)
 INSERT [dbo].[Company] ([CompanyId], [Name], [CountryCode], [ModifiedBy], [ModifiedDate], [IsActive], [IsDeleted]) VALUES (28, N'Xpeed Corp', N'PH', NULL, NULL, 1, NULL)
 SET IDENTITY_INSERT [dbo].[Company] OFF
+
+
+
+INSERT INTO [dbo].[CompanySite]
+           ([CompanyId]
+           ,[SiteId]
+           ,[AccessToken]
+           ,[Domain]
+           ,[ModifiedDate])
+     VALUES
+           (3 ,1 ,'oNhr7dJMpicekc25a2X1q554Cc/qM5SO8d6wwJkawWo=' ,'https://hrm.sms-vn.com' ,NULL),
+           (3 ,1 ,'oNhr7dJMpicekc25a2X1q554Cc/qM5SO8d6wwJkawWo=' ,'https://hrm-new.sms-vn.com' ,NULL),
+           (3 ,1 ,'oNhr7dJMpicekc25a2X1q554Cc/qM5SO8d6wwJkawWo=' ,'https://epa-api1.sms-vn.com' ,NULL)
+
+
+
+SET IDENTITY_INSERT [dbo].[Mail_Config] ON 
+INSERT INTO [dbo].[Mail_Config]
+           ([AppId]
+		   ,[AppName]
+           ,[Description]
+           ,[SettingId]
+           ,[MailFrom]
+           ,[IsEncrypt])
+     VALUES
+           (1
+           ,'HRMS'
+           ,'HRMS'
+           ,1
+           ,'hr.mail@sms-vn.com'
+		   ,0)
+GO
+SET IDENTITY_INSERT [dbo].[Mail_Config] OFF
+
+
+SET IDENTITY_INSERT [dbo].[Mail_Setting] ON 
+
+INSERT INTO [dbo].[Mail_Setting]
+           ([SettingId]
+		   ,[SettingName]
+           ,[IsAuth]
+           ,[Username]
+           ,[Password]
+           ,[Server]
+           ,[Port])
+     VALUES
+           (1
+           ,'mail.sms-vn.com:25 (hr.mail@sms-vn.com)'
+           ,1
+           ,'hr.mail@sms-vn.com'
+           ,'!QA2ws3edp'
+           ,'mail.sms-vn.com'
+		   ,25)
+
+SET IDENTITY_INSERT [dbo].[Mail_Setting] OFF
 
 GO
