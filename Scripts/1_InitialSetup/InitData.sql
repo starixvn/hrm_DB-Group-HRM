@@ -71,6 +71,7 @@ INSERT INTO [dbo].[SystemConfigs] ([Key], [Value], [CompanyId])
         ('TimeZone', 8, 8),
         ('SyncWorkingShift', '{"Enable": true,"LocationCode": "WGI","Timezone": 8}', 8),
         ('TimeZone', 7, 9),
+        ('SyncWorkingShift', '{"Enable": true,"LocationCode": "CTS","Timezone": 7}', 9)
         ('MailSetting', '{"Enable": true, "AppMailId": 1, "EmailSD": "", "EmailGo": ""}', 3)
 
 
