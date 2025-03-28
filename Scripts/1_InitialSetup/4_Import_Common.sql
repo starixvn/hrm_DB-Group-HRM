@@ -1,67 +1,41 @@
-
-DECLARE @CompanyId INT = 3;
-DECLARE @CurrentTimeZone NVARCHAR(50) = 'SE Asia Standard Time'; 
+USE [bodb_HRM]
+GO
+DECLARE @CompanyId INT;
+DECLARE @CurrentTimeZone NVARCHAR(50) = 'SE Asia Standard Time';  /* SE Asia Standard Time (UTC+7) / Taipei Standard Time (UTC+8)  */
 DECLARE @TargetTimeZone NVARCHAR(50) = 'SA Western Standard Time'; 
+SET @CompanyId = 3;
+
+DECLARE @EmployeeMapping TABLE (
+    EmpId INT,
+    OldEmpId INT,
+    CompanyId INT
+);
 
 
--- #region DISCIPLINE TYPE TABLE
-INSERT INTO bodb_HRM.dbo.DisciplineType (DisciplineTypeId, Name, Score, IsActive)
+INSERT INTO @EmployeeMapping (EmpId, OldEmpId, CompanyId)
+SELECT DISTINCT tmpEmp.EmpId, tmpEmp.OldEmpId, ce.CompanyId  
+FROM dbo.Employee AS tmpEmp WITH (NOLOCK) 
+INNER JOIN dbo.CompanyEmployee AS ce  WITH (NOLOCK)
+    ON tmpEmp.EmpId = ce.EmpId 
+WHERE ce.CompanyId = @CompanyId
+
+INSERT INTO dbo.DisciplineType (DisciplineTypeId, Name, Score, IsActive)
 SELECT DisciplineTypeId, Name, Score, IsActive 
-FROM SMSHRM.dbo.DisciplineType;
--- #endregion
+FROM HRM.dbo.DisciplineType;
 
--- #region MAP COMPANY TỪ UI0C 
--- TODO: MIRA RUN THIS SCRIPT ON PRO 19/2/2025
--- SET IDENTITY_INSERT bodb_HRM.dbo.Company ON; 
 
--- INSERT INTO bodb_HRM.dbo.Company (CompanyId, Name, CountryCode, IsActive)
--- SELECT 
---     CompanyId, 
---     Name, 
---     CASE 
---         WHEN Country = 'Vietnam' THEN 'VN'
---         WHEN Country = 'Philippines' THEN 'PH'
---         ELSE NULL 
---     END AS CountryCode,
---     IsActive
--- FROM bodb_IUC.dbo.Company;
--- SET IDENTITY_INSERT bodb_HRM.dbo.Company OFF;
-
--- -- Reset lại IDENTITY để đảm bảo ID tự tăng đúng
--- DECLARE @MaxId INT;
--- SELECT @MaxId = MAX(Id) FROM bodb_HRM.dbo.Company;
--- DBCC CHECKIDENT ('bodb_HRM.dbo.Company', RESEED, @MaxId);
-
--- #endregion
-
--- #region COUNTRY TABLE 
--- TODO: MIRA RUN THIS SCRIPT ON PRO 19/2/2025
--- INSERT INTO bodb_HRM.dbo.Country (
---     CountryCode, CountryName, CountryOrder, Nationality
--- )
--- SELECT 
---     c.CountryCode, 
---     c.CountryName, 
---     c.CountryOrder, 
---     c.Nationality
--- FROM SMSHRM.dbo.Country c;
--- #endregion
-
--- #region LOG ACTION TABLE
-INSERT INTO bodb_HRM.dbo.LogAction (
+INSERT INTO dbo.LogAction (
     LogActionId, Name, SpName
 )
 SELECT 
     la.LogActionId, 
     la.Name, 
     la.SpName
-FROM SMSHRM.dbo.LogAction la;
--- #endregion
+FROM HRM.dbo.LogAction la;
 
 
--- #region JobLevel TABLE
-SET IDENTITY_INSERT bodb_HRM.dbo.JobLevel ON;
-INSERT INTO [bodb_HRM].[dbo].[JobLevel]
+SET IDENTITY_INSERT dbo.JobLevel ON;
+INSERT INTO [dbo].[JobLevel]
            (JobLevelId
 		   ,Name
            ,IsDeleted
@@ -73,21 +47,41 @@ INSERT INTO [bodb_HRM].[dbo].[JobLevel]
            ,jl.IsDeleted
            ,NULL
            ,jl.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
-	FROM SMSHRM.dbo.JobLevel AS jl WITH (NOLOCK)
-SET IDENTITY_INSERT bodb_HRM.dbo.JobLevel OFF;
+	FROM HRM.dbo.JobLevel AS jl WITH (NOLOCK)
+SET IDENTITY_INSERT dbo.JobLevel OFF;
 
--- #endregion
 
 
 -- #region LOOKUP TABLE
-SET IDENTITY_INSERT bodb_HRM.dbo.Lookup ON;
+SET IDENTITY_INSERT dbo.Lookup ON;
 
-INSERT INTO bodb_HRM.dbo.Lookup (Id, Code, Name)
-SELECT Id, Code, Name FROM SMSHRM.dbo.Lookup;
+INSERT INTO dbo.Lookup (Id, Code, Name)
+SELECT Id, Code, Name FROM HRM.dbo.Lookup;
 
-SET IDENTITY_INSERT bodb_HRM.dbo.Lookup OFF;
+SET IDENTITY_INSERT dbo.Lookup OFF;
 
 DECLARE @MaxId INT;
-SELECT @MaxId = MAX(Id) FROM bodb_HRM.dbo.Lookup;
-DBCC CHECKIDENT ('bodb_HRM.dbo.Lookup', RESEED, @MaxId);
+SELECT @MaxId = MAX(Id) FROM dbo.Lookup;
+DBCC CHECKIDENT ('dbo.Lookup', RESEED, @MaxId);
 -- #endregion
+
+
+
+INSERT INTO [dbo].[Country]
+           ([CountryCode]
+           ,[CountryName]
+           ,[CountryOrder]
+           ,[Nationality])
+     SELECT
+           CountryCode
+           ,CountryName
+           ,CountryOrder
+           ,Nationality
+    FROM [HRM].[dbo].[Country] WITH (NOLOCK)
+
+
+GO
+
+
+
+
