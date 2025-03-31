@@ -12,7 +12,6 @@ AS
 Created: 20200521@Patsy.Doan
 Task: Insert Unit.
 DB: HRM
-Original:
 
 Revisions:
 Param's Explanation:
@@ -23,7 +22,9 @@ BEGIN
 	IF EXISTS (
 			SELECT 1
 			FROM dbo.Unit WITH (NOLOCK)
-			WHERE Code = @Code AND IsDeleted = 0
+			WHERE CompanyId = @CompanyId
+                AND Code = @Code
+                AND IsDeleted = 0
 			)
 	BEGIN
 		SELECT @ErrCode = 1
@@ -61,7 +62,3 @@ BEGIN
 		,@OldUnitId
 		)
 END
-
-
-
-
