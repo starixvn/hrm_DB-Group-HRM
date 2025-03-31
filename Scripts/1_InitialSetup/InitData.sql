@@ -119,8 +119,7 @@ INSERT INTO [dbo].[CompanySite]
            ,[ModifiedDate])
      VALUES
            (3 ,1 ,'oNhr7dJMpicekc25a2X1q554Cc/qM5SO8d6wwJkawWo=' ,'https://hrm.sms-vn.com' ,NULL),
-           (3 ,1 ,'oNhr7dJMpicekc25a2X1q554Cc/qM5SO8d6wwJkawWo=' ,'https://hrm-new.sms-vn.com' ,NULL),
-           (3 ,1 ,'oNhr7dJMpicekc25a2X1q554Cc/qM5SO8d6wwJkawWo=' ,'https://epa-api1.sms-vn.com' ,NULL)
+           (3 ,1 ,'oNhr7dJMpicekc25a2X1q554Cc/qM5SO8d6wwJkawWo=' ,'https://hrm-new.sms-vn.com' ,NULL)
 
 GO
 
