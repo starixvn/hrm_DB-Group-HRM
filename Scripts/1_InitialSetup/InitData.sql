@@ -18,7 +18,7 @@ SELECT
     la.Name, 
     la.SpName
 FROM HRM.dbo.LogAction la;
-
+GO
 
 
 SET IDENTITY_INSERT dbo.JobLevel ON;
@@ -36,7 +36,7 @@ INSERT INTO [dbo].[JobLevel]
            ,jl.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
 	FROM HRM.dbo.JobLevel AS jl WITH (NOLOCK)
 SET IDENTITY_INSERT dbo.JobLevel OFF;
-
+GO
 
 -- #region LOOKUP TABLE
 SET IDENTITY_INSERT dbo.Lookup ON;
@@ -50,6 +50,7 @@ DECLARE @MaxId INT;
 SELECT @MaxId = MAX(Id) FROM dbo.Lookup;
 DBCC CHECKIDENT ('dbo.Lookup', RESEED, @MaxId);
 -- #endregion
+GO
 
 INSERT INTO [dbo].[Country]
            ([CountryCode]
@@ -62,18 +63,18 @@ INSERT INTO [dbo].[Country]
            ,CountryOrder
            ,Nationality
     FROM [HRM].[dbo].[Country] WITH (NOLOCK)
-
+GO
 
 
   INSERT INTO [dbo].[SystemConfigs] ([Key], [Value], [CompanyId])
-     VALUES ('TimeZone', 7, 3),
+     VALUES ('TimeZone', '7', 3),
         ('SyncWorkingShift', '{"Enable": true,"LocationCode": "SMS","Timezone": 7}', 3),
-        ('TimeZone', 8, 8),
+        ('TimeZone', '8', 8),
         ('SyncWorkingShift', '{"Enable": true,"LocationCode": "WGI","Timezone": 8}', 8),
-        ('TimeZone', 7, 9),
+        ('TimeZone', '7', 9),
         ('SyncWorkingShift', '{"Enable": true,"LocationCode": "CTS","Timezone": 7}', 9),
         ('MailSetting', '{"Enable": true, "AppMailId": 1, "EmailSD": "", "EmailGo": ""}', 3)
-
+GO
 
 
 SET IDENTITY_INSERT [dbo].[Company] ON 
@@ -107,7 +108,7 @@ INSERT [dbo].[Company] ([CompanyId], [Name], [CountryCode], [ModifiedBy], [Modif
 INSERT [dbo].[Company] ([CompanyId], [Name], [CountryCode], [ModifiedBy], [ModifiedDate], [IsActive], [IsDeleted]) VALUES (27, N'Thendermill', N'PH', NULL, NULL, 1, NULL)
 INSERT [dbo].[Company] ([CompanyId], [Name], [CountryCode], [ModifiedBy], [ModifiedDate], [IsActive], [IsDeleted]) VALUES (28, N'Xpeed Corp', N'PH', NULL, NULL, 1, NULL)
 SET IDENTITY_INSERT [dbo].[Company] OFF
-
+GO
 
 
 INSERT INTO [dbo].[CompanySite]
@@ -121,7 +122,7 @@ INSERT INTO [dbo].[CompanySite]
            (3 ,1 ,'oNhr7dJMpicekc25a2X1q554Cc/qM5SO8d6wwJkawWo=' ,'https://hrm-new.sms-vn.com' ,NULL),
            (3 ,1 ,'oNhr7dJMpicekc25a2X1q554Cc/qM5SO8d6wwJkawWo=' ,'https://epa-api1.sms-vn.com' ,NULL)
 
-
+GO
 
 SET IDENTITY_INSERT [dbo].[Mail_Config] ON 
 INSERT INTO [dbo].[Mail_Config]
@@ -138,9 +139,9 @@ INSERT INTO [dbo].[Mail_Config]
            ,1
            ,'hr.mail@sms-vn.com'
 		   ,0)
-GO
-SET IDENTITY_INSERT [dbo].[Mail_Config] OFF
 
+SET IDENTITY_INSERT [dbo].[Mail_Config] OFF
+GO
 
 SET IDENTITY_INSERT [dbo].[Mail_Setting] ON 
 
