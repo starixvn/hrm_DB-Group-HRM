@@ -1,6 +1,6 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE OR ALTER   PROCEDURE [dbo].[FnB_EmployeeCalendar_GetByLastModifiedDate]
+CREATE OR ALTER PROCEDURE [dbo].[FnB_EmployeeCalendar_GetByLastModifiedDate]
 	@CompanyId SMALLINT,
 	@LastModifiedDate DATETIME
 AS
@@ -68,7 +68,7 @@ BEGIN
 	SELECT
 	  tcl.[WorkDate]
       , CASE WHEN e.OldEmpId IS NOT NULL THEN e.OldEmpId ELSE e.EmpId END AS UserId
-      ,tcl.[ShiftId]
+      ,CASE WHEN s.OldShiftId IS NOT NULL THEN s.OldShiftId ELSE s.ShiftID END AS ShiftID
       ,tcl.[IsHoliday]
       ,CAST(CASE WHEN (tcl.[IsOffDay] = 1 OR wfh.EmployeeWorkFromHomeId IS NOT NULL) THEN 1 ELSE 0 END AS BIT) AS IsOffDay
 	   ,CASE WHEN tcl.EmpId IS NULL THEN cl.IsLeaveDay ELSE tcl.[IsLeaveDay] END AS IsLeaveDay
@@ -86,6 +86,7 @@ BEGIN
 		LEFT JOIN dbo.EmployeeAttendance AS att ON tmp.EmpId = att.EmpId AND tmp.WorkDate = att.AttendanceDate
 		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = tmp.EmpId
 		LEFT JOIN dbo.EmployeeWorkFromHome AS wfh ON tmp.EmpId = wfh.EmpId AND tmp.WorkDate BETWEEN wfh.FromDate AND wfh.ToDate
+		LEFT JOIN dbo.Shift AS s ON tcl.ShiftId = s.ShiftID AND s.CompanyId = @CompanyId
 	WHERE ce.CompanyId = @CompanyId
 	) AS a
 	WHERE a.WorkDate > DATEADD(dd, -30, GETDATE())

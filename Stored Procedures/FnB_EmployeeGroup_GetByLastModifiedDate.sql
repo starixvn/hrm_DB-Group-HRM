@@ -1,6 +1,6 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE OR ALTER   PROCEDURE [dbo].[FnB_EmployeeGroup_GetByLastModifiedDate] 
+CREATE OR ALTER PROCEDURE [dbo].[FnB_EmployeeGroup_GetByLastModifiedDate] 
 	@CompanyId SMALLINT,
 	@LastModifiedDate DATETIME
 AS
@@ -25,7 +25,6 @@ BEGIN
 	SELECT CASE WHEN s.OldSectionId IS NOT NULL THEN s.OldSectionId ELSE s.SectionId END  AS DepartmentId
 		,g.Code
 		,g.[Name]
-		,CASE WHEN e.OldEmpId IS NOT NULL THEN e.OldEmpId ELSE e.EmpId END AS LeaderId
 		,g.[Rank]
 		,ISNULL(g.IsDeleted, 0) AS IsDeleted
 		,CASE 
@@ -38,10 +37,7 @@ BEGIN
 			END AS TeamId
 		,g.SectionId
 	FROM dbo.[Group] AS g WITH (NOLOCK)
-		LEFT JOIN dbo.GroupManager AS mng WITH (NOLOCK) ON g.GroupId = mng.GroupId
 		LEFT JOIN dbo.Section AS s WITH (NOLOCK) ON g.SectionId = s.SectionId
-		LEFT JOIN dbo.Employee AS e WITH (NOLOCK) ON mng.EmpId = e.EmpId
-		AND mng.RoleId = 1
 	WHERE g.CompanyId = @CompanyId
 		AND (@LastModifiedDate IS NULL OR ISNULL(g.ModifiedDate, g.CreatedDate) > @LastModifiedDate)
 	ORDER BY g.ModifiedDate
