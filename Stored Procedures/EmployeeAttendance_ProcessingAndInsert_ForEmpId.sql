@@ -34,7 +34,7 @@ BEGIN
 	INSERT INTO @TimeRecord (Id, EmpId, RecordTime, InOutType)
 	SELECT Id, EmpId, RecordTime, InOutType
 	FROM #tmpTimeRecord WITH (NOLOCK)
-	WHERE RecordTime BETWEEN DATEADD(HH, - 2, CONVERT(VARCHAR(10), @fromTime, 111))
+	WHERE DATEADD(MINUTE, @clientTimeZone * 60, DATEADD(HOUR, ABS(@serverTimeZone), RecordTime)) BETWEEN DATEADD(HH, - 2, CONVERT(VARCHAR(10), @fromTime, 111))
 			AND DATEADD(d, 2, CONVERT(VARCHAR(10), @toTime, 111))
 		AND EmpId = @empId
 
@@ -76,7 +76,7 @@ BEGIN
 
 	WHILE DATEDIFF(d, @attendaceDate, @toTime) >= 0
 	BEGIN
-		SELECT @Absence = 0
+        SELECT @Absence = 0
 			,@InOfMachine = NULL
 			,@OutOfMachine = NULL
 			,@ExpectedOutTime = NULL
@@ -226,14 +226,14 @@ BEGIN
 			SELECT @InOfMachine = MIN(RecordTime)
 			FROM @TimeRecord
 			WHERE InOutType = 0
-				AND RecordTime BETWEEN DATEADD(mi, 270, @attendaceDate)
+				AND DATEADD(MINUTE, @clientTimeZone * 60, DATEADD(HOUR, ABS(@serverTimeZone), RecordTime)) BETWEEN DATEADD(mi, 270, @attendaceDate)
 					AND DATEADD(mi, 270, DATEADD(d, 1, @attendaceDate)) -- 4h30 of after day
 
 			-- get time out
 			SELECT @OutOfMachine = MAX(RecordTime)
 			FROM @TimeRecord
 			WHERE InOutType = 1
-				AND RecordTime BETWEEN DATEADD(mi, 540, @attendaceDate)
+				AND DATEADD(MINUTE, @clientTimeZone * 60, DATEADD(HOUR, ABS(@serverTimeZone), RecordTime)) BETWEEN DATEADD(mi, 540, @attendaceDate)
 					AND DATEADD(mi, 720, DATEADD(d, 1, @attendaceDate)) -- 12h of after day
 
 			IF @InOfMachine > @OutOfMachine
