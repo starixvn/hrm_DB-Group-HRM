@@ -4,7 +4,7 @@ ALTER PROCEDURE [dbo].[EmployeeAttendance_ProcessingAndInsert] @empId INT = NULL
 	,@fromTime DATETIME
 	,@toTime DATETIME
 	,@onlyUpdate BIT = 0
-	,@CompanyId SMALLINT = NULL
+    ,@CompanyId SMALLINT = NULL
 AS
 /*
 Created:
@@ -293,11 +293,7 @@ BEGIN
 			AND EXISTS (
 				SELECT 1
 				FROM dbo.EmployeeCalendar AS cl WITH (NOLOCK)
-				WHERE (
-						ISNULL(cl.LeaveDay, 0) <> 0
-						OR cl.ShiftId IS NULL
-						)
-					AND DATEDIFF(DD, @fromTime, cl.WorkDate) >= 0
+				WHERE DATEDIFF(DD, @fromTime, cl.WorkDate) >= 0
 					AND DATEDIFF(DD, WorkDate, @toTime) >= 0
 					AND e.EmpId = cl.EmpId
 				)

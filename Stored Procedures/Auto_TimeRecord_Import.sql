@@ -23,6 +23,7 @@ BEGIN
 
 	DECLARE @SyncDate DATETIME = GETDATE()
 		,@DocHandler INT
+        ,@serverTimeZone SMALLINT = -4
 
 	CREATE TABLE #tmpTimeRecord (
 		EmpNo VARCHAR(20)
@@ -73,12 +74,14 @@ BEGIN
 		,InsertedDate
 		)
 	SELECT emp.EmpId
-		,CAST(DATEADD(DD, -1, tmp.RecordTime) AS DATE)
+		,CAST(DATEADD(DD, -1, DATEADD(MINUTE, CASE WHEN config.[Value] IS NULL THEN 0 ELSE CAST(config.[Value] AS REAL) END * 60, DATEADD(HOUR, ABS(@serverTimeZone), tmp.RecordTime))) AS DATE)
 		,@SyncDate
 	FROM #tmpTimeRecord AS tmp WITH (NOLOCK)
         INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON tmp.EmpNo = emp.Code
             OR ISNULL(TRY_PARSE(emp.Code AS INT), 0) = ISNULL(TRY_PARSE(tmp.EmpNo AS INT), -1)
         INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
+        LEFT JOIN dbo.SystemConfigs AS config WITH (NOLOCK) ON ce.CompanyId = config.CompanyId
+        AND config.[Key] = 'TimeZone'
 	WHERE ce.CompanyId = @CompanyId
         AND NOT EXISTS (
 		SELECT 1 
@@ -89,12 +92,14 @@ BEGIN
 
 	UNION
 	SELECT emp.EmpId
-		,CAST(tmp.RecordTime AS DATE)
+		,CAST(DATEADD(MINUTE, CASE WHEN config.[Value] IS NULL THEN 0 ELSE CAST(config.[Value] AS REAL) END * 60, DATEADD(HOUR, ABS(@serverTimeZone), tmp.RecordTime)) AS DATE)
 		,@SyncDate
 	FROM #tmpTimeRecord AS tmp WITH (NOLOCK)
         INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON tmp.EmpNo = emp.Code
             OR ISNULL(TRY_PARSE(emp.Code AS INT), 0) = ISNULL(TRY_PARSE(tmp.EmpNo AS INT), -1)
         INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
+        LEFT JOIN dbo.SystemConfigs AS config WITH (NOLOCK) ON ce.CompanyId = config.CompanyId
+        AND config.[Key] = 'TimeZone'
 	WHERE ce.CompanyId = @CompanyId
         AND NOT EXISTS (
 		SELECT 1 

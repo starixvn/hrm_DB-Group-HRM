@@ -17,8 +17,19 @@ BEGIN
 	SET XACT_ABORT ON;
 	
 	DECLARE @RangeToScanTime SMALLINT = 480 -- 480 munites
+        ,@serverTimeZone SMALLINT = -4
+        ,@clientTimeZone REAL
 		,@DateChangeRuleLateInEarlyOutRequest DATETIME = '2015-10-19'
 	DECLARE @TimeRecord TABLE (Id INT, EmpId INT, RecordTime DATETIME, InOutType TINYINT)
+
+    SELECT @clientTimeZone = config.[Value]
+    FROM dbo.Employee AS emp WITH (NOLOCK)
+        INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
+        LEFT JOIN dbo.SystemConfigs AS config WITH (NOLOCK) ON ce.CompanyId = config.CompanyId
+        AND config.[Key] = 'TimeZone'
+    WHERE emp.EmpId = @EmpId
+
+    SET @clientTimeZone = ISNULL(@clientTimeZone, @serverTimeZone)
 
 	INSERT INTO @TimeRecord (Id, EmpId, RecordTime, InOutType)
 	SELECT Id, EmpId, RecordTime, InOutType
@@ -262,7 +273,7 @@ BEGIN
 		END
 
 		--SELECT @ShiftId, @InOfMachine, @OutOfMachine, @IsLeaveDay, @isOffDay, @IsHoliday
-		IF DATEDIFF(DD, @attendaceDate, GETDATE()) >= 0
+		IF DATEDIFF(DD, @attendaceDate, DATEADD(MINUTE, @clientTimeZone * 60, DATEADD(HOUR, ABS(@serverTimeZone), GETDATE()))) >= 0
 		BEGIN
 			IF (
 					@ShiftId IS NOT NULL
