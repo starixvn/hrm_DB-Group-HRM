@@ -293,7 +293,7 @@ BEGIN
 						)
 				BEGIN
 					--update
-					UPDATE dbo.EmployeeAttendance
+					UPDATE dbo.EmployeeAttendance WITH (ROWLOCK)
 					SET ShiftId = @ShiftId
 						,InFixed = @InOfMachine
 						,OutFixed = @OutOfMachine
@@ -352,7 +352,7 @@ BEGIN
 			ELSE
 			BEGIN
 				DELETE
-				FROM dbo.EmployeeAttendance
+				FROM dbo.EmployeeAttendance WITH (ROWLOCK)
 				WHERE EmpId = @empId
 					AND DATEDIFF(d, AttendanceDate, @attendaceDate) = 0
 			END
