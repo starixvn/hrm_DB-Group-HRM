@@ -101,7 +101,7 @@ BEGIN
         AND config.[Key] = 'TimeZone'
 	WHERE emp.[Enabled] = 1
 		AND emp.isDeleted = 0
-		AND DATEADD(HOUR, CAST(ISNULL(config.Value, @serverTimeZone) AS REAL) * 60, DATEADD(HOUR, ABS(@serverTimeZone), tr.RecordTime))
+		AND DATEADD(MINUTE, CAST(ISNULL(config.Value, @serverTimeZone) AS REAL) * 60, DATEADD(HOUR, ABS(@serverTimeZone), tr.RecordTime))
             BETWEEN DATEADD(HH, - 2, CONVERT(VARCHAR(10), @fromTime, 111)) AND DATEADD(d, 2, CONVERT(VARCHAR(10), @toTime, 111))
 		AND emp.JoinedDate <= CAST(tr.RecordTime AS DATE)
 		AND (

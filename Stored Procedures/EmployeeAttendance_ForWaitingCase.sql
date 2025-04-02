@@ -61,7 +61,7 @@ BEGIN
         INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ti.EmpId = ce.EmpId
         LEFT JOIN dbo.SystemConfigs AS config WITH (NOLOCK) ON ce.CompanyId = config.CompanyId
         AND config.[Key] = 'TimeZone'
-	WHERE DATEADD(HOUR, CAST(ISNULL(config.Value, @serverTimeZone) AS REAL) * 60, DATEADD(HOUR, ABS(@serverTimeZone), ti.RecordTime))
+	WHERE DATEADD(MINUTE, CAST(ISNULL(config.Value, @serverTimeZone) AS REAL) * 60, DATEADD(HOUR, ABS(@serverTimeZone), ti.RecordTime))
         BETWEEN DATEADD(HH, - 2, CONVERT(VARCHAR(10), @fromDate, 111)) AND DATEADD(d, 2, CONVERT(VARCHAR(10), @toDate, 111))
 		AND EXISTS (
 			SELECT 1
