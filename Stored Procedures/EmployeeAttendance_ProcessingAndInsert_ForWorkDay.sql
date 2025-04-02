@@ -162,7 +162,7 @@ BEGIN
 				) AS a
 			) AS b
 		) AS c
-		INNER JOIN dbo.EmployeeAttendance AS att WITH (NOLOCK) ON c.EmpId = att.EmpId
+		INNER JOIN dbo.EmployeeAttendance AS att WITH (ROWLOCK) ON c.EmpId = att.EmpId
 		AND c.WorkDate = att.AttendanceDate
 
 	INSERT INTO dbo.EmployeeAttendance (

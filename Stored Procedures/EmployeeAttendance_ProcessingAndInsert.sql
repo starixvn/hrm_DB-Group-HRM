@@ -96,10 +96,13 @@ BEGIN
 		,tr.InOutType
 	FROM dbo.TimeRecord AS tr WITH (NOLOCK)
 		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON tr.EmpId = emp.EmpId
+        INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
+        LEFT JOIN dbo.SystemConfigs AS config WITH (NOLOCK) ON ce.CompanyId = config.CompanyId
+        AND config.[Key] = 'TimeZone'
 	WHERE emp.[Enabled] = 1
 		AND emp.isDeleted = 0
-		AND tr.RecordTime BETWEEN DATEADD(HH, - 2, CONVERT(VARCHAR(10), @fromTime, 111))
-			AND DATEADD(d, 2, CONVERT(VARCHAR(10), @toTime, 111))
+		AND DATEADD(HOUR, CAST(ISNULL(config.Value, @serverTimeZone) AS REAL) * 60, DATEADD(HOUR, ABS(@serverTimeZone), tr.RecordTime))
+            BETWEEN DATEADD(HH, - 2, CONVERT(VARCHAR(10), @fromTime, 111)) AND DATEADD(d, 2, CONVERT(VARCHAR(10), @toTime, 111))
 		AND emp.JoinedDate <= CAST(tr.RecordTime AS DATE)
 		AND (
 			@empId IS NULL
