@@ -22,27 +22,36 @@ BEGIN
 	SET NOCOUNT ON;
 
 	DECLARE @SyncDate DATETIME = GETDATE()
-		,@DocHandler INT
+	    ,@DocHandler INT
         ,@serverTimeZone SMALLINT = -4
 
 	CREATE TABLE #tmpTimeRecord (
-		EmpNo VARCHAR(20)
+		EmpId INT
 		,InOutType TINYINT
 		,RecordTime DATETIME
+        ,ClientRecordTime DATETIME
 		)
 
 	EXEC sp_xml_preparedocument @DocHandler OUTPUT
 		,@TimeRecordXml
 
 	INSERT INTO #tmpTimeRecord (
-		EmpNo
-		,InOutType
-		,RecordTime
-		)
-	SELECT EmpNo
+        EmpId
         ,InOutType
         ,RecordTime
+        ,ClientRecordTime
+		)
+	SELECT emp.EmpId
+        ,InOutType
+        ,RecordTime
+        ,DATEADD(MINUTE, CASE WHEN config.[Value] IS NULL THEN 0 ELSE CAST(config.[Value] AS REAL) END * 60, DATEADD(HOUR, ABS(@serverTimeZone), d.RecordTime))
 	FROM OPENXML(@DocHandler, '/Root/Row', 1) WITH (EmpNo VARCHAR(20), InOutType TINYINT, RecordTime DATETIME) AS d
+        INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON d.EmpNo = emp.Code
+            OR ISNULL(TRY_PARSE(emp.Code AS INT), 0) = ISNULL(TRY_PARSE(d.EmpNo AS INT), -1)
+        INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
+        LEFT JOIN dbo.SystemConfigs AS config WITH (NOLOCK) ON ce.CompanyId = config.CompanyId
+        AND config.[Key] = 'TimeZone'
+    WHERE ce.CompanyId = @CompanyId
 
 	EXEC sp_xml_removedocument @DocHandler
 
@@ -52,63 +61,47 @@ BEGIN
 		,RecordTime
 		,InsertDate
 		)
-    SELECT emp.EmpId
+    SELECT tmp.EmpId
         ,tmp.InOutType
         ,tmp.RecordTime
         ,@SyncDate
     FROM #tmpTimeRecord AS tmp WITH (NOLOCK)
-        INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON tmp.EmpNo = emp.Code
-            OR ISNULL(TRY_PARSE(emp.Code AS INT), 0) = ISNULL(TRY_PARSE(tmp.EmpNo AS INT), -1)
-        INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
-    WHERE ce.CompanyId = @CompanyId
-        AND NOT EXISTS (
-			SELECT 1
-			FROM dbo.TimeRecord AS t WITH (NOLOCK)
-			WHERE t.EmpId = emp.EmpId
-				AND DATEDIFF(SECOND, t.RecordTime, tmp.RecordTime) = 0
-			)
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM dbo.TimeRecord AS t WITH (NOLOCK)
+        WHERE t.EmpId = tmp.EmpId
+	        AND DATEDIFF(SECOND, t.RecordTime, tmp.RecordTime) = 0
+        )
 
     INSERT INTO dbo.tmpEmployeeAttendace (
 		EmpId
 		,WorkDate
 		,InsertedDate
 		)
-	SELECT emp.EmpId
-		,CAST(DATEADD(DD, -1, DATEADD(MINUTE, CASE WHEN config.[Value] IS NULL THEN 0 ELSE CAST(config.[Value] AS REAL) END * 60, DATEADD(HOUR, ABS(@serverTimeZone), tmp.RecordTime))) AS DATE)
+	SELECT tmp.EmpId
+		,CAST(DATEADD(DD, -1, tmp.ClientRecordTime) AS DATE)
 		,@SyncDate
 	FROM #tmpTimeRecord AS tmp WITH (NOLOCK)
-        INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON tmp.EmpNo = emp.Code
-            OR ISNULL(TRY_PARSE(emp.Code AS INT), 0) = ISNULL(TRY_PARSE(tmp.EmpNo AS INT), -1)
-        INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
-        LEFT JOIN dbo.SystemConfigs AS config WITH (NOLOCK) ON ce.CompanyId = config.CompanyId
-        AND config.[Key] = 'TimeZone'
-	WHERE ce.CompanyId = @CompanyId
-        AND NOT EXISTS (
-		SELECT 1 
-		FROM dbo.tmpEmployeeAttendace AS att WITH (NOLOCK) 
-		WHERE att.EmpId = emp.EmpId
-			AND att.WorkDate = CAST(DATEADD(DD, -1, tmp.RecordTime) AS DATE)
-		)
+	WHERE NOT EXISTS (
+        SELECT 1 
+        FROM dbo.tmpEmployeeAttendace AS att WITH (NOLOCK) 
+        WHERE att.EmpId = tmp.EmpId
+	        AND att.WorkDate = CAST(DATEADD(DD, -1, tmp.ClientRecordTime) AS DATE)
+        )
 
 	UNION
-	SELECT emp.EmpId
-		,CAST(DATEADD(MINUTE, CASE WHEN config.[Value] IS NULL THEN 0 ELSE CAST(config.[Value] AS REAL) END * 60, DATEADD(HOUR, ABS(@serverTimeZone), tmp.RecordTime)) AS DATE)
+	SELECT tmp.EmpId
+		,CAST(tmp.ClientRecordTime AS DATE)
 		,@SyncDate
 	FROM #tmpTimeRecord AS tmp WITH (NOLOCK)
-        INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON tmp.EmpNo = emp.Code
-            OR ISNULL(TRY_PARSE(emp.Code AS INT), 0) = ISNULL(TRY_PARSE(tmp.EmpNo AS INT), -1)
-        INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
-        LEFT JOIN dbo.SystemConfigs AS config WITH (NOLOCK) ON ce.CompanyId = config.CompanyId
-        AND config.[Key] = 'TimeZone'
-	WHERE ce.CompanyId = @CompanyId
-        AND NOT EXISTS (
+	WHERE NOT EXISTS (
 		SELECT 1 
 		FROM dbo.tmpEmployeeAttendace AS att WITH (NOLOCK) 
-		WHERE att.EmpId = emp.EmpId 
-			AND att.WorkDate = CAST(tmp.RecordTime AS DATE)
+		WHERE att.EmpId = tmp.EmpId 
+			AND att.WorkDate = CAST(tmp.ClientRecordTime AS DATE)
 		)
 
-    EXEC [dbo].[EmployeeAttendance_ForWaitingCase] @CompanyId = @CompanyId
+    EXEC dbo.EmployeeAttendance_ForWaitingCase @CompanyId = @CompanyId
 
 	SELECT EmpId
 	INTO #tmpEmployee
