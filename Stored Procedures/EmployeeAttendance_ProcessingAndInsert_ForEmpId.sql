@@ -289,7 +289,7 @@ BEGIN
 						SELECT 1
 						FROM dbo.EmployeeAttendance WITH (NOLOCK)
 						WHERE EmpId = @empId
-							AND DATEDIFF(d, AttendanceDate, @attendaceDate) = 0
+							AND AttendanceDate = CAST(@attendaceDate AS DATETIME)
 						)
 				BEGIN
 					--update
@@ -308,7 +308,7 @@ BEGIN
 						,LeaveDay = @LeaveDay
 						,InsertDate = GETDATE()
 					WHERE EmpId = @empId
-						AND DATEDIFF(d, AttendanceDate, @attendaceDate) = 0
+						AND AttendanceDate = CAST(@attendaceDate AS DATETIME)
 				END
 				ELSE
 				BEGIN
@@ -354,7 +354,7 @@ BEGIN
 				DELETE
 				FROM dbo.EmployeeAttendance WITH (ROWLOCK)
 				WHERE EmpId = @empId
-					AND DATEDIFF(d, AttendanceDate, @attendaceDate) = 0
+					AND AttendanceDate = CAST(@attendaceDate AS DATETIME)
 			END
 		END
 
