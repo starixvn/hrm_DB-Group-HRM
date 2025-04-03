@@ -78,6 +78,7 @@ BEGIN
 		,CreatedDate
 		,IsDisabled
         ,CompanyId
+        ,OldShiftId
 		)
     OUTPUT inserted.ShiftID
     INTO #tmpShiftId(ShiftId)
@@ -97,6 +98,7 @@ BEGIN
 		,@SyncDate
 		,0
         ,@CompanyId
+        ,0
 	FROM #tmpShift AS tmpws WITH (NOLOCK)
 	WHERE NOT EXISTS (
 			SELECT 1
