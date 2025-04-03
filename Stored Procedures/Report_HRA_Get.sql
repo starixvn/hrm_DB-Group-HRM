@@ -1,4 +1,4 @@
-/*<info serverAlias="bodb_HRM" executers="internalteam" isFunction="0"></info>*/
+/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE dbo.[Report_HRA_Get] @Year INT
 
