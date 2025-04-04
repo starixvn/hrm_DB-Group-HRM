@@ -19,7 +19,8 @@ Original:
 
 Revisions:
 Param's Explanation:
--Otis - 03062023: get field ResignedReason
+	-Otis - 03062023: get field ResignedReason
+	-Jay  - 04042025: remove Section
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -177,9 +178,6 @@ BEGIN
 	  + ',g.Code AS [TeamCode]' + CHAR(13)
 	  + ',g.Name AS [TeamName]' + CHAR(13)
 	  + ',g.Rank' + CHAR(13)
-	  + ',sec.SectionId' + CHAR(13)
-	  + ',sec.Code AS SectionCode' + CHAR(13)
-	  + ',sec.[Name] AS SectionName' + CHAR(13)
 	  + ',dep.DepartmentId' + CHAR(13)
 	  + ',dep.Code AS DepartmentCode' + CHAR(13)
 	  + ',dep.[Name] AS DepartmentName' + CHAR(13)
@@ -187,8 +185,7 @@ BEGIN
 	  + 'INNER JOIN dbo.CompanyEmployee ce WITH (NOLOCK) ON ce.EmpId = e.EmpId AND ce.CompanyId = ' + CAST(@companyId AS VARCHAR(10))  + CHAR(13)
 	  + 'INNER JOIN dbo.EmployeeSummary AS s WITH (NOLOCK) ON s.EmpId = e.EmpId' + CHAR(13)
 	  + 'LEFT JOIN dbo.[Group] AS g WITH (NOLOCK) ON e.GroupID = g.GroupID' + CHAR(13)
-	  + 'INNER JOIN dbo.[Section] AS sec WITH (NOLOCK) ON g.SectionId = sec.SectionId' + CHAR(13)
-	  + 'INNER JOIN dbo.[Department] AS dep WITH (NOLOCK) ON dep.DepartmentId = sec.DepartmentId' + CHAR(13)
+	  + 'INNER JOIN dbo.[Department] AS dep WITH (NOLOCK) ON dep.DepartmentId = g.DepartmentId' + CHAR(13)
 	  + 'INNER JOIN dbo.[Unit] AS unit WITH (NOLOCK) ON dep.UnitId = unit.UnitId' + CHAR(13)
 	  + 'LEFT JOIN [dbo].[Country] AS ctry WITH(NOLOCK) ON ctry.CountryCode = s.CountryCode' + CHAR(13)
 	  + 'LEFT JOIN [dbo].[Lookup] AS l WITH(NOLOCK) ON l.Code = ''JT''' + CHAR(13)
