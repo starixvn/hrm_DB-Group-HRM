@@ -22,20 +22,16 @@ BEGIN
 		SELECT @LastModifiedDate = DATEADD(YYYY, -10, GETDATE())
 	END
 
-	SELECT [Code]
-		,[Name]
+	SELECT d.[Code]
+		,d.[Name]
 		,[UnitId]
 		,[IsActive]
-		,[ModifiedDate]
-		,[IsDeleted]
-		,[OldDepartmentId]
-		,CASE 
-			WHEN [OldDepartmentId] IS NULL THEN [DepartmentId]
-			ELSE [OldDepartmentId]
-		END AS [DepartmentId]
-	FROM dbo.Department WITH (NOLOCK)
-	WHERE CompanyId = @CompanyId
-		AND ModifiedDate > @LastModifiedDate
+		,d.[ModifiedDate]
+		,d.[IsDeleted]
+		,d.[DepartmentId]
+	FROM dbo.Department AS d WITH (NOLOCK)
+		RIGHT JOIN [Group] AS g WITH (NOLOCK) ON g.DepartmentId = d.DepartmentId
+	WHERE g.CompanyId = @CompanyId
+		AND d.ModifiedDate > @LastModifiedDate
 END
-
 
