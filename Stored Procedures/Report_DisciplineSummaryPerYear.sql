@@ -8,14 +8,15 @@ ALTER PROCEDURE [dbo].[Report_DisciplineSummaryPerYear] @CompanyId SMALLINT
 	,@EmployeeId INT = NULL
 	,@IsLocal BIT = NULL
 	,@IsShowAll BIT = 0
+    ,@RoleIds VARCHAR(1000) = ''
 AS
 /*
 Created: 20220720@Tim.Trinh
 Task: discipline summary by year
 DB: HRM
-Original:
 
 Revisions:
+    20250404@Tim: add param @RoleIds, remove section [Redmine: #222886]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -137,9 +138,8 @@ BEGIN
 	DECLARE @tblRole TABLE (RoleId INT)
 
 	INSERT INTO @tblRole (RoleId)
-	SELECT RoleId
-	FROM dbo.EmployeeRole WITH (NOLOCK)
-	WHERE EmployeeId = @ApproverId
+	SELECT value
+	FROM STRING_SPLIT(@RoleIds, ',')
 
 	SET @Is_HR_SA = CASE 
 			WHEN EXISTS (
@@ -164,15 +164,17 @@ BEGIN
 		,empsum.IsLocal
 		,empsum.MilitaryFromDate
 		,empsum.MilitaryToDate
-		,gr.[Name] AS Team
-		,s.[Name] AS Section
+        ,gr.Code AS TeamCode
+		,gr.[Name] AS TeamName
+        ,dept.Code AS DepartmentCode
+		,dept.[Name] AS DepartmentName
 	FROM dbo.Employee AS emp WITH (NOLOCK)
 		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
 		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
 		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId
 		AND gr.IsDeleted = 0
-		INNER JOIN dbo.Section AS s WITH (NOLOCK) ON gr.SectionId = s.SectionId
-		AND s.IsDeleted = 0
+		INNER JOIN dbo.Department AS dept WITH (NOLOCK) ON gr.DepartmentId = dept.DepartmentId
+		AND dept.IsDeleted = 0
 	WHERE ce.CompanyId = @CompanyId
         AND emp.[Enabled] = 1
 		AND emp.IsDeleted = 0
