@@ -1,14 +1,12 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE OR ALTER PROCEDURE [dbo].[FnB_EmployeeGroup_GetByLastModifiedDate] 
-	@CompanyId SMALLINT,
-	@LastModifiedDate DATETIME
+CREATE PROCEDURE [dbo].[FnB_EmployeeGroup_GetByLastModifiedDate] @CompanyId SMALLINT
+	,@LastModifiedDate DATETIME
 AS
 /*
 Created: 20140320@Quinn.Vo
 Task: Get all groups from change date
 DB: HRM
-Original:
 
 Revisions:
 Param's Explanation:
@@ -22,7 +20,7 @@ BEGIN
 		SELECT @LastModifiedDate = DATEADD(HH, - 1, @LastModifiedDate)
 	END
 
-	SELECT CASE WHEN s.OldSectionId IS NOT NULL THEN s.OldSectionId ELSE s.SectionId END  AS DepartmentId
+	SELECT g.OldGroupId AS TeamId
 		,g.Code
 		,g.[Name]
 		,g.[Rank]
@@ -31,11 +29,7 @@ BEGIN
 			WHEN g.ModifiedDate IS NULL THEN g.CreatedDate
 			ELSE g.ModifiedDate
 			END AS ModifiedDate
-		,CASE 
-			WHEN OldGroupId IS NULL THEN g.GroupId
-			ELSE OldGroupId
-			END AS TeamId
-		,g.SectionId
+		,s.OldSectionId AS SectionId
 	FROM dbo.[Group] AS g WITH (NOLOCK)
 		LEFT JOIN dbo.Section AS s WITH (NOLOCK) ON g.SectionId = s.SectionId
 	WHERE g.CompanyId = @CompanyId
