@@ -27,7 +27,7 @@ BEGIN
 		,e.Phone
 		,e.Email
 		,CASE WHEN ld.OldId IS NOT NULL THEN ld.OldId ELSE ld.Id END  as JobTitleId
-		,e.[Enabled] AS IsEnabled
+		,e.[Enabled]
 		,ISNULL(e.isDeleted, 0) AS IsDeleted
 		,e.JoinedDate
 		,e.ConfirmedDate
