@@ -8,13 +8,14 @@ ALTER PROCEDURE [dbo].[Report_LeaveSummary] @empid INT = NULL
 	,@CompanyId INT
 AS
 /*
-Created: Tom.Vo@2013-11-21
-Task: leave summary report
-DB: HRM_SMS
-Original:
+	Created: Tom.Vo@2013-11-21
+	Task: leave summary report
+	DB: HRM_SMS
+	Original:
 
-Revisions:
-Param's Explanation:
+	Revisions:
+	 - 20250408@Hank: remove section [Redmine: #222886]
+	Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -369,7 +370,6 @@ BEGIN
 		,g.[Rank]
 		,g.GroupId AS TeamId
 		,g.[Name] AS Team
-		,sec.Code AS Section
 		,dep.Code AS Department
 	FROM #CurrenBalace AS cb
 		LEFT JOIN #OpenBalance AS op ON OP.empid = cb.empid
@@ -378,8 +378,7 @@ BEGIN
 		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.EmpId = cb.Empid
 		LEFT JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON e.EmpId = es.EmpId
 		LEFT JOIN dbo.[Group] AS g WITH (NOLOCK) ON g.GroupId = e.GroupId
-		INNER JOIN dbo.Section AS sec WITH (NOLOCK) ON sec.SectionId = g.SectionId
-		INNER JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId = sec.DepartmentId
+		INNER JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId = g.DepartmentId
 	WHERE ISNULL(e.[Enabled], 0) = 1
 		AND (
 			@isLocal IS NULL
@@ -413,7 +412,6 @@ BEGIN
 		,g.[Rank]
 		,g.GroupId AS TeamId
 		,g.[Name] AS Team
-		,sec.Code AS Section
 		,dep.Code AS Department
 	FROM #OpenBalance AS op
 		LEFT JOIN #CreditKIV AS kiv ON op.EmpId = kiv.EmpId
@@ -421,8 +419,7 @@ BEGIN
 		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.Empid = op.Empid
 		LEFT JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON e.EmpId = es.EmpId
 		LEFT JOIN dbo.[Group] AS g WITH (NOLOCK) ON g.GroupId = e.GroupId
-		INNER JOIN dbo.Section AS sec WITH (NOLOCK) ON sec.SectionId = g.SectionId
-		INNER JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId = sec.DepartmentId
+		INNER JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId = g.DepartmentId
 	WHERE e.Empid NOT IN (
 			SELECT EmpID
 			FROM #CurrenBalace AS cb

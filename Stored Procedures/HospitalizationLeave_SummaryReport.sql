@@ -9,13 +9,14 @@ ALTER PROCEDURE [dbo].[HospitalizationLeave_SummaryReport] @EmpId INT = NULL
 	,@CompanyId INT
 AS
 /*
-Created: Tim.Trinh@2021-08-19
-Task: hospitalization leave summary
-DB: HRM_SMS
-Original:
+	Created: Tim.Trinh@2021-08-19
+	Task: hospitalization leave summary
+	DB: HRM_SMS
+	Original:
 
-Revisions:
-Param's Explanation:
+	Revisions:
+		- 20250408@Hank: remove section [Redmine: #222886]
+	Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -134,7 +135,6 @@ BEGIN
 		,emp.FullName
 		,emp.NickName
 		,gr.[Name] AS Team
-		,sec.[Name] AS Section
 		,dep.[Name] AS Department
 		,ISNULL(cb.CreditDays, 0) AS Balance
 		,cb.Jan
@@ -154,8 +154,7 @@ BEGIN
 		INNER JOIN #tblEmployeeId AS tblemp WITH (NOLOCK) ON emp.EmpId = tblemp.EmpId
 		INNER JOIN #tblGroupId AS tblgr WITH (NOLOCK) ON emp.GroupId = tblgr.GroupId
 		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId
-		INNER JOIN dbo.Section AS sec WITH (NOLOCK) ON sec.SectionId = gr.SectionId
-		INNER JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId = sec.DepartmentId
+		INNER JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId = gr.DepartmentId
 		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON emp.EmpId = es.EmpId
 		LEFT JOIN #tblCurrenBalace AS cb WITH (NOLOCK) ON emp.EmpId = cb.EmpId
 	WHERE ISNULL(emp.[Enabled], 0) = 1

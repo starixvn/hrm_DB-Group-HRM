@@ -19,6 +19,8 @@ Original:
 
 Revisions:
 	- Merlin.Le@20200713: Get section and department - Redmine Id: 110683
+	- 20250408@Hank: remove section [Redmine: #222886]
+
 Param's Explanation:
 	@type: 0-all, 1-missing checkin; 2-missing check out, 3: latein; 4-earlyout, 5- not work
 */
@@ -581,7 +583,6 @@ BEGIN
 				WHEN AttendanceDate1 IS NULL THEN 'No Data'
 				ELSE NULL
 				END) AS Notes
-		,T.SectionCode
 		,T.DepartmentCode
 	FROM (
 		SELECT e.Code
@@ -670,7 +671,6 @@ BEGIN
 				WHEN ISNULL(s_CrossDay.IsOutAfterDay, 0) = 1 THEN 1
 				ELSE 0 END
 				) AS IsShiftCrossDay
-			,sec.Code AS SectionCode
 			,de.Code AS DepartmentCode
 		FROM dbo.Employee AS e WITH (NOLOCK)
 			INNER JOIN dbo.tmpEmployeeCalendar AS c WITH (NOLOCK) ON c.EmpId = e.EmpId
@@ -702,8 +702,7 @@ BEGIN
 			LEFT JOIN dbo.EmployeeAttendance AS a WITH (NOLOCK) ON a.AttendanceDate = c.WorkDate
 			AND a.empid = e.empid
 			LEFT JOIN dbo.[Group] AS g WITH (NOLOCK) ON e.groupid = g.groupid
-			INNER JOIN dbo.[Section] AS sec WITH (NOLOCK) ON sec.SectionId = g.SectionId
-			INNER JOIN dbo.[Department] AS de WITH (NOLOCK) ON de.DepartmentId = sec.DepartmentId
+			INNER JOIN dbo.[Department] AS de WITH (NOLOCK) ON de.DepartmentId = g.DepartmentId
 			INNER JOIN #tmpGroup AS tmpgr ON g.GroupId = tmpgr.GroupId
 			LEFT JOIN dbo.OTDailyRequest AS ot WITH (NOLOCK) ON a.attendancedate = ot.OvertimeDate
 			AND a.EmpId = ot.EmpId
@@ -796,5 +795,4 @@ BEGIN
 
 	DROP TABLE #tmpDailyRequest
 END
-
 

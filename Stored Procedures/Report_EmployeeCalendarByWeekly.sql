@@ -16,6 +16,7 @@ Original:
 
 Revisions:
 	- 20200714@Merlin.Le: Get section and department code
+	- 20250408@Hank: remove section [Redmine: #222886]
 Param's Explanation:
 */
 BEGIN
@@ -85,14 +86,12 @@ BEGIN
 		,emp.NickName
 		,emp.FullName
 		,gr.[Name] AS Team
-		,sec.Code AS SectionCode
 		,dep.Code AS DepartmentCode
 	FROM dbo.Employee AS emp WITH (NOLOCK)
 		INNER JOIN #tblEmployeeIds AS tblemp WITH (NOLOCK) ON emp.EmpId = tblemp.EmployeeId
 		INNER JOIN dbo.EmployeeSummary AS esum WITH (NOLOCK) ON emp.EmpId = esum.EmpId
 		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId
-		INNER JOIN dbo.[Section] AS sec WITH (NOLOCK) ON gr.SectionId = sec.SectionId
-		INNER JOIN dbo.[Department] AS dep WITH (NOLOCK) ON sec.DepartmentId = dep.DepartmentId
+		INNER JOIN dbo.[Department] AS dep WITH (NOLOCK) ON gr.DepartmentId = dep.DepartmentId
 	ORDER BY gr.[Name]
 		,emp.Code
 
@@ -134,8 +133,8 @@ BEGIN
 		AND empca.WorkDate BETWEEN @fromTime
 			AND @toTime
 		LEFT JOIN dbo.Shift AS shift WITH (NOLOCK) ON shift.ShiftId = empca.ShiftId
-		LEFT JOIN dbo.LeaveType AS lv1 WITH (NOLOCK) ON empca.LeaveTypeId = lv1.LeaveTypeId
-		LEFT JOIN dbo.LeaveType AS lv2 WITH (NOLOCK) ON empca.LeaveTypeId2 = lv2.LeaveTypeId
+		LEFT JOIN dbo.LeaveType AS lv1 WITH (NOLOCK) ON empca.LeaveTypeId = lv1.LeaveTypeId AND lv1.CompanyId = @companyId
+		LEFT JOIN dbo.LeaveType AS lv2 WITH (NOLOCK) ON empca.LeaveTypeId2 = lv2.LeaveTypeId AND lv2.CompanyId = @companyId
 		LEFT JOIN dbo.ScheduleArrangementOffDayReplacement AS offrep WITH (NOLOCK) ON emp.EmpId = offrep.EmployeeId
 		AND empca.WorkDate = offrep.WorkDate
 	ORDER BY emp.NickName
