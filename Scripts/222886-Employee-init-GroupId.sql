@@ -417,7 +417,7 @@ VALUES
 
 
 UPDATE  e
-SET e.GroupId = tmp.Ctr_ID
+SET e.GroupId = g.GroupId
 FROM dbo.Employee AS e
 INNER JOIN dbo.CompanyEmployee as ce ON ce.EmpId = e.EmpId AND ce.CompanyId = @CompanyId
 LEFT JOIN @EmployeeMapping as tmp ON tmp.EmpCode = e.Code
