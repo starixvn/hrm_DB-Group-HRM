@@ -1,6 +1,8 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[ScheduleArrangement_SyncWorkingShift] @CompanyId SMALLINT
+ALTER PROCEDURE [dbo].[ScheduleArrangement_SyncWorkingShift]
+(
+	@CompanyId SMALLINT
     ,@ActorId INT
 	,@FromDate DATE
 	,@ToDate DATE
@@ -8,17 +10,20 @@ ALTER PROCEDURE [dbo].[ScheduleArrangement_SyncWorkingShift] @CompanyId SMALLINT
 	,@WorkingShiftXml NVARCHAR(MAX) = ''
 	,@ErrCode INT = 0 OUTPUT
 	,@ErrMsg NVARCHAR(200) = '' OUTPUT
+)
 AS
 /*
-Created: 20220106@Tim.Trinh
-Task: sync working shift from OWP
-DB: HRM
+	Created: 20220106@Tim.Trinh
+	Task: sync working shift from OWP
+	DB: bodb_HRM
 
-Revisions:
-Param's Explanation:
-- @WorkingShiftXml: "<Root>
-		<Row EmployeeID={1} ShiftCode={2} ShiftDate={3} IsOffDay={4} IsPublicHoliday={5} ModifiedDate={6} />
-	</Root>"
+	Revisions:
+		20250408@Mira: fix bug faile to sync working shift from OWP to HRM [Redmine: #223246]
+
+	Param's Explanation:
+	- @WorkingShiftXml: "<Root>
+			<Row EmployeeID={1} ShiftCode={2} ShiftDate={3} IsOffDay={4} IsPublicHoliday={5} ModifiedDate={6} />
+		</Root>"
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -51,9 +56,9 @@ BEGIN
 	IF ISNULL(@EmployeeIds, '') <> ''
 	BEGIN
 		INSERT INTO #tmpEmployeeIds (EmpId)
-		SELECT DISTINCT val
-		FROM dbo.fnc_strSplit(@EmployeeIds, ',')
-		WHERE ISNUMERIC(val) = 1
+		SELECT DISTINCT value
+		FROM STRING_SPLIT(@EmployeeIds, ',')
+		WHERE ISNUMERIC(value) = 1
 	END
 
 	BEGIN TRY
@@ -122,23 +127,14 @@ BEGIN
 			(
 				s.ShiftID IS NULL
 				AND (
-					(
+					s.ShiftID IS NULL
+				AND (
 						tmpws.IsOffDay = 1
-						AND tmpca.IsOffDay = 0
-						)
-					OR (
-						tmpws.IsOffDay = 0
-						AND tmpca.IsOffDay = 1
-						)
 					OR (
 						tmpws.IsHoliday = 1
-						AND tmpca.IsHoliday = 0
 						AND h.Id IS NOT NULL
 						)
-					OR (
-						tmpws.IsHoliday = 0
-						AND tmpca.IsHoliday = 1
-						)
+					)
 					)
 				)
 			OR (
