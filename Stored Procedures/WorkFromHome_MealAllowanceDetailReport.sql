@@ -1,18 +1,22 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[WorkFromHome_MealAllowanceDetailReport] @CompanyId SMALLINT
+ALTER PROCEDURE [dbo].[WorkFromHome_MealAllowanceDetailReport]
+(
+    @CompanyId SMALLINT
     ,@FromDate DATE
 	,@ToDate DATE
 	,@TeamIds VARCHAR(MAX) = ''
 	,@EmployeeId INT = NULL
 	,@IsLocal BIT = NULL
+)
 AS
 /*
-Created: 20211109@Quinn.Vo
-Task: Get meal allowance report
-DB: HRM
+    Created: 20211109@Quinn.Vo
+    Task: Get meal allowance report
+    DB: bodb_HRM
 
-Revisions:
+    Revisions:
+        20250404@Tim: remove section [Redmine: #222886]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -155,19 +159,19 @@ BEGIN
 		,e.FullName
 		,e.NickName
 		,g.GroupId AS TeamId
-		,g.[Name] AS Team
-		,sec.Code AS Section
-		,dep.Code AS Department
+        ,g.Code AS TeamCode
+		,g.[Name] AS TeamName
+		,dep.Code AS DepartmentCode
+		,dep.[Name] AS DepartmentName
 	FROM #tmpEmpAttandance AS a WITH (NOLOCK)
 		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON a.EmpId = e.EmpId
 		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON e.EmpId = es.EmpId
 		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON g.GroupId = e.GroupId
-		INNER JOIN dbo.Section AS sec WITH (NOLOCK) ON sec.SectionId = g.SectionId
-		INNER JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId = sec.DepartmentId
+		INNER JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId = g.DepartmentId
 		LEFT JOIN dbo.[Shift] AS s WITH (NOLOCK) ON s.ShiftId = a.ShiftId
         AND s.CompanyId = @CompanyId
 	ORDER BY dep.Code
-		,sec.Code
+		,dep.[Name]
 		,g.[Name]
 		,e.Code
 		,a.WorkDate

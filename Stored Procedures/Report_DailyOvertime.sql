@@ -1,6 +1,8 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[Report_DailyOvertime] @CompanyId SMALLINT
+ALTER PROCEDURE [dbo].[Report_DailyOvertime]
+(
+    @CompanyId SMALLINT
     ,@ActorId INT
 	,@fromDate DATE
 	,@toDate DATE
@@ -8,14 +10,16 @@ ALTER PROCEDURE [dbo].[Report_DailyOvertime] @CompanyId SMALLINT
 	,@isLocal BIT = NULL
 	,@Employee NVARCHAR(200) = NULL
 	,@EmployeeStatusId TINYINT = NULL
+)
 AS
 /*
-Created: 20250307@Tim
-Task: Get daily overtime details report 
-DB: HRM
-Original:
+    Created: 20250307@Tim
+    Task: Get daily overtime details report 
+    DB: bodb_HRM
+    Original:
 
-Revisions:
+    Revisions:
+        20250404@Tim: remove section [Redmine: #222886]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -43,7 +47,8 @@ BEGIN
 		,emp.FullName
 		,emp.Code
 		,gr.GroupId
-		,gr.[Name] AS Team
+        ,gr.Code AS TeamCode
+		,gr.[Name] AS TeamName
 		,ot.OvertimeDate AS WorkDate
 		,s.ShiftId
 		,s.Code AS ShiftCode
@@ -58,16 +63,15 @@ BEGIN
 		,empca.IsHoliday
 		,empca.IsOffDay
 		,ot.[Status] AS StatusId
-		,dept.Code as DepartmentCode
-	    ,sec.Code as Section
+		,dept.Code AS DepartmentCode
+	    ,dept.[Name] AS DepartmentName
 	FROM dbo.OTDailyRequest AS ot WITH (NOLOCK)
 		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON emp.EmpId = ot.EmpId
 		INNER JOIN #tmpMembers AS member WITH (NOLOCK) ON emp.EmpId = member.EmpId
 		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON empsum.EmpId = emp.EmpId
         AND empsum.IsTopManager = 0
 		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId
-		INNER JOIN dbo.Section AS sec WITH (NOLOCK) ON gr.SectionId = sec.SectionId
-		INNER JOIN dbo.Department AS dept WITH (NOLOCK) ON sec.DepartmentId = dept.DepartmentId
+		INNER JOIN dbo.Department AS dept WITH (NOLOCK) ON gr.DepartmentId = dept.DepartmentId
 		LEFT JOIN dbo.EmployeeCalendar AS empca WITH (NOLOCK) ON emp.EmpId = empca.EmpId
 		AND ot.OvertimeDate = empca.WorkDate
 		LEFT JOIN dbo.[Shift] AS s WITH (NOLOCK) ON s.ShiftId = ot.[Schedule]
