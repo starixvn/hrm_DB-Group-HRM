@@ -370,7 +370,7 @@ BEGIN
 		,g.[Rank]
 		,g.GroupId AS TeamId
 		,g.[Name] AS Team
-		,dep.Code AS Department
+		,dep.Name AS Department
 	FROM #CurrenBalace AS cb
 		LEFT JOIN #OpenBalance AS op ON OP.empid = cb.empid
 		LEFT JOIN #CreditKIV AS crk ON cb.EmpId = crk.EmpId

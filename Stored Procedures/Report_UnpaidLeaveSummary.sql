@@ -196,7 +196,7 @@ BEGIN
 		,emp.FullName
 		,g.GroupId AS TeamId
 		,g.[Name] AS Team
-		,dep.Code
+		,dep.[Name] AS Department
 	FROM dbo.EmployeeCalendar AS empca WITH (NOLOCK)
 		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON empca.EmpId = emp.EmpId
 		AND ISNULL(emp.isDeleted, 0) = 0
@@ -230,7 +230,7 @@ BEGIN
 		,emp.FullName
 		,g.GroupId
 		,g.[Name]
-		,dep.Code
+		,dep.[Name]
 	HAVING SUM((CASE 
 				WHEN lt.LeaveTypeId IS NOT NULL THEN (CASE 
 						WHEN ISNULL(empca.LeaveTypeId2, 0) <> 0
