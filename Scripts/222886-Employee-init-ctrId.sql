@@ -1414,10 +1414,9 @@ DECLARE @EmployeeMapping TABLE (
  (NULL, '', 'Adam.Lee', 300000096, 5297);
 
 
- UPDATE  e
+UPDATE  e
 SET e.CtrId = tmp.CtrID,
-    e.GroupId = g.GroupId
+	e.ModifiedDate = GETDATE()
 FROM dbo.Employee AS e
 INNER JOIN dbo.CompanyEmployee as ce ON ce.EmpId = e.EmpId AND ce.CompanyId = @CompanyId
 LEFT JOIN @EmployeeMapping as tmp ON tmp.UserId = e.UserId
-LEFT JOIN dbo.[Group] AS g ON g.GroupTeamId = tmp.TeamId AND g.CompanyId = @CompanyId

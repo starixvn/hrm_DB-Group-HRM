@@ -1,6 +1,7 @@
  
-USE bodb_HRM_20250404
+USE bodb_HRM
 GO
+
 DECLARE @CompanyId INT = 3;
 DECLARE @EmployeeMapping TABLE (
     CtrID INT,
@@ -1409,10 +1410,10 @@ DECLARE @EmployeeMapping TABLE (
  (NULL, '', 'Adam.Lee', 300000096, 5297);
 
 
- SELECT tmp.CtrID, e.EmpId, e.Code, tmp.EmpCode as tmpEmpCode, e.NickName, tmp.NickName as tmpNickName, e.UserId, tmp.UserId as tmpUserId, e.isDeleted, e.Enabled, tmp.TeamId
- FROM [dbo].[Employee] e
- INNER JOIN [dbo].CompanyEmployee as ce ON ce.EmpId = e.EmpId AND ce.CompanyId = 3
- LEFT JOIN @EmployeeMapping as tmp ON tmp.UserId = e.UserId
- WHERE e.isDeleted = 0 AND e.Enabled = 1
-
- 
+UPDATE  e
+SET e.GroupId = g.GroupId,
+	e.ModifiedDate = GETDATE()
+FROM dbo.Employee AS e
+INNER JOIN dbo.CompanyEmployee as ce ON ce.EmpId = e.EmpId AND ce.CompanyId = @CompanyId
+LEFT JOIN @EmployeeMapping as tmp ON tmp.UserId = e.UserId
+LEFT JOIN dbo.[Group] AS g ON g.GroupTeamId = tmp.TeamId AND g.CompanyId = @CompanyId
