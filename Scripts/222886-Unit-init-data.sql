@@ -116,6 +116,6 @@ INSERT INTO [dbo].[Unit]
        ,[Type]
        ,[AccountableArea])
 VALUES 
-       ('Other', 0, NULL, GETDATE(), 0, 940, NULL, 'Other', NULL, NULL);
+       ('Other', 1, NULL, GETDATE(), 0, 940, NULL, 'Other', NULL, NULL);
 GO
 
