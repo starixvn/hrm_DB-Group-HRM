@@ -1,20 +1,24 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[tmpEmployeeCalendar_Insert] @CompanyId SMALLINT = NULL
+ALTER PROCEDURE [dbo].[tmpEmployeeCalendar_Insert]
+(
+    @CompanyId SMALLINT = NULL
     ,@fromDate DATE
 	,@toDate DATE
 	,@empIds VARCHAR(MAX) = NULL
 	,@isEnable BIT = NULL
 	,@isDelete BIT = NULL
 	,@isUpdateRequestData BIT = 0
+)
 AS
 /*
-Created: Tim.Trinh@2019-10-10
-Task: get employee calendar
-DB: HRM
+    Created: Tim.Trinh@2019-10-10
+    Task: get employee calendar
+    DB: bodb_HRM
 
-Revisions:
-Param's Explanation:
+    Revisions:
+        - 20250409@Tim: remove update holiday 
+    Param's Explanation:
 */
 BEGIN
 	DECLARE @tempDate DATE = @fromDate
@@ -259,47 +263,6 @@ BEGIN
 			FROM dbo.tmpEmployeeCalendar AS empca WITH (NOLOCK)
 			WHERE empca.EmpId = tmp.EmpId
 				AND empca.WorkDate = tmp.WorkDate
-			)
-
-	UPDATE empca
-	SET empca.IsHoliday = (CASE 
-			WHEN (
-					empsum.IsLocal = 1
-					OR (
-						empsum.IsLocal = 0
-						AND empsum.IsExpatUseHoliday = 1
-						)
-					)
-				AND holiday.Id IS NOT NULL THEN 1
-			ELSE 0 END
-			)
-		,empca.ModifiedDate = GETDATE()
-	FROM dbo.tmpEmployeeCalendar AS empca WITH (ROWLOCK, UPDLOCK)
-		INNER JOIN #tempEmployeeIds AS tblemp WITH (NOLOCK) ON empca.EmpId = tblemp.EmpId
-		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON empca.EmpId = empsum.EmpId
-        INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON tblemp.EmpId = ce.EmpId
-		LEFT JOIN dbo.Holiday AS holiday WITH (NOLOCK) ON holiday.CompanyId = ce.CompanyId
-        AND empca.WorkDate BETWEEN holiday.FromDate
-			AND holiday.ToDate
-	WHERE (@CompanyId IS NULL OR ce.CompanyId = @CompanyId)
-        AND empca.WorkDate BETWEEN @fromDate
-			AND @toDate
-		AND (
-			(
-				empca.IsHoliday = 1
-				AND holiday.Id IS NULL
-				)
-			OR (
-				empca.IsHoliday = 0
-				AND (
-					empsum.IsLocal = 1
-					OR (
-						empsum.IsLocal = 0
-						AND empsum.IsExpatUseHoliday = 1
-						)
-					)
-				AND holiday.Id IS NOT NULL
-				)
 			)
 
 	UPDATE dbo.tmpEmployeeCalendar WITH (ROWLOCK, UPDLOCK)
