@@ -14,6 +14,20 @@ Revisions:
 Param's Explanation:
 
 */
+ALTER   PROCEDURE [dbo].[FnB_Department_GetByLastModifiedDate]
+	@CompanyId SMALLINT,
+	@LastModifiedDate DATETIME
+AS
+/*
+Created: 20230220@Quinn.Vo
+Task: Get last modified date
+DB: FBM
+Original: 
+
+Revisions:  
+Param's Explanation:
+
+*/
 BEGIN
 	SET NOCOUNT ON;
 
@@ -22,15 +36,15 @@ BEGIN
 		SELECT @LastModifiedDate = DATEADD(YYYY, -10, GETDATE())
 	END
 
-	SELECT d.[Code]
+	SELECT DISTINCT d.[DepartmentId]
+		,d.[Code]
 		,d.[Name]
 		,[UnitId]
 		,[IsActive]
 		,d.[ModifiedDate]
 		,d.[IsDeleted]
-		,d.[DepartmentId]
 	FROM dbo.Department AS d WITH (NOLOCK)
-		RIGHT JOIN [Group] AS g WITH (NOLOCK) ON g.DepartmentId = d.DepartmentId
+		INNER JOIN [Group] AS g WITH (NOLOCK) ON g.DepartmentId = d.DepartmentId
 	WHERE g.CompanyId = @CompanyId
 		AND d.ModifiedDate > @LastModifiedDate
 END

@@ -1,6 +1,6 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE OR ALTER   PROCEDURE [dbo].[FnB_Section_GetByLastModifiedDate]
+ALTER   PROCEDURE [dbo].[FnB_Section_GetByLastModifiedDate]
 	@CompanyId SMALLINT,
 	@LastModifiedDate DATETIME
 AS
@@ -22,13 +22,14 @@ BEGIN
 		SELECT @LastModifiedDate = DATEADD(YYYY, -10, GETDATE())
 	END
 	
-	SELECT [Code]
-		,[Name]
-		,[IsActive]
-		,[ModifiedDate]
-		,[IsDeleted]
-		,[DepartmentId] AS [SectionId]
-	FROM dbo.Department WITH (NOLOCK)
+	SELECT DISTINCT d.[Code]
+		,d.[Name]
+		,d.[IsActive]
+		,d.[ModifiedDate]
+		,d.[IsDeleted]
+		,d.[DepartmentId] AS [SectionId]
+	FROM dbo.Department AS d WITH (NOLOCK)
+		INNER JOIN [Group] AS g WITH (NOLOCK) ON g.DepartmentId = d.DepartmentId
 	WHERE CompanyId = @CompanyId
-		AND ModifiedDate > @LastModifiedDate
+		AND d.ModifiedDate > @LastModifiedDate
 END

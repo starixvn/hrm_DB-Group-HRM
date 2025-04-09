@@ -22,17 +22,17 @@ BEGIN
 		SELECT @LastModifiedDate = DATEADD(YYYY, -10, GETDATE())
 	END
 
-	SELECT u.UnitId
+	SELECT DISTINCT u.UnitId
 		,u.Code
 		,u.Name
 		,u.IsActive
 		,u.ModifiedDate
 		,u.IsDeleted
 	FROM dbo.Unit AS u WITH (NOLOCK) 
-	RIGHT JOIN dbo.Department AS d WITH (NOLOCK) ON d.UnitId = u.UnitId
-	RIGHT JOIN dbo.[Group] AS g WITH (NOLOCK) ON g.DepartmentId = d.DepartmentId
-	WHERE u.ModifiedDate > @LastModifiedDate
+	LEFT JOIN dbo.Department AS d WITH (NOLOCK) ON d.UnitId = u.UnitId
+	INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON g.DepartmentId = d.DepartmentId
 		AND g.CompanyId = @CompanyId
+	WHERE u.ModifiedDate > @LastModifiedDate
 END
 
 
