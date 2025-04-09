@@ -103,6 +103,19 @@ INSERT INTO [dbo].[Unit]
            ,tmp.AccountableArea
 	FROM @tmpUnit AS tmp 
 	LEFT JOIN dbo.Employee AS e WITH (NOLOCK) ON e.CtrId = tmp.PICCtrId
-			
+
+    INSERT INTO [dbo].[Unit]
+       ([Code]
+       ,[IsActive]
+       ,[ModifiedBy]
+       ,[ModifiedDate]
+       ,[IsDeleted]
+       ,[GroupUnitId]
+       ,[PICEmpId]
+       ,[Category]
+       ,[Type]
+       ,[AccountableArea])
+VALUES 
+       ('Other', 0, NULL, GETDATE(), 0, 940, NULL, 'Other', NULL, NULL);
 GO
 
