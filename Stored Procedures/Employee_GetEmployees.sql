@@ -1,6 +1,8 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[Employee_GetEmployees] @query NVARCHAR(256) = NULL
+ALTER PROCEDURE [dbo].[Employee_GetEmployees] 
+(	
+	@query NVARCHAR(256) = NULL
 	,@teamIds NVARCHAR(MAX) = ''
 	,@enable BIT = NULL
 	,@isDelete BIT = NULL
@@ -10,17 +12,19 @@ ALTER PROCEDURE [dbo].[Employee_GetEmployees] @query NVARCHAR(256) = NULL
 	,@totalRow INT = NULL OUTPUT
 	,@titleId INT = NULL
 	,@companyId INT
+)
 AS
 /*
-Created: Tom.Vo@2013-10-23
-Task: Insert default working calendar for employee
-DB: HRM_SMS
-Original:
+	Created: Tom.Vo@2013-10-23
+	Task: Insert default working calendar for employee
+	DB: HRM_SMS
+	Original:
 
-Revisions:
-Param's Explanation:
-	-Otis - 03062023: get field ResignedReason
-	-Jay  - 04042025: remove Section
+	Revisions:
+	Param's Explanation:
+		-Otis - 03062023: get field ResignedReason
+		-Jay  - 04042025: remove Section
+		-Henry- 10042025: map Company
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -173,6 +177,8 @@ BEGIN
 	  + ',s.MilitaryFromDate' + CHAR(13)
 	  + ',s.MilitaryToDate' + CHAR(13)
 	  + ',jt.Name AS [JobTitle]' + CHAR(13)
+	  + ',c.CompanyId' + CHAR(13)
+	  + ',c.[Name] AS CompanyName' + CHAR(13)
 	  + ',unit.[Name] AS UnitName' + CHAR(13)
 	  + ',g.GroupId AS [TeamId]' + CHAR(13)
 	  + ',g.Code AS [TeamCode]' + CHAR(13)
@@ -190,6 +196,7 @@ BEGIN
 	  + 'LEFT JOIN [dbo].[Country] AS ctry WITH(NOLOCK) ON ctry.CountryCode = s.CountryCode' + CHAR(13)
 	  + 'LEFT JOIN [dbo].[Lookup] AS l WITH(NOLOCK) ON l.Code = ''JT''' + CHAR(13)
 	  + 'LEFT JOIN [dbo].[LookupData] AS jt WITH(NOLOCK) ON l.Id = jt.LookupId AND e.JobTitleId = jt.Id' + CHAR(13)
+	  + 'LEFT JOIN [dbo].Company c WITH (NOLOCK) ON c.CompanyId =' + CAST(@companyId AS VARCHAR(10))  + CHAR(13)
 	  + @sWhere + 'ORDER BY ' + CHAR(13)
 
 	IF (@enable = 0)
