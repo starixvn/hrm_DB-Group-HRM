@@ -1,4 +1,4 @@
-
+TRUNCATE TABLE dbo.Department 
 
 ALTER TABLE dbo.Department 
 ADD GroupDeptId INT NULL,
@@ -161,8 +161,8 @@ VALUES
 (600099,'SV08','SVR Core Team','PU08 SVR Core Team','391','SV'),
 (600138,'SV11','Risk','PU08 Risk','181','SV'),
 (600139,'SV22','Risk & Support','PU08 Risk & Support','155','SV'),
-(600140,'SV33','VT','PU08 Variance','391','SV');
-
+(600140,'SV33','VT','PU08 Variance','391','SV'),
+(600141,'Other','Other','','','Other');
 
 INSERT INTO [dbo].[Department]
            ([Code]
