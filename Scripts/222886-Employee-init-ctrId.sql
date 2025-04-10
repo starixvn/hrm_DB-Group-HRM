@@ -1415,8 +1415,7 @@ DECLARE @EmployeeMapping TABLE (
 
 
 UPDATE  e
-SET e.CtrId = tmp.CtrID,
-	e.ModifiedDate = GETDATE()
+SET e.CtrId = tmp.CtrID
 FROM dbo.Employee AS e
 INNER JOIN dbo.CompanyEmployee as ce ON ce.EmpId = e.EmpId AND ce.CompanyId = @CompanyId
 LEFT JOIN @EmployeeMapping as tmp ON tmp.UserId = e.UserId
