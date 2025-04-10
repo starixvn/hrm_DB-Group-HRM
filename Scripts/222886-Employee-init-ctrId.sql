@@ -277,7 +277,7 @@ DECLARE @EmployeeMapping TABLE (
  (1669, 'SMS03324', 'Zero', 300000044, 3843),
  (1690, 'SMS03335', 'Jun', 300000044, 3879),
  (190, 'DAR00067', 'Yong', 300000045, 172),
- (35, 'DAR00023', 'Soon', 300000046, 177),
+ (35, 'DAR00023', 'Soon', 300000065, 177),
  (451, 'DAR02196', 'Yeo', 300000047, 176),
  (41, 'SMS00306', 'Kelly', 300000048, 418),
  (89, 'SMS00356', 'Henry', 300000048, 129),
@@ -746,7 +746,7 @@ DECLARE @EmployeeMapping TABLE (
  (NULL, '', 'Farn Chia', 300000088, 472),
  (NULL, '', 'Leon. Low', 300000088, 474),
  (NULL, '', 'Yean', 300000088, 475),
- (NULL, '', 'Lee.Tan', 300000046, 478),
+ (NULL, '', 'Lee.Tan', 300000065, 478),
  (NULL, '', 'Hon Heng', 300000030, 479),
  (NULL, '', 'Wui. Tan', 300000061, 480),
  (NULL, '', 'C.Keen', 300000061, 481),
@@ -1017,7 +1017,7 @@ DECLARE @EmployeeMapping TABLE (
  (NULL, '', 'Hue.Vu', 300000017, 790),
  (NULL, '', 'Rio.Wong', 300000002, 793);
 
- INSERT INTO @EmployeeMapping (CtrID, EmpCode, NickName, TeamId, UserId) 
+  INSERT INTO @EmployeeMapping (CtrID, EmpCode, NickName, TeamId, UserId) 
  VALUES
  (NULL, '', 'Nick.Hang', 300000048, 796),
  (NULL, '', 'Warrick', 300000054, 797),
