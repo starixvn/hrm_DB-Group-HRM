@@ -84,7 +84,7 @@ BEGIN
 		)
 	SELECT distinct @UnitIndex + u.UnitId
 		,u.Code
-		,u.[Name]
+		,ISNULL(u.[Name], u.Code)
 		,CASE 
 			WHEN u.IsActive = 0
 				OR u.IsDeleted = 1 THEN 1
