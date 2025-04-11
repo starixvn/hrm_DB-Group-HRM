@@ -27,7 +27,8 @@ BEGIN
 		,d.[IsActive]
 		,d.[ModifiedDate]
 		,d.[IsDeleted]
-		,d.[DepartmentId] AS [SectionId]
+		,d.[DepartmentId]
+		,d.[DepartmentId]  AS [SectionId]
 	FROM dbo.Department AS d WITH (NOLOCK)
 		INNER JOIN [Group] AS g WITH (NOLOCK) ON g.DepartmentId = d.DepartmentId
 	WHERE CompanyId = @CompanyId
