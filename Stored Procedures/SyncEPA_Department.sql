@@ -38,7 +38,7 @@ BEGIN
 		,IsDeleted
 		,ModifiedDate
 		)
-	SELECT d.DepartmentId AS SectionId
+	SELECT distinct d.DepartmentId AS SectionId
 		,d.Code
 		,d.[Name]
 		,@DepartmentIndex + d.DepartmentId
@@ -60,7 +60,7 @@ BEGIN
 		,IsDeleted
 		,ModifiedDate
 		)
-	SELECT @DepartmentIndex + d.DepartmentId
+	SELECT distinct @DepartmentIndex + d.DepartmentId
 		,d.Code
 		,d.[Name]
 		,@UnitIndex + u.UnitId
@@ -82,7 +82,7 @@ BEGIN
 		,IsDeleted
 		,ModifiedDate
 		)
-	SELECT @UnitIndex + u.UnitId
+	SELECT distinct @UnitIndex + u.UnitId
 		,u.Code
 		,u.[Name]
 		,CASE 
