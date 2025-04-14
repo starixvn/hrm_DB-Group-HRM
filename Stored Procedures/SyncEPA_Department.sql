@@ -102,5 +102,6 @@ BEGIN
 		OR ModifiedDate > @FromDate
 	ORDER BY DepartmentId
 
+	
 	DROP TABLE #tblDepartment
 END
