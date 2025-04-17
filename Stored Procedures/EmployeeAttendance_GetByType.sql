@@ -584,7 +584,7 @@ BEGIN
 				ELSE NULL
 				END) AS Notes
 		,T.DepartmentCode
-		,T.BUCode
+		,T.UnitCode
 	FROM (
 		SELECT e.Code
 			,e.EmpId
@@ -673,7 +673,7 @@ BEGIN
 				ELSE 0 END
 				) AS IsShiftCrossDay
 			,de.Code AS DepartmentCode
-			,u.Code AS BUCode
+			,u.Code AS UnitCode
 		FROM dbo.Employee AS e WITH (NOLOCK)
 			INNER JOIN dbo.tmpEmployeeCalendar AS c WITH (NOLOCK) ON c.EmpId = e.EmpId
 			AND c.WorkDate BETWEEN @fromtime

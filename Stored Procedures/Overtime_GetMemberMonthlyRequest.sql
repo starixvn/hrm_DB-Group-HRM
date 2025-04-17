@@ -115,7 +115,7 @@ BEGIN
 		,gr.[Name] AS TeamName
 		,dep.Code AS DepartmentCode
         ,dep.[Name] AS DepartmentName
-		,u.Code AS BUCode
+		,u.Code AS UnitCode
 		,verifier.EmpId AS VerifierId
 		,verifier.NickName AS VerifierNickname
 		,verifier.FullName AS VerifierFullName

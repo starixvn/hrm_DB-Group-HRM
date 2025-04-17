@@ -672,7 +672,7 @@ BEGIN
 		,lv.[Name] AS LeaveTypeName
 		,r.Remark
 		,ISNULL(rm.TotalDaysRequest, 0) TotalDaysRequestInMonth
-		,u.Code AS BUCode
+		,u.Code AS UnitCode
 		,CASE 
 			WHEN r.RequestType IN (1, 2) THEN inoutmiss.ReasonId
 			WHEN r.RequestType IN (3, 4) THEN inout.ReasonId
