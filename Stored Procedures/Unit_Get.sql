@@ -1,35 +1,36 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[Unit_Get] 
-	@IsActive BIT = NULL,
-	@CompanyId SMALLINT
+ALTER PROCEDURE [dbo].[Unit_Get] @IsActive BIT = NULL
 AS
 /*
-Created: 20200521@Patsy.Doan
-Task: Get unit.
-DB: HRM
-Original:
+	Created: 20200521@Patsy.Doan
+	Task: Get unit.
+	DB: HRM
 
-Revisions:
-Param's Explanation:
+	Revisions:
+		20250403@Tim: remove param CompanyId [Redmine: #222886]
+	Param's Explanation:
 
 */
 BEGIN
 	SET NOCOUNT ON;
 	SELECT u.UnitId
 		,u.Code
-		,u.Name
+		,u.[Name]
+		,u.GroupUnitId
+		,u.PICEmpId
+		,e.NickName AS PICNickName
+		,u.Category
+		,u.[Type]
+		,u.AccountableArea
 		,u.IsActive
 		,u.ModifiedDate
-	FROM dbo.Unit as u WITH (NOLOCK)
+	FROM dbo.Unit AS u WITH (NOLOCK)
+	LEFT JOIN dbo.Employee As e WITH (NOLOCK) ON e.EmpId = u.PICEmpId
 	WHERE (
 			@IsActive IS NULL
 			OR u.IsActive = @IsActive
 			)
-			AND u.CompanyId = @CompanyId
-			AND U.IsDeleted = 0
+			AND u.IsDeleted = 0
 	ORDER BY u.Code
 END
-
-
-

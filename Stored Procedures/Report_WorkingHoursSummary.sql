@@ -1,6 +1,8 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[Report_WorkingHoursSummary] @CompanyId SMALLINT
+ALTER PROCEDURE [dbo].[Report_WorkingHoursSummary]
+(
+    @CompanyId SMALLINT
     ,@ActorId INT
 	,@FromDate DATE
 	,@ToDate DATE
@@ -8,14 +10,15 @@ ALTER PROCEDURE [dbo].[Report_WorkingHoursSummary] @CompanyId SMALLINT
 	,@isLocal BIT = NULL
 	,@Employee NVARCHAR(200) = NULL
 	,@EmployeeStatusId TINYINT = NULL
+)
 AS
 /*
-Created: 20250307@Tim
-Task: Working Hours Summary Report
-DB: HRM
-Original:
+    Created: 20250307@Tim
+    Task: Working Hours Summary Report
+    DB: bodb_HRM
 
-Revisions:
+    Revisions:
+        20250404@Tim: remove section [Redmine: #222886]
 */
 BEGIN
 	DECLARE @employeeIds VARCHAR(MAX)
@@ -104,9 +107,10 @@ BEGIN
 		,emp.Code
 		,emp.FullName
 		,emp.NickName
-		,gr.[Name] AS Team
+        ,gr.Code AS TeamCode
+		,gr.[Name] AS TeamName
 		,dept.Code AS DepartmentCode
-		,sec.Code AS Section
+		,dept.[Name] AS DepartmentName
 		,empsum.WorkingDays
 		,empsum.WorkingHours
 		,SUM(ISNULL(empatt.TotalWorkHours, 0)) AS TotalWorkingHours
@@ -298,8 +302,7 @@ BEGIN
 		INNER JOIN #tblEmployeeIds AS empid WITH (NOLOCK) ON emp.EmpId = empid.EmployeeId
 		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
 		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId
-		INNER JOIN dbo.Section AS sec WITH (NOLOCK) ON gr.SectionId = sec.SectionId
-		INNER JOIN dbo.Department AS dept WITH (NOLOCK) ON sec.DepartmentId = dept.DepartmentId
+		INNER JOIN dbo.Department AS dept WITH (NOLOCK) ON gr.DepartmentId = dept.DepartmentId
 		INNER JOIN dbo.tmpEmployeeCalendar AS empca WITH (NOLOCK) ON emp.EmpId = empca.EmpId
 		AND empca.WorkDate BETWEEN @FromDate
 			AND @ToDate
@@ -314,9 +317,10 @@ BEGIN
 		,emp.FullName
 		,empsum.WorkingDays
 		,empsum.WorkingHours
+        ,gr.Code
 		,gr.[Name]
-		,sec.Code
-		,dept.Code
+        ,dept.Code
+		,dept.[Name]
 	ORDER BY emp.NickName
 
 	DROP TABLE #tblGroupIds

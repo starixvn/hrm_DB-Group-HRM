@@ -14,11 +14,11 @@ ALTER PROCEDURE [dbo].[WorkingTimeRequest_GetRequestByCreateDate_AllType] @Super
 AS
 /*
 Created: Tom.Vo@2013-11-04
-Task:Get Request By Date For LateInEarlyOutType
-DB: HRM_SMS
-Original: 
+Task: Get Request By Date
+DB: HRM
 
 Revisions:
+    20250403@Tim: remove section [Redmine: #222886]
 Param's Explanation:
 */
 BEGIN
@@ -63,15 +63,15 @@ BEGIN
 	IF ISNULL(@status, '') <> ''
 	BEGIN
 		INSERT INTO #tblstatus (Currentstatus)
-		SELECT val
-		FROM dbo.fnc_strSplit(@status, ',')
+		SELECT value
+		FROM STRING_SPLIT(@status, ',')
 	END
 
 	IF ISNULL(@TeamIds, '') <> ''
 	BEGIN
 		INSERT INTO #tblGroupsList (GroupId)
-		SELECT val
-		FROM dbo.fnc_strSplit(@TeamIds, ',')
+		SELECT value
+		FROM STRING_SPLIT(@TeamIds, ',')
 	END
 
 	IF @empid IS NULL
@@ -528,7 +528,8 @@ BEGIN
 									END) AS NVARCHAR(100)) + ' days ' + lt1.Code
 						)
 				FROM dbo.LeaveRequestDetail AS rd1 WITH (NOLOCK)
-					INNER JOIN dbo.LeaveType AS lt1 WITH (NOLOCK) ON lt1.LeaveTypeId = rd1.LeaveType AND lt1.CompanyId = @CompanyId
+					INNER JOIN dbo.LeaveType AS lt1 WITH (NOLOCK) ON lt1.LeaveTypeId = rd1.LeaveType
+                    AND lt1.CompanyId = @CompanyId
 				WHERE rd1.RequestId = rd.RequestId
 					AND rd1.LeaveType <> 0
 				GROUP BY rd1.RequestId
@@ -601,28 +602,23 @@ BEGIN
 		,g.GroupId AS TeamId
 		,g.Code AS TeamCode
 		,g.[Name] AS TeamName
-		,sec.SectionId
-		,sec.Code AS SectionCode
 		,dep.DepartmentId
 		,dep.Code AS DepartmentCode
+        ,dep.[Name] AS DepartmentName
 		,verifier.EmpId AS VerifierId
 		,verifier.NickName AS VerifierNickName
 		,verifier.FullName AS VerifierFullName
 		,r.VerifiedDate
 		,r.VerifiedStatus
 		,approver.EmpId AS ApproverId
-		,approver.NickName AS ApproverNickName
+        ,approver.NickName AS ApproverNickName
 		,approver.FullName AS ApproverFullName
 		,r.ApprovedDate
 		,r.ApprovedStatus
-		,hr.EmpId AS ProcessedId
-		,hr.NickName AS ProcessedNickName
-		,hr.FullName AS ProcessedFullName
+		,hr.NickName AS ProcessedByNickName
+		,hr.FullName AS ProcessedByFullName
 		,r.HRDate AS ProcessedDate
 		,r.HRStatus AS ProcessedStatus
-		,r.ModifiedBy ModifiedById
-		,e_m.NickName AS ModifiedByNickName
-		,e_m.FullName AS ModifiedByFullName
 		,r.ModifiedDate
 		,ISNULL(rd.IsWarning, 0) AS IsWarning
 		,r.ReworkCount
@@ -631,6 +627,9 @@ BEGIN
 		INNER JOIN #tblRequestInDaily AS rd WITH (NOLOCK) ON r.RequestId = rd.RequestID
 		INNER JOIN #tblRequestId AS rq WITH (NOLOCK) ON r.RequestId = rq.RequestId
 		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = r.EmpId
+		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.empID = r.empID
+		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON e.GroupID = g.GroupID
+		INNER JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId = g.DepartmentId
 		LEFT JOIN dbo.LateInEarlyOutRequest AS inout WITH (NOLOCK) ON r.RequestId = inout.RequestId
 		LEFT JOIN dbo.LeaveRequest AS lr WITH (NOLOCK) ON r.RequestId = lr.RequestId
 		LEFT JOIN dbo.CheckInOutRequest AS inoutmiss WITH (NOLOCK) ON r.RequestId = inoutmiss.RequestId
@@ -638,23 +637,18 @@ BEGIN
 		LEFT JOIN dbo.Employee AS verifier WITH (NOLOCK) ON verifier.empid = r.VerifierId
 		LEFT JOIN dbo.Employee AS approver WITH (NOLOCK) ON approver.empid = r.ApproverId
 		LEFT JOIN dbo.Employee AS hr WITH (NOLOCK) ON hr.empid = r.HRId
-		LEFT JOIN dbo.Employee AS e_m WITH (NOLOCK) ON e_m.empID = r.ModifiedBy
 		LEFT JOIN #tblTotalDaysRequestInMonth AS rm ON r.empID = rm.empid
 		AND r.RequestType = rm.RequestType
 		LEFT JOIN #tblGeneralLeaveDetail AS gdt ON r.RequestId = gdt.RequestId
-		LEFT JOIN dbo.Employee AS e WITH (NOLOCK) ON e.empID = r.empID
 		LEFT JOIN dbo.EmployeeCalendar AS C WITH (NOLOCK) ON c.empid = r.empid
 		AND c.WorkDate = convert(VARCHAR(10), rd.FromDate, 111)
 		LEFT JOIN dbo.[Shift] AS s1 WITH (NOLOCK) ON s1.ShiftID = rd.FromShift
 		LEFT JOIN dbo.[Shift] AS s2 WITH (NOLOCK) ON s2.ShiftID = rd.ToShift
 		LEFT JOIN dbo.[Shift] AS s3 WITH (NOLOCK) ON s3.ShiftID = c.ShiftID
-		LEFT JOIN dbo.[Group] AS g WITH (NOLOCK) ON e.GroupID = g.GroupID
-		LEFT JOIN dbo.LeaveType AS lv WITH (NOLOCK) ON lv.LeaveTypeID = lr.LeaveType AND lv.CompanyId = @CompanyId
-		LEFT JOIN dbo.Section AS sec WITH (NOLOCK) ON sec.SectionId = g.SectionId
-		LEFT JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId = sec.DepartmentId
+		LEFT JOIN dbo.LeaveType AS lv WITH (NOLOCK) ON lv.LeaveTypeID = lr.LeaveType
+        AND lv.CompanyId = @CompanyId
 	WHERE ce.CompanyId = @CompanyId 
-		AND (@leaveTypeId IS NULL
-		OR lr.LeaveType = @leaveTypeId)
+		AND (@leaveTypeId IS NULL OR lr.LeaveType = @leaveTypeId)
 	ORDER BY r.CreatedDate DESC
 
 	SELECT csrd.RequestId
@@ -678,4 +672,3 @@ BEGIN
 
 	DROP TABLE #tblRequestId
 END
-

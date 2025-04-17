@@ -25,8 +25,8 @@ BEGIN
 	IF ISNULL(@TeamIds, '') <> ''
 	BEGIN
 		INSERT INTO #tblGroupIds (GroupId)
-		SELECT val
-		FROM dbo.fnc_strSplit(@TeamIds, ',')
+		SELECT value
+		FROM STRING_SPLIT(@TeamIds, ',')
 	END
 
 	SELECT e.EmpId AS EmployeeId

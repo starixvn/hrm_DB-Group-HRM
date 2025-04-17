@@ -41,8 +41,8 @@ BEGIN
 	IF ISNULL(@TeamIds, '') <> ''
 	BEGIN
 		INSERT INTO @tblGroupIds (GroupId)
-		SELECT val
-		FROM dbo.fnc_strSplit(@TeamIds, ',')
+		SELECT value
+		FROM STRING_SPLIT(@TeamIds, ',')
 	END
 
 	INSERT INTO #tblEmployeeIds (EmpId)
@@ -314,7 +314,9 @@ BEGIN
 			AND @toTime
 		LEFT JOIN dbo.[Shift] AS [shift] WITH (NOLOCK) ON [shift].ShiftId = empca.ShiftId
 		LEFT JOIN dbo.LeaveType AS lv1 WITH (NOLOCK) ON empca.LeaveTypeId = lv1.LeaveTypeId
+        AND lv1.CompanyId = @CompanyId
 		LEFT JOIN dbo.LeaveType AS lv2 WITH (NOLOCK) ON empca.LeaveTypeId2 = lv2.LeaveTypeId
+        AND lv2.CompanyId = @CompanyId
 	WHERE EXISTS (
 			SELECT 1
 			FROM @tblGroupIds AS tblgr

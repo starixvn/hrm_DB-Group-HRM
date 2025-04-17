@@ -32,7 +32,7 @@ BEGIN
 		,e.JoinedDate
 		,e.ConfirmedDate
 		,es.IsLocal
-		,CASE WHEN g.OldGroupId IS NOT NULL THEN g.OldGroupId ELSE g.GroupId END AS TeamId
+		,g.GroupId AS TeamId
 		,CASE 
 			WHEN e.ModifiedDate IS NULL THEN e.CreatedDate
 			ELSE e.ModifiedDate

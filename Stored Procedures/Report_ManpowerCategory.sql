@@ -1,15 +1,18 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[Report_ManpowerCategory] @CompanyId SMALLINT
+ALTER PROCEDURE [dbo].[Report_ManpowerCategory]
+(
+    @CompanyId SMALLINT
     ,@Year INT
+)
 AS
 /*
-Created: 20151103@Quinn.Vo
-Task: Get data for manpower category report.
-DB: HRM
-Original:
+    Created: 20151103@Quinn.Vo
+    Task: Get data for manpower category report.
+    DB: bodb_HRM
 
-Revisions:
+    Revisions:
+        20250404@Tim: remove section [Redmine: #222886]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -23,8 +26,8 @@ BEGIN
 	SELECT g.GroupId AS TeamId
 		,g.Code AS TeamCode
 		,g.[Name] AS TeamName
-		,dept.Code as DepartmentCode
-		,sec.Code as Section
+		,dept.Code AS DepartmentCode
+		,dept.[Name] AS DepartmentName
 		,SUM(CASE 
 				WHEN DATEDIFF(MM, e.JoinedDate, @ToDate) >= 0
 					AND (
@@ -100,17 +103,15 @@ BEGIN
 		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
         INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON e.EmpId = es.EmpId
 		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON e.GroupId = g.GroupId
-		INNER JOIN dbo.Section AS sec WITH (NOLOCK) ON g.SectionId = sec.SectionId
-		INNER JOIN dbo.Department AS dept WITH (NOLOCK) ON sec.DepartmentId = dept.DepartmentId
+		INNER JOIN dbo.Department AS dept WITH (NOLOCK) ON g.DepartmentId = dept.DepartmentId
 		LEFT JOIN dbo.LookupData AS job WITH (NOLOCK) ON e.JobTitleId = job.Id
+        AND job.CompanyId = @CompanyId
 	WHERE ce.CompanyId = @CompanyId
         AND g.IsDeleted = 0
-		AND (e.ResignedDate IS NULL 
-			OR
-			YEAR(e.ResignedDate) >= @Year)
+		AND (e.ResignedDate IS NULL OR YEAR(e.ResignedDate) >= @Year)
 	GROUP BY g.GroupId
 		,g.Code
 		,g.[Name]
 		,dept.Code
-		,sec.Code
+		,dept.[Name]
 END

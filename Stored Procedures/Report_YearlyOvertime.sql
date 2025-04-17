@@ -1,22 +1,25 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[Report_YearlyOvertime] @CompanyId SMALLINT
+ALTER PROCEDURE [dbo].[Report_YearlyOvertime]
+(
+    @CompanyId SMALLINT
     ,@ActorId INT
 	,@MonthXml VARCHAR(MAX)
 	,@TeamIds VARCHAR(MAX) = ''
 	,@Employee NVARCHAR(200) = NULL
 	,@EmployeeStatusId TINYINT = NULL
 	,@IsLocal BIT = NULL
+)
 AS
 /*
-Created: Tim.Trinh@2019-07-09
-Task: Get yearly overtime
-DB: HRM
-Original:
+    Created: Tim.Trinh@2019-07-09
+    Task: Get yearly overtime
+    DB: bodb_HRM
 
-Revisions:
-Param's Explanation:
-    @MonthXml: <ROOT><Row Month='{0}' FromDate='{1}' ToDate='{2}' /></ROOT>
+    Revisions:
+        20250404@Tim: remove section [Redmine: #222886]
+    Param's Explanation:
+        @MonthXml: <ROOT><Row Month='{0}' FromDate='{1}' ToDate='{2}' /></ROOT>
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -134,9 +137,10 @@ BEGIN
 		,NickName
 		,FullName
 		,TeamId
-		,Team
+        ,TeamCode
+		,TeamName
 		,DepartmentCode
-		,Section
+		,DepartmentName
 		,ISNULL([1], 0) AS Jan
 		,ISNULL([2], 0) AS Feb
 		,ISNULL([3], 0) AS Mar
@@ -155,16 +159,16 @@ BEGIN
 			,emp.NickName
 			,emp.FullName
 			,gr.GroupId AS TeamId
-			,gr.[Name] AS Team
+			,gr.Code AS TeamCode
+			,gr.[Name] AS TeamName
 			,dept.Code as DepartmentCode
-			,sec.Code as Section
+            ,dept.[Name] AS DepartmentName
 			,cl.[Month] AS [Month]
 			,(otsum.NormalHours + otsum.OffHours + otsum.PublicHours + otsum.SpecialHours) AS TotalHours
 		FROM dbo.Employee AS emp WITH (NOLOCK)
 			INNER JOIN #tblEmployeeIds AS empid ON emp.EmpId = empid.EmpId
 			INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId
-			INNER JOIN dbo.Section AS sec WITH (NOLOCK) ON gr.SectionId = sec.SectionId
-			INNER JOIN dbo.Department AS dept WITH (NOLOCK) ON sec.DepartmentId = dept.DepartmentId
+			INNER JOIN dbo.Department AS dept WITH (NOLOCK) ON gr.DepartmentId = dept.DepartmentId
 			CROSS JOIN #tblMonth AS cl
 			INNER JOIN #tblOvertimeSummary AS otsum ON emp.EmpId = otsum.EmpId
 			AND cl.[Month] = otsum.[Month]

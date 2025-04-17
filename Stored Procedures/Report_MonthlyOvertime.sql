@@ -13,9 +13,9 @@ AS
 Created: 20250307@Tim
 Task: monthly overtime
 DB: HRM
-Original:
 
 Revisions:
+    20250403@Tim: remove section [Redmine: #222886]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -111,9 +111,10 @@ BEGIN
 		,emp.Code
 		,emp.NickName
 		,emp.FullName
-		,gr.[Name] AS Team
-		,sec.Code AS Section
+        ,gr.Code AS TeamCode
+		,gr.[Name] AS TeamName
 		,dep.Code AS DepartmentCode
+        ,dep.[Name] AS DepartmentName
 		,tmp.WorkDate
 		,s.ShiftId
 		,s.Code AS ShiftCode
@@ -133,12 +134,10 @@ BEGIN
 		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON ot.EmpId = emp.EmpId
 		INNER JOIN @tblEmployeeId AS empid ON emp.EmpId = empid.EmpId
 		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId
-		INNER JOIN dbo.Section AS sec WITH (NOLOCK) ON sec.SectionId = gr.SectionId
-		INNER JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId =  sec.DepartmentId
+		INNER JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId =  gr.DepartmentId
 		LEFT JOIN dbo.EmployeeCalendar AS empca WITH (NOLOCK) ON emp.EmpId = empca.EmpId
 		AND ot.OvertimeDate = empca.WorkDate
 		LEFT JOIN dbo.[Shift] AS s WITH (NOLOCK) ON s.ShiftId = ot.[Schedule]
-        AND s.CompanyId = @CompanyId
     WHERE ot.[Status] IN (@VerifyStatusId, @ApproveStatusId, @ProcessStatusId)
 	ORDER BY tmp.WorkDate
 		,emp.NickName

@@ -13,7 +13,6 @@ AS
 Created: Tim@2019-06-24
 Task: monthly working hours
 DB: HRM
-Original:
 
 Revisions:
 */
@@ -179,16 +178,15 @@ BEGIN
 		,emp.NickName
 		,emp.FullName
 		,empsum.WorkingDays
-		,sec.[Name] AS Section
-		,dep.[Name] AS Department
+		,dep.Code AS DepartmentCode
+		,dep.[Name] AS DepartmentName
 		,gr.GroupId AS Id
 		,gr.Code
 		,gr.[Name]
 	FROM dbo.Employee AS emp WITH (NOLOCK)
 		INNER JOIN #tblEmployeeIds AS empid WITH (NOLOCK) ON emp.EmpId = empid.EmployeeId
 		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId
-		INNER JOIN dbo.Section AS sec WITH (NOLOCK) ON sec.SectionId = gr.SectionId
-		INNER JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId = sec.DepartmentId
+		INNER JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId = gr.DepartmentId
 		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
 	ORDER BY gr.[Name]
 		,emp.Code

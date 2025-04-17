@@ -3,32 +3,33 @@
 ALTER PROCEDURE [dbo].[Report_DisciplineDetail] @FromDate DATE
 	,@ToDate DATE
 	,@ApproverId INT
-	,@TeamId VARCHAR(MAX) = ''
+	,@TeamIds VARCHAR(MAX) = ''
 	,@EmployeeId INT = NULL
 	,@ReasonId INT = NULL
 	,@IsLocal BIT = NULL
 	,@HasIgnored BIT = NULL
 	,@CompanyId SMALLINT
+    ,@RoleIds VARCHAR(1000) = ''
 AS
 /*
 Created: 20191204@Tim.Trinh
 Task: get discipline detail
-DB: SMSHRM
-Original:
+DB: HRM
 
 Revisions:
+    20250404@Tim: add param @RoleIds [Redmine: #222886]
 Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;
 
-	CREATE TABLE #tblGroupIds (TmpGroupId INT)
+	CREATE TABLE #tblGroupIds (GroupId INT)
 
-	IF ISNULL(@TeamId, '') <> ''
+	IF ISNULL(@TeamIds, '') <> ''
 	BEGIN
-		INSERT INTO #tblGroupIds (TmpGroupId)
-		SELECT DISTINCT val
-		FROM fnc_strSplit(@TeamId, ',')
+		INSERT INTO #tblGroupIds (GroupId)
+		SELECT DISTINCT value
+		FROM STRING_SPLIT(@TeamIds, ',')
 	END
 
 	DECLARE @HasEditDisciplineRole INT = 0
@@ -128,9 +129,8 @@ BEGIN
 		)
 
 	INSERT INTO @tblRole (RoleId)
-	SELECT RoleId
-	FROM dbo.[EmployeeRole] WITH (NOLOCK)
-	WHERE EmployeeId = @ApproverId;
+	SELECT value
+	FROM STRING_SPLIT(@RoleIds, ',')
 
 	SELECT @HasEditDisciplineRole = 1
 	FROM @tblRole
@@ -384,7 +384,7 @@ BEGIN
 		AND dis.IsDeleted = 0
 		AND dis.WorkDate BETWEEN @FromDate
 			AND @ToDate
-		AND ISNULL(@EmployeeId, emp.EmpId) = emp.EmpId
+		AND (@EmployeeId IS NULL OR emp.EmpId = @EmployeeId)
 		AND (
 			dis.IsChangeShift = 1
 			OR dis.IsMissingCheckInOut = 1
@@ -536,7 +536,7 @@ BEGIN
 		AND EXISTS (
 			SELECT 1
 			FROM #tblGroupIds AS tbl WITH (NOLOCK)
-			WHERE emp.GroupId = tbl.TmpGroupId
+			WHERE emp.GroupId = tbl.GroupId
 			)
 		AND (
 			EXISTS (
@@ -730,7 +730,7 @@ BEGIN
 		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId
 		LEFT JOIN dbo.EmployeeAttendance AS empatt WITH (NOLOCK) ON dis.EmployeeId = empatt.EmpId
 		AND dis.WorkDate = empatt.AttendanceDate
-		LEFT JOIN dbo.Shift AS shift WITH (NOLOCK) ON empatt.ShiftId = shift.ShiftId
+		LEFT JOIN dbo.[Shift] AS shift WITH (NOLOCK) ON empatt.ShiftId = shift.ShiftId
 	ORDER BY dis.WorkDate DESC
 
 	SELECT did.EmpId AS EmployeeId
@@ -748,4 +748,3 @@ BEGIN
 
 	DROP TABLE #tblGroupIds
 END
-

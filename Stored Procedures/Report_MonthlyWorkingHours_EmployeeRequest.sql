@@ -13,7 +13,6 @@ AS
 Created: Tim.Trinh@2019-08-20
 Task: get employee request
 DB: HRM
-Original:
 
 Revisions:
 */
@@ -78,8 +77,8 @@ BEGIN
 	IF ISNULL(@TeamIds, '') <> ''
 	BEGIN
 		INSERT INTO #tblGroupIds (GroupId)
-		SELECT val
-		FROM dbo.fnc_strSplit(@TeamIds, ',')
+		SELECT value
+		FROM STRING_SPLIT(@TeamIds, ',')
 	END
 
 	INSERT INTO #tblEmployeeIds (EmpId)
@@ -211,7 +210,7 @@ BEGIN
 		INNER JOIN #tblRequestIds AS reqid ON req.RequestId = reqid.RequestId
 		INNER JOIN dbo.LateInEarlyOutRequest AS inout WITH (NOLOCK) ON req.RequestId = inout.RequestId
 		LEFT JOIN dbo.EmployeeAttendance AS att WITH (NOLOCK) ON inout.EmpId = att.EmpId
-		AND inout.OnDate = att.AttendanceDate
+		AND CAST(inout.OnDate AS DATETIME) = att.AttendanceDate
 
 	INSERT INTO #tblRequestInDaily (
 		RequestId
@@ -479,10 +478,14 @@ BEGIN
 		,e.EmpId AS EmployeeId
 		,e.NickName
 		,e.FullName
-		,g.[Name] AS Team
-		,sec.[Name] AS Section
-		,dep.[Name] AS Department
+        ,g.Code AS TeamCode
+		,g.[Name] AS TeamName
+        ,dep.Code AS DepartmentCode
+		,dep.[Name] AS DepartmentName
 	FROM dbo.WorkingTimeRequest AS r WITH (NOLOCK)
+		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.EmpId = r.EmpId
+		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON e.GroupId = g.GroupId
+		INNER JOIN dbo.Department AS dep WITH (NOLOCK ) ON dep.DepartmentId = g.DepartmentId
 		INNER JOIN #tblRequestIds AS rq ON r.RequestId = rq.RequestId
 		INNER JOIN #tblRequestInDaily AS rd ON r.RequestId = rd.RequestID
 		LEFT JOIN dbo.LateInEarlyOutRequest AS inout WITH (NOLOCK) ON r.RequestId = inout.RequestId
@@ -490,7 +493,6 @@ BEGIN
 		LEFT JOIN dbo.CheckInOutRequest AS inoutmiss WITH (NOLOCK) ON r.RequestId = inoutmiss.RequestId
 		LEFT JOIN dbo.ChangeShiftRequest AS csr WITH (NOLOCK) ON r.RequestId = csr.RequestId
 		LEFT JOIN #tblGeneralLeaveDetail AS gdt ON r.RequestId = gdt.RequestId
-		LEFT JOIN dbo.Employee AS e WITH (NOLOCK) ON e.EmpId = r.EmpId
 		LEFT JOIN dbo.EmployeeCalendar AS c WITH (NOLOCK) ON c.empid = r.empid
 		AND c.WorkDate = convert(VARCHAR(10), rd.FromDate, 111)
 		LEFT JOIN dbo.[Shift] AS s1 WITH (NOLOCK) ON s1.ShiftId = rd.FromShift
@@ -499,9 +501,6 @@ BEGIN
         AND s2.CompanyId = @CompanyId
 		LEFT JOIN dbo.[Shift] AS s3 WITH (NOLOCK) ON s3.ShiftId = c.ShiftId
         AND s3.CompanyId = @CompanyId
-		LEFT JOIN dbo.[Group] AS g WITH (NOLOCK) ON e.GroupId = g.GroupId
-		LEFT JOIN dbo.Section AS sec WITH (NOLOCK) ON sec.SectionId = g.SectionId
-		LEFT JOIN dbo.Department AS dep WITH (NOLOCK ) ON dep.DepartmentId = sec.DepartmentId
 		LEFT JOIN dbo.LeaveType AS lv WITH (NOLOCK) ON lv.LeaveTypeId = lr.LeaveType
         AND lv.CompanyId = @CompanyId
 	ORDER BY r.CreatedDate DESC

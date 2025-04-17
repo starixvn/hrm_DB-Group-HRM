@@ -1,24 +1,25 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE PROCEDURE [dbo].[SyncEPA_Department] @FromDate DATETIME = NULL
-	,@CompanyId INT
+ALTER PROCEDURE [dbo].[SyncEPA_Department]
+(
+	@CompanyId INT,
+    @FromDate DATETIME = NULL
+)
 AS
 /*
-Created: 20171108@Tim.Trinh
-Task: Get all departments from change date
-DB: SMSHRM
-Original: 
+    Created: 20171108@Tim.Trinh
+    Task: Get all departments from change date
+    DB: bodb_HRM
 
-Revisions:  
-Param's Explanation:
-
+    Revisions:
+        20250409@Tim: remove section [Redmine: #222886]
+    Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;
 
 	DECLARE @DepartmentIndex INT = 1000000
 		,@UnitIndex INT = 2000000
-		,@RootIndex INT = 3000000
 
 	CREATE TABLE #tblDepartment (
 		DepartmentId INT
@@ -37,19 +38,19 @@ BEGIN
 		,IsDeleted
 		,ModifiedDate
 		)
-	SELECT CASE WHEN s.OldSectionId IS NOT NULL THEN s.OldSectionId ELSE s.SectionId END
-		,s.Code
-		,s.[Name]
-		,@DepartmentIndex + CASE WHEN d.OldDepartmentId IS NOT NULL THEN d.OldDepartmentId ELSE d.DepartmentId END
+	SELECT distinct d.DepartmentId AS SectionId
+		,d.Code
+		,d.[Name]
+		,@DepartmentIndex + d.DepartmentId
 		,CASE 
-			WHEN s.IsActive = 0
-				OR s.IsDeleted = 1 THEN 1
+			WHEN d.IsActive = 0
+				OR d.IsDeleted = 1 THEN 1
 			ELSE 0
 			END
-		,s.ModifiedDate
-	FROM dbo.Section AS s WITH (NOLOCK)
-	LEFT JOIN dbo.Department AS d  WITH (NOLOCK) on s.DepartmentId = d.DepartmentId AND d.CompanyId = @CompanyId
-	WHERE s.CompanyId = @CompanyId
+		,d.ModifiedDate
+	FROM dbo.Department AS d WITH (NOLOCK)
+        INNER JOIN dbo.[Group] AS t WITH (NOLOCK) ON d.DepartmentId = t.DepartmentId
+    WHERE t.CompanyId = @CompanyId
 
 	INSERT INTO #tblDepartment (
 		DepartmentId
@@ -59,10 +60,10 @@ BEGIN
 		,IsDeleted
 		,ModifiedDate
 		)
-	SELECT @DepartmentIndex + CASE WHEN d.OldDepartmentId IS NOT NULL THEN d.OldDepartmentId ELSE d.DepartmentId END
+	SELECT distinct @DepartmentIndex + d.DepartmentId
 		,d.Code
 		,d.[Name]
-		,@UnitIndex + CASE WHEN u.OldUnitId IS NOT NULL THEN u.OldUnitId ELSE u.UnitId END
+		,@UnitIndex + u.UnitId
 		,CASE 
 			WHEN d.IsActive = 0
 				OR d.IsDeleted = 1 THEN 1
@@ -70,31 +71,30 @@ BEGIN
 			END
 		,d.ModifiedDate
 	FROM dbo.Department d WITH (NOLOCK)
-	LEFT JOIN dbo.Unit AS u WITH (NOLOCK) on u.UnitId = d.UnitId AND u.CompanyId = @CompanyId
-	WHERE d.CompanyId = @CompanyId
-
-
+        INNER JOIN dbo.[Group] AS t WITH (NOLOCK) ON d.DepartmentId = t.DepartmentId
+	    INNER JOIN dbo.Unit AS u WITH (NOLOCK) ON u.UnitId = d.UnitId
+    WHERE t.CompanyId = @CompanyId
 
 	INSERT INTO #tblDepartment (
 		DepartmentId
 		,Code
 		,[Name]
-		,ParentId
 		,IsDeleted
 		,ModifiedDate
 		)
-	SELECT @UnitIndex + CASE WHEN OldUnitId IS NOT NULL THEN OldUnitId ELSE UnitId END
-		,Code
-		,[Name]
-		,@RootIndex
+	SELECT distinct @UnitIndex + u.UnitId
+		,u.Code
+		,ISNULL(u.[Name], u.Code)
 		,CASE 
-			WHEN IsActive = 0
-				OR IsDeleted = 1 THEN 1
+			WHEN u.IsActive = 0
+				OR u.IsDeleted = 1 THEN 1
 			ELSE 0
 			END
-		,ModifiedDate
-	FROM dbo.Unit WITH (NOLOCK)
-	WHERE CompanyId = @CompanyId
+		,u.ModifiedDate
+	FROM dbo.Unit AS u WITH (NOLOCK)
+        INNER JOIN dbo.Department d WITH (NOLOCK) ON u.UnitId = d.UnitId
+        INNER JOIN dbo.[Group] AS t WITH (NOLOCK) ON d.DepartmentId = t.DepartmentId
+    WHERE t.CompanyId = @CompanyId
 
 	SELECT *
 	FROM #tblDepartment WITH (NOLOCK)
@@ -102,7 +102,6 @@ BEGIN
 		OR ModifiedDate > @FromDate
 	ORDER BY DepartmentId
 
+	
 	DROP TABLE #tblDepartment
 END
-
-

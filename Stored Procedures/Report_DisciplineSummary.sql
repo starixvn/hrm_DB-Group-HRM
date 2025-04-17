@@ -3,32 +3,33 @@
 ALTER PROCEDURE [dbo].[Report_DisciplineSummary] @FromDate DATE
 	,@ToDate DATE
 	,@ApproverId INT
-	,@TeamId VARCHAR(MAX) = ''
+	,@TeamIds VARCHAR(MAX) = ''
 	,@EmployeeId INT = NULL
 	,@ReasonId INT = NULL
 	,@IsLocal BIT = NULL
 	,@IsShowAll BIT = 0
 	,@CompanyId SMALLINT
+    ,@RoleIds VARCHAR(1000) = ''
 AS
 /*
 Created: 20191204@Tim.Trinh
 Task: get discipline summary
-DB: SMSHRM
-Original:
+DB: HRM
 
 Revisions:
+    20250404@Tim: add param @RoleIds [Redmine: #222886]
 Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;
 
-	CREATE TABLE #tblGroupIds (TmpGroupId INT)
+	CREATE TABLE #tblGroupIds (GroupId INT)
 
-	IF ISNULL(@TeamId, '') <> ''
+	IF ISNULL(@TeamIds, '') <> ''
 	BEGIN
-		INSERT INTO #tblGroupIds (TmpGroupId)
-		SELECT DISTINCT val
-		FROM fnc_strSplit(@TeamId, ',')
+		INSERT INTO #tblGroupIds (GroupId)
+		SELECT DISTINCT value
+		FROM STRING_SPLIT(@TeamIds, ',')
 	END
 
 	CREATE TABLE #tblEmployeeDiscipline (
@@ -188,20 +189,20 @@ BEGIN
 		,0 AS OtherDisciplineScore
 	FROM dbo.Discipline AS d WITH (NOLOCK)
 		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON d.EmpId = emp.EmpId
-		AND ISNULL(emp.isDeleted, 0) = 0
-		AND emp.[Enabled] = 1
-		INNER JOIN dbo.EmployeeSummary AS empSum WITH (NOLOCK) ON emp.EmpId = empSum.EmpId
-		LEFT JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId
-	WHERE d.IsDeleted = 0
-		AND d.WorkDate BETWEEN @FromDate
+		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
+		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId
+	WHERE d.WorkDate BETWEEN @FromDate
 			AND @ToDate
+		AND emp.isDeleted = 0
+		AND emp.[Enabled] = 1
+        AND d.IsDeleted = 0
 		AND EXISTS (
 			SELECT 1
-			FROM #tblGroupIds AS tbl
-			WHERE emp.GroupId = tbl.TmpGroupId
+			FROM #tblGroupIds AS tbl WITH (NOLOCK)
+			WHERE emp.GroupId = tbl.GroupId
 			)
-		AND ISNULL(@EmployeeId, emp.EmpId) = emp.EmpId
-		AND ISNULL(@IsLocal, empSum.IsLocal) = empSum.IsLocal
+		AND (@EmployeeId IS NULL OR emp.EmpId = @EmployeeId)
+		AND (@IsLocal IS NULL OR empsum.IsLocal = @IsLocal)
 	
 	UNION ALL
 	SELECT dis.WorkDate
@@ -232,18 +233,20 @@ BEGIN
 		,dis.Score AS OtherDisciplineScore
 	FROM dbo.OtherDiscipline AS dis WITH (NOLOCK)
 		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON dis.EmpId = emp.EmpId
-		INNER JOIN dbo.EmployeeSummary AS empSum WITH (NOLOCK) ON emp.EmpId = empSum.EmpId
-		LEFT JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId
-	WHERE dis.IsDeleted = 0
-		AND dis.WorkDate BETWEEN @FromDate
+		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
+		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId
+	WHERE dis.WorkDate BETWEEN @FromDate
 			AND @ToDate
+		AND emp.isDeleted = 0
+		AND emp.[Enabled] = 1
+        AND dis.IsDeleted = 0
 		AND EXISTS (
 			SELECT 1
-			FROM #tblGroupIds AS tbl
-			WHERE emp.GroupId = tbl.TmpGroupId
+			FROM #tblGroupIds AS tbl WITH (NOLOCK)
+			WHERE emp.GroupId = tbl.GroupId
 			)
-		AND ISNULL(@EmployeeId, emp.EmpId) = emp.EmpId
-		AND ISNULL(@IsLocal, empSum.IsLocal) = empSum.IsLocal
+		AND (@EmployeeId IS NULL OR emp.EmpId = @EmployeeId)
+		AND (@IsLocal IS NULL OR empsum.IsLocal = @IsLocal)
 
 	CREATE TABLE #tblEmployeeDisciplineFinalScore (
 		WorkDate DATE
@@ -351,9 +354,8 @@ BEGIN
 	DECLARE @tblRole TABLE (RoleId INT)
 
 	INSERT INTO @tblRole (RoleId)
-	SELECT RoleId
-	FROM dbo.EmployeeRole WITH (NOLOCK)
-	WHERE EmployeeId = @ApproverId
+	SELECT value
+	FROM STRING_SPLIT(@RoleIds, ',')
 
 	SET @Is_HR_SA = CASE 
 			WHEN EXISTS (
@@ -423,22 +425,22 @@ BEGIN
 		,gr.[Name] AS TeamName
 		,gr.Code AS TeamCode
 	FROM dbo.Employee AS emp WITH (NOLOCK)
+		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
+		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
+		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId
 		LEFT JOIN #tblEmployeeDiscipline AS empD WITH (NOLOCK) ON emp.EmpId = empD.EmpId
 		LEFT JOIN #tblEmployeeDisciplineFinalScore AS empF WITH (NOLOCK) ON empF.WorkDate = empD.WorkDate
 		AND empF.EmpId = empD.EmpId
-		INNER JOIN dbo.EmployeeSummary AS empSum WITH (NOLOCK) ON emp.EmpId = empSum.EmpId
-		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
-		LEFT JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId
 	WHERE emp.[Enabled] = 1
-		AND ISNULL(emp.IsDeleted, 0) = 0
+		AND emp.IsDeleted = 0
 		AND ce.CompanyId = @CompanyId
 		AND EXISTS (
 			SELECT 1
-			FROM #tblGroupIds AS tbl
-			WHERE emp.GroupId = tbl.TmpGroupId
+			FROM #tblGroupIds AS tbl WITH (NOLOCK)
+			WHERE emp.GroupId = tbl.GroupId
 			)
-		AND ISNULL(@EmployeeId, emp.EmpId) = emp.EmpId
-		AND ISNULL(@IsLocal, empSum.IsLocal) = empSum.IsLocal
+		AND (@EmployeeId IS NULL OR emp.EmpId = @EmployeeId)
+		AND (@IsLocal IS NULL OR empsum.IsLocal = @IsLocal)
 		AND (
 			@IsShowAll = 1
 			OR (

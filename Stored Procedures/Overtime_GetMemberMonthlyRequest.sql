@@ -14,9 +14,9 @@ AS
 Created: Tim.Trinh@2019-07-05
 Task: Get member overtime request
 DB: HRM
-Original:
 
 Revisions:
+    20250403@Tim: remove section [Redmine: #222886]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -90,7 +90,6 @@ BEGIN
 	END
 	
 	SELECT req.RequestId
-		,req.EmpId
 		,req.[Month]
 		,req.NormalHours
 		,req.OffHours
@@ -112,40 +111,40 @@ BEGIN
 				OR @IsProcessor = 1 THEN 1
 			ELSE 0 END
 			) AS IsHost
+        ,gr.Code AS TeamCode
+		,gr.[Name] AS TeamName
+		,dep.Code AS DepartmentCode
+        ,dep.[Name] AS DepartmentName
+		,verifier.EmpId AS VerifierId
+		,verifier.NickName AS VerifierNickname
+		,verifier.FullName AS VerifierFullName
+		,approver.EmpId AS ApproverId
+		,approver.NickName AS ApproverNickname
+		,approver.FullName AS ApproverFullName
 		,req.CurrentStatus AS StatusId
 		,emp.EmpId
 		,emp.NickName
 		,emp.FullName
-		,gr.[Name] AS Team
-		,sec.Code AS Section
-		,dep.Code AS Department
-		,verifier.EmpId AS VerifierId
-		,verifier.NickName
-		,verifier.FullName
-		,approver.EmpId AS ApproverId
-		,approver.NickName
-		,approver.FullName
 	FROM dbo.OTMonthlyRequest AS req WITH (NOLOCK)
 		INNER JOIN #tblEmployeeIds e WITH (NOLOCK) ON req.EmpId = e.EmployeeId
 		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON req.EmpId = emp.EmpId
-			AND emp.[Enabled] = 1
-			AND emp.isDeleted = 0
 		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
 		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId
 		INNER JOIN #tblGroupIds AS tblgr WITH (NOLOCK) ON gr.GroupId = tblgr.GroupId
-		INNER JOIN dbo.Section AS sec WITH (NOLOCK) ON sec.SectionId = gr.SectionId
-		INNER JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId = sec.DepartmentId
+		INNER JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId = gr.DepartmentId
 		LEFT JOIN dbo.Employee AS verifier WITH (NOLOCK) ON verifier.EmpId = req.VerifierId
 		LEFT JOIN dbo.Employee AS approver WITH (NOLOCK) ON approver.EmpId = req.ApproverId
 		LEFT JOIN (
 		SELECT DISTINCT ot.RequestId
 		FROM dbo.OTDailyRequest AS ot WITH (NOLOCK)
-			LEFT JOIN dbo.Shift AS s WITH (NOLOCK) ON ot.Schedule = s.ShiftId
+			LEFT JOIN dbo.[Shift] AS s WITH (NOLOCK) ON ot.Schedule = s.ShiftId
 			LEFT JOIN dbo.EmployeeAttendance AS empatt WITH (NOLOCK) ON empatt.AttendanceDate = ot.OvertimeDate
 			AND empatt.EmpId = ot.EmpId
 		WHERE ot.TotalHours - ISNULL(empatt.LateIn, 0) / 60 >= s.TotalHours + 1
 		) AS att ON att.RequestId = req.RequestId
-	WHERE (
+	WHERE emp.[Enabled] = 1
+		AND emp.isDeleted = 0
+        AND (
 			@Month IS NULL
 			OR req.[Month] = @Month
 			)
