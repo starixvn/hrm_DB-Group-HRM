@@ -1,6 +1,8 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[Report_MonthlyOvertime] @CompanyId SMALLINT
+ALTER PROCEDURE [dbo].[Report_MonthlyOvertime]
+(
+    @CompanyId SMALLINT
     ,@ActorId INT
 	,@FromDate DATE
 	,@ToDate DATE
@@ -8,14 +10,16 @@ ALTER PROCEDURE [dbo].[Report_MonthlyOvertime] @CompanyId SMALLINT
 	,@EmployeeStatusId TINYINT = NULL
 	,@TeamIds VARCHAR(MAX) = ''
 	,@IsLocal BIT = NULL
+)
 AS
 /*
-Created: 20250307@Tim
-Task: monthly overtime
-DB: HRM
+    Created: 20250307@Tim
+    Task: monthly overtime
+    DB: bodb_HRM
 
-Revisions:
-    20250403@Tim: remove section [Redmine: #222886]
+    Revisions:
+        20250403@Tim: remove section [Redmine: #222886]
+        20250417@Tim: get Unit Code [Redmine: #224530]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -115,6 +119,7 @@ BEGIN
 		,gr.[Name] AS TeamName
 		,dep.Code AS DepartmentCode
         ,dep.[Name] AS DepartmentName
+        ,u.Code AS UnitCode
 		,tmp.WorkDate
 		,s.ShiftId
 		,s.Code AS ShiftCode
@@ -135,6 +140,7 @@ BEGIN
 		INNER JOIN @tblEmployeeId AS empid ON emp.EmpId = empid.EmpId
 		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId
 		INNER JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId =  gr.DepartmentId
+        INNER JOIN dbo.Unit AS u WITH (NOLOCK) ON dep.UnitId = u.UnitId
 		LEFT JOIN dbo.EmployeeCalendar AS empca WITH (NOLOCK) ON emp.EmpId = empca.EmpId
 		AND ot.OvertimeDate = empca.WorkDate
 		LEFT JOIN dbo.[Shift] AS s WITH (NOLOCK) ON s.ShiftId = ot.[Schedule]
