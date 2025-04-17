@@ -1,6 +1,8 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[Report_MonthlyWorkingHours] @CompanyId SMALLINT
+ALTER PROCEDURE [dbo].[Report_MonthlyWorkingHours]
+(
+    @CompanyId SMALLINT
     ,@ActorId INT
 	,@FromDate DATE
 	,@ToDate DATE
@@ -8,13 +10,15 @@ ALTER PROCEDURE [dbo].[Report_MonthlyWorkingHours] @CompanyId SMALLINT
 	,@Employee NVARCHAR(200) = NULL
 	,@IsLocal BIT = NULL
 	,@EmployeeStatusId TINYINT = NULL
+)
 AS
 /*
-Created: Tim@2019-06-24
-Task: monthly working hours
-DB: HRM
+    Created: Tim@2019-06-24
+    Task: monthly working hours
+    DB: bodb_HRM
 
-Revisions:
+    Revisions:
+        20250417@Tim: get Unit Code [Redmine: #224530]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -178,6 +182,7 @@ BEGIN
 		,emp.NickName
 		,emp.FullName
 		,empsum.WorkingDays
+        ,u.Code AS UnitCode
 		,dep.Code AS DepartmentCode
 		,dep.[Name] AS DepartmentName
 		,gr.GroupId AS Id
@@ -187,6 +192,7 @@ BEGIN
 		INNER JOIN #tblEmployeeIds AS empid WITH (NOLOCK) ON emp.EmpId = empid.EmployeeId
 		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId
 		INNER JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId = gr.DepartmentId
+        INNER JOIN dbo.Unit AS u WITH (NOLOCK) ON dep.UnitId = u.UnitId
 		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
 	ORDER BY gr.[Name]
 		,emp.Code
