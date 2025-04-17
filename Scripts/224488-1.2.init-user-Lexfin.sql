@@ -16,8 +16,8 @@ WHILE @RowIndex <= @TotalRows
 BEGIN
    DECLARE @UserId INT
 
-	INSERT INTO dbo.[User](Code, FullName, Nickname, [Password], [OldPassword], IsActive, IsDeleted, IsResetPassword)
-	SELECT EmpCode, FullName, NickName, @Password, @Password, 1, 0, 1
+	INSERT INTO dbo.[User](Code, FullName, Nickname, [Password], [OldPassword], IsActive, IsDeleted, IsResetPassword, CreatedDate)
+	SELECT Code, FullName, Nickname, @Password, @Password, 1, 0, 1, GETDATE()
 	FROM [dbo].[tmpInitUser] AS tmp WITH (NOLOCK)
 	WHERE RowIndex = @rowIndex
 		AND NOT EXISTS (
@@ -38,14 +38,17 @@ BEGIN
 		VALUES (@UserId, @SiteId, @RoleId)
 
 		INSERT INTO dbo.UserMapping(UserId, SiteId, RefId)
-		SELECT @UserId, @SiteId, EmpId
-		FROM @tmpEmp WITH (NOLOCK)
-		WHERE RowIndex = @rowIndex
+		VALUES (@UserId, @SiteId, @UserId)
 
-		UPDATE dbo.tmpUser WITH (ROWLOCK, UPDLOCK)
+
+		UPDATE dbo.[tmpInitUser] WITH (ROWLOCK, UPDLOCK)
 		SET UserId = @UserId
 		WHERE RowIndex = @rowIndex
 	END
+
+	SET @RowIndex = @RowIndex + 1
+END
+
 
 
 
