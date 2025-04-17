@@ -6,6 +6,8 @@ CREATE TABLE [dbo].[tmpInitUser](
 	[Code] [varchar](20) NULL,
 	[Nickname] [nvarchar](50) NULL,
 	[FullName] [nvarchar](100) NULL,
+	[TeamCode] [nvarchar](200) NULL,
+	[TeamName] [nvarchar](200) NULL,
 	[Password] [varchar](100) NULL,
 	[IsActive] [bit] NULL,
 	[IsDeleted] [bit] NULL,
@@ -76,8 +78,8 @@ VALUES
 
 SET IDENTITY_INSERT [dbo].[tmpInitUser] ON 
 
-INSERT INTO dbo.[tmpInitUser](CtrId, Code, FullName, Nickname, [Password], IsActive, IsDeleted, RowIndex)
-SELECT CtrId, EmpCode, FullName, NickName, @Password, 1, 0, RowIndex
+INSERT INTO dbo.[tmpInitUser](CtrId, Code, FullName, Nickname, TeamCode, TeamName, [Password], IsActive, IsDeleted, RowIndex)
+SELECT CtrId, EmpCode, FullName, NickName, TeamCode, TeamName, @Password, 1, 0, RowIndex
 FROM @tmpEmp
 
 SET IDENTITY_INSERT [dbo].[tmpInitUser] OFF
