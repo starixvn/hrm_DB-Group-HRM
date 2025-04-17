@@ -115,6 +115,7 @@ BEGIN
 		,gr.[Name] AS TeamName
 		,dep.Code AS DepartmentCode
         ,dep.[Name] AS DepartmentName
+		,u.Code AS BUCode
 		,verifier.EmpId AS VerifierId
 		,verifier.NickName AS VerifierNickname
 		,verifier.FullName AS VerifierFullName
@@ -132,6 +133,7 @@ BEGIN
 		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId
 		INNER JOIN #tblGroupIds AS tblgr WITH (NOLOCK) ON gr.GroupId = tblgr.GroupId
 		INNER JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId = gr.DepartmentId
+		INNER JOIN dbo.Unit AS u WITH (NOLOCK) ON u.UnitId = dep.UnitId
 		LEFT JOIN dbo.Employee AS verifier WITH (NOLOCK) ON verifier.EmpId = req.VerifierId
 		LEFT JOIN dbo.Employee AS approver WITH (NOLOCK) ON approver.EmpId = req.ApproverId
 		LEFT JOIN (
