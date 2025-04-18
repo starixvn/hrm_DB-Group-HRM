@@ -50,22 +50,4 @@ BEGIN
 END
 
 
-
-
 GO
-
-SELECT 
-    t.Code,
-    t.FullName, 
-    t.Nickname,
-    t.TeamCode,
-    t.TeamName,
-    t.UserId as TempUserId,
-    u.UserId as ActualUserId,
-    CASE 
-        WHEN u.UserId IS NULL THEN 'Not Created'
-        ELSE 'Created'
-    END as Status
-FROM dbo.tmpInitUser t
-LEFT JOIN dbo.[User] u ON t.Code = u.Code AND t.Nickname = u.Nickname
-ORDER BY t.RowIndex;
