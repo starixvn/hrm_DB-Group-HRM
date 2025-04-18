@@ -30,7 +30,7 @@ INSERT INTO [dbo].[Group]
            ,[CompanyId]
            ,[DepartmentId]
            ,[GroupTeamId]
-           ,[PICEmpId])
+           ,[AccountableArea])
      SELECT t.TeamCode,
 			t.TeamName,
 			GETDATE(),
@@ -38,10 +38,9 @@ INSERT INTO [dbo].[Group]
 			6,
 			d.DepartmentId,
 			ROW_NUMBER() OVER (ORDER BY (SELECT 1)) + @maxId AS GroupTeamId,
-			e.EmpId
+			t.AccountableArea
 	 FROM @tmpTeam t 
 	 INNER JOIN Department d WITH(NOLOCK) ON d.Code = t.DepartmentCode
-	 LEFT JOIN dbo.Employee e WITH(NOLOCK) ON e.NickName = t.TeamPIC
 
 GO 
 
