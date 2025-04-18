@@ -3,7 +3,7 @@ GO
 
 DECLARE @rowIndex INT
 	,@TotalRows INT
-	,@Password VARCHAR(100) = '/IirRX6DR+3J+itTfUQPFeDxmyMAAAAAAAAAAA==' /*123456*/
+	,@Password VARCHAR(100) = '$2a$11$HlrbWdanSgkujUqWux8VneSldcHne2leIvOdsjeDQGa1CcFp6cEd2' /*123456*/
     ,@SiteId SMALLINT = 15
 	,@RoleId TINYINT = 1
 
