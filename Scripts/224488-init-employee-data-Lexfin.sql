@@ -188,11 +188,32 @@ GO
 
 
 -- Update TeamPIC
+
+DECLARE @tmpTeam TABLE (
+    [BUCode] NVARCHAR(10),
+    [DepartmentCode] NVARCHAR(10),
+    [TeamCode] NVARCHAR(10),
+    [TeamName] NVARCHAR(100),
+    [TeamPIC] NVARCHAR(100),
+    [AccountableArea] NVARCHAR(100)
+);
+
+-- Insert values
+INSERT INTO @tmpTeam ([BUCode], [DepartmentCode], [TeamCode], [TeamName], [TeamPIC], [AccountableArea])
+VALUES 
+('FI', 'FI01', 'FI1', 'Finance', 'Steven', 'Finance SU01'),
+('HM', 'HM08', 'HL4', 'HR', 'Cams', 'HR SU04'),
+('LG', 'LG02', 'CT1', 'Core Team', 'David Alfeche', 'Core Team SU02'),
+('LG', 'LG02', 'LY2', 'Lawyer', 'David Alfeche', 'Lawyer SU03'),
+('LG', 'LG03', 'LA2', 'Legal Admin', 'David Alfeche', 'Legal Admin SU05');
+
 UPDATE g
 SET PICEmpId = e.EmpId
 FROM dbo.[Group] g
 LEFT JOIN @tmpTeam t ON t.TeamCode = g.Code
 LEFT JOIN dbo.Employee e WITH(NOLOCK) ON e.NickName = t.TeamPIC
+INNER JOIN dbo.CompanyEmployee ce  WITH(NOLOCK) ON ce.EmpId = e.EmpId and ce.CompanyId = 6
+WHERE g.CompanyId = 6
 
 GO
 
