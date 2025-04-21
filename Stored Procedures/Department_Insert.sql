@@ -6,8 +6,8 @@ ALTER PROCEDURE [dbo].[Department_Insert] @Code VARCHAR(50)
 	,@IsActive BIT
 	,@ModifiedBy INT
 	,@GroupDeptId INT
-	,@AccountableArea NVARCHAR(100)
-	,@PICEmpId INT
+	,@AccountableArea NVARCHAR(100) = ''
+	,@PICEmpId INT = NULL
 	,@ErrCode INT = 0 OUTPUT
 	,@ErrMsg VARCHAR(200) = '' OUTPUT
 AS
