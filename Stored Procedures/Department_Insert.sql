@@ -5,9 +5,11 @@ ALTER PROCEDURE [dbo].[Department_Insert] @Code VARCHAR(50)
 	,@UnitId INT
 	,@IsActive BIT
 	,@ModifiedBy INT
+	,@GroupDeptId INT
+	,@AccountableArea NVARCHAR(100)
+	,@PICEmpId INT
 	,@ErrCode INT = 0 OUTPUT
 	,@ErrMsg VARCHAR(200) = '' OUTPUT
-	,@CompanyId SMALLINT
 AS
 /*
 Created: 20200521@Lilac.Nguyen
@@ -16,6 +18,8 @@ DB: HRM
 Original: 
 
 Revisions:  
+	20250421@Mira: add new Deparment - new structure [Redmine: #221568]
+
 Param's Explanation:
 */
 BEGIN
@@ -32,15 +36,19 @@ BEGIN
 
 		RETURN
 	END
+
+	IF EXISTS (
+			SELECT 1
+			FROM dbo.Department WITH (NOLOCK)
+			WHERE GroupDeptId = @GroupDeptId AND IsDeleted = 0
+			)
+	BEGIN
+		SELECT @ErrCode = 1
+			,@ErrMsg = N'Department ID ' + CONVERT(NVARCHAR(10), @GroupDeptId) + ' has already exists'
+
+		RETURN
+	END
 	
-    DECLARE @OldDepartmentId INT
-
-    SELECT @OldDepartmentId = MAX(e.OldDepartmentId)
-    FROM dbo.Department AS e WITH (NOLOCK)
-    WHERE CompanyId = @CompanyId
-
-    SET @OldDepartmentId = ISNULL(@OldDepartmentId, 0) + 1
-
 	INSERT INTO dbo.Department(
 		[Code]
 		,[Name]
@@ -49,8 +57,9 @@ BEGIN
 		,[ModifiedBy]
 		,[ModifiedDate]
 		,[IsDeleted]
-		,[CompanyId]
-		,[OldDepartmentId]
+		,[AccountableArea]
+		,[GroupDeptId]
+		,[PICEmpId]
 		)
 	VALUES (
 		@Code
@@ -60,7 +69,8 @@ BEGIN
 		,@ModifiedBy
 		,GETDATE()
 		,0
-		,@CompanyId
-		,@OldDepartmentId
+		,@AccountableArea
+		,@GroupDeptId
+		,@PICEmpId
 		)
 END

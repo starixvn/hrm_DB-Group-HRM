@@ -1,8 +1,7 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Department_GetById]
-	@Id INT,
-	@CompanyId SMALLINT
+	@Id INT
 AS
 /*
 Created: 20200521@Lilac.Nguyen
@@ -11,6 +10,8 @@ DB: HRM
 Original: 
 
 Revisions:  
+	20250421@Mira: edit Deparment - new structure [Redmine: #221568]
+
 Param's Explanation:
 */
 BEGIN
@@ -20,11 +21,13 @@ BEGIN
 	,dep.Code
 	,dep.Name
 	,dep.IsActive
+	,dep.AccountableArea
+	,dep.GroupDeptId
+	,dep.PICEmpId
 	,u.UnitId
 	,u.Name
 	FROM dbo.Department AS dep WITH (NOLOCK)
 		LEFT JOIN dbo.Unit AS u WITH (NOLOCK) ON dep.UnitId = u.UnitId
 	WHERE dep.DepartmentId = @Id
-		AND dep.CompanyId = @CompanyId
 
 END
