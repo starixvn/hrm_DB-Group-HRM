@@ -672,6 +672,7 @@ BEGIN
 		,lv.[Name] AS LeaveTypeName
 		,r.Remark
 		,ISNULL(rm.TotalDaysRequest, 0) TotalDaysRequestInMonth
+		,u.Code AS UnitCode
 		,CASE 
 			WHEN r.RequestType IN (1, 2) THEN inoutmiss.ReasonId
 			WHEN r.RequestType IN (3, 4) THEN inout.ReasonId
@@ -737,6 +738,7 @@ BEGIN
 		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.empID = r.empID
 		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON e.GroupID = g.GroupID
 		INNER JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId = g.DepartmentId
+		INNER JOIN dbo.Unit AS u WITH (NOLOCK) ON u.UnitId = dep.UnitId
 		LEFT JOIN dbo.LateInEarlyOutRequest AS inout WITH (NOLOCK) ON r.RequestId = inout.RequestId
 		LEFT JOIN dbo.LeaveRequest AS lr WITH (NOLOCK) ON r.RequestId = lr.RequestId
 		LEFT JOIN dbo.CheckInOutRequest AS inoutmiss WITH (NOLOCK) ON r.RequestId = inoutmiss.RequestId

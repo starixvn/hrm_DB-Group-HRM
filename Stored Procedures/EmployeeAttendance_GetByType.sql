@@ -584,6 +584,7 @@ BEGIN
 				ELSE NULL
 				END) AS Notes
 		,T.DepartmentCode
+		,T.UnitCode
 	FROM (
 		SELECT e.Code
 			,e.EmpId
@@ -672,6 +673,7 @@ BEGIN
 				ELSE 0 END
 				) AS IsShiftCrossDay
 			,de.Code AS DepartmentCode
+			,u.Code AS UnitCode
 		FROM dbo.Employee AS e WITH (NOLOCK)
 			INNER JOIN dbo.tmpEmployeeCalendar AS c WITH (NOLOCK) ON c.EmpId = e.EmpId
 			AND c.WorkDate BETWEEN @fromtime
@@ -703,6 +705,7 @@ BEGIN
 			AND a.empid = e.empid
 			LEFT JOIN dbo.[Group] AS g WITH (NOLOCK) ON e.groupid = g.groupid
 			INNER JOIN dbo.[Department] AS de WITH (NOLOCK) ON de.DepartmentId = g.DepartmentId
+			INNER JOIN dbo.[Unit] AS u WITH (NOLOCK) ON u.UnitId = de.UnitId
 			INNER JOIN #tmpGroup AS tmpgr ON g.GroupId = tmpgr.GroupId
 			LEFT JOIN dbo.OTDailyRequest AS ot WITH (NOLOCK) ON a.attendancedate = ot.OvertimeDate
 			AND a.EmpId = ot.EmpId
@@ -795,4 +798,3 @@ BEGIN
 
 	DROP TABLE #tmpDailyRequest
 END
-

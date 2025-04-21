@@ -1,6 +1,8 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[Report_MonthlyWorkingHours_EmployeeRequest] @CompanyId SMALLINT
+ALTER PROCEDURE [dbo].[Report_MonthlyWorkingHours_EmployeeRequest]
+(
+    @CompanyId SMALLINT
     ,@ActorId INT
 	,@FromDate DATE
 	,@ToDate DATE
@@ -8,13 +10,15 @@ ALTER PROCEDURE [dbo].[Report_MonthlyWorkingHours_EmployeeRequest] @CompanyId SM
 	,@TeamIds VARCHAR(MAX) = ''
 	,@IsLocal BIT = NULL
 	,@EmployeeStatusId TINYINT = NULL
+)
 AS
 /*
-Created: Tim.Trinh@2019-08-20
-Task: get employee request
-DB: HRM
+    Created: Tim.Trinh@2019-08-20
+    Task: get employee request
+    DB: bodb_HRM
 
-Revisions:
+    Revisions:
+        20250417@Tim: get Unit Code [Redmine: #224530]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -482,10 +486,12 @@ BEGIN
 		,g.[Name] AS TeamName
         ,dep.Code AS DepartmentCode
 		,dep.[Name] AS DepartmentName
+        ,u.Code AS UnitCode
 	FROM dbo.WorkingTimeRequest AS r WITH (NOLOCK)
 		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.EmpId = r.EmpId
 		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON e.GroupId = g.GroupId
 		INNER JOIN dbo.Department AS dep WITH (NOLOCK ) ON dep.DepartmentId = g.DepartmentId
+        INNER JOIN dbo.Unit AS u WITH (NOLOCK) ON dep.UnitId = u.UnitId
 		INNER JOIN #tblRequestIds AS rq ON r.RequestId = rq.RequestId
 		INNER JOIN #tblRequestInDaily AS rd ON r.RequestId = rd.RequestID
 		LEFT JOIN dbo.LateInEarlyOutRequest AS inout WITH (NOLOCK) ON r.RequestId = inout.RequestId
