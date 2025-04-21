@@ -16,8 +16,8 @@ VALUES
 ('FI', 'FI01', 'FI1', 'Finance', 'Steven', 'Finance SU01'),
 ('HM', 'HM08', 'HL4', 'HR', 'Cams', 'HR SU04'),
 ('LG', 'LG02', 'CT1', 'Core Team', 'David Alfeche', 'Core Team SU02'),
-('LG', 'LG02', 'LY2', 'Lawyer', 'David Alfeche', 'Lawyer SU03'),
-('LG', 'LG03', 'LA2', 'Legal Admin', 'David Alfeche', 'Legal Admin SU05');
+('LG', 'LG02', 'LY2', 'Lawyer', 'David Alfeche', 'Lawyer SU02'),
+('LG', 'LG03', 'LA2', 'Legal Admin', 'David Alfeche', 'Legal Admin SU02');
 
 -- Get max GroupTeamId
 DECLARE @maxId INT = ISNULL((SELECT MAX(GroupTeamId) FROM dbo.[Group]), 0);
@@ -203,8 +203,8 @@ VALUES
 ('FI', 'FI01', 'FI1', 'Finance', 'Steven', 'Finance SU01'),
 ('HM', 'HM08', 'HL4', 'HR', 'Cams', 'HR SU04'),
 ('LG', 'LG02', 'CT1', 'Core Team', 'David Alfeche', 'Core Team SU02'),
-('LG', 'LG02', 'LY2', 'Lawyer', 'David Alfeche', 'Lawyer SU03'),
-('LG', 'LG03', 'LA2', 'Legal Admin', 'David Alfeche', 'Legal Admin SU05');
+('LG', 'LG02', 'LY2', 'Lawyer', 'David Alfeche', 'Lawyer SU02'),
+('LG', 'LG03', 'LA2', 'Legal Admin', 'David Alfeche', 'Legal Admin SU02');
 
 UPDATE g
 SET PICEmpId = e.EmpId
