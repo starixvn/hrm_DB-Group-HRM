@@ -9,9 +9,8 @@ Created: Tom.Vo@2013-10-21
 Task: get group
 DB: HRM
 
-Revisions:
-	20250310@Mira: filter by CompanyId [Redmine: #217976]
-    20250403@Tim: remove section [Redmine: #222886]
+Revisions:        
+	- 20250422@Jay: Apply get group team logic [Redmine: #221567]
 */
 BEGIN
 	SET NOCOUNT ON;

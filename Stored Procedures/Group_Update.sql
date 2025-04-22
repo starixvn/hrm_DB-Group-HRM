@@ -19,6 +19,7 @@ Original:
 
 Revisions:
 Param's Explanation:
+	- 20250422@Jay: Apply gupdate group team logic [Redmine: #221567]
 */
 BEGIN
 	SET NOCOUNT ON;
