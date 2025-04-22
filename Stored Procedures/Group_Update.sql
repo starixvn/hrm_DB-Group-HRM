@@ -21,7 +21,6 @@ ALTER PROCEDURE [dbo].[Group_Update] @TeamId INT
 	,@ErrCode INT = 0 OUTPUT
 	,@ErrMsg NVARCHAR(200) = '' OUTPUT
 	,@CompanyId SMALLINT
-	,@GroupTeamId INT
 	,@PICEmpId INT
 	,@DepartmentId INT
 	,@AccountableArea VARCHAR(200)
@@ -99,7 +98,6 @@ BEGIN
 				,ExpatOffDaysbyWeek AS '@ExpatOffDaysbyWeek'
 				,ExpatWorkingHoursByWeek AS '@ExpatWorkingHoursByWeek'
 				,CompanyId AS '@CompanyId'
-				,GroupTeamId AS '@GroupTeamId'
 				,PICEmpId AS '@PICEmpId'
 				,DepartmentId AS '@DepartmentId'
 				,AccountableArea AS '@AccountTableArea'
@@ -145,7 +143,6 @@ BEGIN
 		,ExpatOffDaysbyWeek = @ExpatOffDaysbyWeek
 		,ExpatWorkingHoursByWeek = @ExpatWorkingHoursByWeek
 		,CompanyId = @CompanyId
-		,GroupTeamId = @GroupTeamId
 		,PICEmpId = @PICEmpId
 		,DepartmentId = @DepartmentId
 		,AccountableArea = @AccountableArea
@@ -169,7 +166,6 @@ BEGIN
 				,ExpatOffDaysbyWeek AS '@ExpatOffDaysbyWeek'
 				,ExpatWorkingHoursByWeek AS '@ExpatWorkingHoursByWeek'
 				,CompanyId as '@CompanyId'
-				,GroupTeamId as '@GroupTeamId'
 				,PICEmpId as '@PICEmpId'
 				,DepartmentId as '@DepartmentId'
 				,AccountableArea as '@AccountableArea'

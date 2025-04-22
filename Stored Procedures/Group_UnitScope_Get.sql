@@ -55,7 +55,7 @@ BEGIN
 	GROUP BY g.GroupId
 
 	SELECT g.GroupId AS Id
-		,GroupTeamId AS TeamId
+		,GroupTeamId AS GroupTeamId
 		,g.[Name] AS TeamName
 		,g.Code AS TeamCode
 		,g.[Rank]
