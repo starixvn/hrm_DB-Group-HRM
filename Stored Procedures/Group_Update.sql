@@ -3,20 +3,6 @@
 ALTER PROCEDURE [dbo].[Group_Update] @TeamId INT
 	,@Code VARCHAR(20)
 	,@Name NVARCHAR(150)
-	,@MailGroup VARCHAR(50) = ''
-	,@ManagerIds VARCHAR(MAX) = ''
-	,@LeaderIds VARCHAR(MAX) = ''
-	,@SupervisorIds VARCHAR(MAX) = ''
-	,@LocalBasicAnnualLeaveBalance TINYINT = NULL
-	,@LocalWorkingDays TINYINT = NULL
-	,@LocalWorkingHours TINYINT = NULL
-	,@LocalOffDaysbyWeek TINYINT = NULL
-	,@LocalWorkingHoursByWeek TINYINT = NULL
-	,@ExpatBasicAnnualLeaveBalance TINYINT = NULL
-	,@ExpatWorkingDays TINYINT = NULL
-	,@ExpatWorkingHours TINYINT = NULL
-	,@ExpatOffDaysbyWeek TINYINT = NULL
-	,@ExpatWorkingHoursByWeek TINYINT = NULL
 	,@ModifiedBy INT
 	,@ErrCode INT = 0 OUTPUT
 	,@ErrMsg NVARCHAR(200) = '' OUTPUT
@@ -55,48 +41,10 @@ BEGIN
 	DECLARE @xml XML
 		,@logData NVARCHAR(MAX)
 		,@logOldData NVARCHAR(MAX)
-		,@OldHeadId INT
-		,@OldManagerIds VARCHAR(MAX) = ''
-		,@OldLeaderIds VARCHAR(MAX)
-		,@OldSupervisorIds VARCHAR(MAX)
-
-	SELECT @OldHeadId = EmpId
-	FROM dbo.GroupManager WITH (NOLOCK)
-	WHERE GroupId = @TeamId
-		AND RoleId = 1
-
-	SELECT @OldManagerIds = COALESCE(@OldManagerIds + ',', '') + CAST(EmpId AS VARCHAR(10))
-	FROM dbo.GroupManager WITH (NOLOCK)
-	WHERE GroupId = @TeamId
-		AND RoleId = 2
-
-	SELECT @OldLeaderIds = COALESCE(@OldLeaderIds + ',', '') + CAST(EmpId AS VARCHAR(10))
-	FROM dbo.GroupManager WITH (NOLOCK)
-	WHERE GroupId = @TeamId
-		AND RoleId = 3
-
-	SELECT @OldSupervisorIds = COALESCE(@OldSupervisorIds + ',', '') + CAST(EmpId AS VARCHAR(10))
-	FROM dbo.GroupManager WITH (NOLOCK)
-	WHERE GroupId = @TeamId
-		AND RoleId = 4
 
 	SET @xml = (
 			SELECT Code AS '@Code'
 				,[Name] AS '@Name'
-				,@OldManagerIds AS '@ManagerIds'
-				,@OldLeaderIds AS '@LeaderIds'
-				,@OldSupervisorIds AS '@SupervisorIds'
-				,MailGroup AS '@MailGroup'
-				,LocalBasicAnnualLeaveBalance AS '@LocalBasicAnnualLeaveBalance'
-				,LocalWorkingDays AS '@LocalWorkingDays'
-				,LocalWorkingHours AS '@LocalWorkingHours'
-				,LocalOffDaysbyWeek AS '@LocalOffDaysbyWeek'
-				,LocalWorkingHoursByWeek AS '@LocalWorkingHoursByWeek'
-				,ExpatBasicAnnualLeaveBalance AS '@ExpatBasicAnnualLeaveBalance'
-				,ExpatWorkingDays AS '@ExpatWorkingDays'
-				,ExpatWorkingHours AS '@ExpatWorkingHours'
-				,ExpatOffDaysbyWeek AS '@ExpatOffDaysbyWeek'
-				,ExpatWorkingHoursByWeek AS '@ExpatWorkingHoursByWeek'
 				,CompanyId AS '@CompanyId'
 				,PICEmpId AS '@PICEmpId'
 				,DepartmentId AS '@DepartmentId'
@@ -108,40 +56,11 @@ BEGIN
 			)
 	SET @logOldData = REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"')
 
-	DELETE
-	FROM dbo.GroupManager WITH (ROWLOCK, UPDLOCK)
-	WHERE GroupId = @TeamId
-
-	IF ISNULL(@LeaderIds, '') <> ''
-	BEGIN
-		INSERT INTO dbo.GroupManager (GroupId, EmpId, RoleId)
-		SELECT @TeamId, val, 3
-		FROM dbo.fnc_strSplit(@LeaderIds, ',')
-	END
-
-	IF ISNULL(@SupervisorIds, '') <> ''
-	BEGIN
-		INSERT INTO dbo.GroupManager (GroupId, EmpId, RoleId)
-		SELECT @TeamId, val, 4
-		FROM dbo.fnc_strSplit(@SupervisorIds, ',')
-	END
-
 	UPDATE dbo.[Group] WITH (ROWLOCK, UPDLOCK)
 	SET Code = @Code
 		,[Name] = @Name
-		,[MailGroup] = @MailGroup
 		,ModifiedDate = GETDATE()
 		,ModifiedBy = @ModifiedBy
-		,LocalBasicAnnualLeaveBalance = @LocalBasicAnnualLeaveBalance
-		,LocalWorkingDays = @LocalWorkingDays
-		,LocalWorkingHours = @LocalWorkingHours
-		,LocalOffDaysbyWeek = @LocalOffDaysbyWeek
-		,LocalWorkingHoursByWeek = @LocalWorkingHoursByWeek
-		,ExpatBasicAnnualLeaveBalance = @ExpatBasicAnnualLeaveBalance
-		,ExpatWorkingDays = @ExpatWorkingDays
-		,ExpatWorkingHours = @ExpatWorkingHours
-		,ExpatOffDaysbyWeek = @ExpatOffDaysbyWeek
-		,ExpatWorkingHoursByWeek = @ExpatWorkingHoursByWeek
 		,CompanyId = @CompanyId
 		,PICEmpId = @PICEmpId
 		,DepartmentId = @DepartmentId
@@ -151,20 +70,6 @@ BEGIN
 	SET @xml = (
 			SELECT Code AS '@Code'
 				,[Name] AS '@Name'
-				,@ManagerIds AS '@ManagerIds'
-				,@LeaderIds AS '@LeaderIds'
-				,@SupervisorIds AS '@SupervisorIds'
-				,MailGroup AS '@MailGroup'
-				,LocalBasicAnnualLeaveBalance AS '@LocalBasicAnnualLeaveBalance'
-				,LocalWorkingDays AS '@LocalWorkingDays'
-				,LocalWorkingHours AS '@LocalWorkingHours'
-				,LocalOffDaysbyWeek AS '@LocalOffDaysbyWeek'
-				,LocalWorkingHoursByWeek AS '@LocalWorkingHoursByWeek'
-				,ExpatBasicAnnualLeaveBalance AS '@ExpatBasicAnnualLeaveBalance'
-				,ExpatWorkingDays AS '@ExpatWorkingDays'
-				,ExpatWorkingHours AS '@ExpatWorkingHours'
-				,ExpatOffDaysbyWeek AS '@ExpatOffDaysbyWeek'
-				,ExpatWorkingHoursByWeek AS '@ExpatWorkingHoursByWeek'
 				,CompanyId as '@CompanyId'
 				,PICEmpId as '@PICEmpId'
 				,DepartmentId as '@DepartmentId'
