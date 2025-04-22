@@ -6,10 +6,10 @@ ALTER PROCEDURE [dbo].[Group_Update] @TeamId INT
 	,@ModifiedBy INT
 	,@ErrCode INT = 0 OUTPUT
 	,@ErrMsg NVARCHAR(200) = '' OUTPUT
-	,@CompanyId SMALLINT
 	,@PICEmpId INT
 	,@DepartmentId INT
 	,@AccountableArea VARCHAR(200)
+	,@GroupTeamId INT
 AS
 /*
 Created: Tom.Vo@2013-10-23
@@ -18,8 +18,8 @@ DB: HRM_SMS
 Original:
 
 Revisions:
-Param's Explanation:
 	- 20250422@Jay: Apply gupdate group team logic [Redmine: #221567]
+Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -39,6 +39,20 @@ BEGIN
 		RETURN
 	END
 
+	IF EXISTS (
+			SELECT 1
+			FROM dbo.[Group] WITH (NOLOCK)
+			WHERE GroupId <> @TeamId 
+				AND GroupTeamId = @GroupTeamId
+				AND IsDeleted = 0
+			)
+	BEGIN
+		SELECT @ErrCode = 101
+			,@ErrMsg = N'Team Id "' + CAST(@GroupTeamId AS NVARCHAR) + '" have been used by other group.'
+
+		RETURN
+	END
+
 	DECLARE @xml XML
 		,@logData NVARCHAR(MAX)
 		,@logOldData NVARCHAR(MAX)
@@ -46,10 +60,10 @@ BEGIN
 	SET @xml = (
 			SELECT Code AS '@Code'
 				,[Name] AS '@Name'
-				,CompanyId AS '@CompanyId'
 				,PICEmpId AS '@PICEmpId'
 				,DepartmentId AS '@DepartmentId'
 				,AccountableArea AS '@AccountTableArea'
+				,GroupTeamId AS '@GroupTeamId'
 			FROM dbo.[Group] WITH (NOLOCK)
 			WHERE GroupId = @TeamId
 			FOR XML PATH('Row')
@@ -62,19 +76,19 @@ BEGIN
 		,[Name] = @Name
 		,ModifiedDate = GETDATE()
 		,ModifiedBy = @ModifiedBy
-		,CompanyId = @CompanyId
 		,PICEmpId = @PICEmpId
 		,DepartmentId = @DepartmentId
 		,AccountableArea = @AccountableArea
+		,GroupTeamId = @GroupTeamId
 	WHERE GroupId = @TeamId
 
 	SET @xml = (
 			SELECT Code AS '@Code'
 				,[Name] AS '@Name'
-				,CompanyId as '@CompanyId'
 				,PICEmpId as '@PICEmpId'
 				,DepartmentId as '@DepartmentId'
 				,AccountableArea as '@AccountableArea'
+				,GroupTeamId as '@GroupTeamId'
 			FROM dbo.[Group] WITH (NOLOCK)
 			WHERE GroupId = @TeamId
 			FOR XML PATH('Row')
