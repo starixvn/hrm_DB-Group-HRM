@@ -18,7 +18,7 @@ DB: HRM_SMS
 Original:
 
 Revisions:
-	- 20250422@Jay: Apply gupdate group team logic [Redmine: #221567]
+	- 20250422@Jay: Apply update group team logic [Redmine: #221567]
 Param's Explanation:
 */
 BEGIN
