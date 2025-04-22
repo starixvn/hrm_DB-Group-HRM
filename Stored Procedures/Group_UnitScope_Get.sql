@@ -19,29 +19,17 @@ BEGIN
 	CREATE TABLE #tmpGroup (
 		GroupId INT PRIMARY KEY
 		,NoOfMembers INT
-		,TotalLocal INT
-		,TotalExpat INT
 		)
 
 	INSERT INTO #tmpGroup (
 		GroupId
 		,NoOfMembers
-		,TotalLocal
-		,TotalExpat
 		)
 	SELECT g.GroupId
 		,SUM(CASE 
 				WHEN esum.IsLocal IS NOT NULL THEN 1
 				ELSE 0
 				END) AS NoOfMembers
-		,SUM(CASE 
-				WHEN esum.IsLocal = 1 THEN 1
-				ELSE 0
-				END) TotalLocal
-		,SUM(CASE 
-				WHEN esum.IsLocal = 0 THEN 1
-				ELSE 0
-				END) TotalExpat
 	FROM dbo.[Group] AS g WITH (NOLOCK)
 		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON emp.GroupId = g.GroupId
 		AND emp.isDeleted = 0
@@ -59,34 +47,25 @@ BEGIN
 		,g.[Name] AS TeamName
 		,g.Code AS TeamCode
 		,g.[Rank]
-		,g.MailGroup
-		,g.LocalBasicAnnualLeaveBalance
-		,g.LocalWorkingDays
-		,g.LocalWorkingHours
-		,g.LocalOffDaysbyWeek
-		,g.LocalWorkingHoursByWeek
-		,g.ExpatBasicAnnualLeaveBalance
-		,g.ExpatWorkingDays
-		,g.ExpatWorkingHours
-		,g.ExpatOffDaysbyWeek
-		,g.ExpatWorkingHoursByWeek
 		,tbl.NoOfMembers
-		,tbl.TotalLocal
-		,tbl.TotalExpat
 		,g.PICEmpId
 		,e.NickName as TeamPIC
 		,d.DepartmentId
         ,d.Code AS DepartmentCode
         ,d.[Name] AS DepartmentName
-		, d.PICEmpId AS DepartmentPIC
+		,d.PICEmpId AS DepartmentPICId
+		,ed.NickName AS DepartmentPIC
 		,u.Code AS UnitCode
 		,g.AccountableArea
 		,g.CompanyId
+		,c.[Name] AS CompanyName
 	FROM dbo.[Group] AS g WITH (NOLOCK)
 		INNER JOIN dbo.Department AS d WITH (NOLOCK) ON g.DepartmentId = d.DepartmentId
 		LEFT JOIN dbo.Employee AS e WITH (NOLOCK) ON e.EmpId = g.PICEmpId
 		INNER JOIN dbo.Unit AS u WITH (NOLOCK) ON u.UnitId = d.UnitId
+		LEFT JOIN dbo.Employee AS ed WITH (NOLOCK) ON ed.EmpId = d.PICEmpId
 		LEFT JOIN #tmpGroup AS tbl ON g.GroupId = tbl.GroupId
+		LEFT JOIN dbo.Company AS c ON g.CompanyId = c.CompanyId
 	WHERE (
 			 @TeamId IS NULL
 			OR g.GroupId =  @TeamId
@@ -98,23 +77,6 @@ BEGIN
 			 OR LOWER(g.Code) like LOWER('%' + @keyWord + '%') 
 			)
 	ORDER BY d.Code
-
-	SELECT mng.GroupId AS TeamId
-		,mng.RoleId
-		,emp.EmpId
-		,emp.NickName
-		,emp.FullName
-	FROM dbo.GroupManager AS mng WITH (NOLOCK)
-		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON mng.GroupId = g.GroupId
-		AND  g.isDeleted != 1
-		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON mng.EmpId = emp.EmpId
-		INNER JOIN dbo.CompanyEmployee c WITH (NOLOCK) on c.EmpId = emp.EmpId
-    WHERE emp.isDeleted = 0
-		AND emp.[Enabled] = 1
-		AND (
-			 @TeamId IS NULL
-			OR g.GroupId =  @TeamId
-			)
 
     DROP TABLE #tmpGroup
 END
