@@ -9,8 +9,9 @@ Created: Tom.Vo@2013-10-21
 Task: get group
 DB: HRM
 
-Revisions:        
-	- 20250422@Jay: Apply get group team logic [Redmine: #221567]
+Revisions:
+	20250310@Mira: filter by CompanyId [Redmine: #217976]
+    20250403@Tim: remove section [Redmine: #222886]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -58,6 +59,17 @@ BEGIN
 		,g.AccountableArea
 		,g.CompanyId
 		,c.[Name] AS CompanyName
+		,g.MailGroup
+		,g.LocalBasicAnnualLeaveBalance
+		,g.LocalWorkingDays
+		,g.LocalWorkingHours
+		,g.LocalOffDaysbyWeek
+		,g.LocalWorkingHoursByWeek
+		,g.ExpatBasicAnnualLeaveBalance
+		,g.ExpatWorkingDays
+		,g.ExpatWorkingHours
+		,g.ExpatOffDaysbyWeek
+		,g.ExpatWorkingHoursByWeek
 	FROM dbo.[Group] AS g WITH (NOLOCK)
 		INNER JOIN dbo.Department AS d WITH (NOLOCK) ON g.DepartmentId = d.DepartmentId
 		LEFT JOIN dbo.Employee AS e WITH (NOLOCK) ON e.EmpId = g.PICEmpId

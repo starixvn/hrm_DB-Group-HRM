@@ -10,6 +10,17 @@ ALTER PROCEDURE [dbo].[Group_Update] @TeamId INT
 	,@DepartmentId INT
 	,@AccountableArea VARCHAR(200)
 	,@GroupTeamId INT
+	,@MailGroup VARCHAR(50) = ''
+	,@LocalBasicAnnualLeaveBalance TINYINT = NULL
+	,@LocalWorkingDays TINYINT = NULL
+	,@LocalWorkingHours TINYINT = NULL
+	,@LocalOffDaysbyWeek TINYINT = NULL
+	,@LocalWorkingHoursByWeek TINYINT = NULL
+	,@ExpatBasicAnnualLeaveBalance TINYINT = NULL
+	,@ExpatWorkingDays TINYINT = NULL
+	,@ExpatWorkingHours TINYINT = NULL
+	,@ExpatOffDaysbyWeek TINYINT = NULL
+	,@ExpatWorkingHoursByWeek TINYINT = NULL
 AS
 /*
 Created: Tom.Vo@2013-10-23
@@ -18,7 +29,6 @@ DB: HRM_SMS
 Original:
 
 Revisions:
-	- 20250422@Jay: Apply update group team logic [Redmine: #221567]
 Param's Explanation:
 */
 BEGIN
@@ -64,6 +74,17 @@ BEGIN
 				,DepartmentId AS '@DepartmentId'
 				,AccountableArea AS '@AccountTableArea'
 				,GroupTeamId AS '@GroupTeamId'
+				,MailGroup AS '@MailGroup'
+				,LocalBasicAnnualLeaveBalance AS '@LocalBasicAnnualLeaveBalance'
+				,LocalWorkingDays AS '@LocalWorkingDays'
+				,LocalWorkingHours AS '@LocalWorkingHours'
+				,LocalOffDaysbyWeek AS '@LocalOffDaysbyWeek'
+				,LocalWorkingHoursByWeek AS '@LocalWorkingHoursByWeek'
+				,ExpatBasicAnnualLeaveBalance AS '@ExpatBasicAnnualLeaveBalance'
+				,ExpatWorkingDays AS '@ExpatWorkingDays'
+				,ExpatWorkingHours AS '@ExpatWorkingHours'
+				,ExpatOffDaysbyWeek AS '@ExpatOffDaysbyWeek'
+				,ExpatWorkingHoursByWeek AS '@ExpatWorkingHoursByWeek'
 			FROM dbo.[Group] WITH (NOLOCK)
 			WHERE GroupId = @TeamId
 			FOR XML PATH('Row')
@@ -80,6 +101,17 @@ BEGIN
 		,DepartmentId = @DepartmentId
 		,AccountableArea = @AccountableArea
 		,GroupTeamId = @GroupTeamId
+		,LocalBasicAnnualLeaveBalance = @LocalBasicAnnualLeaveBalance
+		,LocalWorkingDays = @LocalWorkingDays
+		,LocalWorkingHours = @LocalWorkingHours
+		,LocalOffDaysbyWeek = @LocalOffDaysbyWeek
+		,LocalWorkingHoursByWeek = @LocalWorkingHoursByWeek
+		,ExpatBasicAnnualLeaveBalance = @ExpatBasicAnnualLeaveBalance
+		,ExpatWorkingDays = @ExpatWorkingDays
+		,ExpatWorkingHours = @ExpatWorkingHours
+		,ExpatOffDaysbyWeek = @ExpatOffDaysbyWeek
+		,ExpatWorkingHoursByWeek = @ExpatWorkingHoursByWeek
+		,[MailGroup] = @MailGroup
 	WHERE GroupId = @TeamId
 
 	SET @xml = (
@@ -89,6 +121,17 @@ BEGIN
 				,DepartmentId as '@DepartmentId'
 				,AccountableArea as '@AccountableArea'
 				,GroupTeamId as '@GroupTeamId'
+				,MailGroup AS '@MailGroup'
+				,LocalBasicAnnualLeaveBalance AS '@LocalBasicAnnualLeaveBalance'
+				,LocalWorkingDays AS '@LocalWorkingDays'
+				,LocalWorkingHours AS '@LocalWorkingHours'
+				,LocalOffDaysbyWeek AS '@LocalOffDaysbyWeek'
+				,LocalWorkingHoursByWeek AS '@LocalWorkingHoursByWeek'
+				,ExpatBasicAnnualLeaveBalance AS '@ExpatBasicAnnualLeaveBalance'
+				,ExpatWorkingDays AS '@ExpatWorkingDays'
+				,ExpatWorkingHours AS '@ExpatWorkingHours'
+				,ExpatOffDaysbyWeek AS '@ExpatOffDaysbyWeek'
+				,ExpatWorkingHoursByWeek AS '@ExpatWorkingHoursByWeek'
 			FROM dbo.[Group] WITH (NOLOCK)
 			WHERE GroupId = @TeamId
 			FOR XML PATH('Row')
