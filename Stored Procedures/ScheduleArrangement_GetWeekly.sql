@@ -11,12 +11,13 @@ ALTER PROCEDURE [dbo].[ScheduleArrangement_GetWeekly] @ActorId INT
     ,@IsEditScheduleUnlimited BIT = 0
 AS
 /*
-Created: Tim.Trinh@2019-04-12
-Task: Get weekly schedules
-DB: HRM
+	Created: Tim.Trinh@2019-04-12
+	Task: Get weekly schedules
+	DB: HRM
 
-Revisions:
-Param's Explanation:
+	Revisions:
+		Henry.Dinh@2025-04-24: Merge action type 2, 3, 4, 5
+	Param's Explanation:
 
 */
 BEGIN
@@ -46,12 +47,12 @@ BEGIN
 	END
 
 	INSERT INTO #tblEmployeeIds (EmpId)
-	SELECT OwnerId
+	SELECT EmpId
 	FROM dbo.EmployeeSupervisor AS es WITH (NOLOCK)
-	WHERE EmpId = @ActorId
+	WHERE OwnerId = @ActorId  
 		AND (
 			@EmpId IS NULL
-			OR es.OwnerId = @EmpId
+			OR es.EmpId = @EmpId
 			)
 		AND ActionType = @ShiftManagerRoleId
 		AND ISNULL(IsDeleted, 0) = 0
@@ -61,7 +62,7 @@ BEGIN
 				INNER JOIN @tblGroupIds AS gr ON emp.GroupId = gr.GroupId
 			WHERE emp.[Enabled] = 1
 				AND emp.isDeleted = 0
-				AND es.OwnerId = emp.EmpId
+				AND es.EmpId = emp.EmpId
 			)
 
 	INSERT INTO #tblEmployeeIds (EmpId)

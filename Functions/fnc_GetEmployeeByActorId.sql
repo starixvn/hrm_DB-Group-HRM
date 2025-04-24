@@ -8,13 +8,14 @@ ALTER FUNCTION [dbo].[fnc_GetEmployeeByActorId] (
 	)
 RETURNS TABLE
 /*
-Created: Quinn.Vo@20151203
-Task: Get employee Id by actor id
-DB: HRM
-Original:
+	Created: Quinn.Vo@20151203
+	Task: Get employee Id by actor id
+	DB: HRM
+	Original:
 
-Revisions:
-Param's Explanation:
+	Revisions:
+		Henry.Dinh@2025-04-24: Merge action type 2, 3, 4, 5
+	Param's Explanation:
 
 */
 AS
@@ -56,24 +57,7 @@ RETURN WITH cteEmployee AS (
 				OR @ExcludeUserDelete = 0
 				)
 			AND es.IsDeleted = 0
-			AND es.ActionType IN (2, 3) -- verifier, approver
-		
-		UNION
-		SELECT es.EmpId
-		FROM dbo.EmployeeSupervisor AS es WITH (NOLOCK)
-			INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON es.EmpId = e.EmpId
-			INNER JOIN dbo.CompanyEmployee ce WITH (NOLOCK) ON ce.EmpId = e.EmpId AND ce.CompanyId = @CompanyId
-		WHERE es.EmpId = @EmpId
-			AND (
-				(
-					@ExcludeUserDelete = 1
-					AND e.isDeleted = 0
-					AND e.[Enabled] = 1
-					)
-				OR @ExcludeUserDelete = 0
-				)
-			AND es.IsDeleted = 0
-			AND es.ActionType IN (4, 5) -- shift manager, on behalf request
+			AND es.ActionType IN (2, 3, 4, 5) -- verifier, approver, shift manager, on behalf request
 		
 		UNION
 		SELECT e.EmpId
@@ -90,31 +74,7 @@ RETURN WITH cteEmployee AS (
 				OR @ExcludeUserDelete = 0
 				)
 			AND gs.IsDeleted = 0
-			AND gs.ActionType IN (2, 3)
-			AND NOT EXISTS (
-				SELECT 1
-				FROM dbo.EmployeeSupervisor AS es WITH (NOLOCK)
-				WHERE es.EmpId = e.EmpId
-					AND es.ActionType = gs.ActionType
-					AND es.IsDeleted = 0
-				)
-		
-		UNION
-		SELECT e.EmpId
-		FROM dbo.GroupSupervisor AS gs WITH (NOLOCK)
-			INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON gs.GroupId = e.GroupId
-			INNER JOIN dbo.CompanyEmployee ce WITH (NOLOCK) ON ce.EmpId = e.EmpId AND ce.CompanyId = @CompanyId
-		WHERE OwnerId = @EmpId
-			AND (
-				(
-					@ExcludeUserDelete = 1
-					AND e.isDeleted = 0
-					AND e.[Enabled] = 1
-					)
-				OR @ExcludeUserDelete = 0
-				)
-			AND gs.IsDeleted = 0
-			AND gs.ActionType IN (4, 5)
+			AND gs.ActionType IN (2, 3, 4, 5) -- verifier, approver, shift manager, on behalf request
 			AND NOT EXISTS (
 				SELECT 1
 				FROM dbo.EmployeeSupervisor AS es WITH (NOLOCK)
