@@ -17,7 +17,6 @@ AS
     DB: bodb_HRM
 
     Revisions:
-        - 20250409@Tim: remove update holiday 
     Param's Explanation:
 */
 BEGIN
@@ -153,12 +152,25 @@ BEGIN
 					AND ISNULL(empshift.SatShift, @OffDayShiftId) = @OffDayShiftId THEN 1
 				ELSE 0
 				END
-			,0
+			,(CASE
+			    WHEN (
+					    empsum.IsLocal = 1
+					    OR (
+						    empsum.IsLocal = 0
+						    AND empsum.IsExpatUseHoliday = 1
+						    )
+					    )
+				    AND holiday.Id IS NOT NULL THEN 1
+			    ELSE 0 END
+			    )
 		FROM dbo.Employee AS emp WITH (NOLOCK)
 			INNER JOIN #tempEmployeeIds AS tblemp WITH (NOLOCK) ON emp.EmpId = tblemp.EmpId
 			INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
 			AND empsum.IsDefaultSchedule = 1
 			INNER JOIN dbo.EmployeeDefaultShift AS empshift WITH (NOLOCK) ON emp.EmpId = empshift.EmpId
+            LEFT JOIN dbo.Holiday AS holiday WITH (NOLOCK) ON holiday.CompanyId = @CompanyId
+            AND @tempDate BETWEEN holiday.FromDate
+			    AND holiday.ToDate
 		WHERE NOT EXISTS (
 				SELECT 1
 				FROM #tempEmployeeCalendar AS tbl WITH (NOLOCK)
@@ -177,11 +189,24 @@ BEGIN
 			,@tempDate
 			,empshift.ShiftId
 			,0
-			,0
+			,(CASE
+			    WHEN (
+					    empsum.IsLocal = 1
+					    OR (
+						    empsum.IsLocal = 0
+						    AND empsum.IsExpatUseHoliday = 1
+						    )
+					    )
+				    AND holiday.Id IS NOT NULL THEN 1
+			    ELSE 0 END
+			    )
 		FROM dbo.Employee AS emp WITH (NOLOCK)
 			INNER JOIN #tempEmployeeIds AS tblemp WITH (NOLOCK) ON emp.EmpId = tblemp.EmpId
 			INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
 			AND empsum.IsDefaultSchedule = 0
+            LEFT JOIN dbo.Holiday AS holiday WITH (NOLOCK) ON holiday.CompanyId = @CompanyId
+            AND @tempDate BETWEEN holiday.FromDate
+			    AND holiday.ToDate
 			OUTER APPLY (
 			SELECT TOP 1 empshift.ShiftId
 			FROM dbo.ScheduleArrangementDefaultShift AS empshift WITH (NOLOCK)

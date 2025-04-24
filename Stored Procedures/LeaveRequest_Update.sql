@@ -1,7 +1,10 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[LeaveRequest_Update] @RequestId BIGINT
+ALTER PROCEDURE [dbo].[LeaveRequest_Update]
+(
+    @RequestId BIGINT
 	,@EmpId INT
+	,@CompanyId SMALLINT
 	,@Remark NVARCHAR(2000) = NULL
 	,@FromDate DATETIME = NULL
 	,@ToDate DATETIME = NULL
@@ -16,21 +19,21 @@ ALTER PROCEDURE [dbo].[LeaveRequest_Update] @RequestId BIGINT
 	,@ListDetail VARCHAR(MAX) = ''
 	,@ErrCode INT = 0 OUTPUT
 	,@ErrMsg NVARCHAR(200) = '' OUTPUT
-	,@CompanyId SMALLINT
+)
 AS
 /*
-Created: Tom.Vo@2013-11-11
-Task: update leave request
-DB: HRM
-Original:
+    Created: Tom.Vo@2013-11-11
+    Task: update leave request
+    DB: bodb_HRM
 
-Revisions:
-Param's Explanation:
-	- @ListDetail: '<ROOT><Row OnDate='' ShiftID='' LeaveType='' IsHalfDay='' WorkType='' FromTime='' ToTime='' /></ROOT>'
-	- @WorkType :
-			1. off
-			2. leave
-			3. work
+    Revisions:
+        20250423@Tim: fix bug validate request in the same range
+    Param's Explanation:
+	    - @ListDetail: '<ROOT><Row OnDate='' ShiftID='' LeaveType='' IsHalfDay='' WorkType='' FromTime='' ToTime='' /></ROOT>'
+	    - @WorkType :
+			    1. off
+			    2. leave
+			    3. work
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -493,6 +496,18 @@ BEGIN
 								AND CAST(l.ToDate AS DATE)
 							)
 						)
+                    OR (
+					    NOT EXISTS (
+						    SELECT 1
+						    FROM dbo.LeaveRequestDetail AS ldt WITH (NOLOCK)
+                            WHERE r.RequestId = ldt.RequestId
+						    )
+					    AND EXISTS (
+						    SELECT 1
+						    FROM #tblLeaveRequestDetail AS ldt WITH (NOLOCK)
+						    WHERE ldt.OnDate BETWEEN l.FromDate AND l.ToDate
+						    )
+					    )
 					OR (
 						NOT EXISTS (
 							SELECT 1
@@ -502,8 +517,7 @@ BEGIN
 							SELECT 1
 							FROM dbo.LeaveRequestDetail AS ldt WITH (NOLOCK)
 							WHERE r.RequestId = ldt.RequestId
-								AND ldt.OnDate BETWEEN @TmpFromDate
-									AND @TmpToDate
+								AND ldt.OnDate BETWEEN @TmpFromDate AND @TmpToDate
 							)
 						)
 					OR (
@@ -541,14 +555,10 @@ BEGIN
 										ldt.IsHalfDay = 1
 										AND ldtt.IsHalfDay = 1
 										AND (
-											ldt.FromTime BETWEEN ldtt.FromTime
-												AND ldtt.ToTime
-											OR ldt.ToTime BETWEEN ldtt.FromTime
-												AND ldtt.ToTime
-											OR ldtt.FromTime BETWEEN ldt.FromTime
-												AND ldt.ToTime
-											OR ldtt.ToTime BETWEEN ldt.FromTime
-												AND ldt.ToTime
+											ldt.FromTime BETWEEN ldtt.FromTime AND ldtt.ToTime
+											OR ldt.ToTime BETWEEN ldtt.FromTime AND ldtt.ToTime
+											OR ldtt.FromTime BETWEEN ldt.FromTime AND ldt.ToTime
+											OR ldtt.ToTime BETWEEN ldt.FromTime AND ldt.ToTime
 											)
 										AND ldt.FromTime != ldtt.ToTime
 										AND ldt.ToTime != ldtt.FromTime
