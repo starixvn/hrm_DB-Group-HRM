@@ -1101,7 +1101,7 @@ SELECT
     dgr.IsLocal, 
     dgr.Value
 FROM CabintechHRM.dbo.DisciplineGroupRule dgr
-LEFT JOIN dbo.[Group] g ON dgr.GroupId = g.OldGroupId AND g.CompanyId = @CompanyId;
+INNER JOIN dbo.[Group] g ON dgr.GroupId = g.OldGroupId AND g.CompanyId = @CompanyId;
 
 -- #endregion
 
