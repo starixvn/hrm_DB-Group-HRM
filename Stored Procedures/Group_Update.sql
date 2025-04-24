@@ -8,7 +8,7 @@ ALTER PROCEDURE [dbo].[Group_Update] @TeamId INT
 	,@ErrMsg NVARCHAR(200) = '' OUTPUT
 	,@PICEmpId INT
 	,@DepartmentId INT
-	,@AccountableArea VARCHAR(200)
+	,@AccountableArea VARCHAR(200) = NULL
 	,@GroupTeamId INT
 	,@MailGroup VARCHAR(50) = ''
 	,@LocalBasicAnnualLeaveBalance TINYINT = NULL
@@ -147,3 +147,4 @@ BEGIN
 		,@ErrCode = @ErrCode OUTPUT
 		,@ErrMsg = @ErrMsg OUTPUT
 END
+
