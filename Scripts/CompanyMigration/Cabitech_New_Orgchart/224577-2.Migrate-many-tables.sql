@@ -1,7 +1,9 @@
-﻿USE [bodb_HRM]
+﻿--BEGIN TRANSACTION
+
+USE [bodb_HRM]
 GO
 DECLARE @CompanyId INT;
-DECLARE @CurrentTimeZone NVARCHAR(50) = 'Taipei Standard Time';  /* SE Asia Standard Time (UTC+7) / Taipei Standard Time (UTC+8)  */
+DECLARE @CurrentTimeZone NVARCHAR(50) = 'SE Asia Standard Time';  /* SE Asia Standard Time (UTC+7) / Taipei Standard Time (UTC+8)  */
 DECLARE @TargetTimeZone NVARCHAR(50) = 'SA Western Standard Time'; 
 SET @CompanyId = 9;
 
@@ -56,10 +58,8 @@ LEFT JOIN @EmployeeMapping em_created ON emp.CreatedBy = em_created.OldEmpId AND
 LEFT JOIN @EmployeeMapping em_modified ON emp.ModifiedBy = em_modified.OldEmpId AND em_modified.CompanyId = @CompanyId
 LEFT JOIN @EmployeeMapping em_manager ON emp.ManagerId = em_manager.OldEmpId AND em_manager.CompanyId = @CompanyId;
 -- GroupId sẽ map lại sau ở phần OrgChart vì hiện tại chưa có GroupId mới
--- JobTitleId sẽ map lại sau ở phần CompanyRelate - LookupData vì hiện tại chưa có data mới    
-
--- TODO: Mapping JobLevel + GradeLevel
--- TODO: Lưu ý khi user add emp mới trên hệ thống có thể trùng vs EmpdI ở company khác sau này migrate. Cần xem xét cách xử lý migrate hết rồi mới chạy hệ thống
+-- JobTitleId sẽ map lại sau 
+-- Mapping JobLevel + GradeLevel
 -- #endregion
 
 INSERT INTO dbo.Shift (
@@ -142,13 +142,12 @@ SELECT
     @CompanyId,
     ld.Id AS OldId 
 FROM CabintechHRM.dbo.LookupData ld;
-
+-- update Job title
 UPDATE emp
 SET emp.JobTitleId = ld.Id
 FROM dbo.Employee emp
 INNER JOIN dbo.CompanyEmployee ce ON emp.EmpId = ce.EmpId AND ce.CompanyId = @CompanyId
 LEFT JOIN dbo.LookupData ld ON emp.JobTitleId = ld.OldId and ld.CompanyId = @CompanyId
-
 
 --#region NEW STRUCTURE =============================================================================================================
 DECLARE @DepartmentTeamTemp TABLE(
@@ -228,7 +227,7 @@ SELECT DISTINCT
 	ROW_NUMBER() OVER (ORDER BY (SELECT 1)) + @maxDeptId,
 	d.DepartName,
 	0,
-	0
+	1
 FROM DistinctDepartments d;
 
 -- Team
@@ -280,368 +279,390 @@ LEFT JOIN @EmployeeMapping AS em ON mng.EmpID = em.OldEmpId
 DECLARE @EmpNewInfo TABLE(
 	UserId INT,
 	TeamCode VARCHAR(100),
-	CtrlId INT
+	CtrlId INT,
+	JobLevel VARCHAR(100)
 )
-INSERT INTO @EmpNewInfo(UserId, TeamCode, CtrlId) VALUES
-(4878,'HR',NULL),
-(5103,'Technical Support',2139),
-(4652,'Special User',NULL),
-(4653,'Special User',NULL),
-(4654,'Special User',NULL),
-(4655,'Special User',NULL),
-(4349,'Special User',NULL),
-(4352,'Special User',NULL),
-(4462,'Special User',NULL),
-(4526,'Special User',NULL),
-(4527,'Special User',NULL),
-(4528,'Special User',NULL),
-(4651,'Special User',NULL),
-(5229,'Special User',NULL),
-(5270,'Special User',NULL),
-(5302,'Special User',NULL),
-(4436,'Admin',NULL),
-(4601,'Admin',NULL),
-(4213,'CSD',NULL),
-(4214,'CSD',NULL),
-(4221,'CSD',NULL),
-(4222,'CSD',NULL),
-(4225,'CSD',NULL),
-(4226,'CSD',NULL),
-(4233,'CSD',NULL),
-(4251,'CSD',NULL),
-(4258,'CSD',NULL),
-(4274,'CSD',NULL),
-(4303,'CSD',NULL),
-(4307,'CSD',NULL),
-(4308,'CSD',NULL),
-(4317,'CSD',NULL),
-(4321,'CSD',NULL),
-(4324,'CSD',NULL),
-(4325,'CSD',NULL),
-(4262,'Management',272),
-(4333,'Management',273),
-(4212,'Marketing Team',NULL),
-(4215,'Marketing Team',1989),
-(4227,'Marketing Team',1990),
-(4242,'Marketing Team',2037),
-(4249,'Marketing Team',NULL),
-(4252,'Marketing Team',1468),
-(4269,'Marketing Team',NULL),
-(4278,'Marketing Team',786),
-(4287,'Marketing Team',NULL),
-(4291,'Marketing Team',1593),
-(4309,'Marketing Team',1727),
-(4319,'Marketing Team',1631),
-(4322,'Marketing Team',855),
-(4323,'Marketing Team',1991),
-(4331,'Marketing Team',787),
-(4334,'Marketing Team',1571),
-(4336,'Marketing Team',1992),
-(4444,'Marketing Team',1505),
-(4446,'Marketing Team',2036),
-(5107,'Marketing Team',1721),
-(4266,'PMO - OT',1124),
-(4327,'PMO - OT',816),
-(4217,'Risk - OT',1686),
-(4234,'Risk - OT',1413),
-(4240,'Risk - OT',374),
-(4279,'Risk - OT',1411),
-(4301,'Risk - OT',1988),
-(4329,'Risk - OT',992),
-(4423,'Risk - OT',2094),
-(4424,'Risk - OT',NULL),
-(4427,'Risk - OT',2090),
-(4467,'Risk - OT',NULL),
-(4469,'Risk - OT',NULL),
-(4470,'Risk - OT',NULL),
-(4603,'Risk - OT',2092),
-(4656,'Risk - OT',NULL),
-(4679,'Risk - OT',2089),
-(4697,'Risk - OT',2093),
-(4698,'Risk - OT',2091),
-(5237,'Risk - OT',2095),
-(5238,'Risk - OT',2096),
-(5239,'Risk - OT',NULL),
-(5240,'Risk - OT',NULL),
-(5256,'Risk - OT',2097),
-(4276,'S.A.A',NULL),
-(4306,'S.A.A',568),
-(4426,'S.A.A',NULL),
-(4428,'S.A.A',NULL),
-(4429,'S.A.A',NULL),
-(4438,'S.A.A',NULL),
-(4453,'S.A.A',NULL),
-(4456,'S.A.A',NULL),
-(4457,'S.A.A',NULL),
-(4458,'S.A.A',NULL),
-(4461,'S.A.A',NULL),
-(4684,'S.A.A',NULL),
-(4685,'S.A.A',NULL),
-(4686,'S.A.A',NULL),
-(4687,'S.A.A',NULL),
-(4699,'S.A.A',NULL),
-(4700,'S.A.A',NULL),
-(4701,'S.A.A',NULL),
-(4753,'S.A.A',NULL),
-(5133,'S.A.A',NULL),
-(5134,'S.A.A',NULL),
-(5135,'S.A.A',NULL),
-(5136,'S.A.A',NULL),
-(5137,'S.A.A',NULL),
-(5138,'S.A.A',NULL),
-(5230,'S.A.A',2234),
-(5252,'S.A.A',2235),
-(5253,'S.A.A',2236),
-(5254,'S.A.A',2237),
-(5255,'S.A.A',2238),
-(4376,'Internal Operation',NULL),
-(4378,'Internal Operation',NULL),
-(4388,'Internal Operation',2146),
-(4420,'Internal Operation',NULL),
-(4422,'Internal Operation',2101),
-(4425,'Internal Operation',2155),
-(4435,'Internal Operation',NULL),
-(4440,'Internal Operation',2184),
-(4441,'Internal Operation',2157),
-(4447,'Internal Operation',2159),
-(4459,'Internal Operation',2185),
-(4658,'Internal Operation',2170),
-(4688,'Internal Operation',2104),
-(4694,'Internal Operation',NULL),
-(4829,'Internal Operation',NULL),
-(4847,'Internal Operation',NULL),
-(4863,'Internal Operation',NULL),
-(5222,'Internal Operation',2174),
-(5224,'Internal Operation',2176),
-(4375,'Risk Compliance',2040),
-(4389,'Risk Compliance',2042),
-(4437,'Risk Compliance',NULL),
-(4442,'Risk Compliance',NULL),
-(4443,'Risk Compliance',NULL),
-(4452,'Risk Compliance',NULL),
-(4524,'Risk Compliance',2118),
-(4691,'Risk Compliance',NULL),
-(4692,'Risk Compliance',2046),
-(4695,'Risk Compliance',NULL),
-(4696,'Risk Compliance',NULL),
-(4752,'Risk Compliance',2048),
-(4831,'Risk Compliance',NULL),
-(4839,'Risk Compliance',NULL),
-(4859,'Risk Compliance',NULL),
-(4877,'Risk Compliance',NULL),
-(4879,'Risk Compliance',NULL),
-(5236,'Risk Compliance',2049),
-(4380,'Driver',NULL),
-(4381,'Driver',NULL),
-(4382,'Driver',2123),
-(4383,'Driver',2124),
-(4384,'Driver',2125),
-(4385,'Driver',NULL),
-(4386,'Driver',NULL),
-(4387,'Driver',2120),
-(4434,'Driver',2121),
-(4445,'HR Local - PP',NULL),
-(4392,'Product & Data',2043),
-(4417,'Product & Data',2041),
-(4449,'Product & Data',NULL),
-(4450,'Product & Data',NULL),
-(4693,'Product & Data',2047),
-(5234,'Product & Data',2051),
-(5235,'Product & Data',2050),
-(5263,'Product & Data',NULL),
-(4268,'I.O (Bo)',339),
-(4295,'I.O (Bo)',841),
-(4360,'I.O (Bo)',2141),
-(4377,'I.O (Bo)',2110),
-(4418,'I.O (Bo)',2179),
-(4439,'I.O (Bo)',2183),
-(4460,'I.O (Bo)',2186),
-(4468,'I.O (Bo)',2167),
-(4525,'I.O (Bo)',2168),
-(4659,'I.O (Bo)',2171),
-(4823,'I.O (Bo)',NULL),
-(4857,'I.O (Bo)',NULL),
-(5223,'I.O (Bo)',2175),
-(5225,'I.O (Bo)',2177),
-(4260,'I.O (Emily)',936),
-(4379,'I.O (Emily)',2102),
-(4390,'I.O (Emily)',2178),
-(4391,'I.O (Emily)',2108),
-(4419,'I.O (Emily)',2180),
-(4421,'I.O (Emily)',2151),
-(4430,'I.O (Emily)',2181),
-(4431,'I.O (Emily)',2182),
-(4455,'I.O (Emily)',2143),
-(4463,'I.O (Emily)',2166),
-(4657,'I.O (Emily)',2169),
-(4843,'I.O (Emily)',NULL),
-(4864,'I.O (Emily)',NULL),
-(4869,'I.O (Emily)',NULL),
-(5102,'I.O (Emily)',2172),
-(5146,'I.O (Emily)',2173),
-(4850,'Business&Development',NULL),
-(4855,'Business&Development',NULL),
-(4358,'Marketing - NV',NULL),
-(4359,'Marketing - NV',NULL),
-(4374,'Marketing - NV',2054),
-(4824,'Marketing - NV',NULL),
-(4842,'Marketing - NV',NULL),
-(4858,'Marketing - NV',NULL),
-(4867,'Marketing - NV',NULL),
-(4868,'Marketing - NV',NULL),
-(4873,'Marketing - NV',NULL),
-(4822,'CRM',NULL),
-(4825,'CRM',NULL),
-(4849,'CRM',NULL),
-(4852,'CRM',NULL),
-(4870,'CRM',NULL),
-(4872,'CRM',NULL),
-(4355,'Core Team - NV',NULL),
-(4356,'Core Team - NV',NULL),
-(4866,'Core Team - NV',NULL),
-(4821,'CSD-NV-MYR',NULL),
-(4826,'CSD-NV-MYR',NULL),
-(4835,'CSD-NV-MYR',NULL),
-(4836,'CSD-NV-MYR',NULL),
-(5121,'CSD-NV-MYR',NULL),
-(4834,'CSD-NV-THB',NULL),
-(4838,'CSD-NV-THB',NULL),
-(4851,'CSD-NV-THB',NULL),
-(4856,'CSD-NV-THB',NULL),
-(4860,'CSD-NV-THB',NULL),
-(4865,'CSD-NV-THB',NULL),
-(4876,'CSD-NV-THB',NULL),
-(4827,'CSD-NV-VND',NULL),
-(4832,'CSD-NV-VND',NULL),
-(4833,'CSD-NV-VND',NULL),
-(4837,'CSD-NV-VND',NULL),
-(4844,'CSD-NV-VND',NULL),
-(4845,'CSD-NV-VND',NULL),
-(4846,'CSD-NV-VND',NULL),
-(4848,'CSD-NV-VND',NULL),
-(4853,'CSD-NV-VND',NULL),
-(4862,'CSD-NV-VND',NULL),
-(4871,'CSD-NV-VND',NULL),
-(4874,'CSD-NV-VND',NULL),
-(4875,'CSD-NV-VND',NULL),
-(5108,'CSD-NV-VND',NULL),
-(4819,'CSD-NV-IDR',NULL),
-(4820,'CSD-NV-IDR',NULL),
-(4840,'CSD-NV-IDR',NULL),
-(4841,'CSD-NV-IDR',NULL),
-(4854,'CSD-NV-IDR',NULL),
-(4216,'CSD-OT-CSS',809),
-(4231,'CSD-OT-CSS',944),
-(4238,'CSD-OT-CSS',919),
-(4254,'CSD-OT-CSS',616),
-(4264,'CSD-OT-CSS',258),
-(4271,'CSD-OT-CSS',874),
-(4289,'CSD-OT-CSS',627),
-(4294,'CSD-OT-CSS',702),
-(4300,'CSD-OT-CSS',1014),
-(4318,'CSD-OT-CSS',547),
-(4335,'CSD-OT-CSS',879),
-(4220,'CSD-OT-RMB',1500),
-(4223,'CSD-OT-RMB',1484),
-(4236,'CSD-OT-RMB',1517),
-(4257,'CSD-OT-RMB',1432),
-(4261,'CSD-OT-RMB',1051),
-(4267,'CSD-OT-RMB',1404),
-(4338,'CSD-OT-RMB',738),
-(5243,'CSD-OT-RMB',NULL),
-(4229,'CSD-OT-MYR',1028),
-(4230,'CSD-OT-MYR',608),
-(4232,'CSD-OT-MYR',1511),
-(4243,'CSD-OT-MYR',943),
-(4265,'CSD-OT-MYR',934),
-(4304,'CSD-OT-MYR',1415),
-(4313,'CSD-OT-MYR',1499),
-(4332,'CSD-OT-MYR',1658),
-(5242,'CSD-OT-MYR',NULL),
-(4244,'CSD-OT-THB',1497),
-(4248,'CSD-OT-THB',954),
-(4281,'CSD-OT-THB',1379),
-(4282,'CSD-OT-THB',839),
-(4283,'CSD-OT-THB',1583),
-(4293,'CSD-OT-THB',1718),
-(4305,'CSD-OT-THB',703),
-(4310,'CSD-OT-THB',980),
-(4311,'CSD-OT-THB',1383),
-(4312,'CSD-OT-THB',710),
-(4314,'CSD-OT-THB',1376),
-(4320,'CSD-OT-THB',504),
-(4218,'CSD-OT-VND',1338),
-(4237,'CSD-OT-VND',1649),
-(4253,'CSD-OT-VND',873),
-(4255,'CSD-OT-VND',1611),
-(4256,'CSD-OT-VND',1529),
-(4272,'CSD-OT-VND',NULL),
-(4273,'CSD-OT-VND',1467),
-(4275,'CSD-OT-VND',1327),
-(4285,'CSD-OT-VND',965),
-(4286,'CSD-OT-VND',990),
-(4288,'CSD-OT-VND',1566),
-(4296,'CSD-OT-VND',NULL),
-(4316,'CSD-OT-VND',1414),
-(4326,'CSD-OT-VND',1452),
-(5117,'CSD-OT-VND',NULL),
-(5118,'CSD-OT-VND',NULL),
-(4239,'CSD-OT-INR',1211),
-(4241,'CSD-OT-INR',1531),
-(4250,'CSD-OT-INR',1617),
-(4277,'CSD-OT-INR',1035),
-(4290,'CSD-OT-INR',1530),
-(4297,'CSD-OT-INR',1615),
-(4299,'CSD-OT-INR',1023),
-(4330,'CSD-OT-INR',972),
-(4466,'CSD-OT-INR',NULL),
-(5112,'CSD-OT-INR',NULL),
-(5120,'CSD-OT-INR',NULL),
-(5241,'CSD-OT-INR',NULL),
-(4235,'CSD-OT-BDT',1604),
-(4247,'CSD-OT-BDT',1665),
-(4302,'CSD-OT-BDT',1616),
-(4219,'CSD-OT-CRM',580),
-(4228,'CSD-OT-CRM',NULL),
-(4245,'CSD-OT-CRM',1117),
-(4263,'CSD-OT-CRM',398),
-(4270,'CSD-OT-CRM',1339),
-(4280,'CSD-OT-CRM',1512),
-(4284,'CSD-OT-CRM',1400),
-(4292,'CSD-OT-CRM',1664),
-(5104,'Marketing - OT',NULL),
-(5105,'Marketing - OT',NULL),
-(5106,'Marketing - OT',NULL),
-(5264,'Marketing - OT',NULL),
-(5265,'Marketing - OT',NULL),
-(5266,'Marketing - OT',NULL),
-(5267,'Marketing - OT',NULL),
-(5268,'Marketing - OT',NULL),
-(4353,'Admin - SHV',NULL),
-(4354,'Admin - SHV',2119),
-(4337,'CSD-OT-KRW',NULL),
-(5116,'ADM - PP',2122),
-(5259,'ADM - PP',2131),
-(4828,'PMO - NV',NULL),
-(4830,'Affiliate Team',NULL),
-(4880,'Affiliate Team',NULL),
-(4224,'CSD - OT - CT',792),
-(4246,'CSD - OT - CT',399),
-(4298,'CSD - OT - CT',658),
-(4328,'CSD - OT - CT',791),
-(4454,'R.M.R',NULL),
-(4861,'R.M.R',NULL),
-(4315,'RP CT',354),
-(4259,'Payment CT',373),
-(4357,'Payment CT',NULL),
-(4451,'Payment OPS CT',NULL);
+INSERT INTO @EmpNewInfo(UserId, TeamCode, CtrlId, JobLevel) VALUES
+(4878,'HR',NULL,'E2-B'),
+(5103,'Technical Support',2139,'NULL'),
+(4652,'Special User',NULL,'NULL'),
+(4653,'Special User',NULL,'NULL'),
+(4654,'Special User',NULL,'NULL'),
+(4655,'Special User',NULL,'E2-B'),
+(4349,'Special User',NULL,'NULL'),
+(4352,'Special User',NULL,'NULL'),
+(4462,'Special User',NULL,'NULL'),
+(4526,'Special User',NULL,'NULL'),
+(4527,'Special User',NULL,'NULL'),
+(4528,'Special User',NULL,'NULL'),
+(4651,'Special User',NULL,'NULL'),
+(5229,'Special User',NULL,'NULL'),
+(5270,'Special User',NULL,'NULL'),
+(5302,'Special User',NULL,'NULL'),
+(4436,'Admin',NULL,'E1-C'),
+(4601,'Admin',NULL,'NULL'),
+(4213,'CSD',NULL,'E1-C'),
+(4214,'CSD',NULL,'E1-A'),
+(4221,'CSD',NULL,'E2-C'),
+(4222,'CSD',NULL,'E3-C'),
+(4225,'CSD',NULL,'E1-C'),
+(4226,'CSD',NULL,'E1-C'),
+(4233,'CSD',NULL,'E1-C'),
+(4251,'CSD',NULL,'E1-B'),
+(4258,'CSD',NULL,'E2-A'),
+(4274,'CSD',NULL,'E1-C'),
+(4303,'CSD',NULL,'E1-C'),
+(4307,'CSD',NULL,'E1-C'),
+(4308,'CSD',NULL,'E1-C'),
+(4317,'CSD',NULL,'E1-A'),
+(4321,'CSD',NULL,'E1-C'),
+(4324,'CSD',NULL,'E1-B'),
+(4325,'CSD',NULL,'E1-A'),
+(4262,'Management',272,'NULL'),
+(4333,'Management',273,'NULL'),
+(4212,'Marketing Team',NULL,'E1-B'),
+(4215,'Marketing Team',1989,'E1-A'),
+(4227,'Marketing Team',1990,'E1-A'),
+(4242,'Marketing Team',2037,'E2-C'),
+(4249,'Marketing Team',NULL,'E1-B'),
+(4252,'Marketing Team',1468,'E2-B'),
+(4269,'Marketing Team',NULL,'E1-B'),
+(4278,'Marketing Team',786,'M2-A'),
+(4287,'Marketing Team',NULL,'E1-B'),
+(4291,'Marketing Team',1593,'E2-C'),
+(4309,'Marketing Team',1727,'E1-A'),
+(4319,'Marketing Team',1631,'E1-A'),
+(4322,'Marketing Team',855,'E3-B'),
+(4323,'Marketing Team',1991,'E1-B'),
+(4331,'Marketing Team',787,'E3-B'),
+(4334,'Marketing Team',1571,'E1-B'),
+(4336,'Marketing Team',1992,'E3-B'),
+(4444,'Marketing Team',1505,'NULL'),
+(4446,'Marketing Team',2036,'NULL'),
+(5107,'Marketing Team',1721,'E1-B'),
+(4266,'PMO - OT',1124,'NULL'),
+(4327,'PMO - OT',816,'NULL'),
+(4217,'Risk - OT',1686,'E1-C'),
+(4234,'Risk - OT',1413,'E1-B'),
+(4240,'Risk - OT',374,'M1-A'),
+(4279,'Risk - OT',1411,'E1-B'),
+(4301,'Risk - OT',1988,'E1-C'),
+(4329,'Risk - OT',992,'E2-B'),
+(4423,'Risk - OT',2094,'NULL'),
+(4424,'Risk - OT',NULL,'NULL'),
+(4427,'Risk - OT',2090,'E1-C'),
+(4467,'Risk - OT',NULL,'NULL'),
+(4469,'Risk - OT',NULL,'E1-C'),
+(4470,'Risk - OT',NULL,'NULL'),
+(4603,'Risk - OT',2092,'E1-B'),
+(4656,'Risk - OT',NULL,'M1-A'),
+(4679,'Risk - OT',2089,'E1-C'),
+(4697,'Risk - OT',2093,'NULL'),
+(4698,'Risk - OT',2091,'NULL'),
+(5237,'Risk - OT',2095,'E1-C'),
+(5238,'Risk - OT',2096,'E1-C'),
+(5239,'Risk - OT',NULL,'E1-B'),
+(5240,'Risk - OT',NULL,'E1-C'),
+(5256,'Risk - OT',2097,'E1-C'),
+(4276,'S.A.A',NULL,'E2-C'),
+(4306,'S.A.A',568,'E2-A'),
+(4426,'S.A.A',NULL,'NULL'),
+(4428,'S.A.A',NULL,'NULL'),
+(4429,'S.A.A',NULL,'NULL'),
+(4438,'S.A.A',NULL,'NULL'),
+(4453,'S.A.A',NULL,'E3-C'),
+(4456,'S.A.A',NULL,'NULL'),
+(4457,'S.A.A',NULL,'E1-C'),
+(4458,'S.A.A',NULL,'NULL'),
+(4461,'S.A.A',NULL,'NULL'),
+(4684,'S.A.A',NULL,'NULL'),
+(4685,'S.A.A',NULL,'NULL'),
+(4686,'S.A.A',NULL,'NULL'),
+(4687,'S.A.A',NULL,'NULL'),
+(4699,'S.A.A',NULL,'NULL'),
+(4700,'S.A.A',NULL,'NULL'),
+(4701,'S.A.A',NULL,'NULL'),
+(4753,'S.A.A',NULL,'NULL'),
+(5133,'S.A.A',NULL,'E1-C'),
+(5134,'S.A.A',NULL,'E1-C'),
+(5135,'S.A.A',NULL,'E1-C'),
+(5136,'S.A.A',NULL,'NULL'),
+(5137,'S.A.A',NULL,'E1-C'),
+(5138,'S.A.A',NULL,'E1-C'),
+(5230,'S.A.A',2234,'NULL'),
+(5252,'S.A.A',2235,'NULL'),
+(5253,'S.A.A',2236,'NULL'),
+(5254,'S.A.A',2237,'NULL'),
+(5255,'S.A.A',2238,'NULL'),
+(4376,'Internal Operation',NULL,'NULL'),
+(4378,'Internal Operation',NULL,'NULL'),
+(4388,'Internal Operation',2146,'NULL'),
+(4420,'Internal Operation',NULL,'NULL'),
+(4422,'Internal Operation',2101,'E1-C'),
+(4425,'Internal Operation',2155,'NULL'),
+(4435,'Internal Operation',NULL,'E1-A'),
+(4440,'Internal Operation',2184,'NULL'),
+(4441,'Internal Operation',2157,'NULL'),
+(4447,'Internal Operation',2159,'NULL'),
+(4459,'Internal Operation',2185,'E1-C'),
+(4658,'Internal Operation',2170,'NULL'),
+(4688,'Internal Operation',2104,'NULL'),
+(4694,'Internal Operation',NULL,'NULL'),
+(4829,'Internal Operation',NULL,'E2-B'),
+(4847,'Internal Operation',NULL,'E1-A'),
+(4863,'Internal Operation',NULL,'E1-B'),
+(5222,'Internal Operation',2174,'NULL'),
+(5224,'Internal Operation',2176,'NULL'),
+(4375,'Risk Compliance',2040,'NULL'),
+(4389,'Risk Compliance',2042,'NULL'),
+(4437,'Risk Compliance',NULL,'NULL'),
+(4442,'Risk Compliance',NULL,'NULL'),
+(4443,'Risk Compliance',NULL,'E1-C'),
+(4452,'Risk Compliance',NULL,'E3-A'),
+(4524,'Risk Compliance',2118,'NULL'),
+(4691,'Risk Compliance',NULL,'NULL'),
+(4692,'Risk Compliance',2046,'NULL'),
+(4695,'Risk Compliance',NULL,'NULL'),
+(4696,'Risk Compliance',NULL,'NULL'),
+(4752,'Risk Compliance',2048,'E1-C'),
+(4831,'Risk Compliance',NULL,'E3-A'),
+(4839,'Risk Compliance',NULL,'E3-C'),
+(4859,'Risk Compliance',NULL,'E2-B'),
+(4877,'Risk Compliance',NULL,'E2-B'),
+(4879,'Risk Compliance',NULL,'E2-B'),
+(5236,'Risk Compliance',2049,'E1-C'),
+(4380,'Driver',NULL,'NULL'),
+(4381,'Driver',NULL,'NULL'),
+(4382,'Driver',2123,'NULL'),
+(4383,'Driver',2124,'NULL'),
+(4384,'Driver',2125,'NULL'),
+(4385,'Driver',NULL,'NULL'),
+(4386,'Driver',NULL,'NULL'),
+(4387,'Driver',2120,'NULL'),
+(4434,'Driver',2121,'NULL'),
+(4445,'HR Local - PP',NULL,'E1-C'),
+(4392,'Product & Data',2043,'NULL'),
+(4417,'Product & Data',2041,'NULL'),
+(4449,'Product & Data',NULL,'P1-B'),
+(4450,'Product & Data',NULL,'E3-C'),
+(4693,'Product & Data',2047,'NULL'),
+(5234,'Product & Data',2051,'E1-C'),
+(5235,'Product & Data',2050,'E1-C'),
+(5263,'Product & Data',NULL,'E1-C'),
+(4268,'I.O (Bo)',339,'E3-B'),
+(4295,'I.O (Bo)',841,'E2-B'),
+(4360,'I.O (Bo)',2141,'NULL'),
+(4377,'I.O (Bo)',2110,'NULL'),
+(4418,'I.O (Bo)',2179,'E1-C'),
+(4439,'I.O (Bo)',2183,'NULL'),
+(4460,'I.O (Bo)',2186,'E1-A'),
+(4468,'I.O (Bo)',2167,'NULL'),
+(4525,'I.O (Bo)',2168,'NULL'),
+(4659,'I.O (Bo)',2171,'NULL'),
+(4823,'I.O (Bo)',NULL,'E1-A'),
+(4857,'I.O (Bo)',NULL,'E1-C'),
+(5223,'I.O (Bo)',2175,'NULL'),
+(5225,'I.O (Bo)',2177,'NULL'),
+(4260,'I.O (Emily)',936,'E2-B'),
+(4379,'I.O (Emily)',2102,'NULL'),
+(4390,'I.O (Emily)',2178,'NULL'),
+(4391,'I.O (Emily)',2108,'NULL'),
+(4419,'I.O (Emily)',2180,'NULL'),
+(4421,'I.O (Emily)',2151,'NULL'),
+(4430,'I.O (Emily)',2181,'E1-C'),
+(4431,'I.O (Emily)',2182,'E1-C'),
+(4455,'I.O (Emily)',2143,'NULL'),
+(4463,'I.O (Emily)',2166,'NULL'),
+(4657,'I.O (Emily)',2169,'E1-C'),
+(4843,'I.O (Emily)',NULL,'E1-A'),
+(4864,'I.O (Emily)',NULL,'E3-B'),
+(4869,'I.O (Emily)',NULL,'E1-A'),
+(5102,'I.O (Emily)',2172,'E1-C'),
+(5146,'I.O (Emily)',2173,'E1-C'),
+(4850,'Business&Development',NULL,'P1-A'),
+(4855,'Business&Development',NULL,'P1-A'),
+(4358,'Marketing - NV',NULL,'P1-A'),
+(4359,'Marketing - NV',NULL,'E3-A'),
+(4374,'Marketing - NV',2054,'NULL'),
+(4824,'Marketing - NV',NULL,'E1-A'),
+(4842,'Marketing - NV',NULL,'E1-C'),
+(4858,'Marketing - NV',NULL,'E2-A'),
+(4867,'Marketing - NV',NULL,'E2-A'),
+(4868,'Marketing - NV',NULL,'E2-A'),
+(4873,'Marketing - NV',NULL,'E1-B'),
+(4822,'CRM',NULL,'E2-C'),
+(4825,'CRM',NULL,'E2-B'),
+(4849,'CRM',NULL,'E1'),
+(4852,'CRM',NULL,'E1'),
+(4870,'CRM',NULL,'E1-C'),
+(4872,'CRM',NULL,'E1'),
+(4355,'Core Team - NV',NULL,'M2-A'),
+(4356,'Core Team - NV',NULL,'M2-B'),
+(4866,'Core Team - NV',NULL,'M1-B'),
+(4821,'CSD-NV-MYR',NULL,'E1-B'),
+(4826,'CSD-NV-MYR',NULL,'E1-C'),
+(4835,'CSD-NV-MYR',NULL,'E3-A'),
+(4836,'CSD-NV-MYR',NULL,'E1-C'),
+(5121,'CSD-NV-MYR',NULL,'NULL'),
+(4834,'CSD-NV-THB',NULL,'E1-B'),
+(4838,'CSD-NV-THB',NULL,'E1-B'),
+(4851,'CSD-NV-THB',NULL,'E1-C'),
+(4856,'CSD-NV-THB',NULL,'E1-B'),
+(4860,'CSD-NV-THB',NULL,'E1-B'),
+(4865,'CSD-NV-THB',NULL,'E1-A'),
+(4876,'CSD-NV-THB',NULL,'E3-A'),
+(4827,'CSD-NV-VND',NULL,'E1-A'),
+(4832,'CSD-NV-VND',NULL,'E1-A'),
+(4833,'CSD-NV-VND',NULL,'E1-A'),
+(4837,'CSD-NV-VND',NULL,'E1-C'),
+(4844,'CSD-NV-VND',NULL,'E1-A'),
+(4845,'CSD-NV-VND',NULL,'E1-A'),
+(4846,'CSD-NV-VND',NULL,'E1-B'),
+(4848,'CSD-NV-VND',NULL,'E1-C'),
+(4853,'CSD-NV-VND',NULL,'E1-C'),
+(4862,'CSD-NV-VND',NULL,'E1-B'),
+(4871,'CSD-NV-VND',NULL,'E3-A'),
+(4874,'CSD-NV-VND',NULL,'E1-C'),
+(4875,'CSD-NV-VND',NULL,'E1-C'),
+(5108,'CSD-NV-VND',NULL,'E1-C'),
+(4819,'CSD-NV-IDR',NULL,'E1-A'),
+(4820,'CSD-NV-IDR',NULL,'E1-A'),
+(4840,'CSD-NV-IDR',NULL,'E1-B'),
+(4841,'CSD-NV-IDR',NULL,'E1-B'),
+(4854,'CSD-NV-IDR',NULL,'E3-C'),
+(4216,'CSD-OT-CSS',809,'E2-B'),
+(4231,'CSD-OT-CSS',944,'E2-B'),
+(4238,'CSD-OT-CSS',919,'E2-C'),
+(4254,'CSD-OT-CSS',616,'E2-B'),
+(4264,'CSD-OT-CSS',258,'E2-C'),
+(4271,'CSD-OT-CSS',874,'E2-B'),
+(4289,'CSD-OT-CSS',627,'E2-B'),
+(4294,'CSD-OT-CSS',702,'E2-B'),
+(4300,'CSD-OT-CSS',1014,'E2-B'),
+(4318,'CSD-OT-CSS',547,'E2-B'),
+(4335,'CSD-OT-CSS',879,'E2-B'),
+(4220,'CSD-OT-RMB',1500,'E1-B'),
+(4223,'CSD-OT-RMB',1484,'E1-A'),
+(4236,'CSD-OT-RMB',1517,'E1-C'),
+(4257,'CSD-OT-RMB',1432,'E1-B'),
+(4261,'CSD-OT-RMB',1051,'E1-A'),
+(4267,'CSD-OT-RMB',1404,'E1-C'),
+(4338,'CSD-OT-RMB',738,'E1-A'),
+(5243,'CSD-OT-RMB',NULL,'NULL'),
+(4229,'CSD-OT-MYR',1028,'E1-A'),
+(4230,'CSD-OT-MYR',608,'E1-A'),
+(4232,'CSD-OT-MYR',1511,'E1-C'),
+(4243,'CSD-OT-MYR',943,'E1-A'),
+(4265,'CSD-OT-MYR',934,'E2-C'),
+(4304,'CSD-OT-MYR',1415,'E1-B'),
+(4313,'CSD-OT-MYR',1499,'E1-C'),
+(4332,'CSD-OT-MYR',1658,'E1-C'),
+(5242,'CSD-OT-MYR',NULL,'NULL'),
+(4244,'CSD-OT-THB',1497,'E1-C'),
+(4248,'CSD-OT-THB',954,'E1-A'),
+(4281,'CSD-OT-THB',1379,'E1-C'),
+(4282,'CSD-OT-THB',839,'E1-A'),
+(4283,'CSD-OT-THB',1583,'E1-C'),
+(4293,'CSD-OT-THB',1718,'E1-C'),
+(4305,'CSD-OT-THB',703,'E1-A'),
+(4310,'CSD-OT-THB',980,'E1-A'),
+(4311,'CSD-OT-THB',1383,'E1-C'),
+(4312,'CSD-OT-THB',710,'E2-C'),
+(4314,'CSD-OT-THB',1376,'E1-C'),
+(4320,'CSD-OT-THB',504,'E1-A'),
+(4218,'CSD-OT-VND',1338,'E1-B'),
+(4237,'CSD-OT-VND',1649,'E1-C'),
+(4253,'CSD-OT-VND',873,'E2-C'),
+(4255,'CSD-OT-VND',1611,'E1-C'),
+(4256,'CSD-OT-VND',1529,'E1-C'),
+(4272,'CSD-OT-VND',NULL,'E1-C'),
+(4273,'CSD-OT-VND',1467,'E1-B'),
+(4275,'CSD-OT-VND',1327,'E1-B'),
+(4285,'CSD-OT-VND',965,'E2-C'),
+(4286,'CSD-OT-VND',990,'E1-A'),
+(4288,'CSD-OT-VND',1566,'E1-C'),
+(4296,'CSD-OT-VND',NULL,'E1-A'),
+(4316,'CSD-OT-VND',1414,'E1-B'),
+(4326,'CSD-OT-VND',1452,'E1-B'),
+(5117,'CSD-OT-VND',NULL,'NULL'),
+(5118,'CSD-OT-VND',NULL,'NULL'),
+(4239,'CSD-OT-INR',1211,'E1-B'),
+(4241,'CSD-OT-INR',1531,'E1-C'),
+(4250,'CSD-OT-INR',1617,'E1-C'),
+(4277,'CSD-OT-INR',1035,'E1-A'),
+(4290,'CSD-OT-INR',1530,'E1-C'),
+(4297,'CSD-OT-INR',1615,'E1-C'),
+(4299,'CSD-OT-INR',1023,'E2-C'),
+(4330,'CSD-OT-INR',972,'E2-C'),
+(4466,'CSD-OT-INR',NULL,'E1-C'),
+(5112,'CSD-OT-INR',NULL,'NULL'),
+(5120,'CSD-OT-INR',NULL,'NULL'),
+(5241,'CSD-OT-INR',NULL,'NULL'),
+(4235,'CSD-OT-BDT',1604,'E1-C'),
+(4247,'CSD-OT-BDT',1665,'E1-C'),
+(4302,'CSD-OT-BDT',1616,'E1-C'),
+(4219,'CSD-OT-CRM',580,'E1-A'),
+(4228,'CSD-OT-CRM',NULL,'E1-C'),
+(4245,'CSD-OT-CRM',1117,'E1-B'),
+(4263,'CSD-OT-CRM',398,'E1-B'),
+(4270,'CSD-OT-CRM',1339,'E1-B'),
+(4280,'CSD-OT-CRM',1512,'E1-C'),
+(4284,'CSD-OT-CRM',1400,'E1-B'),
+(4292,'CSD-OT-CRM',1664,'E1-C'),
+(5104,'Marketing - OT',NULL,'NULL'),
+(5105,'Marketing - OT',NULL,'NULL'),
+(5106,'Marketing - OT',NULL,'NULL'),
+(5264,'Marketing - OT',NULL,'NULL'),
+(5265,'Marketing - OT',NULL,'NULL'),
+(5266,'Marketing - OT',NULL,'NULL'),
+(5267,'Marketing - OT',NULL,'NULL'),
+(5268,'Marketing - OT',NULL,'NULL'),
+(4353,'Admin - SHV',NULL,'E1-A'),
+(4354,'Admin - SHV',2119,'E1-C'),
+(4337,'CSD-OT-KRW',NULL,'NULL'),
+(5116,'ADM - PP',2122,'NULL'),
+(5259,'ADM - PP',2131,'NULL'),
+(4828,'PMO - NV',NULL,'E2-A'),
+(4830,'Affiliate Team',NULL,'E3-A'),
+(4880,'Affiliate Team',NULL,'E1-C'),
+(4224,'CSD - OT - CT',792,'E2-A'),
+(4246,'CSD - OT - CT',399,'E3-B'),
+(4298,'CSD - OT - CT',658,'E2-A'),
+(4328,'CSD - OT - CT',791,'E2-B'),
+(4454,'R.M.R',NULL,'E3-C'),
+(4861,'R.M.R',NULL,'E2-C'),
+(4315,'RP CT',354,'NULL'),
+(4259,'Payment CT',373,'NULL'),
+(4357,'Payment CT',NULL,'P1-A'),
+(4451,'Payment OPS CT',NULL,'E3-A');
 
+;WITH RankedGroup AS (
+    SELECT 
+        *,
+        ROW_NUMBER() OVER (
+            PARTITION BY Code 
+            ORDER BY 
+                CASE WHEN IsDeleted = 0 THEN 0 ELSE 1 END,
+                GroupId 
+        ) AS rn
+    FROM dbo.[Group]
+    WHERE CompanyId = 9
+)
 UPDATE e
 SET e.CtrId = en.CtrlId,
 	e.GroupId = g.GroupId
-FROM Employee e WITH(ROWLOCK)
-LEFT JOIN @EmpNewInfo en ON en.UserId = e.EmpId
-LEFT JOIN dbo.[Group] g ON g.Code = en.TeamCode
+FROM Employee e WITH (ROWLOCK)
+INNER JOIN CompanyEmployee c WITH (NOLOCK) ON c.EmpId = e.EmpId AND c.CompanyId = @CompanyId
+INNER JOIN @EmpNewInfo en ON en.UserId = e.EmpId
+INNER JOIN RankedGroup g ON g.Code = en.TeamCode AND g.rn = 1
+
+-- update joblevel
+UPDATE e
+	SET e.JobLevelId = jl.JobLevelId
+FROM Employee e WITH (ROWLOCK)
+INNER JOIN CompanyEmployee c WITH (NOLOCK) ON c.EmpId = e.EmpId AND c.CompanyId = 9
+INNER JOIN @EmpNewInfo en ON en.UserId = e.EmpId
+LEFT JOIN dbo.JobLevel jl ON jl.Name = en.JobLevel
 --#endregion =============================================================================================================
 
 
@@ -756,11 +777,11 @@ INSERT INTO [dbo].[WorkingTimeRequestHistory]
 	LEFT JOIN @EmployeeMapping AS empModified  ON wrh.ModifiedBy = empModified.OldEmpId;
 
 
-      INSERT INTO dbo.tmpSickLeaveBalance (EmpId, RequestId, TotalDays, [Month], [Year], [Status])
+INSERT INTO dbo.tmpSickLeaveBalance (EmpId, RequestId, TotalDays, [Month], [Year], [Status])
 SELECT e.EmpId, rq.RequestId, tmp.TotalDays, tmp.[Month], tmp.[Year], tmp.[Status]
 FROM CabintechHRM.dbo.tmpSickLeaveBalance AS tmp WITH (NOLOCK)
     INNER JOIN dbo.WorkingTimeRequest AS rq WITH (NOLOCK) ON tmp.RequestId = rq.OldRequestId
-    INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON tmp.EmpId = e.OldEmpId
+    INNER JOIN @EmployeeMapping AS e ON tmp.EmpId = e.OldEmpId
     INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
 WHERE rq.CompanyId = @CompanyId
     AND ce.CompanyId = @CompanyId
@@ -775,7 +796,7 @@ INSERT INTO dbo.tmpLeaveBalance (EmpId, RequestId, TotalDays, InYear, InMonth, [
 SELECT e.EmpId, rq.RequestId, tmp.TotalDays, tmp.InYear, tmp.InMonth, tmp.[Status]
 FROM CabintechHRM.dbo.tmpLeaveBalance AS tmp WITH (NOLOCK)
     INNER JOIN dbo.WorkingTimeRequest AS rq WITH (NOLOCK) ON tmp.RequestId = rq.OldRequestId
-    INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON tmp.EmpId = e.OldEmpId
+    INNER JOIN @EmployeeMapping AS e ON tmp.EmpId = e.OldEmpId
     INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
 WHERE rq.CompanyId = @CompanyId
     AND ce.CompanyId = @CompanyId
@@ -790,7 +811,7 @@ INSERT INTO dbo.tmpKIVLeaveBalance (EmpId, RequestId, TotalDays, InYear, [Status
 SELECT e.EmpId, rq.RequestId, tmp.TotalDays, tmp.InYear, tmp.[Status]
 FROM CabintechHRM.dbo.tmpKIVLeaveBalance AS tmp WITH (NOLOCK)
     INNER JOIN dbo.WorkingTimeRequest AS rq WITH (NOLOCK) ON tmp.RequestId = rq.OldRequestId
-    INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON tmp.EmpId = e.OldEmpId
+    INNER JOIN @EmployeeMapping AS e ON tmp.EmpId = e.OldEmpId
     INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
 WHERE rq.CompanyId = @CompanyId
     AND ce.CompanyId = @CompanyId
@@ -805,7 +826,7 @@ INSERT INTO dbo.tmpHospitalizationLeaveBalance (EmpId, RequestId, TotalDays, [Mo
 SELECT e.EmpId, rq.RequestId, tmp.TotalDays, tmp.[Month], tmp.[Year], tmp.[Status]
 FROM CabintechHRM.dbo.tmpHospitalizationLeaveBalance AS tmp WITH (NOLOCK)
     INNER JOIN dbo.WorkingTimeRequest AS rq WITH (NOLOCK) ON tmp.RequestId = rq.OldRequestId
-    INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON tmp.EmpId = e.OldEmpId
+    INNER JOIN @EmployeeMapping AS e ON tmp.EmpId = e.OldEmpId
     INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
 WHERE rq.CompanyId = @CompanyId
     AND ce.CompanyId = @CompanyId
@@ -816,34 +837,10 @@ WHERE rq.CompanyId = @CompanyId
             AND rq.RequestId = tmphb.RequestId
     )
 
-INSERT INTO dbo.tmpEmployeeCalendar(EmpId, WorkDate, RequestId, RequestTypeId, ShiftId, IsOffDay, IsHoliday, IsOvertime, IsKeepInView,
-    IsLeaveDay, IsLeaveOffDay, LeaveDay, LeaveTypeId, FromTime, ToTime, LeaveTypeId2, FromTime2, ToTime2, ChangeShiftTypeId, MoveOffFromDate, MoveOffToDate, ModifiedDate)
-SELECT e.EmpId, tmp.WorkDate, rq.RequestId, tmp.RequestTypeId, s.ShiftId, tmp.IsOffDay, tmp.IsHoliday, tmp.IsOvertime, tmp.IsKeepInView,
-    tmp.IsLeaveDay, tmp.IsLeaveOffDay, tmp.LeaveDay, tmp.LeaveTypeId,
-    tmp.FromTime AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone,
-    tmp.ToTime AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone,
-    tmp.LeaveTypeId2,
-    tmp.FromTime2 AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone,
-    tmp.ToTime2 AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone,
-    tmp.ChangeShiftTypeId, tmp.MoveOffFromDate, tmp.MoveOffToDate,
-    tmp.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
-FROM CabintechHRM.dbo.tmpEmployeeCalendar AS tmp WITH (NOLOCK)
-    INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON tmp.EmpId = e.OldEmpId
-    INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
-    LEFT JOIN dbo.WorkingTimeRequest AS rq WITH (NOLOCK) ON tmp.RequestId = rq.OldRequestId
-    LEFT JOIN dbo.[Shift] AS s WITH (NOLOCK) ON tmp.ShiftId = s.OldShiftId AND s.CompanyId = @CompanyId
-WHERE ce.CompanyId = @CompanyId
-    AND NOT EXISTS (
-        SELECT 1
-        FROM dbo.tmpEmployeeCalendar AS tmpempca WITH (NOLOCK)
-        WHERE e.EmpId = tmpempca.EmpId
-            AND tmp.WorkDate = tmpempca.WorkDate
-    )
-
 INSERT INTO dbo.tmpEmployeeAttendace(EmpId, WorkDate, InsertedDate)
 SELECT e.EmpId, tmp.WorkDate, tmp.InsertedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
 FROM CabintechHRM.dbo.tmpEmployeeAttendace AS tmp WITH (NOLOCK)
-    INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON tmp.EmpId = e.OldEmpId
+    INNER JOIN @EmployeeMapping AS e ON tmp.EmpId = e.OldEmpId
     INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
 WHERE ce.CompanyId = @CompanyId
     AND NOT EXISTS (
@@ -857,7 +854,7 @@ INSERT INTO dbo.TimeRecord(EmpId, RecordTime, InOutType, InsertDate, ModifiedBy,
 SELECT e.EmpId, tc.RecordTime AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone, tc.InOutType,
     tc.InsertDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone, NULL, NULL, @CompanyId, tc.Id
 FROM CabintechHRM.dbo.TimeRecord AS tc WITH (NOLOCK)
-    INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON tc.EmpId = e.OldEmpId
+    INNER JOIN @EmployeeMapping AS e ON tc.EmpId = e.OldEmpId
     INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
 WHERE ce.CompanyId = @CompanyId
     AND NOT EXISTS (
@@ -883,7 +880,7 @@ SELECT e.EmpId, rq.RequestId, st.[Description], st.FromDate, st.ToDate, st.Deduc
     st.CreatedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone,
     md.EmpId, st.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
 FROM CabintechHRM.dbo.SickLeaveTrans AS st WITH (NOLOCK)
-    INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON st.EmpId = e.OldEmpId
+    INNER JOIN @EmployeeMapping AS e ON st.EmpId = e.OldEmpId
     INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
     LEFT JOIN dbo.WorkingTimeRequest AS rq WITH (NOLOCK) ON st.RequestId = rq.OldRequestId
     LEFT JOIN dbo.Employee AS cr WITH (NOLOCK) ON st.CreatedBy = cr.OldEmpId
@@ -2130,8 +2127,31 @@ INSERT INTO [dbo].[RefResource]
 		   ,@CompanyId
 	FROM [HRM].[dbo].[RefResource] 
 
+-- Insert data into temporary table with optimized time zone conversion
+INSERT INTO dbo.tmpEmployeeCalendar(EmpId, WorkDate, RequestId, RequestTypeId, ShiftId, IsOffDay, IsHoliday, IsOvertime, IsKeepInView,
+    IsLeaveDay, IsLeaveOffDay, LeaveDay, LeaveTypeId, FromTime, ToTime, LeaveTypeId2, FromTime2, ToTime2, ChangeShiftTypeId, MoveOffFromDate, MoveOffToDate, ModifiedDate)
+SELECT e.EmpId, tmp.WorkDate, rq.RequestId, tmp.RequestTypeId, s.ShiftId, tmp.IsOffDay, tmp.IsHoliday, tmp.IsOvertime, tmp.IsKeepInView,
+    tmp.IsLeaveDay, tmp.IsLeaveOffDay, tmp.LeaveDay, tmp.LeaveTypeId,
+    tmp.FromTime AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone,
+    tmp.ToTime AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone,
+    tmp.LeaveTypeId2,
+    tmp.FromTime2 AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone,
+    tmp.ToTime2 AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone,
+    tmp.ChangeShiftTypeId, tmp.MoveOffFromDate, tmp.MoveOffToDate,
+    tmp.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
+FROM CabintechHRM.dbo.tmpEmployeeCalendar AS tmp WITH (NOLOCK)
+INNER JOIN @EmployeeMapping AS e ON tmp.EmpId = e.OldEmpId
+INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
+LEFT JOIN dbo.WorkingTimeRequest AS rq WITH (NOLOCK) ON tmp.RequestId = rq.OldRequestId
+LEFT JOIN dbo.[Shift] AS s WITH (NOLOCK) ON tmp.ShiftId = s.OldShiftId AND s.CompanyId = @CompanyId
+WHERE ce.CompanyId = @CompanyId
+	AND NOT EXISTS (
+			SELECT 1
+			FROM dbo.tmpEmployeeCalendar AS tmpempca WITH (NOLOCK)
+			WHERE e.EmpId = tmpempca.EmpId
+				AND tmp.WorkDate = tmpempca.WorkDate
+		)
+
 GO
 
-
-
-
+--ROLLBACK
