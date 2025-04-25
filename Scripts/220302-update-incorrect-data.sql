@@ -2,7 +2,7 @@ USE [bodb_HRM]
 GO
 
 -- Update Deleted Employee's ResignedDate
-UPDATE [dbo].[Employee] WITH (NOLOCK)
+UPDATE [dbo].[Employee] WITH (ROWLOCK)
 SET [IsDeleted] = 1
 WHERE [UserId] IN (
     999, 552, 553, 554, 4381, 4382, 4383, 4384, 4386, 4387, 
@@ -18,7 +18,7 @@ SET e.ResignedDate = COALESCE(
      WHERE a.EmpId = e.EmpId),
     e.JoinedDate
 )
-FROM [dbo].[Employee] e WITH (NOLOCK)
+FROM [dbo].[Employee] e WITH (ROWLOCK)
 WHERE [UserId] IN (
     1056, 142, 886, 667, 726, 904, 952, 662, 331, 4, 145, 160, 164, 167, 600, 725, 1029,
     4378, 4380, 4385, 4420, 4424, 4428, 4429, 4434, 4436, 4438, 4442, 4456, 4457, 4458,
@@ -39,7 +39,7 @@ SET e.JoinedDate = (
     FROM [dbo].[EmployeeAttendance] a WITH (NOLOCK)
     WHERE a.EmpId = e.EmpId
 )
-FROM [dbo].[Employee] e WITH (NOLOCK)
+FROM [dbo].[Employee] e WITH (ROWLOCK)
 WHERE [UserId] IN (2603)
 GO
 
