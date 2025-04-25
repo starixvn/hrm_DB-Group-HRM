@@ -4,6 +4,7 @@ GO
 -- Update Deleted Employee's ResignedDate
 UPDATE [dbo].[Employee] WITH (ROWLOCK)
 SET [IsDeleted] = 1
+    ,ModifiedDate = GETDATE()
 WHERE [UserId] IN (
     999, 552, 553, 554, 4381, 4382, 4383, 4384, 4386, 4387, 
     4437, 4601, 4535, 4536, 4537, 4538, 4539, 4542, 4543, 4544, 4555
@@ -13,11 +14,12 @@ GO
 -- Update ResignedDate based on last attendance date or JoinedDate
 UPDATE e
 SET e.ResignedDate = COALESCE(
-    (SELECT MAX(a.AttendanceDate)
-     FROM [dbo].[EmployeeAttendance] a WITH (NOLOCK)
-     WHERE a.EmpId = e.EmpId),
-    e.JoinedDate
-)
+        (SELECT MAX(a.AttendanceDate)
+         FROM [dbo].[EmployeeAttendance] a WITH (NOLOCK)
+         WHERE a.EmpId = e.EmpId),
+        e.JoinedDate
+    )
+    ,ModifiedDate = GETDATE()
 FROM [dbo].[Employee] e WITH (ROWLOCK)
 WHERE [UserId] IN (
     1056, 142, 886, 667, 726, 904, 952, 662, 331, 4, 145, 160, 164, 167, 600, 725, 1029,
@@ -35,10 +37,11 @@ GO
 -- Update JoinedDate based on first attendance date
 UPDATE e
 SET e.JoinedDate = (
-    SELECT MIN(a.AttendanceDate)
-    FROM [dbo].[EmployeeAttendance] a WITH (NOLOCK)
-    WHERE a.EmpId = e.EmpId
-)
+        SELECT MIN(a.AttendanceDate)
+        FROM [dbo].[EmployeeAttendance] a WITH (NOLOCK)
+        WHERE a.EmpId = e.EmpId
+    )
+    ,ModifiedDate = GETDATE()
 FROM [dbo].[Employee] e WITH (ROWLOCK)
 WHERE [UserId] IN (2603)
 GO
