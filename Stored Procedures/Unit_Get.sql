@@ -9,6 +9,7 @@ AS
 
 	Revisions:
 		20250403@Tim: remove param CompanyId [Redmine: #222886]
+		20250421@Tim: sort by GroupUnitId [Redmine: #221569]
 	Param's Explanation:
 
 */
@@ -32,5 +33,5 @@ BEGIN
 			OR u.IsActive = @IsActive
 			)
 			AND u.IsDeleted = 0
-	ORDER BY u.Code
+	ORDER BY u.GroupUnitId, u.Code
 END
