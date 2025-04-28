@@ -2,7 +2,7 @@
 
 ALTER PROCEDURE [dbo].[ScheduleArrangement_SyncWorkingShift]
 (
-	@CompanyId SMALLINT
+    @CompanyId SMALLINT
     ,@ActorId INT
 	,@FromDate DATE
 	,@ToDate DATE
@@ -13,17 +13,16 @@ ALTER PROCEDURE [dbo].[ScheduleArrangement_SyncWorkingShift]
 )
 AS
 /*
-	Created: 20220106@Tim.Trinh
-	Task: sync working shift from OWP
-	DB: bodb_HRM
+    Created: 20220106@Tim.Trinh
+    Task: sync working shift from OWP
+    DB: bodb_HRM
 
-	Revisions:
-		20250408@Mira: fix bug faile to sync working shift from OWP to HRM [Redmine: #223246]
-
-	Param's Explanation:
-	- @WorkingShiftXml: "<Root>
-			<Row EmployeeID={1} ShiftCode={2} ShiftDate={3} IsOffDay={4} IsPublicHoliday={5} ModifiedDate={6} />
-		</Root>"
+    Revisions:
+        20250438@Tim: fix bug sync holiday
+    Param's Explanation:
+    - @WorkingShiftXml: "<Root>
+		    <Row EmployeeID={1} ShiftCode={2} ShiftDate={3} IsOffDay={4} IsPublicHoliday={5} ModifiedDate={6} />
+	    </Root>"
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -95,10 +94,8 @@ BEGIN
 			ELSE ec.IsOffDay
 			END
 		,ec.IsHoliday = CASE 
-			WHEN tmpws.IsHoliday = 1
-				AND h.Id IS NOT NULL THEN 1
-			ELSE 0
-			END
+			WHEN (es.IsLocal = 1 OR es.IsExpatUseHoliday = 1) AND h.Id IS NOT NULL THEN 1
+			ELSE 0 END
 		,ec.ModifiedBy = @ActorId
 		,ec.ModifiedDate = @SyncDate
 		,ec.OWPSyncDate = @SyncDate
@@ -110,6 +107,7 @@ BEGIN
 	INTO #tmpEmployeeCalendar(EmpId, WorkDate, ShiftId, IsOffDay, IsHoliday)
 	FROM dbo.EmployeeCalendar AS ec WITH (ROWLOCK, UPDLOCK)
 		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON ec.EmpId = e.EmpId
+        INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON e.EmpId = es.EmpId
 		INNER JOIN #tmpEmployeeIds AS tmpemp WITH (NOLOCK) ON e.EmpId = tmpemp.EmpId
 		INNER JOIN #tmpWorkingShift AS tmpws WITH (NOLOCK) ON e.Code = tmpws.EmployeeID
 		INNER JOIN dbo.tmpEmployeeCalendar AS tmpca WITH (NOLOCK) ON ec.EmpId = tmpca.EmpId
@@ -124,25 +122,16 @@ BEGIN
 		AND tmpca.IsLeaveDay = 0
 		AND tmpca.IsKeepInView = 0
 		AND (
-			(
+			    (
 				s.ShiftID IS NULL
 				AND (
-					s.ShiftID IS NULL
-				AND (
-						tmpws.IsOffDay = 1
-					OR (
-						tmpws.IsHoliday = 1
-						AND h.Id IS NOT NULL
-						)
-					)
+					tmpws.IsOffDay = 1
+					OR (tmpws.IsHoliday = 1 AND h.Id IS NOT NULL)
 					)
 				)
 			OR (
 				s.ShiftID IS NOT NULL
-				AND (
-					tmpca.ShiftId IS NULL
-					OR tmpca.ShiftId != s.ShiftID
-					)
+				AND (tmpca.ShiftId IS NULL OR tmpca.ShiftId != s.ShiftID)
 				)
 			)
 
@@ -176,15 +165,14 @@ BEGIN
 			ELSE 0
 			END
 		,CASE 
-			WHEN tmpws.IsHoliday = 1
-				AND h.Id IS NOT NULL THEN 1
-			ELSE 0
-			END
+			WHEN (es.IsLocal = 1 OR es.IsExpatUseHoliday = 1) AND h.Id IS NOT NULL THEN 1
+			ELSE 0 END
 		,@ActorId
 		,@SyncDate
 		,@SyncDate
 	FROM #tmpWorkingShift AS tmpws WITH (NOLOCK)
 		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.Code = tmpws.EmployeeID
+        INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON e.EmpId = es.EmpId
 		INNER JOIN #tmpEmployeeIds AS tmpemp WITH (NOLOCK) ON e.EmpId = tmpemp.EmpId
 		LEFT JOIN dbo.[Shift] AS s WITH (NOLOCK) ON s.CompanyId = @CompanyId
         AND s.Code = tmpws.ShiftCode
@@ -198,10 +186,7 @@ BEGIN
 				s.ShiftID IS NULL
 				AND (
 					tmpws.IsOffDay = 1
-					OR (
-						tmpws.IsHoliday = 1
-						AND h.Id IS NOT NULL
-						)
+					OR (tmpws.IsHoliday = 1 AND h.Id IS NOT NULL)
 					)
 				)
 			OR s.ShiftID IS NOT NULL
