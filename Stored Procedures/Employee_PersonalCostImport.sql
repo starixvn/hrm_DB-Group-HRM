@@ -4,7 +4,7 @@ CREATE PROCEDURE [dbo].[EmployeePayroll_Import]
     @employeeListJson VARCHAR(MAX),
     @Month DATE,
     @PeriodType TINYINT,
-    @CreatedBy INT,
+    @ActorId INT = NULL,
 	@CompanyId INT,
 	@ErrCode INT = 0 OUTPUT,
 	@ErrMsg VARCHAR(200) = '' OUTPUT
@@ -28,7 +28,7 @@ BEGIN
     FROM OPENJSON(@employeeListJson)
     WITH (
         EmpId INT '$.EmpId',
-        PersonalCost MONEY '$.PersonalCost',
+        PersonalCost MONEY '$.TotalPersonalCost',
         ExtraPayment MONEY '$.ExtraPayment'
     );
 
@@ -36,10 +36,10 @@ BEGIN
     UPDATE ep
     SET ep.PersonalCost = ec.PersonalCost,
         ep.ExtraPayment = ec.ExtraPayment,
-        ep.ModifiedBy = @CreatedBy,
+        ep.ModifiedBy = @ActorId,
         ep.ModifiedDate = GETDATE()
     FROM [dbo].[EmployeePayroll] ep
-	INNER JOIN [dbo].[EmployeeCompany] ec ON ep.EmpId = ec.EmpId AND ec.CompanyId = @CompanyId
+	INNER JOIN [dbo].[CompanyEmployee] empCom ON ep.EmpId = empCom.EmpId AND empCom.CompanyId = @CompanyId
     INNER JOIN @EmployeeCosts ec ON ep.EmpId = ec.EmpId
     WHERE ep.Month = @Month 
     AND ep.PeriodType = @PeriodType;
@@ -61,16 +61,15 @@ BEGIN
         @Month,
         ec.PersonalCost,
         ec.ExtraPayment,
-        @CreatedBy,
+        @ActorId,
         GETDATE(),
-        @CreatedBy,
+        @ActorId,
         GETDATE()
     FROM @EmployeeCosts ec
-	INNER JOIN [dbo].[EmployeeCompany] ec ON ec.EmpId = ec.EmpId AND ec.CompanyId = @CompanyId
+	INNER JOIN [dbo].[CompanyEmployee] empCom ON ec.EmpId = empCom.EmpId AND empCom.CompanyId = @CompanyId
     LEFT JOIN [dbo].[EmployeePayroll] ep ON ec.EmpId = ep.EmpId
         AND ep.Month = @Month
         AND ep.PeriodType = @PeriodType
     WHERE ep.EmpId IS NULL;
 
 END
-GO
