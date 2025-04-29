@@ -34,7 +34,7 @@ INSERT INTO [dbo].[CompanySite]
            ,[ModifiedDate])
      VALUES
            (9, 18, 'Jd7cgaMTpeieADKdy9IOrCMtlHM5FeEHo+LVkai+flU=', 'https://hrm.comtechsb.com', NULL),
-           (9, 18, 'Jd7cgaMTpeieADKdy9IOrCMtlHM5FeEHo+LVkai+flU=', 'https://hrm-cabintech.nexdev.net', NULL)
+           (9, 18, 'Jd7cgaMTpeieADKdy9IOrCMtlHM5FeEHo+LVkai+flU=', 'https://hrm-new.comtechsb.com', NULL)
 GO
 
 SET IDENTITY_INSERT [dbo].[Mail_Config] ON 
@@ -47,8 +47,8 @@ INSERT INTO [dbo].[Mail_Config]
            ,[IsEncrypt])
      VALUES
            (4
-           ,'CTS'
-           ,'CTS'
+           ,'Cabintech'
+           ,'Cabintech'
            ,3
            ,'hrm@comtechsb.com'
 		   ,0)
