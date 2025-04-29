@@ -18,7 +18,7 @@ CREATE TABLE [dbo].[SalaryUploadHistory](
 GO
 
 /****** Object:  Table [dbo].[PersonalCost] ******/
-CREATE TABLE [dbo].[PersonalCost](
+CREATE TABLE [dbo].[EmployeePayroll](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
 	[EmpId] int NOT NULL,
 	[PeriodType] tinyint NOT NULL,
