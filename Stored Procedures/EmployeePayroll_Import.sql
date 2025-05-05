@@ -6,6 +6,8 @@ CREATE PROCEDURE [dbo].[EmployeePayroll_Import]
     @PeriodType TINYINT,
     @ActorId INT = NULL,
 	@CompanyId INT,
+	@SavedFileName VARCHAR(200),
+	@FileName VARCHAR(200),
 	@ErrCode INT = 0 OUTPUT,
 	@ErrMsg VARCHAR(200) = '' OUTPUT
 AS
@@ -71,5 +73,22 @@ BEGIN
         AND ep.Month = @Month
         AND ep.PeriodType = @PeriodType
     WHERE ep.EmpId IS NULL;
+
+
+INSERT INTO [SalaryUploadHistory]
+           ([FileName]
+           ,[SavedFileName]
+           ,[CreatedBy]
+           ,[CreatedDate]
+           ,[PeriodType]
+           ,[Month])
+     VALUES
+           (@FileName
+           ,@SavedFileName
+           ,@ActorId
+           ,GETDATE()
+           ,@PeriodType
+           ,@Month);
+
 
 END
