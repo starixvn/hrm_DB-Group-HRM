@@ -125,8 +125,10 @@ BEGIN
       ,e.[Enabled]
       ,e.[JoinedDate]
       ,e.[ResignedDate]
-      ,e.[isDeleted]'
+      ,e.[isDeleted]
+	  ,e.[FullName]'
 	  + ',s.[IsLocal]' + CHAR(13)
+	  + ',s.[IsTopManager] AS IsSpecial' + CHAR(13)
 	  + ',s.[CompanyDate]' + CHAR(13)
 	  + ',jt.Name AS [JobTitle]' + CHAR(13)
 	  + ',c.CompanyId' + CHAR(13)
