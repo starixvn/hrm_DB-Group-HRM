@@ -2125,7 +2125,7 @@ INSERT INTO [dbo].[RefResource]
            ,[Description]
            ,IsActive
 		   ,@CompanyId
-	FROM [HRM].[dbo].[RefResource] 
+	FROM CabintechHRM.[dbo].[RefResource] 
 
 -- Insert data into temporary table with optimized time zone conversion
 INSERT INTO dbo.tmpEmployeeCalendar(EmpId, WorkDate, RequestId, RequestTypeId, ShiftId, IsOffDay, IsHoliday, IsOvertime, IsKeepInView,
