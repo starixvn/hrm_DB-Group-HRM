@@ -1,3 +1,10 @@
+USE [bodb_HRM]
+GO
+/****** Object:  StoredProcedure [dbo].[Employee_GroupScope_Get]    Script Date: 5/6/2025 1:33:10 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER   PROCEDURE [dbo].[Employee_GroupScope_Get] 
@@ -135,15 +142,15 @@ BEGIN
 	  + ',c.[Name] AS Company' + CHAR(13)
 	  + ',u.[GroupUnitId] AS UnitId' + CHAR(13)
 	  + ',u.[Code] AS UnitCode' + CHAR(13)
-	  + ',eu.FullName AS UnitPIC' + CHAR(13)
+	  + ',eu.NickName AS UnitPIC' + CHAR(13)
 	  + ',g.GroupId AS [TeamId]' + CHAR(13)
 	  + ',g.Code AS [TeamCode]' + CHAR(13)
 	  + ',g.Name AS [TeamName]' + CHAR(13)
-	  + ',eg.FullName AS [TeamPIC]' + CHAR(13)
+	  + ',eg.NickName AS [TeamPIC]' + CHAR(13)
 	  + ',d.DepartmentId' + CHAR(13)
 	  + ',d.Code AS DepartmentCode' + CHAR(13)
 	  + ',d.[Name] AS DepartmentName' + CHAR(13)
-	  + ',ed.FullName AS DepartmentPIC' + CHAR(13)
+	  + ',ed.NickName AS DepartmentPIC' + CHAR(13)
 	  + ',ml.[Name] AS ManagementLevel' + CHAR(13)
 	  + ',jl.[Name] AS JobLevel' + CHAR(13)
 	  + 'FROM dbo.Employee AS e WITH (NOLOCK)' + CHAR(13)
