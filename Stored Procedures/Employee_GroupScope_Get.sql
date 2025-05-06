@@ -1,10 +1,3 @@
-USE [bodb_HRM]
-GO
-/****** Object:  StoredProcedure [dbo].[Employee_GroupScope_Get]    Script Date: 5/6/2025 1:33:10 PM ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER   PROCEDURE [dbo].[Employee_GroupScope_Get] 
