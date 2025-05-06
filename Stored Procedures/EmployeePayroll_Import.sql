@@ -49,6 +49,14 @@ BEGIN
         ExtraPayment MONEY '$.ExtraPayment'
     );
 
+    -- Check if employee costs table is empty
+    IF NOT EXISTS (SELECT 1 FROM @EmployeeCosts)
+    BEGIN
+        SET @ErrCode = 1;
+        SET @ErrMsg = 'No employee payroll data found. Please check the input data.';
+        RETURN;
+    END
+
     -- Handle period type changes
     IF @PeriodType = @FullMonthPeriodType
     BEGIN
@@ -80,11 +88,8 @@ BEGIN
         ep.ModifiedBy = @ActorId,
         ep.ModifiedDate = GETDATE()
     FROM [dbo].[EmployeePayroll] ep
-    INNER JOIN [dbo].[CompanyEmployee] empCom 
-        ON ep.EmpId = empCom.EmpId 
-        AND empCom.CompanyId = @CompanyId
-    INNER JOIN @EmployeeCosts ec 
-        ON ep.EmpId = ec.EmpId
+    INNER JOIN [dbo].[CompanyEmployee] empCom ON ep.EmpId = empCom.EmpId AND empCom.CompanyId = @CompanyId
+    INNER JOIN @EmployeeCosts ec ON ep.EmpId = ec.EmpId
     WHERE ep.Month = @Month 
     AND ep.PeriodType = @PeriodType;
 
@@ -112,13 +117,8 @@ BEGIN
         @ActorId,
         GETDATE()
     FROM @EmployeeCosts ec
-    INNER JOIN [dbo].[CompanyEmployee] empCom 
-        ON ec.EmpId = empCom.EmpId 
-        AND empCom.CompanyId = @CompanyId
-    LEFT JOIN [dbo].[EmployeePayroll] ep 
-        ON ec.EmpId = ep.EmpId
-        AND ep.Month = @Month
-        AND ep.PeriodType = @PeriodType
+    INNER JOIN [dbo].[CompanyEmployee] empCom ON ec.EmpId = empCom.EmpId AND empCom.CompanyId = @CompanyId
+    LEFT JOIN [dbo].[EmployeePayroll] ep   ON ec.EmpId = ep.EmpId AND ep.Month = @Month AND ep.PeriodType = @PeriodType
     WHERE ep.EmpId IS NULL;
 
     -- Record upload history
@@ -142,6 +142,14 @@ BEGIN
         @Month,
 		@CompanyId
     );
+
+    DELETE ep
+    FROM [dbo].[EmployeePayroll] ep
+    INNER JOIN [dbo].[CompanyEmployee] empCom ON ep.EmpId = empCom.EmpId  AND empCom.CompanyId = @CompanyId
+    LEFT JOIN @EmployeeCosts ec ON ep.EmpId = ec.EmpId
+    WHERE ep.[Month] = @Month
+        AND ep.PeriodType = @PeriodType
+        AND ec.EmpId IS NULL;
 
     SET @ErrMsg = 'Uploaded Salary successfully';
 
