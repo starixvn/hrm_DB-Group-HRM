@@ -3,7 +3,7 @@
 ALTER PROCEDURE [dbo].[EmployeePayroll_Get]
     @Month DATE = NULL,
 	@PeriodType TINYINT NULL,
-	@PeriodType INT = NULL
+    @CompanyId INT
 AS
 /*
 	Created: 20250505@Hank.Nguyen
@@ -40,3 +40,4 @@ BEGIN
     ORDER BY ep.[Month], ep.[PeriodType], dept.[Name], team.[Name], emp.[FullName];
 
 END
+
