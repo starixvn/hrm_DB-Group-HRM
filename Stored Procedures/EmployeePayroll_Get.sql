@@ -1,7 +1,7 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 CREATE PROCEDURE [dbo].[EmployeePayroll_Get]
-    @Month DATE,
+    @Month DATE = NULL,
     @CompanyId INT,
     @ErrCode INT = 0 OUTPUT,
     @ErrMsg VARCHAR(200) = '' OUTPUT
@@ -36,7 +36,7 @@ BEGIN
     INNER JOIN [dbo].[CompanyEmployee] empCom WITH (NOLOCK) ON emp.EmpId = empCom.EmpId AND empCom.CompanyId = @CompanyId
     LEFT JOIN [dbo].[Group] team WITH (NOLOCK) ON emp.GroupId = team.GroupId
     LEFT JOIN [dbo].[Department] dept WITH (NOLOCK) ON team.DepartmentId = dept.DepartmentId
-    WHERE ep.[Month] = @Month
+    WHERE @Month IS NULL OR ep.[Month] = @Month
     ORDER BY ep.[Month], ep.[PeriodType], dept.[Name], team.[Name], emp.[FullName];
 
 END
