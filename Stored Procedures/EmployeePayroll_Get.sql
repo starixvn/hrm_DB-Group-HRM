@@ -2,9 +2,7 @@
 
 CREATE PROCEDURE [dbo].[EmployeePayroll_Get]
     @Month DATE = NULL,
-    @CompanyId INT,
-    @ErrCode INT = 0 OUTPUT,
-    @ErrMsg VARCHAR(200) = '' OUTPUT
+    @CompanyId INT
 AS
 /*
 	Created: 20250505@Hank.Nguyen

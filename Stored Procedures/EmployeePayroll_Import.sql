@@ -75,8 +75,8 @@ BEGIN
 
     -- Update existing records
     UPDATE ep
-    SET ep.PersonalCost = ec.PersonalCost,
-        ep.ExtraPayment = ec.ExtraPayment,
+    SET ep.PersonalCost = ISNULL(ec.PersonalCost, ep.PersonalCost),
+        ep.ExtraPayment = ISNULL(ec.ExtraPayment, ep.ExtraPayment),
         ep.ModifiedBy = @ActorId,
         ep.ModifiedDate = GETDATE()
     FROM [dbo].[EmployeePayroll] ep
@@ -105,8 +105,8 @@ BEGIN
         ec.EmpId,
         @PeriodType,
         @Month,
-        ec.PersonalCost,
-        ec.ExtraPayment,
+        ISNULL(ec.PersonalCost, 0),
+        ISNULL(ec.ExtraPayment, 0),
         @ActorId,
         GETDATE(),
         @ActorId,
