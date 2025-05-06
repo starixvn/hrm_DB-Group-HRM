@@ -121,6 +121,14 @@ BEGIN
     LEFT JOIN [dbo].[EmployeePayroll] ep   ON ec.EmpId = ep.EmpId AND ep.Month = @Month AND ep.PeriodType = @PeriodType
     WHERE ep.EmpId IS NULL;
 
+    DELETE ep
+    FROM [dbo].[EmployeePayroll] ep
+    INNER JOIN [dbo].[CompanyEmployee] empCom ON ep.EmpId = empCom.EmpId  AND empCom.CompanyId = @CompanyId
+    LEFT JOIN @EmployeeCosts ec ON ep.EmpId = ec.EmpId
+    WHERE ep.[Month] = @Month
+        AND ep.PeriodType = @PeriodType
+        AND ec.EmpId IS NULL;
+
     -- Record upload history
     INSERT INTO [SalaryUploadHistory]
     (
@@ -143,13 +151,7 @@ BEGIN
 		@CompanyId
     );
 
-    DELETE ep
-    FROM [dbo].[EmployeePayroll] ep
-    INNER JOIN [dbo].[CompanyEmployee] empCom ON ep.EmpId = empCom.EmpId  AND empCom.CompanyId = @CompanyId
-    LEFT JOIN @EmployeeCosts ec ON ep.EmpId = ec.EmpId
-    WHERE ep.[Month] = @Month
-        AND ep.PeriodType = @PeriodType
-        AND ec.EmpId IS NULL;
+   
 
     SET @ErrMsg = 'Uploaded Salary successfully';
 
