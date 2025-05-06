@@ -1,6 +1,9 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[AnnualLeave_InsertMultipleTransactions] @EmployeeIds VARCHAR(MAX)
+ALTER PROCEDURE [dbo].[AnnualLeave_InsertMultipleTransactions]
+(
+    @CompanyId SMALLINT
+    ,@EmployeeIds VARCHAR(MAX)
 	,@Description NVARCHAR(4000) = ''
 	,@FromDate DATE
 	,@DeductDays NUMERIC(18, 1)
@@ -8,30 +11,32 @@ ALTER PROCEDURE [dbo].[AnnualLeave_InsertMultipleTransactions] @EmployeeIds VARC
 	,@ActorId INT
 	,@ErrCode INT = 0 OUTPUT
 	,@ErrMsg VARCHAR(200) = '' OUTPUT
+)
 AS
 /*
-Created: Tom.Vo@2013.10.29
-Task: record multiple annual leave transaction and calculate annual leave balance for employee
-DB: HRM
-Original:
+    Created: Tom.Vo@2013.10.29
+    Task: record multiple annual leave transaction and calculate annual leave balance for employee
+    DB: bodb_HRM
 
-Revisions:
-Param's Explanation:
+    Revisions:
+        20250429@Tim: add param @CompanyId
+    Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;
-	SET XACT_ABORT ON;
 
 	DECLARE @maximumBalanceForLocal SMALLINT
 		,@maximumBalanceForExpat SMALLINT
 
 	SELECT @maximumBalanceForLocal = Value
 	FROM dbo.RefResource WITH (NOLOCK)
-	WHERE RefName = 'AnnualLeaveBalanceForLocal'
+	WHERE CompanyId = @CompanyId
+        AND RefName = 'AnnualLeaveBalanceForLocal'
 
 	SELECT @maximumBalanceForExpat = Value
 	FROM dbo.RefResource WITH (NOLOCK)
-	WHERE RefName = 'AnnualLeaveBalanceForExpat'
+	WHERE CompanyId = @CompanyId
+        AND RefName = 'AnnualLeaveBalanceForExpat'
 
 	SET @maximumBalanceForLocal = ISNULL(@maximumBalanceForLocal, 0)
 	SET @maximumBalanceForExpat = ISNULL(@maximumBalanceForExpat, 0)
@@ -106,7 +111,7 @@ BEGIN
 		INNER JOIN #tblEmployeeIds AS empid ON emp.EmpId = empid.EmployeeId
 	WHERE ISNULL(emp.isDeleted, 0) = 0
 
-	UPDATE dbo.EmployeeSummary WITH (ROWLOCK, UPDLOCK)
+	UPDATE dbo.EmployeeSummary WITH (ROWLOCK)
 	SET AnnualLeaveBalance = ISNULL(AnnualLeaveBalance, 0) + ISNULL(@CreditDays, 0) - ISNULL(@DeductDays, 0)
 	WHERE EXISTS (
 			SELECT 1
