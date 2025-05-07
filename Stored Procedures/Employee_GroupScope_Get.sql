@@ -1,6 +1,6 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[Employee_GroupScope_Get] 
+CREATE OR ALTER PROCEDURE [dbo].[Employee_GroupScope_Get] 
 	@query NVARCHAR(256) = NULL,
 	@teamIds VARCHAR(MAX) = '',
 	@enable BIT = NULL,
@@ -97,7 +97,7 @@ BEGIN
 		ed.NickName AS DepartmentPIC,
 		ml.[Name] AS ManagementLevel,
 		jl.[Name] AS JobLevel
-	FROM Employee AS e
+	FROM Employee AS e WITH (NOLOCK)
 		LEFT JOIN dbo.CompanyEmployee ce WITH (NOLOCK) ON ce.EmpId = e.EmpId 
 		LEFT JOIN dbo.EmployeeSummary AS s WITH (NOLOCK) ON s.EmpId = e.EmpId
 		LEFT JOIN dbo.[Group] AS g WITH (NOLOCK) ON e.GroupID = g.GroupID
