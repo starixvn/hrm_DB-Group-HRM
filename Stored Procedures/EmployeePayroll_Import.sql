@@ -31,20 +31,20 @@ BEGIN
 
     -- Temporary table for employee costs
     DECLARE @EmployeeCosts TABLE (
-        EmpId INT,
+        EmpCode VARCHAR(200),
         PersonalCost MONEY,
         ExtraPayment MONEY
     );
 
     -- Parse JSON input
-    INSERT INTO @EmployeeCosts (EmpId, PersonalCost, ExtraPayment)
+    INSERT INTO @EmployeeCosts (EmpCode, PersonalCost, ExtraPayment)
     SELECT 
-        EmpId,
+        EmpCode,
         PersonalCost,
         ExtraPayment
     FROM OPENJSON(@employeeListJson)
     WITH (
-        EmpId INT '$.EmpId',
+        EmpCode VARCHAR(200) '$.EmpCode',
         PersonalCost MONEY '$.TotalPersonalCost',
         ExtraPayment MONEY '$.ExtraPayment'
     );
@@ -83,14 +83,15 @@ BEGIN
 
     -- Update existing records
     UPDATE ep
-    SET ep.PersonalCost = ISNULL(ec.PersonalCost, ep.PersonalCost),
-        ep.ExtraPayment = ISNULL(ec.ExtraPayment, ep.ExtraPayment),
+    SET ep.PersonalCost = ISNULL(tmp.PersonalCost, ep.PersonalCost),
+        ep.ExtraPayment = ISNULL(tmp.ExtraPayment, ep.ExtraPayment),
         ep.ModifiedBy = @ActorId,
         ep.ModifiedDate = GETDATE()
     FROM [dbo].[EmployeePayroll] ep
-    INNER JOIN [dbo].[CompanyEmployee] empCom ON ep.EmpId = empCom.EmpId AND empCom.CompanyId = @CompanyId
-    INNER JOIN @EmployeeCosts ec ON ep.EmpId = ec.EmpId
-    WHERE ep.Month = @Month 
+    INNER JOIN [dbo].[Employee] emp ON ep.EmpId = emp.EmpId
+    INNER JOIN [dbo].[CompanyEmployee] empCom ON emp.EmpId = empCom.EmpId AND empCom.CompanyId = @CompanyId
+    INNER JOIN @EmployeeCosts tmp ON emp.Code = tmp.EmpCode
+    WHERE ep.Month = @Month
     AND ep.PeriodType = @PeriodType;
 
     -- Insert new records
@@ -107,27 +108,30 @@ BEGIN
         [ModifiedDate]
     )
     SELECT 
-        ec.EmpId,
+        emp.EmpId,
         @PeriodType,
         @Month,
-        ISNULL(ec.PersonalCost, 0),
-        ISNULL(ec.ExtraPayment, 0),
+        ISNULL(tmp.PersonalCost, 0),
+        ISNULL(tmp.ExtraPayment, 0),
         @ActorId,
         GETDATE(),
         @ActorId,
         GETDATE()
-    FROM @EmployeeCosts ec
-    INNER JOIN [dbo].[CompanyEmployee] empCom ON ec.EmpId = empCom.EmpId AND empCom.CompanyId = @CompanyId
-    LEFT JOIN [dbo].[EmployeePayroll] ep   ON ec.EmpId = ep.EmpId AND ep.Month = @Month AND ep.PeriodType = @PeriodType
+    FROM @EmployeeCosts tmp
+    INNER JOIN [dbo].[Employee] emp ON tmp.EmpCode = emp.Code
+    INNER JOIN [dbo].[CompanyEmployee] empCom ON emp.EmpId = empCom.EmpId AND empCom.CompanyId = @CompanyId
+    LEFT JOIN [dbo].[EmployeePayroll] ep ON emp.EmpId = ep.EmpId AND ep.Month = @Month AND ep.PeriodType = @PeriodType
     WHERE ep.EmpId IS NULL;
 
+    -- Delete records not in import
     DELETE ep
     FROM [dbo].[EmployeePayroll] ep
-    INNER JOIN [dbo].[CompanyEmployee] empCom ON ep.EmpId = empCom.EmpId  AND empCom.CompanyId = @CompanyId
-    LEFT JOIN @EmployeeCosts ec ON ep.EmpId = ec.EmpId
+    INNER JOIN [dbo].[Employee] emp ON ep.EmpId = emp.EmpId
+    INNER JOIN [dbo].[CompanyEmployee] empCom ON emp.EmpId = empCom.EmpId AND empCom.CompanyId = @CompanyId
+    LEFT JOIN @EmployeeCosts tmp ON emp.Code = tmp.EmpCode
     WHERE ep.[Month] = @Month
         AND ep.PeriodType = @PeriodType
-        AND ec.EmpId IS NULL;
+        AND tmp.EmpCode IS NULL;
 
     -- Record upload history
     INSERT INTO [SalaryUploadHistory]
@@ -138,7 +142,7 @@ BEGIN
         [CreatedDate],
         [PeriodType],
         [Month],
-		[CompanyId]
+        [CompanyId]
     )
     VALUES
     (
@@ -148,10 +152,8 @@ BEGIN
         GETDATE(),
         @PeriodType,
         @Month,
-		@CompanyId
+        @CompanyId
     );
-
-   
 
     SET @ErrMsg = 'Uploaded Salary successfully';
 
