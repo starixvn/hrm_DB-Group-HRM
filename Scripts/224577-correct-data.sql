@@ -62,3 +62,15 @@ FROM CabintechHRM.dbo.KeepInViewByDayTrans AS trans WITH (NOLOCK)
     INNER JOIN CabintechHRM.dbo.Employee AS e WITH (NOLOCK) ON trans.EmpId = e.EmpId
 WHERE trans.RequestId <= 0
 GO
+
+-- enable Sick Leave
+UPDATE dbo.LeaveType WITH (ROWLOCK)
+SET isShown = 1
+WHERE CompanyId = 6 AND LeaveTypeId = 29
+GO
+
+UPDATE dbo.RefResource WITH (ROWLOCK)
+SET [Value] = '1'
+WHERE CompanyId = 6
+    AND RefName = 'EnableSickLeaveBalance'
+GO
