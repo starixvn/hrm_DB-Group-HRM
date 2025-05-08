@@ -1,9 +1,9 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[EmployeePayroll_Get]
+CREATE PROCEDURE [dbo].[EmployeePayroll_Get]
     @Month DATE = NULL,
-	@PeriodType TINYINT NULL,
-    @CompanyId INT
+    @CompanyId INT,
+	@PeriodType INT = NULL
 AS
 /*
 	Created: 20250505@Hank.Nguyen
@@ -35,8 +35,8 @@ BEGIN
     INNER JOIN [dbo].[CompanyEmployee] empCom WITH (NOLOCK) ON emp.EmpId = empCom.EmpId AND empCom.CompanyId = @CompanyId
     LEFT JOIN [dbo].[Group] team WITH (NOLOCK) ON emp.GroupId = team.GroupId
     LEFT JOIN [dbo].[Department] dept WITH (NOLOCK) ON team.DepartmentId = dept.DepartmentId
-    WHERE (@Month IS NULL OR ep.[Month] = @Month)
-		AND (@PeriodType IS NULL OR ep.[PeriodType] = @PeriodType)
+    WHERE (@Month IS NULL OR ep.[Month] = @Month) AND
+		(@PeriodType IS NULL OR ep.PeriodType = @PeriodType)
     ORDER BY ep.[Month], ep.[PeriodType], dept.[Name], team.[Name], emp.[FullName];
 
 END
