@@ -27,7 +27,7 @@ INSERT INTO dbo.Employee (
 OUTPUT INSERTED.EmpId, INSERTED.OldEmpId, @CompanyId INTO @EmployeeMapping  -- Store new & old EmpId
 SELECT 
     UserId, Code, DomainUsername, FullName, NickName, DOB, Email, JobTitleId,
-    Enabled, Phone, Gender, NULL, Roles, ManagerId, JoinedDate, ConfirmedDate, 
+    Enabled, Phone, Gender, GroupId, Roles, ManagerId, JoinedDate, ConfirmedDate, 
     ResignedDate, Skype, Yahoo, Marriage, 
     LastLogin,
     CreatedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone,  
