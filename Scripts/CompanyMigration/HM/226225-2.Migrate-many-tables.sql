@@ -40,7 +40,7 @@ SELECT
     Major, PasswordReset, EmployeeCard, PickupRemark, TeamDate, PromotionDate, 
     LetsTalk, JobLevelId, UserId, UC_ModifiedDate, UC_SyncDate, ResignedReason, 
     ExpertGradeId, EmpId AS OldEmpId  -- Keep track of old EmpId
-FROM CabintechHRM.dbo.Employee
+FROM HMHRM.dbo.Employee
 WHERE UserId is not null
 
 -- Insert into CompanyEmployee using NewEmpId and CompanyId
@@ -93,7 +93,7 @@ SELECT
     s.OWPSyncDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone, 
     @CompanyId, 
     s.ShiftID 
-FROM CabintechHRM.dbo.Shift s
+FROM HMHRM.dbo.Shift s
 LEFT JOIN @EmployeeMapping em_created ON s.CreatedBy = em_created.OldEmpId
 LEFT JOIN @EmployeeMapping em_modified ON s.ModifiedBy = em_modified.OldEmpId;    
 -- #endregion
@@ -107,13 +107,13 @@ INSERT INTO dbo.LeaveType (
 SELECT LeaveTypeId, Code, Name, IsAnnualQuota, IsDefault, IsSalaryDeduction, IsALDeduction, 
     IsHoliday, isShown, IsLeaveDuringWorking, IsCalculateWoking, Color, 
     OrderNo, Description, @CompanyId 
-FROM CabintechHRM.dbo.LeaveType;
+FROM HMHRM.dbo.LeaveType;
 -- #endregion
 
 -- #region HOLIDAY TABLE
 INSERT INTO dbo.Holiday (HolidayName, FromDate, ToDate, TypeId, CompanyId, OldHolidayId)
 SELECT HolidayName, FromDate, ToDate, TypeId, @CompanyId, Id 
-FROM CabintechHRM.dbo.Holiday;
+FROM HMHRM.dbo.Holiday;
 -- #endregion
 
 -- #region MEMO TABLE
@@ -123,13 +123,13 @@ INSERT INTO dbo.Memo (
 )
 SELECT RefNo, Contents, Subject, SentTo, SentFrom, ForInfo, TotalPages, 
     SentDate, Category, Type, Enabled, @CompanyId, Id 
-FROM CabintechHRM.dbo.Memo;
+FROM HMHRM.dbo.Memo;
 -- #endregion
 
 -- #region SYSTEM CONFIGS TABLE
 INSERT INTO dbo.SystemConfigs ([Key], [Value], CompanyId)
 SELECT [Key], [Value], @CompanyId 
-FROM CabintechHRM.dbo.SystemConfigs;
+FROM HMHRM.dbo.SystemConfigs;
 -- #endregion
 
 -- #region LOOKUP DATA TABLE
@@ -141,7 +141,7 @@ SELECT
     ld.Value, 
     @CompanyId,
     ld.Id AS OldId 
-FROM CabintechHRM.dbo.LookupData ld;
+FROM HMHRM.dbo.LookupData ld;
 -- update Job title
 UPDATE emp
 SET emp.JobTitleId = ld.Id
@@ -157,8 +157,8 @@ WITH DistinctUnits AS (
         u.Code,
         u.IsActive,
         u.IsDeleted
-    FROM CabintechHRM.dbo.Unit u
-    INNER JOIN CabintechHRM.dbo.Department d WITH(NOLOCK) ON d.UnitId = u.UnitId
+    FROM HMHRM.dbo.Unit u
+    INNER JOIN HMHRM.dbo.Department d WITH(NOLOCK) ON d.UnitId = u.UnitId
     WHERE NOT EXISTS (
         SELECT 1
         FROM dbo.Unit newUnit
@@ -191,11 +191,11 @@ WITH DistinctDepartments AS (
         d.IsActive,
         d.IsDeleted,
         u.Code AS UnitCode
-    FROM CabintechHRM.dbo.Department d
-    INNER JOIN CabintechHRM.dbo.Unit u WITH(NOLOCK) ON u.UnitId = d.UnitId
+    FROM HMHRM.dbo.Department d
+    INNER JOIN HMHRM.dbo.Unit u WITH(NOLOCK) ON u.UnitId = d.UnitId
     WHERE EXISTS (
         SELECT 1 
-        FROM CabintechHRM.dbo.Section s WITH(NOLOCK) 
+        FROM HMHRM.dbo.Section s WITH(NOLOCK) 
         WHERE s.DepartmentId = d.DepartmentId
     )
 )
@@ -207,7 +207,8 @@ INSERT INTO [dbo].[Department] (
     IsActive,
     ModifiedDate,
     IsDeleted,
-    GroupDeptId
+    GroupDeptId,
+    AccountableArea
 )
 SELECT
     d.Code,
@@ -216,7 +217,8 @@ SELECT
     d.IsActive,
     GETDATE(),
     d.IsDeleted,
-    ROW_NUMBER() OVER (ORDER BY d.Code) + @maxGroupDepartmentId
+    ROW_NUMBER() OVER (ORDER BY d.Code) + @maxGroupDepartmentId,
+    d.Name
 FROM DistinctDepartments d
 INNER JOIN dbo.Unit newUnit ON newUnit.Code = d.UnitCode
 
@@ -254,10 +256,10 @@ SELECT
 	newDept.DepartmentId,
 	g.Name,
 	ROW_NUMBER() OVER (ORDER BY (SELECT 1)) + @maxGroupTeamId
-FROM CabintechHRM.dbo.[Group] g
-INNER JOIN CabintechHRM.dbo.Section s WITH(NOLOCK) ON s.SectionId = g.SectionId
-INNER JOIN CabintechHRM.dbo.Department dept WITH(NOLOCK) ON dept.DepartmentId = s.DepartmentId
-INNER JOIN CabintechHRM.dbo.Unit u WITH (NOLOCK) ON u.UnitId = dept.UnitId
+FROM HMHRM.dbo.[Group] g
+INNER JOIN HMHRM.dbo.Section s WITH(NOLOCK) ON s.SectionId = g.SectionId
+INNER JOIN HMHRM.dbo.Department dept WITH(NOLOCK) ON dept.DepartmentId = s.DepartmentId
+INNER JOIN HMHRM.dbo.Unit u WITH (NOLOCK) ON u.UnitId = dept.UnitId
 INNER JOIN dbo.Unit newUnit WITH (NOLOCK) ON newUnit.Code = u.Code
 INNER JOIN dbo.Department newDept WITH (NOLOCK) ON newDept.Code = dept.Code AND newDept.UnitId = newUnit.UnitId
 
@@ -315,7 +317,7 @@ INSERT INTO [dbo].[WorkingTimeRequest]
            ,wr.ApproverComment
 		   ,@CompanyId
 		   ,wr.RequestId
-	FROM CabintechHRM.dbo.WorkingTimeRequest AS wr  WITH (NOLOCK)
+	FROM HMHRM.dbo.WorkingTimeRequest AS wr  WITH (NOLOCK)
 	INNER JOIN @EmployeeMapping AS emp ON wr.EmpId = emp.OldEmpId
 	LEFT JOIN @EmployeeMapping AS empVerify ON wr.VerifierId = empVerify.OldEmpId
 	LEFT JOIN @EmployeeMapping AS empApprove ON wr.ApproverId = empApprove.OldEmpId 
@@ -372,7 +374,7 @@ INSERT INTO [dbo].[WorkingTimeRequestHistory]
            ,wrh.ApproverComment
            ,wrh.LogDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
 		   ,wrh.HistoryId
-	FROM CabintechHRM.dbo.WorkingTimeRequestHistory as wrh  WITH (NOLOCK)
+	FROM HMHRM.dbo.WorkingTimeRequestHistory as wrh  WITH (NOLOCK)
 	INNER JOIN dbo.WorkingTimeRequest AS wr WITH (NOLOCK) ON wrh.RequestId = wr.OldRequestId AND wr.CompanyId = @CompanyId  --some requestId not exists in WR
 	INNER JOIN @EmployeeMapping AS emp ON wrh.EmpId = emp.OldEmpId
 	LEFT JOIN @EmployeeMapping AS empVerify ON wrh.VerifierId = empVerify.OldEmpId 
@@ -384,7 +386,7 @@ INSERT INTO [dbo].[WorkingTimeRequestHistory]
 
 INSERT INTO dbo.tmpSickLeaveBalance (EmpId, RequestId, TotalDays, [Month], [Year], [Status])
 SELECT e.EmpId, rq.RequestId, tmp.TotalDays, tmp.[Month], tmp.[Year], tmp.[Status]
-FROM CabintechHRM.dbo.tmpSickLeaveBalance AS tmp WITH (NOLOCK)
+FROM HMHRM.dbo.tmpSickLeaveBalance AS tmp WITH (NOLOCK)
     INNER JOIN dbo.WorkingTimeRequest AS rq WITH (NOLOCK) ON tmp.RequestId = rq.OldRequestId
     INNER JOIN @EmployeeMapping AS e ON tmp.EmpId = e.OldEmpId
     INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
@@ -399,7 +401,7 @@ WHERE rq.CompanyId = @CompanyId
 
 INSERT INTO dbo.tmpLeaveBalance (EmpId, RequestId, TotalDays, InYear, InMonth, [Status])
 SELECT e.EmpId, rq.RequestId, tmp.TotalDays, tmp.InYear, tmp.InMonth, tmp.[Status]
-FROM CabintechHRM.dbo.tmpLeaveBalance AS tmp WITH (NOLOCK)
+FROM HMHRM.dbo.tmpLeaveBalance AS tmp WITH (NOLOCK)
     INNER JOIN dbo.WorkingTimeRequest AS rq WITH (NOLOCK) ON tmp.RequestId = rq.OldRequestId
     INNER JOIN @EmployeeMapping AS e ON tmp.EmpId = e.OldEmpId
     INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
@@ -414,7 +416,7 @@ WHERE rq.CompanyId = @CompanyId
 
 INSERT INTO dbo.tmpKIVLeaveBalance (EmpId, RequestId, TotalDays, InYear, [Status])
 SELECT e.EmpId, rq.RequestId, tmp.TotalDays, tmp.InYear, tmp.[Status]
-FROM CabintechHRM.dbo.tmpKIVLeaveBalance AS tmp WITH (NOLOCK)
+FROM HMHRM.dbo.tmpKIVLeaveBalance AS tmp WITH (NOLOCK)
     INNER JOIN dbo.WorkingTimeRequest AS rq WITH (NOLOCK) ON tmp.RequestId = rq.OldRequestId
     INNER JOIN @EmployeeMapping AS e ON tmp.EmpId = e.OldEmpId
     INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
@@ -429,7 +431,7 @@ WHERE rq.CompanyId = @CompanyId
 
 INSERT INTO dbo.tmpHospitalizationLeaveBalance (EmpId, RequestId, TotalDays, [Month], [Year], [Status])
 SELECT e.EmpId, rq.RequestId, tmp.TotalDays, tmp.[Month], tmp.[Year], tmp.[Status]
-FROM CabintechHRM.dbo.tmpHospitalizationLeaveBalance AS tmp WITH (NOLOCK)
+FROM HMHRM.dbo.tmpHospitalizationLeaveBalance AS tmp WITH (NOLOCK)
     INNER JOIN dbo.WorkingTimeRequest AS rq WITH (NOLOCK) ON tmp.RequestId = rq.OldRequestId
     INNER JOIN @EmployeeMapping AS e ON tmp.EmpId = e.OldEmpId
     INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
@@ -444,7 +446,7 @@ WHERE rq.CompanyId = @CompanyId
 
 INSERT INTO dbo.tmpEmployeeAttendace(EmpId, WorkDate, InsertedDate)
 SELECT e.EmpId, tmp.WorkDate, tmp.InsertedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
-FROM CabintechHRM.dbo.tmpEmployeeAttendace AS tmp WITH (NOLOCK)
+FROM HMHRM.dbo.tmpEmployeeAttendace AS tmp WITH (NOLOCK)
     INNER JOIN @EmployeeMapping AS e ON tmp.EmpId = e.OldEmpId
     INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
 WHERE ce.CompanyId = @CompanyId
@@ -458,7 +460,7 @@ WHERE ce.CompanyId = @CompanyId
 INSERT INTO dbo.TimeRecord(EmpId, RecordTime, InOutType, InsertDate, ModifiedBy, ModifiedDate, CompanyId, OldId)
 SELECT e.EmpId, tc.RecordTime AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone, tc.InOutType,
     tc.InsertDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone, NULL, NULL, @CompanyId, tc.Id
-FROM CabintechHRM.dbo.TimeRecord AS tc WITH (NOLOCK)
+FROM HMHRM.dbo.TimeRecord AS tc WITH (NOLOCK)
     INNER JOIN @EmployeeMapping AS e ON tc.EmpId = e.OldEmpId
     INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
 WHERE ce.CompanyId = @CompanyId
@@ -471,7 +473,7 @@ WHERE ce.CompanyId = @CompanyId
 
 INSERT INTO dbo.TimeRecordExt(Id, IPAddress, [Platform])
 SELECT tc.Id, ext.IPAddress, ext.[Platform]
-FROM CabintechHRM.dbo.TimeRecordExt AS ext WITH (NOLOCK)
+FROM HMHRM.dbo.TimeRecordExt AS ext WITH (NOLOCK)
     INNER JOIN dbo.TimeRecord AS tc WITH (NOLOCK) ON ext.Id = tc.OldId
 WHERE tc.CompanyId = @CompanyId
     AND NOT EXISTS (
@@ -484,7 +486,7 @@ INSERT INTO dbo.SickLeaveTrans(EmpId, RequestId, [Description], FromDate, ToDate
 SELECT e.EmpId, rq.RequestId, st.[Description], st.FromDate, st.ToDate, st.DeductDays, st.CreditDays, st.IsDeleted, cr.EmpId,
     st.CreatedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone,
     md.EmpId, st.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
-FROM CabintechHRM.dbo.SickLeaveTrans AS st WITH (NOLOCK)
+FROM HMHRM.dbo.SickLeaveTrans AS st WITH (NOLOCK)
     INNER JOIN @EmployeeMapping AS e ON st.EmpId = e.OldEmpId
     INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
     LEFT JOIN dbo.WorkingTimeRequest AS rq WITH (NOLOCK) ON st.RequestId = rq.OldRequestId
@@ -504,7 +506,7 @@ WHERE ce.CompanyId = @CompanyId
 
 INSERT INTO dbo.RoleFunction(CompanyId, RoleId, FunctionId, IsRead, IsHost)
 SELECT @CompanyId, RoleId, FunctionId, IsRead, IsHost
-FROM CabintechHRM.dbo.RoleFunction AS rf WITH (NOLOCK)
+FROM HMHRM.dbo.RoleFunction AS rf WITH (NOLOCK)
 WHERE NOT EXISTS (
         SELECT 1
         FROM dbo.RoleFunction AS nrf WITH (NOLOCK)
@@ -526,7 +528,7 @@ INSERT INTO [dbo].[ChangeShiftRequest]
            ,cs.FromDate
            ,cs.ToDate
            ,cs.TypeId 
-	FROM CabintechHRM.dbo.ChangeShiftRequest AS cs WITH (NOLOCK)
+	FROM HMHRM.dbo.ChangeShiftRequest AS cs WITH (NOLOCK)
 	INNER JOIN dbo.WorkingTimeRequest AS wkr WITH (NOLOCK) ON cs.RequestId = wkr.OldRequestId AND wkr.CompanyId = @companyId
 	INNER JOIN @EmployeeMapping AS emp ON cs.EmpId = emp.OldEmpId;
 
@@ -552,7 +554,7 @@ INSERT INTO [dbo].[ChangeShiftRequestDetail]
 			END 
            ,csd.Remark
            ,csd.ToDate
-	FROM CabintechHRM.dbo.ChangeShiftRequestDetail AS csd WITH (NOLOCK)
+	FROM HMHRM.dbo.ChangeShiftRequestDetail AS csd WITH (NOLOCK)
 	INNER JOIN dbo.WorkingTimeRequest AS wkr WITH (NOLOCK) ON csd.RequestId = wkr.OldRequestId AND wkr.CompanyId = @companyId
 	INNER JOIN @EmployeeMapping AS emp ON csd.EmpId = emp.OldEmpId
 	LEFT JOIN dbo.Shift AS s1 WITH (NOLOCK) ON s1.OldShiftId = csd.FromShift AND s1.CompanyId = @CompanyId
@@ -581,7 +583,7 @@ INSERT INTO [dbo].[ChangeShiftRequestDetailHistory]
            ,csdh.Remark
            ,csdh.ToDate
            ,wkrh.HistoryId
-	FROM CabintechHRM.dbo.ChangeShiftRequestDetailHistory AS csdh WITH (NOLOCK)
+	FROM HMHRM.dbo.ChangeShiftRequestDetailHistory AS csdh WITH (NOLOCK)
 	INNER JOIN dbo.WorkingTimeRequest AS wkr WITH (NOLOCK) ON csdh.RequestId = wkr.OldRequestId AND wkr.CompanyId = @companyId
 	INNER JOIN dbo.WorkingTimeRequestHistory AS wkrh WITH (NOLOCK) ON csdh.HistoryId = wkrh.OldHistoryId AND wkr.RequestId = wkrh.RequestId
 	INNER JOIN @EmployeeMapping AS emp ON csdh.EmpId = emp.OldEmpId
@@ -604,7 +606,7 @@ INSERT INTO [dbo].[ChangeShiftRequestHistory]
            ,csh.ToDate
            ,csh.TypeId
            ,wkrh.HistoryId
-	FROM CabintechHRM.dbo.ChangeShiftRequestHistory AS csh WITH (NOLOCK)
+	FROM HMHRM.dbo.ChangeShiftRequestHistory AS csh WITH (NOLOCK)
 	INNER JOIN dbo.WorkingTimeRequest AS wkr WITH (NOLOCK) ON csh.RequestId = wkr.OldRequestId AND wkr.CompanyId = @companyId
 	INNER JOIN dbo.WorkingTimeRequestHistory AS wkrh WITH (NOLOCK) ON csh.HistoryId = wkrh.OldHistoryId AND wkr.RequestId = wkrh.RequestId
 	INNER JOIN @EmployeeMapping AS emp ON csh.EmpId = emp.OldEmpId
@@ -624,7 +626,7 @@ INSERT INTO [dbo].[CheckInOutRequest]
            ,cio.RequestTime AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone --Actual Request time
            ,cio.ReasonId
            ,cio.RefNo
-	FROM CabintechHRM.dbo.CheckInOutRequest AS cio WITH (NOLOCK)
+	FROM HMHRM.dbo.CheckInOutRequest AS cio WITH (NOLOCK)
 	INNER JOIN dbo.WorkingTimeRequest AS wkr WITH (NOLOCK) ON cio.RequestId = wkr.OldRequestId AND wkr.CompanyId = @companyId
 	INNER JOIN @EmployeeMapping AS emp ON cio.EmpId = emp.OldEmpId
 
@@ -645,7 +647,7 @@ INSERT INTO [dbo].[CheckInOutRequestHistory]
            ,cioh.ReasonId
            ,cioh.RefNo
            ,wkrh.HistoryId
-	FROM CabintechHRM.dbo.CheckInOutRequestHistory AS cioh WITH (NOLOCK)
+	FROM HMHRM.dbo.CheckInOutRequestHistory AS cioh WITH (NOLOCK)
 	INNER JOIN dbo.WorkingTimeRequest AS wkr WITH (NOLOCK) ON cioh.RequestId = wkr.OldRequestId AND wkr.CompanyId = @companyId
 	LEFT JOIN dbo.WorkingTimeRequestHistory AS wkrh WITH (NOLOCK) ON cioh.HistoryId = wkrh.OldHistoryId AND wkr.RequestId = wkrh.RequestId
 	INNER JOIN @EmployeeMapping AS emp ON cioh.EmpId = emp.OldEmpId
@@ -678,7 +680,7 @@ SELECT
     em_modified.EmpId, 
     d.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone, 
     d.IsSevenDaysLeave
-FROM CabintechHRM.dbo.Discipline d
+FROM HMHRM.dbo.Discipline d
 LEFT JOIN @EmployeeMapping em ON d.EmpId = em.OldEmpId
 LEFT JOIN @EmployeeMapping em_modified ON d.ModifiedBy = em_modified.OldEmpId
 WHERE d.IsDeleted != 1 and em.EmpId IS NOT NULL;
@@ -693,7 +695,7 @@ SELECT
     dgr.DisciplineTypeId, 
     dgr.IsLocal, 
     dgr.Value
-FROM CabintechHRM.dbo.DisciplineGroupRule dgr
+FROM HMHRM.dbo.DisciplineGroupRule dgr
 INNER JOIN dbo.[Group] g ON dgr.GroupId = g.OldGroupId AND g.CompanyId = @CompanyId;
 
 -- #endregion
@@ -719,7 +721,7 @@ SELECT
     di.IsIgnoredUnplannedLeave, 
     di.IsIgnoredWeekendLeave, 
     di.IsIgnoredSevenDaysLeave
-FROM CabintechHRM.dbo.DisciplineIgnore di
+FROM HMHRM.dbo.DisciplineIgnore di
 LEFT JOIN @EmployeeMapping em ON di.EmpId = em.OldEmpId
 WHERE em.EmpId IS NOT NULL;
 
@@ -735,7 +737,7 @@ SELECT
     di.DisciplineTypeId, 
     em_ignore.EmpId, 
     di.IgnoreDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
-FROM CabintechHRM.dbo.DisciplineIgnoreDetail di
+FROM HMHRM.dbo.DisciplineIgnoreDetail di
 LEFT JOIN @EmployeeMapping em ON di.EmpId = em.OldEmpId
 LEFT JOIN @EmployeeMapping em_ignore ON di.IgnoreBy = em_ignore.OldEmpId
 WHERE em.EmpId IS NOT NULL AND em_ignore.EmpId IS NOT NULL;
@@ -763,7 +765,7 @@ SELECT
     doc.IsOutOfControlUnplannedLeave, 
     doc.IsOutOfControlWeekendLeave, 
     doc.IsOutOfControlSevenDaysLeave
-FROM CabintechHRM.dbo.DisciplineOutOfControl doc
+FROM HMHRM.dbo.DisciplineOutOfControl doc
 LEFT JOIN @EmployeeMapping em ON doc.EmpId = em.OldEmpId
 WHERE em.EmpId IS NOT NULL;
 
@@ -784,7 +786,7 @@ SELECT
     drt.IsOutOfControl, 
     drt.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone, 
     em_modified.EmpId
-FROM CabintechHRM.dbo.DisciplineRequestTrans drt
+FROM HMHRM.dbo.DisciplineRequestTrans drt
 LEFT JOIN @EmployeeMapping em ON drt.EmpId = em.OldEmpId
 LEFT JOIN @EmployeeMapping em_modified ON drt.ModifiedBy = em_modified.OldEmpId
 WHERE em.EmpId IS NOT NULL;
@@ -809,7 +811,7 @@ INSERT INTO dbo.OtherDiscipline
            ,od.IsDeleted
            ,em_modified.EmpId
            ,od.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone 
-	FROM CabintechHRM.dbo.OtherDiscipline od
+	FROM HMHRM.dbo.OtherDiscipline od
 	LEFT JOIN @EmployeeMapping em ON od.EmpId = em.OldEmpId
 	LEFT JOIN @EmployeeMapping em_modified ON od.ModifiedBy = em_modified.OldEmpId;
 
@@ -839,7 +841,7 @@ SELECT
     ea.LeaveDay, 
     ea.InsertDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone, 
     ea.LeaveTypeId2
-FROM CabintechHRM.dbo.EmployeeAttendance ea
+FROM HMHRM.dbo.EmployeeAttendance ea
     INNER JOIN @EmployeeMapping em ON ea.EmpId = em.OldEmpId
     LEFT JOIN dbo.Shift s_new ON ea.ShiftId = s_new.OldShiftId AND s_new.CompanyId = @CompanyId
 -- #endregion
@@ -872,7 +874,7 @@ SELECT ec.WorkDate,
     ec.IsFixedOffDay, 
     ec.OWPModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone,  
     ec.OWPSyncDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
-FROM CabintechHRM.dbo.EmployeeCalendar ec
+FROM HMHRM.dbo.EmployeeCalendar ec
     INNER JOIN @EmployeeMapping em ON ec.EmpId = em.OldEmpId
     LEFT JOIN dbo.Shift s ON ec.ShiftId = s.OldShiftId AND s.CompanyId = @CompanyId
     LEFT JOIN dbo.Shift s_cs ON ec.ChangeShiftId = s_cs.OldShiftId AND s_cs.CompanyId = @CompanyId
@@ -908,7 +910,7 @@ SELECT em.EmpId,
     ec.FromDate5, 
     ec.ToDate5, 
     ec.History
-FROM CabintechHRM.dbo.EmployeeContract ec
+FROM HMHRM.dbo.EmployeeContract ec
     INNER JOIN @EmployeeMapping em ON ec.EmpID = em.OldEmpId
 -- #endregion
 
@@ -924,7 +926,7 @@ SELECT em.EmpId,
     s_fri.ShiftId, 
     s_sat.ShiftId, 
     s_sun.ShiftId
-FROM CabintechHRM.dbo.EmployeeDefaultShift eds
+FROM HMHRM.dbo.EmployeeDefaultShift eds
     INNER JOIN @EmployeeMapping em ON eds.EmpID = em.OldEmpId 
     LEFT JOIN dbo.Shift s_mon ON eds.MonShift = s_mon.OldShiftId AND s_mon.CompanyId = @CompanyId
     LEFT JOIN dbo.Shift s_tue ON eds.TueShift = s_tue.OldShiftId AND s_tue.CompanyId = @CompanyId
@@ -950,7 +952,7 @@ SELECT em.EmpId,
     ep.Remark, 
     ep.BalanceDay, 
     ep.PaternityId
-FROM CabintechHRM.dbo.EmployeePaternity ep
+FROM HMHRM.dbo.EmployeePaternity ep
     INNER JOIN @EmployeeMapping em ON ep.EmpId = em.OldEmpId
     LEFT JOIN @EmployeeMapping em_created ON ep.CreatedBy = em_created.OldEmpId
     LEFT JOIN @EmployeeMapping em_modified ON ep.ModifiedBy = em_modified.OldEmpId
@@ -972,7 +974,7 @@ SELECT em.EmpId,
     em_modified.EmpId, 
     ep.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone,
     ep.PostnatalId
-FROM CabintechHRM.dbo.EmployeePostnatal ep
+FROM HMHRM.dbo.EmployeePostnatal ep
     INNER JOIN @EmployeeMapping em ON ep.EmpId = em.OldEmpId
     LEFT JOIN @EmployeeMapping em_created ON ep.CreatedBy = em_created.OldEmpId
     LEFT JOIN @EmployeeMapping em_modified ON ep.ModifiedBy = em_modified.OldEmpId
@@ -995,7 +997,7 @@ SELECT em.EmpId,
     er.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone,
     em_modified.EmpId,
     er.Id 
-FROM CabintechHRM.dbo.EmployeeRelationship er
+FROM HMHRM.dbo.EmployeeRelationship er
     INNER JOIN @EmployeeMapping em ON er.EmpId = em.OldEmpId
     LEFT JOIN @EmployeeMapping em_created ON er.CreatedBy = em_created.OldEmpId
     LEFT JOIN @EmployeeMapping em_modified ON er.ModifiedBy = em_modified.OldEmpId
@@ -1009,7 +1011,7 @@ SELECT em.EmpId,
     er.RoleId, 
     em_modified.EmpId, 
     er.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
-FROM CabintechHRM.dbo.EmployeeRole er
+FROM HMHRM.dbo.EmployeeRole er
     INNER JOIN @EmployeeMapping em ON er.EmployeeId = em.OldEmpId
     LEFT JOIN @EmployeeMapping em_modified ON er.ModifiedBy = em_modified.OldEmpId
 -- #endregion
@@ -1042,7 +1044,7 @@ SELECT em.EmpId,
     es.HospitalizationLeaveBalance, 
     es.SickLeaveBalance, 
     es.WorkingHoursByWeek
-FROM CabintechHRM.dbo.EmployeeSummary es
+FROM HMHRM.dbo.EmployeeSummary es
     INNER JOIN @EmployeeMapping em ON es.EmpId = em.OldEmpId
 -- TODO: CHECK UNIT ?
 -- #endregion
@@ -1061,7 +1063,7 @@ SELECT em_owner.EmpId,
     es.OrderNo, 
     es.OrderCode, 
     es.IsDeleted
-FROM CabintechHRM.dbo.EmployeeSupervisor es
+FROM HMHRM.dbo.EmployeeSupervisor es
     INNER JOIN @EmployeeMapping em ON es.EmpId = em.OldEmpId
     INNER JOIN @EmployeeMapping em_owner ON es.OwnerId = em_owner.OldEmpId
     LEFT JOIN @EmployeeMapping em_modified ON es.ModifiedBy = em_modified.OldEmpId
@@ -1078,7 +1080,7 @@ SELECT em.EmpId,
     em_modified.EmpId, 
     ewfh.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone,
     ewfh.EmployeeWorkFromHomeId
-FROM CabintechHRM.dbo.EmployeeWorkFromHome ewfh
+FROM HMHRM.dbo.EmployeeWorkFromHome ewfh
     INNER JOIN @EmployeeMapping em ON ewfh.EmpId = em.OldEmpId
     LEFT JOIN @EmployeeMapping em_modified ON ewfh.ModifiedBy = em_modified.OldEmpId
 -- #endregion
@@ -1088,7 +1090,7 @@ INSERT INTO dbo.EmployeeGroup (GroupId, EmpId, isMainGroup)
 SELECT g.GroupId,       
     em.EmpId,        
     eg.isMainGroup    
-FROM CabintechHRM.dbo.EmployeeGroup AS eg
+FROM HMHRM.dbo.EmployeeGroup AS eg
     INNER JOIN dbo.[Group] AS g ON eg.GroupId = g.OldGroupId AND g.CompanyId = @CompanyId
     INNER JOIN @EmployeeMapping AS em ON eg.EmpID = em.OldEmpId
 -- #endregion
@@ -1098,7 +1100,7 @@ INSERT INTO dbo.GroupManager (GroupId, EmpId, RoleId)
 SELECT g.GroupId,  
     em.EmpId,   
     gm.RoleId 
-FROM CabintechHRM.dbo.GroupManager AS gm
+FROM HMHRM.dbo.GroupManager AS gm
     INNER JOIN dbo.[Group] AS g ON gm.GroupId = g.OldGroupId AND g.CompanyId = @CompanyId
     INNER JOIN @EmployeeMapping AS em ON gm.EmpID = em.OldEmpId
 -- #endregion
@@ -1113,7 +1115,7 @@ SELECT em.EmpId,
     gs.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone, 
     gs.IsDeleted,
     gs.DisplayOrder
-FROM CabintechHRM.dbo.GroupSupervisor AS gs
+FROM HMHRM.dbo.GroupSupervisor AS gs
     INNER JOIN dbo.[Group] AS g ON gs.GroupId = g.OldGroupId AND g.CompanyId = @CompanyId
     INNER JOIN @EmployeeMapping AS em ON gs.OwnerId = em.OldEmpId
     LEFT JOIN @EmployeeMapping AS em_mod ON gs.ModifiedBy = em_mod.OldEmpId
@@ -1131,7 +1133,7 @@ SELECT en.FullName,
     en.OrderNo,
 	@CompanyId,
 	en.ExtID
-FROM CabintechHRM.dbo.ExtensionNumbers AS en
+FROM HMHRM.dbo.ExtensionNumbers AS en
     LEFT JOIN @EmployeeMapping AS em ON en.EmpID = em.OldEmpId
     LEFT JOIN dbo.[Group] AS g ON en.GroupID = g.OldGroupId AND g.CompanyId = @CompanyId;
 
@@ -1153,7 +1155,7 @@ SELECT
     ms.AllowSendApprover,
     ms.AllowSendHR,
     ms.AllowSendMailGroup
-FROM CabintechHRM.dbo.MailSettings AS ms
+FROM HMHRM.dbo.MailSettings AS ms
     LEFT JOIN dbo.[Group] AS g ON ms.GroupId = g.OldGroupId AND g.CompanyId = @CompanyId
 WHERE NOT EXISTS (
         SELECT 1
@@ -1193,7 +1195,7 @@ INSERT INTO [dbo].[HospitalizationLeaveTrans]
            ,hpl.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
            ,empModified.EmpId
 		   ,hpl.TransId
-	FROM CabintechHRM.dbo.[HospitalizationLeaveTrans] AS hpl WITH (NOLOCK)
+	FROM HMHRM.dbo.[HospitalizationLeaveTrans] AS hpl WITH (NOLOCK)
     INNER JOIN @EmployeeMapping AS emp ON hpl.EmpId = emp.OldEmpId
 	LEFT JOIN dbo.WorkingTimeRequest AS wkr WITH (NOLOCK) ON hpl.RequestId = wkr.OldRequestId AND wkr.CompanyId = @companyId
 	LEFT JOIN @EmployeeMapping AS empCreated ON hpl.CreatedBy = empCreated.OldEmpId
@@ -1206,7 +1208,7 @@ INSERT INTO [dbo].[HospitalLeave]
      SELECT
            wkr.RequestId
            ,IsHospitalApplication
-	FROM CabintechHRM.dbo.[HospitalLeave] AS hl WITH (NOLOCK)
+	FROM HMHRM.dbo.[HospitalLeave] AS hl WITH (NOLOCK)
 	INNER JOIN dbo.WorkingTimeRequest AS wkr WITH (NOLOCK) ON hl.RequestId = wkr.OldRequestId AND wkr.CompanyId = @companyId
 
 
@@ -1226,7 +1228,7 @@ INSERT INTO [dbo].[WeekendLeaveTrans]
            ,wkr.RequestId
            ,wl.IsDiscipline
            ,wl.InsertedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
-	FROM CabintechHRM.dbo.[WeekendLeaveTrans] AS wl WITH (NOLOCK)
+	FROM HMHRM.dbo.[WeekendLeaveTrans] AS wl WITH (NOLOCK)
 	INNER JOIN @EmployeeMapping AS emp ON wl.EmpId = emp.OldEmpId
 	LEFT JOIN dbo.WorkingTimeRequest AS wkr WITH (NOLOCK) ON wl.RequestId = wkr.OldRequestId AND wkr.CompanyId = @companyId
 	
@@ -1246,7 +1248,7 @@ INSERT INTO [dbo].[KeepInViewByDayTrans]
            ,kivd.DeductDays
            ,kivd.InYear
            ,kivd.InsertedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
-	FROM CabintechHRM.dbo.[KeepInViewByDayTrans] AS kivd WITH (NOLOCK)
+	FROM HMHRM.dbo.[KeepInViewByDayTrans] AS kivd WITH (NOLOCK)
 	INNER JOIN dbo.WorkingTimeRequest AS wkr WITH (NOLOCK) ON kivd.RequestId = wkr.OldRequestId AND wkr.CompanyId = @companyId
 	INNER JOIN @EmployeeMapping AS emp ON kivd.EmpId = emp.OldEmpId
 
@@ -1268,7 +1270,7 @@ INSERT INTO [dbo].[KeepInViewByHourTrans]
            ,kivh.DeductMinutes
            ,kivh.InsertedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
            ,kivh.MinutesBalance
-	FROM CabintechHRM.dbo.[KeepInViewByHourTrans] AS kivh WITH (NOLOCK)
+	FROM HMHRM.dbo.[KeepInViewByHourTrans] AS kivh WITH (NOLOCK)
 	INNER JOIN dbo.WorkingTimeRequest AS wkr WITH (NOLOCK) ON kivh.RequestId = wkr.OldRequestId AND wkr.CompanyId = @companyId
 	INNER JOIN @EmployeeMapping AS emp ON kivh.EmpId = emp.OldEmpId
 
@@ -1293,7 +1295,7 @@ INSERT INTO [dbo].[KeepInViewRequest]
            ,kiv.OnDate
            ,kiv.KeepInViewType
            ,s.ShiftId
-	FROM CabintechHRM.dbo.[KeepInViewRequest] AS kiv WITH (NOLOCK)
+	FROM HMHRM.dbo.[KeepInViewRequest] AS kiv WITH (NOLOCK)
 	INNER JOIN dbo.WorkingTimeRequest AS wkr WITH (NOLOCK) ON kiv.RequestId = wkr.OldRequestId AND wkr.CompanyId = @companyId
 	INNER JOIN @EmployeeMapping AS emp ON kiv.EmpId = emp.OldEmpId
 	LEFT JOIN dbo.Shift AS s WITH (NOLOCK) ON kiv.ShiftId = s.OldShiftId AND s.CompanyId = @CompanyId
@@ -1318,7 +1320,7 @@ INSERT INTO [dbo].[KeepInViewRequestHistory]
            ,kivh.ToTime AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
            ,wkrh.HistoryId
            ,kivh.KeepInViewType
-	FROM  CabintechHRM.dbo.[KeepInViewRequestHistory] AS kivh WITH (NOLOCK)
+	FROM  HMHRM.dbo.[KeepInViewRequestHistory] AS kivh WITH (NOLOCK)
 	INNER JOIN dbo.WorkingTimeRequest AS wkr WITH (NOLOCK) ON kivh.RequestId = wkr.OldRequestId AND wkr.CompanyId = @companyId
 	LEFT JOIN dbo.WorkingTimeRequestHistory AS wkrh WITH (NOLOCK) ON kivh.HistoryId = wkrh.OldHistoryId AND wkr.RequestId = wkrh.RequestId
 	INNER JOIN @EmployeeMapping AS emp ON kivh.EmpId = emp.OldEmpId
@@ -1339,7 +1341,7 @@ INSERT INTO [dbo].[LateInEarlyOutRequest]
            ,lieo.EarlyOutMins
            ,lieo.ReasonId
            ,lieo.RefNo
-	FROM CabintechHRM.dbo.[LateInEarlyOutRequest] AS lieo WITH (NOLOCK)
+	FROM HMHRM.dbo.[LateInEarlyOutRequest] AS lieo WITH (NOLOCK)
 	INNER JOIN dbo.WorkingTimeRequest AS wkr WITH (NOLOCK) ON lieo.RequestId = wkr.OldRequestId AND wkr.CompanyId = @companyId
 	INNER JOIN @EmployeeMapping AS emp ON lieo.EmpId = emp.OldEmpId
 
@@ -1363,7 +1365,7 @@ INSERT INTO [dbo].[LateInEarlyOutRequestHistory]
            ,lieoh.ReasonId
            ,lieoh.RefNo
            ,wkrh.HistoryId
-	FROM CabintechHRM.dbo.[LateInEarlyOutRequestHistory] AS lieoh WITH (NOLOCK)
+	FROM HMHRM.dbo.[LateInEarlyOutRequestHistory] AS lieoh WITH (NOLOCK)
 	INNER JOIN dbo.WorkingTimeRequest AS wkr WITH (NOLOCK) ON lieoh.RequestId = wkr.OldRequestId AND wkr.CompanyId = @companyId
 	LEFT JOIN dbo.WorkingTimeRequestHistory AS wkrh WITH (NOLOCK) ON lieoh.HistoryId = wkrh.OldHistoryId AND wkr.RequestId = wkrh.RequestId
 	INNER JOIN @EmployeeMapping AS emp ON lieoh.EmpId = emp.OldEmpId
@@ -1387,7 +1389,7 @@ INSERT INTO [dbo].[LeaveRequest]
            ,lr.TotalDays
            ,lr.RefNo
            ,lr.ReworkCount
-	FROM CabintechHRM.dbo.[LeaveRequest] AS lr WITH (NOLOCK)
+	FROM HMHRM.dbo.[LeaveRequest] AS lr WITH (NOLOCK)
 	INNER JOIN dbo.WorkingTimeRequest AS wkr WITH (NOLOCK) ON lr.RequestId = wkr.OldRequestId AND wkr.CompanyId = @companyId
 	INNER JOIN @EmployeeMapping AS emp ON lr.EmpId = emp.OldEmpId
 
@@ -1413,7 +1415,7 @@ INSERT INTO [dbo].LeaveRequestDetail
            ,lrd.FromTime AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
            ,lrd.ToTime AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
            ,lrd.WorkType
-	FROM CabintechHRM.dbo.[LeaveRequestDetail] AS lrd WITH (NOLOCK)
+	FROM HMHRM.dbo.[LeaveRequestDetail] AS lrd WITH (NOLOCK)
 	INNER JOIN dbo.WorkingTimeRequest AS wkr WITH (NOLOCK) ON lrd.RequestId = wkr.OldRequestId AND wkr.CompanyId = @companyId
 	INNER JOIN @EmployeeMapping AS emp ON lrd.EmpId = emp.OldEmpId 
 	LEFT JOIN dbo.Shift AS s WITH (NOLOCK) ON lrd.ShiftId = s.OldShiftId AND s.CompanyId = @CompanyId
@@ -1441,7 +1443,7 @@ INSERT INTO [dbo].[LeaveRequestDetailHistory]
            ,lrdh.ToTime AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
            ,lrdh.WorkType
            ,wkrh.HistoryId
-	FROM CabintechHRM.dbo.[LeaveRequestDetailHistory] AS lrdh WITH (NOLOCK)
+	FROM HMHRM.dbo.[LeaveRequestDetailHistory] AS lrdh WITH (NOLOCK)
 	INNER JOIN dbo.WorkingTimeRequest AS wkr WITH (NOLOCK) ON lrdh.RequestId = wkr.OldRequestId AND wkr.CompanyId = @companyId
 	LEFT JOIN dbo.WorkingTimeRequestHistory AS wkrh WITH (NOLOCK) ON lrdh.HistoryId = wkrh.OldHistoryId AND wkr.RequestId = wkrh.RequestId
 	INNER JOIN @EmployeeMapping AS emp ON lrdh.EmpId = emp.OldEmpId 
@@ -1464,7 +1466,7 @@ INSERT INTO [dbo].[LeaveRequestHistory]
            ,lrh.LeaveType
            ,lrh.TotalDays
            ,wkrh.HistoryId
-	FROM CabintechHRM.dbo.[LeaveRequestHistory] AS lrh WITH (NOLOCK)
+	FROM HMHRM.dbo.[LeaveRequestHistory] AS lrh WITH (NOLOCK)
 	INNER JOIN dbo.WorkingTimeRequest AS wkr WITH (NOLOCK) ON lrh.RequestId = wkr.OldRequestId AND wkr.CompanyId = @companyId
 	LEFT JOIN dbo.WorkingTimeRequestHistory AS wkrh WITH (NOLOCK) ON lrh.HistoryId = wkrh.OldHistoryId AND wkr.RequestId = wkrh.RequestId
 	INNER JOIN @EmployeeMapping AS emp ON lrh.EmpId = emp.OldEmpId 
@@ -1498,7 +1500,7 @@ INSERT INTO [dbo].[LeaveTrans]
            ,lt.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
            ,empModified.EmpId
            ,lt.LeaveTransId
-	FROM CabintechHRM.dbo.[LeaveTrans] AS lt WITH (NOLOCK)
+	FROM HMHRM.dbo.[LeaveTrans] AS lt WITH (NOLOCK)
 	LEFT JOIN dbo.WorkingTimeRequest AS wkr WITH (NOLOCK) ON lt.RequestId = wkr.OldRequestId AND wkr.CompanyId = @companyId
 	INNER JOIN @EmployeeMapping AS emp ON lt.EmpId = emp.OldEmpId 
 	LEFT JOIN @EmployeeMapping AS empCreated ON lt.CreatedBy = empCreated.OldEmpId 
@@ -1522,7 +1524,7 @@ SELECT
     m.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone,
     @CompanyId,
     m.MessageId
-FROM CabintechHRM.dbo.Message AS m
+FROM HMHRM.dbo.Message AS m
 LEFT JOIN dbo.Employee AS e_created ON m.CreatedBy = e_created.OldEmpId
 LEFT JOIN dbo.Employee AS e_modified ON m.ModifiedBy = e_modified.OldEmpId;
 -- #endregion
@@ -1537,7 +1539,7 @@ SELECT
     me.Email,
     me.IsDisabled,
     me.IsRead
-FROM CabintechHRM.dbo.MessageEmployee AS me
+FROM HMHRM.dbo.MessageEmployee AS me
 INNER JOIN dbo.[Message] AS m ON me.MessageId = m.OldMessageId AND m.CompanyId = @CompanyId
 INNER JOIN dbo.Employee AS em ON me.EmployeeId = em.OldEmpId
 WHERE em.EmpId IS NOT NULL;
@@ -1551,7 +1553,7 @@ SELECT
     m.MessageId,
     g.GroupId, 
     mg.Email
-FROM CabintechHRM.dbo.MessageGroup AS mg
+FROM HMHRM.dbo.MessageGroup AS mg
 INNER JOIN dbo.[Group] AS g ON mg.GroupId = g.OldGroupId AND g.CompanyId = @CompanyId
 INNER JOIN dbo.[Message] AS m ON mg.MessageId = m.OldMessageId AND m.CompanyId = @CompanyId;
 -- #endregion
@@ -1601,7 +1603,7 @@ INSERT INTO [dbo].[OTMonthlyRequest]
            ,otm.CreatedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
            ,empCreated.EmpId
 		   ,otm.RequestId
-	FROM CabintechHRM.dbo.[OTMonthlyRequest] as otm  WITH (NOLOCK)
+	FROM HMHRM.dbo.[OTMonthlyRequest] as otm  WITH (NOLOCK)
 	INNER JOIN @EmployeeMapping AS emp ON otm.EmpId = emp.OldEmpId 
 	LEFT JOIN @EmployeeMapping AS empVerify ON otm.VerifierId = empVerify.OldEmpId 
 	LEFT JOIN @EmployeeMapping AS empApprove  ON otm.ApproverId = empApprove.OldEmpId 
@@ -1645,7 +1647,7 @@ INSERT INTO [dbo].[OTDailyRequest]
            ,empCreated.EmpId
            ,otd.CreatedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
            ,otd.IsUpdated
-	FROM CabintechHRM.dbo.[OTDailyRequest] as otd  WITH (NOLOCK)
+	FROM HMHRM.dbo.[OTDailyRequest] as otd  WITH (NOLOCK)
 	INNER JOIN @EmployeeMapping AS emp ON otd.EmpId = emp.OldEmpId 
 	LEFT JOIN dbo.OTMonthlyRequest AS otm WITH (NOLOCK) ON otd.RequestId = otm.OldRequestId 
 	LEFT JOIN dbo.Shift AS s ON otd.Schedule = s.OldShiftId AND s.CompanyId = @CompanyId
@@ -1664,7 +1666,7 @@ INSERT INTO [dbo].[ScheduleArrangement]
            ,sa.DisplayOrder
            ,empModified.EmpId
            ,sa.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
-	FROM CabintechHRM.dbo.[ScheduleArrangement] AS sa  WITH (NOLOCK)
+	FROM HMHRM.dbo.[ScheduleArrangement] AS sa  WITH (NOLOCK)
 	INNER JOIN @EmployeeMapping AS emp ON sa.EmployeeId = emp.OldEmpId 
 	LEFT JOIN @EmployeeMapping AS empModified ON sa.ModifiedBy = empModified.OldEmpId;
 
@@ -1680,7 +1682,7 @@ INSERT INTO [dbo].[ScheduleArrangementDefaultShift]
            ,s.ShiftId
            ,empModified.EmpId
            ,sas.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
-	FROM CabintechHRM.dbo.[ScheduleArrangementDefaultShift] AS sas  WITH (NOLOCK)
+	FROM HMHRM.dbo.[ScheduleArrangementDefaultShift] AS sas  WITH (NOLOCK)
 	INNER JOIN @EmployeeMapping AS emp ON sas.EmployeeId = emp.OldEmpId 
 	LEFT JOIN @EmployeeMapping AS empModified ON sas.ModifiedBy = empModified.OldEmpId
 	LEFT JOIN dbo.Shift AS s WITH (NOLOCK) ON sas.ShiftId = s.OldShiftId AND s.CompanyId = @CompanyId;
@@ -1697,7 +1699,7 @@ INSERT INTO [dbo].[ScheduleArrangementGroupOrder]
            ,sag.DisplayOrder
            ,empModified.EmpId
            ,sag.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
-	FROM CabintechHRM.dbo.[ScheduleArrangementGroupOrder] AS sag  WITH (NOLOCK)
+	FROM HMHRM.dbo.[ScheduleArrangementGroupOrder] AS sag  WITH (NOLOCK)
 	INNER JOIN dbo.[Group] AS g ON sag.GroupId = g.OldGroupId AND g.CompanyId = @CompanyId 
 	LEFT JOIN @EmployeeMapping AS empModified ON sag.ModifiedBy = empModified.OldEmpId;
 
@@ -1712,7 +1714,7 @@ INSERT INTO [dbo].[ScheduleArrangementOffDayReplacement]
            emp.EmpId
            ,sar.WorkDate
            ,sar.ReplaceForDate
-	FROM CabintechHRM.dbo.[ScheduleArrangementOffDayReplacement] AS sar  WITH (NOLOCK)
+	FROM HMHRM.dbo.[ScheduleArrangementOffDayReplacement] AS sar  WITH (NOLOCK)
 	INNER JOIN @EmployeeMapping AS emp ON sar.EmployeeId = emp.OldEmpId 
 
 
@@ -1730,7 +1732,7 @@ INSERT INTO [dbo].[RefResource]
            ,[Description]
            ,IsActive
 		   ,@CompanyId
-	FROM CabintechHRM.[dbo].[RefResource] 
+	FROM HMHRM.[dbo].[RefResource] 
 
 -- Insert data into temporary table with optimized time zone conversion
 INSERT INTO dbo.tmpEmployeeCalendar(EmpId, WorkDate, RequestId, RequestTypeId, ShiftId, IsOffDay, IsHoliday, IsOvertime, IsKeepInView,
@@ -1744,7 +1746,7 @@ SELECT e.EmpId, tmp.WorkDate, rq.RequestId, tmp.RequestTypeId, s.ShiftId, tmp.Is
     tmp.ToTime2 AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone,
     tmp.ChangeShiftTypeId, tmp.MoveOffFromDate, tmp.MoveOffToDate,
     tmp.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
-FROM CabintechHRM.dbo.tmpEmployeeCalendar AS tmp WITH (NOLOCK)
+FROM HMHRM.dbo.tmpEmployeeCalendar AS tmp WITH (NOLOCK)
 INNER JOIN @EmployeeMapping AS e ON tmp.EmpId = e.OldEmpId
 INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
 LEFT JOIN dbo.WorkingTimeRequest AS rq WITH (NOLOCK) ON tmp.RequestId = rq.OldRequestId
