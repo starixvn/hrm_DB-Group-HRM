@@ -9,33 +9,53 @@ where ce.CompanyId = 9 and tmp.WorkDate <= '2025-05-01'
 
 UPDATE empca
 SET empca.IsHoliday = 1
-	,empca.IsOffDay = 0
-	,empca.ModifiedDate = GETDATE()
+    ,empca.IsOffDay = 0
+    ,empca.ModifiedDate = GETDATE()
 FROM dbo.EmployeeCalendar AS empca WITH (ROWLOCK, UPDLOCK)
-	INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON empca.EmpId = emp.EmpId
-	INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
-	INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
-	LEFT JOIN dbo.Holiday AS holiday WITH (NOLOCK) ON ce.CompanyId = holiday.CompanyId
+    INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON empca.EmpId = emp.EmpId
+    INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
+    INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
+    LEFT JOIN dbo.Holiday AS holiday WITH (NOLOCK) ON ce.CompanyId = holiday.CompanyId
     AND empca.WorkDate BETWEEN holiday.FromDate
-		AND holiday.ToDate
+        AND holiday.ToDate
 WHERE ce.CompanyId = 3
     AND emp.[Enabled] = 1
-	AND ISNULL(emp.IsDeleted, 0) = 0
-	AND empca.WorkDate in ('2025-04-30', '2025-05-01')
-	AND empca.IsHoliday = 0
-	AND (empsum.IsLocal = 1 OR empsum.IsExpatUseHoliday = 1)
+    AND ISNULL(emp.IsDeleted, 0) = 0
+    AND empca.WorkDate in ('2025-04-30', '2025-05-01')
+    AND empca.IsHoliday = 0
+    AND (empsum.IsLocal = 1 OR empsum.IsExpatUseHoliday = 1)
 GO
 
 UPDATE empca
 SET empca.IsHoliday = 0
-	,empca.ModifiedDate = GETDATE()
+    ,empca.ModifiedDate = GETDATE()
 FROM dbo.EmployeeCalendar AS empca WITH (ROWLOCK)
-	INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON empca.EmpId = emp.EmpId
-	INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
+    INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON empca.EmpId = emp.EmpId
+    INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
 WHERE ce.CompanyId = 3
-	AND empca.WorkDate = '2025-06-12'
-	AND empca.IsHoliday = 1
+    AND empca.WorkDate = '2025-06-12'
+    AND empca.IsHoliday = 1
 */
+
+-- update holiday
+UPDATE ec
+SET ec.IsHoliday = 0
+    ,ec.ModifiedDate = GETDATE()
+FROM dbo.EmployeeCalendar AS ec WITH (ROWLOCK)
+WHERE ec.EmpId = 5352
+    AND ec.WorkDate = '2025-05-01'
+
+UPDATE ec
+SET ec.IsOffDay = 1
+    ,ec.ModifiedDate = GETDATE()
+FROM dbo.EmployeeCalendar AS ec WITH (ROWLOCK)
+WHERE ec.EmpId IN (476, 497)
+    AND ec.WorkDate = '2025-05-02'
+
+DELETE
+FROM dbo.ScheduleArrangementOffDayReplacement WITH (ROWLOCK)
+WHERE EmployeeId IN (136, 476, 497, 740, 814, 3999, 5352)
+    AND ReplaceForDate = '2025-04-30'
 
 -- missing Management Level
 SET IDENTITY_INSERT dbo.ManagementLevel ON 
