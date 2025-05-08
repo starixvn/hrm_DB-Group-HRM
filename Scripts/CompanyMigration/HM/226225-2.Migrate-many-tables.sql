@@ -38,7 +38,7 @@ SELECT
     IdCardNumber, PassportNo, PassportExp, Password, ChineseName, PlaceOfbirth, 
     Ethnic, Native, Religion, DateOfIDCard, PlaceOfIDCard, HomePhone, Qualification, 
     Major, PasswordReset, EmployeeCard, PickupRemark, TeamDate, PromotionDate, 
-    LetsTalk, JobLevelId, UserId, UC_ModifiedDate, UC_SyncDate, ResignedReason, 
+    LetsTalk, JobLevelId, UserId, NULL, NULL, ResignedReason, 
     ExpertGradeId, EmpId AS OldEmpId  -- Keep track of old EmpId
 FROM HMHRM.dbo.Employee
 WHERE UserId is not null
@@ -489,7 +489,7 @@ SELECT e.EmpId, rq.RequestId, st.[Description], st.FromDate, st.ToDate, st.Deduc
 FROM HMHRM.dbo.SickLeaveTrans AS st WITH (NOLOCK)
     INNER JOIN @EmployeeMapping AS e ON st.EmpId = e.OldEmpId
     INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
-    LEFT JOIN dbo.WorkingTimeRequest AS rq WITH (NOLOCK) ON st.RequestId = rq.OldRequestId
+    LEFT JOIN dbo.WorkingTimeRequest AS rq WITH (NOLOCK) ON st.RequestId = rq.OldRequestId AND rq.CompanyId = @CompanyId
     LEFT JOIN dbo.Employee AS cr WITH (NOLOCK) ON st.CreatedBy = cr.OldEmpId
     LEFT JOIN dbo.CompanyEmployee AS cr_ce WITH (NOLOCK) ON cr.EmpId = cr_ce.EmpId
     AND cr_ce.CompanyId = @CompanyId
@@ -1749,7 +1749,7 @@ SELECT e.EmpId, tmp.WorkDate, rq.RequestId, tmp.RequestTypeId, s.ShiftId, tmp.Is
 FROM HMHRM.dbo.tmpEmployeeCalendar AS tmp WITH (NOLOCK)
 INNER JOIN @EmployeeMapping AS e ON tmp.EmpId = e.OldEmpId
 INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
-LEFT JOIN dbo.WorkingTimeRequest AS rq WITH (NOLOCK) ON tmp.RequestId = rq.OldRequestId
+LEFT JOIN dbo.WorkingTimeRequest AS rq WITH (NOLOCK) ON tmp.RequestId = rq.OldRequestId AND rq.CompanyId = @CompanyId
 LEFT JOIN dbo.[Shift] AS s WITH (NOLOCK) ON tmp.ShiftId = s.OldShiftId AND s.CompanyId = @CompanyId
 WHERE ce.CompanyId = @CompanyId
 	AND NOT EXISTS (
