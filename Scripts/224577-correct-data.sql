@@ -35,7 +35,6 @@ FROM dbo.EmployeeCalendar AS empca WITH (ROWLOCK)
 WHERE ce.CompanyId = 3
     AND empca.WorkDate = '2025-06-12'
     AND empca.IsHoliday = 1
-*/
 
 -- update holiday
 UPDATE ec
@@ -94,3 +93,18 @@ SET [Value] = '1'
 WHERE CompanyId = 6
     AND RefName = 'EnableSickLeaveBalance'
 GO
+*/
+
+UPDATE ec
+SET ec.IsOffDay = 0
+    ,ec.ModifiedDate = GETDATE()
+FROM dbo.EmployeeCalendar AS ec WITH (ROWLOCK)
+WHERE ec.EmpId IN (476, 497)
+    AND ec.WorkDate = '2025-05-03'
+
+UPDATE ec
+SET ec.IsHoliday = 0
+    ,ec.ModifiedDate = GETDATE()
+FROM dbo.EmployeeCalendar AS ec WITH (ROWLOCK)
+WHERE ec.EmpId IN (903, 983, 985, 991, 993, 1000, 1002, 1003, 1013, 1023, 1037, 1077, 1078, 1082, 112, 4464, 5115)
+    AND ec.WorkDate = '2025-05-01'
