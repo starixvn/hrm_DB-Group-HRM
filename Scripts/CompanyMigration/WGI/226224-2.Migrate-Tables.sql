@@ -155,13 +155,14 @@ LEFT JOIN dbo.LookupData ld ON emp.JobTitleId = ld.OldId and ld.CompanyId = @Com
 -- #region Unit Table
 DECLARE @maxGroupUnitId INT = ISNULL((SELECT MAX(GroupUnitId) FROM dbo.Unit), 0);
 
-INSERT INTO dbo.Unit(Code, Name, ModifiedDate, IsDeleted, GroupUnitId)
+INSERT INTO dbo.Unit(Code, Name, ModifiedDate, IsDeleted, GroupUnitId, IsActive)
 	SELECT
 	Code, 
 	Name, 
 	ModifiedDate, 
 	IsDeleted, 
-	ROW_NUMBER() OVER (ORDER BY (SELECT 1)) + @maxGroupUnitId
+	ROW_NUMBER() OVER (ORDER BY (SELECT 1)) + @maxGroupUnitId,
+    1
 	FROM WGIHRM.dbo.Unit wu
 WHERE NOT EXISTS (
     SELECT 1
