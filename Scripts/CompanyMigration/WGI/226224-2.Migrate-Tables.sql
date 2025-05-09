@@ -176,11 +176,12 @@ DECLARE @DepartmentTeamTemp TABLE(
     UnitCode VARCHAR(10),
     DepartCode VARCHAR(100),
     DepartName VARCHAR(50),
-    TeamName VARCHAR(100)
+    TeamName VARCHAR(100),
+	TeamCode VARCHAR(100)
 );
 
-INSERT INTO @DepartmentTeamTemp (UnitCode, DepartCode, DepartName, TeamName)
-SELECT u.Code AS UnitCode, d.Code AS DepartCode, d.[Name] AS DepartName, g.[Name] AS TeamName  
+INSERT INTO @DepartmentTeamTemp (UnitCode, DepartCode, DepartName, TeamName, TeamCode)
+SELECT u.Code AS UnitCode, d.Code AS DepartCode, d.[Name] AS DepartName, g.[Name] AS TeamName, g.[Code] AS TeamCode  
 FROM WGIHRM.dbo.Department AS d
 	LEFT JOIN WGIHRM.dbo.Unit AS u ON d.UnitId = u.UnitId
 	LEFT JOIN WGIHRM.dbo.Section AS s ON s.DepartmentId = d.DepartmentId
@@ -254,7 +255,7 @@ SELECT
 	ROW_NUMBER() OVER (ORDER BY (SELECT 1)) + @maxGroupId,
 	em.EmpId
 FROM WGIHRM.dbo.[Group] g
-INNER JOIN @DepartmentTeamTemp d ON g.Code = d.TeamName
+INNER JOIN @DepartmentTeamTemp d ON g.Code = d.TeamCode
 INNER JOIN dbo.Department dept WITH (NOLOCK) ON dept.Code = d.DepartCode
 OUTER APPLY (
     SELECT TOP 1 mng.*
@@ -262,11 +263,6 @@ OUTER APPLY (
     WHERE mng.GroupId = g.GroupId AND mng.RoleId = 3
 ) AS mng
 LEFT JOIN @EmployeeMapping AS em ON mng.EmpID = em.OldEmpId
-WHERE NOT EXISTS (
-    SELECT 1
-    FROM dbo.[Group] gg
-    WHERE g.Code = gg.Code
-);
 --#endregion =============================================================================================================
 
 INSERT INTO [dbo].[WorkingTimeRequest]
