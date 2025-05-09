@@ -152,86 +152,91 @@ LEFT JOIN dbo.LookupData ld ON emp.JobTitleId = ld.OldId and ld.CompanyId = @Com
 
 --#region NEW STRUCTURE =============================================================================================================
 
--- #region Unit Table
 DECLARE @maxGroupUnitId INT = ISNULL((SELECT MAX(GroupUnitId) FROM dbo.Unit), 0);
 
-INSERT INTO dbo.Unit(Code, Name, ModifiedDate, IsDeleted, GroupUnitId, IsActive)
-	SELECT
-	Code, 
-	Name, 
-	ModifiedDate, 
-	IsDeleted, 
-	ROW_NUMBER() OVER (ORDER BY (SELECT 1)) + @maxGroupUnitId,
-    1
-	FROM WGIHRM.dbo.Unit wu
-WHERE NOT EXISTS (
-    SELECT 1
-    FROM dbo.Unit u
-    WHERE u.Code = wu.Code
-)
--- #endregion
-
-DECLARE @DepartmentTeamTemp TABLE(
-	DeptId INT,
-    UnitCode VARCHAR(10),
-    DepartCode VARCHAR(100),
-    DepartName VARCHAR(50),
-    TeamName VARCHAR(100),
-	TeamCode VARCHAR(100)
-);
-
-INSERT INTO @DepartmentTeamTemp (UnitCode, DepartCode, DepartName, TeamName, TeamCode)
-SELECT u.Code AS UnitCode, d.Code AS DepartCode, d.[Name] AS DepartName, g.[Name] AS TeamName, g.[Code] AS TeamCode  
-FROM WGIHRM.dbo.Department AS d
-	LEFT JOIN WGIHRM.dbo.Unit AS u ON d.UnitId = u.UnitId
-	LEFT JOIN WGIHRM.dbo.Section AS s ON s.DepartmentId = d.DepartmentId
-	LEFT JOIN WGIHRM.dbo.[Group] AS g ON g.SectionId = s.SectionId
-
-DECLARE @maxDeptId INT = ISNULL((SELECT MAX(GroupDeptId) FROM dbo.Department), 0);
-WITH DistinctDepartments AS (
+WITH DistinctUnits AS (
     SELECT DISTINCT
-        d.DepartCode,
-        d.DepartName,
-        u.UnitId,
-        d.DepartName AS AccountableArea
-    FROM @DepartmentTeamTemp d
-    LEFT JOIN dbo.Unit u WITH(NOLOCK) ON d.UnitCode = u.Code
+        u.Code,
+        u.IsActive,
+        u.IsDeleted
+    FROM WGIHRM.dbo.Unit u
+    INNER JOIN WGIHRM.dbo.Department d WITH(NOLOCK) ON d.UnitId = u.UnitId
     WHERE NOT EXISTS (
         SELECT 1
-        FROM dbo.Department dep
-        WHERE dep.Code = d.DepartCode
+        FROM dbo.Unit newUnit
+        WHERE newUnit.Code = u.Code
     )
 )
-INSERT INTO dbo.Department (Code, Name, UnitId, ModifiedDate, GroupDeptId, AccountableArea, IsDeleted, IsActive)
-SELECT DISTINCT
-	d.DepartCode,
-	d.DepartName,
-	d.UnitId,
-	GETDATE(),
-	ROW_NUMBER() OVER (ORDER BY (SELECT 1)) + @maxDeptId,
-	d.DepartName,
-	0,
-	1
-FROM DistinctDepartments d
-WHERE NOT EXISTS (
-    SELECT 1
-    FROM dbo.Department dep
-    WHERE dep.Code = d.DepartCode
-);
 
--- Team
-DECLARE @maxGroupId INT = ISNULL((SELECT MAX(GroupTeamId) FROM dbo.[Group]), 0);
+INSERT INTO dbo.Unit (
+        [Code]
+        ,[IsActive]
+        ,[IsDeleted]
+        ,[ModifiedDate]
+        ,[GroupUnitId])
+SELECT DISTINCT
+        u.Code,
+        u.IsActive,
+        u.IsDeleted,
+        GETDATE(),
+        ROW_NUMBER() OVER (ORDER BY (SELECT 1)) + @maxGroupUnitId
+FROM DistinctUnits u
+
+
+DECLARE @maxGroupDepartmentId INT = ISNULL((SELECT MAX(GroupDeptId) FROM dbo.Department), 0);
+
+WITH DistinctDepartments AS (
+    SELECT DISTINCT
+		d.DepartmentId,
+        d.Code,
+        d.Name,
+        d.IsActive,
+        d.IsDeleted,
+        u.Code AS UnitCode
+    FROM WGIHRM.dbo.Department d
+    INNER JOIN WGIHRM.dbo.Unit u WITH(NOLOCK) ON u.UnitId = d.UnitId
+    WHERE EXISTS (
+        SELECT 1 
+        FROM WGIHRM.dbo.Section s WITH(NOLOCK) 
+        WHERE s.DepartmentId = d.DepartmentId
+    )
+)
+
+INSERT INTO [dbo].[Department] (
+    Code,
+    Name,
+    UnitId,
+    IsActive,
+    ModifiedDate,
+    IsDeleted,
+    GroupDeptId,
+    AccountableArea
+)
+SELECT
+    d.Code,
+    d.Name,
+    newUnit.UnitId,
+    d.IsActive,
+    GETDATE(),
+    d.IsDeleted,
+    ROW_NUMBER() OVER (ORDER BY d.Code) + @maxGroupDepartmentId,
+    d.Name
+FROM DistinctDepartments d
+INNER JOIN dbo.Unit newUnit ON newUnit.Code = d.UnitCode
+
+
+DECLARE @maxGroupTeamId INT = ISNULL((SELECT MAX(GroupTeamId) FROM dbo.[Group]), 0);
 INSERT INTO dbo.[Group] (
-    Code, [Name], [Rank], CreatedDate, CreatedBy, ModifiedDate, ModifiedBy, IsDeleted, MailGroup,
+    Code, Name, Rank, CreatedDate, CreatedBy, ModifiedDate, ModifiedBy, IsDeleted, MailGroup,
     LocalBasicAnnualLeaveBalance, LocalWorkingDays, LocalWorkingHours, LocalOffDaysbyWeek,
     ExpatBasicAnnualLeaveBalance, ExpatWorkingDays, ExpatWorkingHours, ExpatOffDaysbyWeek,
     LocalWorkingHoursbyWeek, ExpatWorkingHoursbyWeek, CompanyId, OldGroupId, 
-	DepartmentId, AccountableArea, GroupTeamId, PICEmpId
+	DepartmentId, AccountableArea, GroupTeamId
 )
 SELECT 
     g.Code, 
-    g.[Name], 
-    g.[Rank], 
+    g.Name, 
+    g.Rank, 
     GETDATE(), 
     NULL, 
     NULL, 
@@ -250,19 +255,23 @@ SELECT
     g.ExpatWorkingHoursbyWeek, 
     @CompanyId, 
     g.GroupId,
-	dept.DepartmentId,
-	g.[Name],
-	ROW_NUMBER() OVER (ORDER BY (SELECT 1)) + @maxGroupId,
-	em.EmpId
+	newDept.DepartmentId,
+	g.Name,
+	ROW_NUMBER() OVER (ORDER BY (SELECT 1)) + @maxGroupTeamId
 FROM WGIHRM.dbo.[Group] g
-INNER JOIN @DepartmentTeamTemp d ON g.Code = d.TeamCode
-INNER JOIN dbo.Department dept WITH (NOLOCK) ON dept.Code = d.DepartCode
-OUTER APPLY (
-    SELECT TOP 1 mng.*
-    FROM WGIHRM.dbo.GroupManager mng WITH (NOLOCK)
-    WHERE mng.GroupId = g.GroupId AND mng.RoleId = 3
-) AS mng
-LEFT JOIN @EmployeeMapping AS em ON mng.EmpID = em.OldEmpId
+INNER JOIN WGIHRM.dbo.Section s WITH(NOLOCK) ON s.SectionId = g.SectionId
+INNER JOIN WGIHRM.dbo.Department dept WITH(NOLOCK) ON dept.DepartmentId = s.DepartmentId
+INNER JOIN WGIHRM.dbo.Unit u WITH (NOLOCK) ON u.UnitId = dept.UnitId
+INNER JOIN dbo.Unit newUnit WITH (NOLOCK) ON newUnit.Code = u.Code
+INNER JOIN dbo.Department newDept WITH (NOLOCK) ON newDept.Code = dept.Code AND newDept.UnitId = newUnit.UnitId
+
+
+-- Map lại GroupId của Employee
+UPDATE emp
+SET emp.GroupId = g_new.GroupId
+FROM dbo.Employee emp
+INNER JOIN dbo.CompanyEmployee ce ON emp.EmpId = ce.EmpId AND ce.CompanyId = @CompanyId
+LEFT JOIN dbo.[Group] g_new ON emp.GroupId = g_new.OldGroupId AND g_new.CompanyId = @CompanyId;
 --#endregion =============================================================================================================
 
 INSERT INTO [dbo].[WorkingTimeRequest]
