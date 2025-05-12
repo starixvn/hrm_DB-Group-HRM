@@ -2,10 +2,10 @@
 
 USE [bodb_HRM]
 GO
-DECLARE @CompanyName VARCHAR(50) = 'WGI'
-DECLARE @CompanyId INT = (SELECT TOP 1 CompanyId FROM Company WHERE [Name] = @CompanyName);
-DECLARE @CurrentTimeZone VARCHAR(50) = 'Taipei Standard Time';  /* SE Asia Standard Time (UTC+7) / Taipei Standard Time (UTC+8)  */
-DECLARE @TargetTimeZone VARCHAR(50) = 'SA Western Standard Time'; 
+DECLARE @CompanyId INT;
+DECLARE @CurrentTimeZone NVARCHAR(50) = 'Taipei Standard Time';  /* SE Asia Standard Time (UTC+7) / Taipei Standard Time (UTC+8)  */
+DECLARE @TargetTimeZone NVARCHAR(50) = 'SA Western Standard Time'; 
+SET @CompanyId = 8;
 
 DECLARE @EmployeeMapping TABLE (
     EmpId INT,
@@ -26,8 +26,7 @@ INSERT INTO dbo.Employee (
 )
 OUTPUT INSERTED.EmpId, INSERTED.OldEmpId, @CompanyId INTO @EmployeeMapping  -- Store new & old EmpId
 SELECT 
-    UserId, 
-	Code, DomainUsername, FullName, NickName, DOB, Email, JobTitleId,
+    UserId, Code, DomainUsername, FullName, NickName, DOB, Email, JobTitleId,
     Enabled, Phone, Gender, GroupId, Roles, ManagerId, JoinedDate, ConfirmedDate, 
     ResignedDate, Skype, Yahoo, Marriage, 
     LastLogin,
@@ -39,11 +38,12 @@ SELECT
     IdCardNumber, PassportNo, PassportExp, Password, ChineseName, PlaceOfbirth, 
     Ethnic, Native, Religion, DateOfIDCard, PlaceOfIDCard, HomePhone, Qualification, 
     Major, PasswordReset, EmployeeCard, PickupRemark, TeamDate, PromotionDate, 
-    LetsTalk, JobLevelId, UserId, UC_ModifiedDate, UC_SyncDate, ResignedReason, 
+    LetsTalk, JobLevelId, UserId, NULL, NULL, ResignedReason, 
     ExpertGradeId, EmpId AS OldEmpId  -- Keep track of old EmpId
-FROM WGIHRM.dbo.Employee e
+FROM WGIHRM.dbo.Employee
 WHERE UserId is not null
 
+-- Insert into CompanyEmployee using NewEmpId and CompanyId
 INSERT INTO dbo.CompanyEmployee (EmpId, CompanyId)
 SELECT EmpId, @CompanyId FROM @EmployeeMapping;
 
@@ -57,16 +57,20 @@ INNER JOIN dbo.CompanyEmployee ce ON emp.EmpId = ce.EmpId AND ce.CompanyId = @Co
 LEFT JOIN @EmployeeMapping em_created ON emp.CreatedBy = em_created.OldEmpId AND em_created.CompanyId = @CompanyId
 LEFT JOIN @EmployeeMapping em_modified ON emp.ModifiedBy = em_modified.OldEmpId AND em_modified.CompanyId = @CompanyId
 LEFT JOIN @EmployeeMapping em_manager ON emp.ManagerId = em_manager.OldEmpId AND em_manager.CompanyId = @CompanyId;
+-- GroupId sẽ map lại sau ở phần OrgChart vì hiện tại chưa có GroupId mới
+-- JobTitleId sẽ map lại sau 
+-- Mapping JobLevel + GradeLevel
+-- #endregion
 
 INSERT INTO dbo.Shift (
-    Code, [Name], BeginCheckInTime, EndCheckInTime, BeginCheckOutTime, EndCheckOutTime, BreakTimeMins, 
+    Code, Name, BeginCheckInTime, EndCheckInTime, BeginCheckOutTime, EndCheckOutTime, BreakTimeMins, 
     OrderNo, BeginBreakTime, EndBreakTime, CrossDay, Color, TotalHours, IsInAfterDay, IsOutAfterDay, 
     IsDisabled, CreatedBy, CreatedDate, ModifiedBy, ModifiedDate, OWPModifiedDate, OWPSyncDate, 
     CompanyId, OldShiftId
 )
 SELECT 
     s.Code, 
-    s.[Name], 
+    s.Name, 
     s.BeginCheckInTime, 
     s.EndCheckInTime, 
     s.BeginCheckOutTime, 
@@ -89,25 +93,21 @@ SELECT
     s.OWPSyncDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone, 
     @CompanyId, 
     s.ShiftID 
-FROM WGIHRM.dbo.[Shift] s
+FROM WGIHRM.dbo.Shift s
 LEFT JOIN @EmployeeMapping em_created ON s.CreatedBy = em_created.OldEmpId
 LEFT JOIN @EmployeeMapping em_modified ON s.ModifiedBy = em_modified.OldEmpId;    
+-- #endregion
 
 -- #region LEAVE TYPE TABLE
 INSERT INTO dbo.LeaveType (
-    LeaveTypeId, Code, [Name], IsAnnualQuota, IsDefault, IsSalaryDeduction, IsALDeduction, 
+    LeaveTypeId, Code, Name, IsAnnualQuota, IsDefault, IsSalaryDeduction, IsALDeduction, 
     IsHoliday, isShown, IsLeaveDuringWorking, IsCalculateWoking, Color, 
-    OrderNo, [Description], CompanyId
+    OrderNo, Description, CompanyId
 )
-SELECT LeaveTypeId, Code, [Name], IsAnnualQuota, IsDefault, IsSalaryDeduction, IsALDeduction, 
+SELECT LeaveTypeId, Code, Name, IsAnnualQuota, IsDefault, IsSalaryDeduction, IsALDeduction, 
     IsHoliday, isShown, IsLeaveDuringWorking, IsCalculateWoking, Color, 
-    OrderNo, [Description], @CompanyId 
-FROM WGIHRM.dbo.LeaveType lt
-WHERE NOT EXISTS (
-        SELECT 1
-        FROM dbo.LeaveType glt
-        WHERE glt.CompanyId = @CompanyId AND LeaveTypeId = glt.LeaveTypeId
-    )
+    OrderNo, Description, @CompanyId 
+FROM WGIHRM.dbo.LeaveType;
 -- #endregion
 
 -- #region HOLIDAY TABLE
@@ -118,11 +118,11 @@ FROM WGIHRM.dbo.Holiday;
 
 -- #region MEMO TABLE
 INSERT INTO dbo.Memo (
-    RefNo, Contents, [Subject], SentTo, SentFrom, ForInfo, TotalPages, 
-    SentDate, Category, [Type], [Enabled], CompanyId, OldId
+    RefNo, Contents, Subject, SentTo, SentFrom, ForInfo, TotalPages, 
+    SentDate, Category, Type, Enabled, CompanyId, OldId
 )
-SELECT RefNo, Contents, [Subject], SentTo, SentFrom, ForInfo, TotalPages, 
-    SentDate, Category, [Type], [Enabled], @CompanyId, Id 
+SELECT RefNo, Contents, Subject, SentTo, SentFrom, ForInfo, TotalPages, 
+    SentDate, Category, Type, Enabled, @CompanyId, Id 
 FROM WGIHRM.dbo.Memo;
 -- #endregion
 
@@ -133,12 +133,12 @@ FROM WGIHRM.dbo.SystemConfigs;
 -- #endregion
 
 -- #region LOOKUP DATA TABLE
-INSERT INTO dbo.LookupData (LookupId, Code, [Name], [Value], CompanyId, OldId)
+INSERT INTO dbo.LookupData (LookupId, Code, Name, Value, CompanyId, OldId)
 SELECT 
 	ld.LookupId,
     ld.Code, 
-    ld.[Name], 
-    ld.[Value], 
+    ld.Name, 
+    ld.Value, 
     @CompanyId,
     ld.Id AS OldId 
 FROM WGIHRM.dbo.LookupData ld;
@@ -148,10 +148,8 @@ SET emp.JobTitleId = ld.Id
 FROM dbo.Employee emp
 INNER JOIN dbo.CompanyEmployee ce ON emp.EmpId = ce.EmpId AND ce.CompanyId = @CompanyId
 LEFT JOIN dbo.LookupData ld ON emp.JobTitleId = ld.OldId and ld.CompanyId = @CompanyId
--- #endregion
 
 --#region NEW STRUCTURE =============================================================================================================
-
 DECLARE @maxGroupUnitId INT = ISNULL((SELECT MAX(GroupUnitId) FROM dbo.Unit), 0);
 
 WITH DistinctUnits AS (
@@ -187,7 +185,7 @@ DECLARE @maxGroupDepartmentId INT = ISNULL((SELECT MAX(GroupDeptId) FROM dbo.Dep
 
 WITH DistinctDepartments AS (
     SELECT DISTINCT
-		d.DepartmentId,
+        d.DepartmentId,
         d.Code,
         d.Name,
         d.IsActive,
@@ -196,9 +194,15 @@ WITH DistinctDepartments AS (
     FROM WGIHRM.dbo.Department d
     INNER JOIN WGIHRM.dbo.Unit u WITH(NOLOCK) ON u.UnitId = d.UnitId
     WHERE EXISTS (
-        SELECT 1 
-        FROM WGIHRM.dbo.Section s WITH(NOLOCK) 
+        SELECT 1
+        FROM WGIHRM.dbo.Section s WITH(NOLOCK)
         WHERE s.DepartmentId = d.DepartmentId
+    )
+    AND NOT EXISTS (
+        SELECT 1
+        FROM dbo.Department newDept
+        INNER JOIN dbo.Unit newUnit ON newDept.UnitId = newUnit.UnitId
+        WHERE newDept.Code = d.Code AND newUnit.Code = u.Code
     )
 )
 
@@ -272,7 +276,8 @@ SET emp.GroupId = g_new.GroupId
 FROM dbo.Employee emp
 INNER JOIN dbo.CompanyEmployee ce ON emp.EmpId = ce.EmpId AND ce.CompanyId = @CompanyId
 LEFT JOIN dbo.[Group] g_new ON emp.GroupId = g_new.OldGroupId AND g_new.CompanyId = @CompanyId;
---#endregion =============================================================================================================
+-- #endregion
+
 
 INSERT INTO [dbo].[WorkingTimeRequest]
            (EmpId
@@ -325,6 +330,7 @@ INSERT INTO [dbo].[WorkingTimeRequest]
 	LEFT JOIN @EmployeeMapping AS empHr ON wr.HRId = empHr.OldEmpId 
 	LEFT JOIN @EmployeeMapping AS empCreated ON wr.CreatedBy = empCreated.OldEmpId 
 	LEFT JOIN @EmployeeMapping AS empModified ON wr.ModifiedBy = empModified.OldEmpId;
+	
 
 INSERT INTO [dbo].[WorkingTimeRequestHistory]
            (RequestId
@@ -382,6 +388,7 @@ INSERT INTO [dbo].[WorkingTimeRequestHistory]
 	LEFT JOIN @EmployeeMapping AS empHr  ON wrh.HRId = empHr.OldEmpId 
 	LEFT JOIN @EmployeeMapping AS empCreated ON wrh.CreatedBy = empCreated.OldEmpId 
 	LEFT JOIN @EmployeeMapping AS empModified  ON wrh.ModifiedBy = empModified.OldEmpId;
+
 
 INSERT INTO dbo.tmpSickLeaveBalance (EmpId, RequestId, TotalDays, [Month], [Year], [Status])
 SELECT e.EmpId, rq.RequestId, tmp.TotalDays, tmp.[Month], tmp.[Year], tmp.[Status]
@@ -488,7 +495,7 @@ SELECT e.EmpId, rq.RequestId, st.[Description], st.FromDate, st.ToDate, st.Deduc
 FROM WGIHRM.dbo.SickLeaveTrans AS st WITH (NOLOCK)
     INNER JOIN @EmployeeMapping AS e ON st.EmpId = e.OldEmpId
     INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
-    LEFT JOIN dbo.WorkingTimeRequest AS rq WITH (NOLOCK) ON st.RequestId = rq.OldRequestId
+    LEFT JOIN dbo.WorkingTimeRequest AS rq WITH (NOLOCK) ON st.RequestId = rq.OldRequestId AND rq.CompanyId = @CompanyId
     LEFT JOIN dbo.Employee AS cr WITH (NOLOCK) ON st.CreatedBy = cr.OldEmpId
     LEFT JOIN dbo.CompanyEmployee AS cr_ce WITH (NOLOCK) ON cr.EmpId = cr_ce.EmpId
     AND cr_ce.CompanyId = @CompanyId
@@ -514,6 +521,7 @@ WHERE NOT EXISTS (
             AND rf.FunctionId = nrf.FunctionId
     )
 
+
 INSERT INTO [dbo].[ChangeShiftRequest]
            (RequestId
            ,EmpId
@@ -529,6 +537,8 @@ INSERT INTO [dbo].[ChangeShiftRequest]
 	FROM WGIHRM.dbo.ChangeShiftRequest AS cs WITH (NOLOCK)
 	INNER JOIN dbo.WorkingTimeRequest AS wkr WITH (NOLOCK) ON cs.RequestId = wkr.OldRequestId AND wkr.CompanyId = @companyId
 	INNER JOIN @EmployeeMapping AS emp ON cs.EmpId = emp.OldEmpId;
+
+
 
 INSERT INTO [dbo].[ChangeShiftRequestDetail]
            (OnDate
@@ -555,6 +565,7 @@ INSERT INTO [dbo].[ChangeShiftRequestDetail]
 	INNER JOIN @EmployeeMapping AS emp ON csd.EmpId = emp.OldEmpId
 	LEFT JOIN dbo.Shift AS s1 WITH (NOLOCK) ON s1.OldShiftId = csd.FromShift AND s1.CompanyId = @CompanyId
 	LEFT JOIN dbo.Shift AS s2 WITH (NOLOCK) ON s2.OldShiftId = csd.ToShift AND s2.CompanyId = @CompanyId;
+
 
 INSERT INTO [dbo].[ChangeShiftRequestDetailHistory]
            (RequestId
@@ -585,6 +596,8 @@ INSERT INTO [dbo].[ChangeShiftRequestDetailHistory]
 	LEFT JOIN dbo.Shift AS s1 WITH (NOLOCK) ON s1.OldShiftId = csdh.FromShift AND s1.CompanyId = @CompanyId
 	LEFT JOIN dbo.Shift AS s2 WITH (NOLOCK) ON s2.OldShiftId = csdh.ToShift AND s2.CompanyId = @CompanyId;
 
+
+
 INSERT INTO [dbo].[ChangeShiftRequestHistory]
            (RequestId
            ,EmpId
@@ -604,6 +617,7 @@ INSERT INTO [dbo].[ChangeShiftRequestHistory]
 	INNER JOIN dbo.WorkingTimeRequestHistory AS wkrh WITH (NOLOCK) ON csh.HistoryId = wkrh.OldHistoryId AND wkr.RequestId = wkrh.RequestId
 	INNER JOIN @EmployeeMapping AS emp ON csh.EmpId = emp.OldEmpId
 
+
 INSERT INTO [dbo].[CheckInOutRequest]
            (RequestId
            ,EmpId
@@ -621,6 +635,7 @@ INSERT INTO [dbo].[CheckInOutRequest]
 	FROM WGIHRM.dbo.CheckInOutRequest AS cio WITH (NOLOCK)
 	INNER JOIN dbo.WorkingTimeRequest AS wkr WITH (NOLOCK) ON cio.RequestId = wkr.OldRequestId AND wkr.CompanyId = @companyId
 	INNER JOIN @EmployeeMapping AS emp ON cio.EmpId = emp.OldEmpId
+
 
 INSERT INTO [dbo].[CheckInOutRequestHistory]
            (RequestId
@@ -677,7 +692,6 @@ LEFT JOIN @EmployeeMapping em_modified ON d.ModifiedBy = em_modified.OldEmpId
 WHERE d.IsDeleted != 1 and em.EmpId IS NOT NULL;
 -- #endregion
 
-
 -- #region DISCIPLINE GROUP RULE TABLE
 INSERT INTO dbo.DisciplineGroupRule (
     GroupId, DisciplineTypeId, IsLocal, Value
@@ -688,7 +702,8 @@ SELECT
     dgr.IsLocal, 
     dgr.Value
 FROM WGIHRM.dbo.DisciplineGroupRule dgr
-INNER JOIN dbo.[Group] g ON dgr.GroupId = g.OldGroupId AND g.CompanyId = @CompanyId
+INNER JOIN dbo.[Group] g ON dgr.GroupId = g.OldGroupId AND g.CompanyId = @CompanyId;
+
 -- #endregion
 
 -- #region DISCIPLINE IGNORE TABLE
@@ -1086,14 +1101,6 @@ FROM WGIHRM.dbo.EmployeeGroup AS eg
     INNER JOIN @EmployeeMapping AS em ON eg.EmpID = em.OldEmpId
 -- #endregion
 
--- #region Update Employee GroupId
-UPDATE e
-SET e.GroupId = g.GroupId
-	FROM dbo.Employee e 
-	INNER JOIN dbo.[Group] g ON e.GroupId = g.OldGroupId
-	WHERE g.CompanyId = @CompanyId
--- #endregion
-
 -- #region GROUP MANAGER TABLE
 INSERT INTO dbo.GroupManager (GroupId, EmpId, RoleId)
 SELECT g.GroupId,  
@@ -1110,7 +1117,7 @@ SELECT em.EmpId,
     g.GroupId, 
     gs.ActionType,
     gs.RequestType,
-    em_mod.EmpId, -- L?y ModifiedBy t? Employee Mapping
+    em_mod.EmpId, -- Lấy ModifiedBy từ Employee Mapping
     gs.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone, 
     gs.IsDeleted,
     gs.DisplayOrder
@@ -1161,9 +1168,10 @@ WHERE NOT EXISTS (
         FROM dbo.MailSettings AS setting WITH (NOLOCK)
         WHERE setting.GroupId = ms.GroupId
             AND setting.Action = ms.Action
-			AND ms.GroupId = setting.GroupId
+			AND ms.GroupId = 0
     )
 -- #endregion
+
 
 INSERT INTO [dbo].[HospitalizationLeaveTrans]
            (EmpId
@@ -1199,6 +1207,7 @@ INSERT INTO [dbo].[HospitalizationLeaveTrans]
 	LEFT JOIN @EmployeeMapping AS empCreated ON hpl.CreatedBy = empCreated.OldEmpId
 	LEFT JOIN @EmployeeMapping AS empModified ON hpl.ModifiedBy = empModified.OldEmpId;
 
+
 INSERT INTO [dbo].[HospitalLeave]
            (RequestId
            ,IsHospitalApplication)
@@ -1207,6 +1216,7 @@ INSERT INTO [dbo].[HospitalLeave]
            ,IsHospitalApplication
 	FROM WGIHRM.dbo.[HospitalLeave] AS hl WITH (NOLOCK)
 	INNER JOIN dbo.WorkingTimeRequest AS wkr WITH (NOLOCK) ON hl.RequestId = wkr.OldRequestId AND wkr.CompanyId = @companyId
+
 
 INSERT INTO [dbo].[WeekendLeaveTrans]
            (EmpId
@@ -1227,6 +1237,8 @@ INSERT INTO [dbo].[WeekendLeaveTrans]
 	FROM WGIHRM.dbo.[WeekendLeaveTrans] AS wl WITH (NOLOCK)
 	INNER JOIN @EmployeeMapping AS emp ON wl.EmpId = emp.OldEmpId
 	LEFT JOIN dbo.WorkingTimeRequest AS wkr WITH (NOLOCK) ON wl.RequestId = wkr.OldRequestId AND wkr.CompanyId = @companyId
+	
+
 
 INSERT INTO [dbo].[KeepInViewByDayTrans]
            (EmpId
@@ -1245,6 +1257,8 @@ INSERT INTO [dbo].[KeepInViewByDayTrans]
 	FROM WGIHRM.dbo.[KeepInViewByDayTrans] AS kivd WITH (NOLOCK)
 	INNER JOIN dbo.WorkingTimeRequest AS wkr WITH (NOLOCK) ON kivd.RequestId = wkr.OldRequestId AND wkr.CompanyId = @companyId
 	INNER JOIN @EmployeeMapping AS emp ON kivd.EmpId = emp.OldEmpId
+
+
 
 INSERT INTO [dbo].[KeepInViewByHourTrans]
            (EmpId
@@ -1265,6 +1279,7 @@ INSERT INTO [dbo].[KeepInViewByHourTrans]
 	FROM WGIHRM.dbo.[KeepInViewByHourTrans] AS kivh WITH (NOLOCK)
 	INNER JOIN dbo.WorkingTimeRequest AS wkr WITH (NOLOCK) ON kivh.RequestId = wkr.OldRequestId AND wkr.CompanyId = @companyId
 	INNER JOIN @EmployeeMapping AS emp ON kivh.EmpId = emp.OldEmpId
+
 
 INSERT INTO [dbo].[KeepInViewRequest]
            (RequestId
@@ -1291,6 +1306,8 @@ INSERT INTO [dbo].[KeepInViewRequest]
 	INNER JOIN @EmployeeMapping AS emp ON kiv.EmpId = emp.OldEmpId
 	LEFT JOIN dbo.Shift AS s WITH (NOLOCK) ON kiv.ShiftId = s.OldShiftId AND s.CompanyId = @CompanyId
 
+
+
 INSERT INTO [dbo].[KeepInViewRequestHistory]
            (RequestId
            ,EmpId
@@ -1313,7 +1330,7 @@ INSERT INTO [dbo].[KeepInViewRequestHistory]
 	INNER JOIN dbo.WorkingTimeRequest AS wkr WITH (NOLOCK) ON kivh.RequestId = wkr.OldRequestId AND wkr.CompanyId = @companyId
 	LEFT JOIN dbo.WorkingTimeRequestHistory AS wkrh WITH (NOLOCK) ON kivh.HistoryId = wkrh.OldHistoryId AND wkr.RequestId = wkrh.RequestId
 	INNER JOIN @EmployeeMapping AS emp ON kivh.EmpId = emp.OldEmpId
-
+	
 INSERT INTO [dbo].[LateInEarlyOutRequest]
            (RequestId
            ,EmpId
@@ -1333,6 +1350,8 @@ INSERT INTO [dbo].[LateInEarlyOutRequest]
 	FROM WGIHRM.dbo.[LateInEarlyOutRequest] AS lieo WITH (NOLOCK)
 	INNER JOIN dbo.WorkingTimeRequest AS wkr WITH (NOLOCK) ON lieo.RequestId = wkr.OldRequestId AND wkr.CompanyId = @companyId
 	INNER JOIN @EmployeeMapping AS emp ON lieo.EmpId = emp.OldEmpId
+
+
 
 INSERT INTO [dbo].[LateInEarlyOutRequestHistory]
            (RequestId
@@ -1357,6 +1376,7 @@ INSERT INTO [dbo].[LateInEarlyOutRequestHistory]
 	LEFT JOIN dbo.WorkingTimeRequestHistory AS wkrh WITH (NOLOCK) ON lieoh.HistoryId = wkrh.OldHistoryId AND wkr.RequestId = wkrh.RequestId
 	INNER JOIN @EmployeeMapping AS emp ON lieoh.EmpId = emp.OldEmpId
 
+
 INSERT INTO [dbo].[LeaveRequest]
            (RequestId
            ,EmpId
@@ -1378,6 +1398,8 @@ INSERT INTO [dbo].[LeaveRequest]
 	FROM WGIHRM.dbo.[LeaveRequest] AS lr WITH (NOLOCK)
 	INNER JOIN dbo.WorkingTimeRequest AS wkr WITH (NOLOCK) ON lr.RequestId = wkr.OldRequestId AND wkr.CompanyId = @companyId
 	INNER JOIN @EmployeeMapping AS emp ON lr.EmpId = emp.OldEmpId
+
+
 
 INSERT INTO [dbo].LeaveRequestDetail
            (RequestId
@@ -1403,6 +1425,7 @@ INSERT INTO [dbo].LeaveRequestDetail
 	INNER JOIN dbo.WorkingTimeRequest AS wkr WITH (NOLOCK) ON lrd.RequestId = wkr.OldRequestId AND wkr.CompanyId = @companyId
 	INNER JOIN @EmployeeMapping AS emp ON lrd.EmpId = emp.OldEmpId 
 	LEFT JOIN dbo.Shift AS s WITH (NOLOCK) ON lrd.ShiftId = s.OldShiftId AND s.CompanyId = @CompanyId
+
 
 INSERT INTO [dbo].[LeaveRequestDetailHistory]
            (RequestId
@@ -1432,6 +1455,7 @@ INSERT INTO [dbo].[LeaveRequestDetailHistory]
 	INNER JOIN @EmployeeMapping AS emp ON lrdh.EmpId = emp.OldEmpId 
 	LEFT JOIN dbo.Shift AS s WITH (NOLOCK) ON lrdh.ShiftId = s.OldShiftId AND s.CompanyId = @CompanyId
 
+
 INSERT INTO [dbo].[LeaveRequestHistory]
            (RequestId
            ,EmpId
@@ -1452,6 +1476,7 @@ INSERT INTO [dbo].[LeaveRequestHistory]
 	INNER JOIN dbo.WorkingTimeRequest AS wkr WITH (NOLOCK) ON lrh.RequestId = wkr.OldRequestId AND wkr.CompanyId = @companyId
 	LEFT JOIN dbo.WorkingTimeRequestHistory AS wkrh WITH (NOLOCK) ON lrh.HistoryId = wkrh.OldHistoryId AND wkr.RequestId = wkrh.RequestId
 	INNER JOIN @EmployeeMapping AS emp ON lrh.EmpId = emp.OldEmpId 
+
 
 INSERT INTO [dbo].[LeaveTrans]
            (EmpId
@@ -1539,6 +1564,7 @@ INNER JOIN dbo.[Group] AS g ON mg.GroupId = g.OldGroupId AND g.CompanyId = @Comp
 INNER JOIN dbo.[Message] AS m ON mg.MessageId = m.OldMessageId AND m.CompanyId = @CompanyId;
 -- #endregion
 
+
 INSERT INTO [dbo].[OTMonthlyRequest]
            (Month
            ,EmpId
@@ -1561,7 +1587,7 @@ INSERT INTO [dbo].[OTMonthlyRequest]
            ,CreatedDate
            ,CreatedBy
 		   ,OldRequestId)
-     SELECT DISTINCT
+     SELECT
            otm.[Month]
            ,emp.EmpId
            ,otm.NormalHours
@@ -1591,6 +1617,8 @@ INSERT INTO [dbo].[OTMonthlyRequest]
 	LEFT JOIN @EmployeeMapping AS empCreated ON otm.CreatedBy = empCreated.OldEmpId 
 	LEFT JOIN @EmployeeMapping AS empModified  ON otm.ModifiedBy = empModified.OldEmpId;
 
+
+	
 INSERT INTO [dbo].[OTDailyRequest]
            (OvertimeDate
            ,EmpId
@@ -1608,7 +1636,7 @@ INSERT INTO [dbo].[OTDailyRequest]
            ,CreatedBy
            ,CreatedDate
            ,IsUpdated)
-     SELECT DISTINCT
+     SELECT
            otd.OvertimeDate
            ,emp.EmpId
            ,otm.RequestId
@@ -1630,8 +1658,9 @@ INSERT INTO [dbo].[OTDailyRequest]
 	LEFT JOIN dbo.OTMonthlyRequest AS otm WITH (NOLOCK) ON otd.RequestId = otm.OldRequestId 
 	INNER JOIN dbo.CompanyEmployee ce ON ce.Empid = otm.EmpId AND ce.CompanyId = @CompanyId
 	LEFT JOIN dbo.Shift AS s ON otd.Schedule = s.OldShiftId AND s.CompanyId = @CompanyId
-	LEFT JOIN @EmployeeMapping AS empCreated ON otd.CreatedBy = empCreated.OldEmpId
-	
+	LEFT JOIN @EmployeeMapping AS empCreated ON otd.CreatedBy = empCreated.OldEmpId 
+
+
 INSERT INTO [dbo].[ScheduleArrangement]
            (EmployeeId
            ,Remark
@@ -1665,6 +1694,8 @@ INSERT INTO [dbo].[ScheduleArrangementDefaultShift]
 	LEFT JOIN @EmployeeMapping AS empModified ON sas.ModifiedBy = empModified.OldEmpId
 	LEFT JOIN dbo.Shift AS s WITH (NOLOCK) ON sas.ShiftId = s.OldShiftId AND s.CompanyId = @CompanyId;
 
+
+
 INSERT INTO [dbo].[ScheduleArrangementGroupOrder]
            (GroupId
            ,DisplayOrder
@@ -1679,6 +1710,9 @@ INSERT INTO [dbo].[ScheduleArrangementGroupOrder]
 	INNER JOIN dbo.[Group] AS g ON sag.GroupId = g.OldGroupId AND g.CompanyId = @CompanyId 
 	LEFT JOIN @EmployeeMapping AS empModified ON sag.ModifiedBy = empModified.OldEmpId;
 
+
+
+
 INSERT INTO [dbo].[ScheduleArrangementOffDayReplacement]
            (EmployeeId
            ,WorkDate
@@ -1689,6 +1723,7 @@ INSERT INTO [dbo].[ScheduleArrangementOffDayReplacement]
            ,sar.ReplaceForDate
 	FROM WGIHRM.dbo.[ScheduleArrangementOffDayReplacement] AS sar  WITH (NOLOCK)
 	INNER JOIN @EmployeeMapping AS emp ON sar.EmployeeId = emp.OldEmpId 
+
 
 INSERT INTO [dbo].[RefResource]
            (RefName

@@ -1,6 +1,3 @@
-begin transaction
-
-
 USE [bodb_HRM]
 GO
 
@@ -247,5 +244,3 @@ WHERE EmpId IN (SELECT EmpId FROM dbo.CompanyEmployee WHERE CompanyId = @Company
 
 -- 33. Delete CompanyEmployee
 DELETE FROM dbo.CompanyEmployee WHERE CompanyId = @CompanyId;
-
-ROLLBACK
