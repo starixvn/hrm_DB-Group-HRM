@@ -198,6 +198,12 @@ WITH DistinctDepartments AS (
         FROM HMHRM.dbo.Section s WITH(NOLOCK) 
         WHERE s.DepartmentId = d.DepartmentId
     )
+    AND NOT EXISTS (
+        SELECT 1
+        FROM dbo.Department newDept
+        INNER JOIN dbo.Unit newUnit ON newDept.UnitId = newUnit.UnitId
+        WHERE newDept.Code = d.Code AND newUnit.Code = u.Code
+    )
 )
 
 INSERT INTO [dbo].[Department] (
@@ -1650,6 +1656,7 @@ INSERT INTO [dbo].[OTDailyRequest]
 	FROM HMHRM.dbo.[OTDailyRequest] as otd  WITH (NOLOCK)
 	INNER JOIN @EmployeeMapping AS emp ON otd.EmpId = emp.OldEmpId 
 	LEFT JOIN dbo.OTMonthlyRequest AS otm WITH (NOLOCK) ON otd.RequestId = otm.OldRequestId 
+    INNER JOIN dbo.CompanyEmployee ce ON ce.EmpId = otm.EmpId AND ce.CompanyId = @CompanyId
 	LEFT JOIN dbo.Shift AS s ON otd.Schedule = s.OldShiftId AND s.CompanyId = @CompanyId
 	LEFT JOIN @EmployeeMapping AS empCreated ON otd.CreatedBy = empCreated.OldEmpId 
 

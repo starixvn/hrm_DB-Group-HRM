@@ -1,0 +1,45 @@
+﻿--BEGIN TRANSACTION
+
+USE [bodb_HRM]
+GO
+DECLARE @CompanyId INT;
+DECLARE @CurrentTimeZone NVARCHAR(50) = 'SE Asia Standard Time';  /* SE Asia Standard Time (UTC+7) / Taipei Standard Time (UTC+8)  */
+DECLARE @TargetTimeZone NVARCHAR(50) = 'SA Western Standard Time'; 
+SET @CompanyId = 4;
+
+DECLARE @EmployeeMapping TABLE (
+    EmpId INT,
+    OldEmpId INT,
+    CompanyId INT
+);
+
+INSERT INTO @EmployeeMapping (EmpId, OldEmpId, CompanyId)
+SELECT DISTINCT tmpEmp.EmpId, tmpEmp.OldEmpId, ce.CompanyId  
+FROM dbo.Employee AS tmpEmp WITH (NOLOCK) 
+INNER JOIN dbo.CompanyEmployee AS ce  WITH (NOLOCK)
+    ON tmpEmp.EmpId = ce.EmpId 
+WHERE ce.CompanyId = @CompanyId
+
+
+-- Insert data into temporary table with optimized time zone conversion
+INSERT INTO dbo.tmpEmployeeCalendar(EmpId, WorkDate, RequestId, RequestTypeId, ShiftId, IsOffDay, IsHoliday, IsOvertime, IsKeepInView,
+    IsLeaveDay, IsLeaveOffDay, LeaveDay, LeaveTypeId, FromTime, ToTime, LeaveTypeId2, FromTime2, ToTime2, ChangeShiftTypeId, MoveOffFromDate, MoveOffToDate, ModifiedDate)
+SELECT e.EmpId, tmp.WorkDate, rq.RequestId, tmp.RequestTypeId, s.ShiftId, tmp.IsOffDay, tmp.IsHoliday, tmp.IsOvertime, tmp.IsKeepInView,
+    tmp.IsLeaveDay, tmp.IsLeaveOffDay, tmp.LeaveDay, tmp.LeaveTypeId,
+    tmp.FromTime AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone,
+    tmp.ToTime AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone,
+    tmp.LeaveTypeId2,
+    tmp.FromTime2 AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone,
+    tmp.ToTime2 AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone,
+    tmp.ChangeShiftTypeId, tmp.MoveOffFromDate, tmp.MoveOffToDate,
+    tmp.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
+FROM HMHRM.dbo.tmpEmployeeCalendar AS tmp WITH (NOLOCK)
+INNER JOIN @EmployeeMapping AS e ON tmp.EmpId = e.OldEmpId
+INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
+LEFT JOIN dbo.WorkingTimeRequest AS rq WITH (NOLOCK) ON tmp.RequestId = rq.OldRequestId AND rq.CompanyId = @CompanyId
+LEFT JOIN dbo.[Shift] AS s WITH (NOLOCK) ON tmp.ShiftId = s.OldShiftId AND s.CompanyId = @CompanyId
+WHERE ce.CompanyId = @CompanyId
+
+GO
+
+--ROLLBACK
