@@ -1,5 +1,3 @@
---BEGIN TRANSACTION
-
 USE [bodb_HRM]
 GO
 
@@ -16,18 +14,17 @@ DECLARE @tmpCompany TABLE (
 );
 
 INSERT INTO @tmpCompany (CompanyName, SiteId, SiteName, AccessToken, SiteURL, TimeZone) VALUES
-('Acora', 30, 'Acora HRM', 'D/R5zQnWEhRB4hcnLOAOYpByEI+Oo/j7T2gZiV2t+dk=', 'https://acora.klc.nexdev.net', 8),
-('Ascentis', 31, 'Ascentis HRM', 'B3v8FzV19t4uMcQUDwEuFkIPMIWPd+fnFLbtEmOSDrQ=', 'https://ascentis.klc.nexdev.net', 8),
-('BPO', 32, 'BPO HRM', 'OVoIac/+43Va3oshwlsh6MXTAVAVbkhLRfKvyZbOiGI=', 'https://bpo.klc.nexdev.net', 8),
-('DAR', 33, 'DAR HRM', 'AMSLTPLopOWGKnlbsEsfKn2M7WlGF9MOW5jlN1Tec9M=', 'https://dar.klc.nexdev.net', 7),
-('EMC', 34, 'EMC HRM', 'Rnkkq74y7idh3gczIqbOUtxhIaqPo2OgindFp92c6Pk=', 'https://emc.klc.nexdev.net', 8),
-('FTS', 35, 'FTS HRM', 'a+6ccsNlqFSq7EyS+5tYwJ38UE7jG8JAkSBjTRIu9dw=', 'https://fts.klc.nexdev.net', 8),
-('Hyjay', 36, 'Hyjay HRM', 'u6z/lVQQZl/Ht1xAgS/4oTTkWQIH7j+bDDhHV5cNBQg=', 'https://hyjay.klc.nexdev.net', 8),
-('Letstalk', 37, 'LT HRM', 'PYyvyOqKFhAxNMrMFUsCba3BM0c5+LON+c7eg1LzKuU=', 'https://lt.klc.nexdev.net', 8),
-('Next Fortune', 38, 'Next Fortune HRM', 'uoTWF3w0c/mnz63fKDkWtFRC95n+J+TBEmI0kzDdMDs=', 'https://ascentis.klc.nexdev.net', 8),
-('One Lab', 39, 'One Lab HRM', 'k+0Kuyr4yp57za+A84TFj2nIjb2hWvmZg/m/c0NI/sw=', 'https://oneLab.klc.nexdev.net', 8),
-('OSEAS', 40, 'OSEAS HRM', 'VMvYdwQ3qlIN8W7DdxLIY5G+EFAAOpwW/X9R7geXRxE=', 'https://oseas.klc.nexdev.net', 8),
-('SSI', 41, 'SSI HRM', 'kDOSvQKy1079KPhcY79leU9POAYLswmbpVxgUcyfFyc=', 'https://ssi.klc.nexdev.net', 8);
+('Acora', 38, 'Acora HRM', 'Cnt9dwonueJHqMoBkIJrWaWvRyGbGoKgBJqRsKY6c5s=', 'https://hrm-acora.nexdev.net', 8),
+('Ascentis', 28, 'Ascentis HRM', 'GNWs3aN7RfeYHirMuWGg5JXlmSP5HhhNcBk/y5WQbYY=', 'https://hrm-ascentis.nexdev.net', 8),
+('BPO', 41, 'BPO HRM', 'HiJ0K7O02rCT9aZTzwCacBnPNmEPJAL6Pn3aykB6w9M=', 'https://hrm-bpo.nexdev.net', 8),
+('EMC', 40, 'EMC HRM', 'rNbGnHoUEVUMDOvC67QYekzWTwS4tGVd/1BTyIBLmOk=', 'https://hrm-emc.nexdev.net', 8),
+('FTS', 37, 'FTS HRM', 'Rv31qCV5cpI3J1QbIZQcIDPThudUr6nRz7NVfPwvXuk=', 'https://hrm-fts.nexdev.net', 8),
+('Hyjay', 29, 'Hyjay HRM', '3i3LN8QmL90y/VLHVpoXf0jADEVzNrLYdeN00cEcrlI=', 'https://hrm-hyjay.nexdev.net', 8),
+('Letstalk', 30, 'Letstalk HRM', 'o05Wfft4OuHlTFD/ii7pPKsEgEWPjNDIWpeW6EXXbcI=', 'https://hrm-letstalk.nexdev.net', 8),
+('Next Fortune', 31, 'Next Fortune HRM', 'p9ViJmRSSo0IjYRkhuRFAGSCVVrMoIVcDsPkDF2Ta3o=', 'https://hrm-nexfortune.nexdev.net', 8),
+('One Lab', 32, 'One Lab HRM', 'E5U2LkEzy71lis6TbNAak3GvNYtX6RMAQWqli/x+TZU=', 'https://hrm-onelab.nexdev.net', 8),
+('OSEAS', 36, 'OSEAS HRM', '1mii5aPBU2hwUQMwY/r2+yeRRLZ97SvZU9BHvCzinUs=', 'https://hrm-oseas.nexdev.net', 8),
+('SSI', 39, 'SSI HRM', 'pdSqXKdx2P3zrTBPOd9ixznAx27IZXuvLYgkmwJ1DJ0=', 'https://hrm-ssi.nexdev.net', 8);
 
 --Insert Company
 INSERT INTO dbo.Company(Name, CountryCode, IsActive)
@@ -74,6 +71,12 @@ INNER JOIN dbo.Company c WITH(NOLOCK) ON c.Name = t.CompanyName;
 --Insert SystemConfigs MailSetting
 INSERT INTO dbo.SystemConfigs ([Key], [Value], CompanyId)
 SELECT 'MailSetting', '{"Enable": true, "AppMailId": ' + CAST(t.AppId AS NVARCHAR(10)) + ', "EmailSD": "", "EmailGo": ""}', c.CompanyId
+FROM @tmpCompany t
+INNER JOIN dbo.Company c WITH(NOLOCK) ON c.Name = t.CompanyName;
+
+--Insert SystemConfigs MailSetting
+INSERT INTO dbo.SystemConfigs ([Key], [Value], CompanyId)
+SELECT 'EnableGroupDate', 'true', c.CompanyId
 FROM @tmpCompany t
 INNER JOIN dbo.Company c WITH(NOLOCK) ON c.Name = t.CompanyName;
 
@@ -125,6 +128,3 @@ select LookupId, Code, [Name], [Value], t.CompanyId
 from dbo.LookupData l with (nolock)
 cross join @tmpCompany t
 where l.CompanyId = @SMSCompanyId and l.LookupId != 1
-
-
---ROLLBACK
