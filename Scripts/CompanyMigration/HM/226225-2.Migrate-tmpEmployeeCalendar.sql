@@ -1,4 +1,3 @@
-﻿--BEGIN TRANSACTION
 
 USE [bodb_HRM]
 GO
@@ -21,6 +20,8 @@ INNER JOIN dbo.CompanyEmployee AS ce  WITH (NOLOCK)
 WHERE ce.CompanyId = @CompanyId
 
 
+
+
 -- Insert data into temporary table with optimized time zone conversion
 INSERT INTO dbo.tmpEmployeeCalendar(EmpId, WorkDate, RequestId, RequestTypeId, ShiftId, IsOffDay, IsHoliday, IsOvertime, IsKeepInView,
     IsLeaveDay, IsLeaveOffDay, LeaveDay, LeaveTypeId, FromTime, ToTime, LeaveTypeId2, FromTime2, ToTime2, ChangeShiftTypeId, MoveOffFromDate, MoveOffToDate, ModifiedDate)
@@ -39,7 +40,11 @@ INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
 LEFT JOIN dbo.WorkingTimeRequest AS rq WITH (NOLOCK) ON tmp.RequestId = rq.OldRequestId AND rq.CompanyId = @CompanyId
 LEFT JOIN dbo.[Shift] AS s WITH (NOLOCK) ON tmp.ShiftId = s.OldShiftId AND s.CompanyId = @CompanyId
 WHERE ce.CompanyId = @CompanyId
+	AND NOT EXISTS (
+			SELECT 1
+			FROM dbo.tmpEmployeeCalendar AS tmpempca WITH (NOLOCK)
+			WHERE e.EmpId = tmpempca.EmpId
+				AND tmp.WorkDate = tmpempca.WorkDate
+		)
 
 GO
-
---ROLLBACK

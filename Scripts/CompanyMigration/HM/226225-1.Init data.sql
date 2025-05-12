@@ -24,7 +24,7 @@ ELSE
 GO
 
 INSERT INTO dbo.SystemConfigs([Key], [Value], [CompanyId])
-	VALUES ('MailSetting', '{"Enable": true, "AppMailId": 4, "EmailSD": "", "EmailGo": ""}', @CompanyId)
+	VALUES ('MailSetting', '{"Enable": false, "AppMailId": "0", "EmailSD": "", "EmailGo": ""}', @CompanyId)
 
 INSERT INTO [dbo].[CompanySite]
            ([CompanyId]
@@ -35,44 +35,4 @@ INSERT INTO [dbo].[CompanySite]
      VALUES
            (4, 7, 'iNwj8G0D4VikvwGh7//acyKlmW3vkvw6qy9LYTbm+dE=', 'https://hrm.comtechsb.com', NULL),
            (4, 7, 'iNwj8G0D4VikvwGh7//acyKlmW3vkvw6qy9LYTbm+dE=', 'https://hrm-new.comtechsb.com', NULL)
-GO
-
-SET IDENTITY_INSERT [dbo].[Mail_Config] ON 
-INSERT INTO [dbo].[Mail_Config]
-           ([AppId]
-		   ,[AppName]
-           ,[Description]
-           ,[SettingId]
-           ,[MailFrom]
-           ,[IsEncrypt])
-     VALUES
-           (4
-           ,'Hồng Mã'
-           ,'Hồng Mã'
-           ,3
-           ,'hrm@comtechsb.com'
-		   ,0)
-
-SET IDENTITY_INSERT [dbo].[Mail_Config] OFF
-GO
-
-
-SET IDENTITY_INSERT [dbo].[Mail_Setting] ON 
-INSERT INTO [dbo].[Mail_Setting]
-           ([SettingId]
-		   ,[SettingName]
-           ,[IsAuth]
-           ,[Username]
-           ,[Password]
-           ,[Server]
-           ,[Port])
-     VALUES
-           (3
-           ,'mail.comtechsb.com:465 (hrm@comtechsb.com)'
-           ,1
-           ,'hrm@comtechsb.com'
-           ,'>2btuS+6'
-           ,'mail.comtechsb.com'
-		   ,465)
-SET IDENTITY_INSERT [dbo].[Mail_Setting] OFF
 GO
