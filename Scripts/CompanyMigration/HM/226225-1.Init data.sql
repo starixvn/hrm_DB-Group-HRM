@@ -33,6 +33,5 @@ INSERT INTO [dbo].[CompanySite]
            ,[Domain]
            ,[ModifiedDate])
      VALUES
-           (4, 7, 'iNwj8G0D4VikvwGh7//acyKlmW3vkvw6qy9LYTbm+dE=', 'https://hrm.comtechsb.com', NULL),
-           (4, 7, 'iNwj8G0D4VikvwGh7//acyKlmW3vkvw6qy9LYTbm+dE=', 'https://hrm-new.comtechsb.com', NULL)
+           (4, 7, 'iNwj8G0D4VikvwGh7//acyKlmW3vkvw6qy9LYTbm+dE=', 'https://hrm.smstower-vn.com', NULL)
 GO
