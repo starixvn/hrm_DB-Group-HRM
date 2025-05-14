@@ -180,6 +180,7 @@ BEGIN
 	  + ',c.CompanyId' + CHAR(13)
 	  + ',c.[Name] AS CompanyName' + CHAR(13)
 	  + ',unit.[Name] AS UnitName' + CHAR(13)
+	  + ',unit.[Code] AS UnitCode' + CHAR(13)
 	  + ',g.GroupId AS [TeamId]' + CHAR(13)
 	  + ',g.Code AS [TeamCode]' + CHAR(13)
 	  + ',g.Name AS [TeamName]' + CHAR(13)
