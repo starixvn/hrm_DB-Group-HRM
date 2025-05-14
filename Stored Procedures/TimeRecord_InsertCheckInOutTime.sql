@@ -28,6 +28,11 @@ BEGIN
 	DECLARE @FromDate DATETIME
         ,@ToDate DATETIME
         ,@TimeRecoredId INT
+        ,@CompanyId SMALLINT
+
+    SELECT @CompanyId = CompanyId
+    FROM dbo.CompanyEmployee WITH (NOLOCK)
+    WHERE EmpId = @EmpId
 
 	INSERT INTO [dbo].[TimeRecord] (
 		EmpId
@@ -54,4 +59,5 @@ BEGIN
 		,@fromTime = @FromDate
 		,@toTime = @ToDate
 		,@onlyUpdate = 0
+        ,@CompanyId = @CompanyId
 END
