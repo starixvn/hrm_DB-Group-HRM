@@ -27,7 +27,7 @@ INSERT INTO dbo.Employee (
 OUTPUT INSERTED.EmpId, INSERTED.OldEmpId, @CompanyId INTO @EmployeeMapping  -- Store new & old EmpId
 SELECT 
     UserId, Code, DomainUsername, FullName, NickName, DOB, Email, JobTitleId,
-    Enabled, Phone, Gender, GroupId, Roles, ManagerId, JoinedDate, ConfirmedDate, 
+    Enabled, Phone, Gender, NULL, Roles, ManagerId, JoinedDate, ConfirmedDate, 
     ResignedDate, Skype, Yahoo, Marriage, 
     LastLogin,
     CreatedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone,  
@@ -2142,7 +2142,7 @@ SELECT e.EmpId, tmp.WorkDate, rq.RequestId, tmp.RequestTypeId, s.ShiftId, tmp.Is
 FROM CabintechHRM.dbo.tmpEmployeeCalendar AS tmp WITH (NOLOCK)
 INNER JOIN @EmployeeMapping AS e ON tmp.EmpId = e.OldEmpId
 INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
-LEFT JOIN dbo.WorkingTimeRequest AS rq WITH (NOLOCK) ON tmp.RequestId = rq.OldRequestId
+LEFT JOIN dbo.WorkingTimeRequest AS rq WITH (NOLOCK) ON tmp.RequestId = rq.OldRequestId and rq.CompanyId = @CompanyId
 LEFT JOIN dbo.[Shift] AS s WITH (NOLOCK) ON tmp.ShiftId = s.OldShiftId AND s.CompanyId = @CompanyId
 WHERE ce.CompanyId = @CompanyId
 	AND NOT EXISTS (

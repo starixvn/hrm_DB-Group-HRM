@@ -1,22 +1,26 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[Auto_TimeRecord_Import] @CompanyId SMALLINT
+ALTER PROCEDURE [dbo].[Auto_TimeRecord_Import]
+(
+    @CompanyId SMALLINT
 	,@FromDate DATE
     ,@ToDate DATE
     ,@TimeRecordXml NVARCHAR(MAX) = ''
     ,@ErrCode INT = 0 OUTPUT
 	,@ErrMsg NVARCHAR(200) = '' OUTPUT
+)
 AS
 /*
-Created: 20250318@Tim
-Task: import check in/out
-DB: HRM
+    Created: 20250318@Tim
+    Task: import check in/out
+    DB: bodb_HRM
 
-Revisions:
-Param's Explanation:
-- @TimeRecordXml: "<Root>
-		<Row EmpNo={0} InOutType={1} RecordTime={2} />
-	</Root>"
+    Revisions:
+        20250512@Tim: sync time record Hong Ma [Redmine: 226225]
+    Param's Explanation:
+        - @TimeRecordXml: "<Root>
+		        <Row EmpNo={0} InOutType={1} RecordTime={2} />
+	        </Root>"
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -48,6 +52,7 @@ BEGIN
 	FROM OPENXML(@DocHandler, '/Root/Row', 1) WITH (EmpNo VARCHAR(20), InOutType TINYINT, RecordTime DATETIME) AS d
         INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON d.EmpNo = emp.Code
             OR ISNULL(TRY_PARSE(emp.Code AS INT), 0) = ISNULL(TRY_PARSE(d.EmpNo AS INT), -1)
+            OR RIGHT(emp.Code, 4) = RIGHT(d.EmpNo, 4)
         INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
         LEFT JOIN dbo.SystemConfigs AS config WITH (NOLOCK) ON ce.CompanyId = config.CompanyId
         AND config.[Key] = 'TimeZone'
@@ -100,8 +105,6 @@ BEGIN
 		WHERE att.EmpId = tmp.EmpId 
 			AND att.WorkDate = CAST(tmp.ClientRecordTime AS DATE)
 		)
-
-    EXEC dbo.EmployeeAttendance_ForWaitingCase @CompanyId = @CompanyId
 
 	SELECT EmpId
 	INTO #tmpEmployee

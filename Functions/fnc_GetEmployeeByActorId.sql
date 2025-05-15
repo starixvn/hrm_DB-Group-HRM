@@ -100,7 +100,7 @@ RETURN WITH cteEmployee AS (
 			AND @IsShowUserInTeam = 1
 
 		UNION
-		SELECT @EmpId
+		SELECT @EmpId WHERE @EmpId IS NOT NULL
 		)
 
 SELECT EmpId

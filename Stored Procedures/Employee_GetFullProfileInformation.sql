@@ -99,6 +99,7 @@ BEGIN
 		,g.[Name] AS TeamName
 		,dep.[Name] AS DepartmentName
 		,unit.[Name] AS UnitName
+		,unit.[Code] AS UnitCode
 		,e.EmployeeCard
 		,es.CompanyDate
 		,e.ConfirmedDate
@@ -179,3 +180,4 @@ BEGIN
 
 	DROP TABLE #tmpSupervisor
 END
+
