@@ -41,7 +41,7 @@ SELECT e.EmpId, tmp.WorkDate, rq.RequestId, tmp.RequestTypeId, s.ShiftId, tmp.Is
     tmp.ToTime2 AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone,
     tmp.ChangeShiftTypeId, tmp.MoveOffFromDate, tmp.MoveOffToDate,
     tmp.ModifiedDate AT TIME ZONE @CurrentTimeZone AT TIME ZONE @TargetTimeZone
-FROM HMHRM.dbo.tmpEmployeeCalendar AS tmp WITH (NOLOCK)
+FROM WGIHRM.dbo.tmpEmployeeCalendar AS tmp WITH (NOLOCK)
 INNER JOIN @EmployeeMapping AS e ON tmp.EmpId = e.OldEmpId
 INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
 LEFT JOIN dbo.WorkingTimeRequest AS rq WITH (NOLOCK) ON tmp.RequestId = rq.OldRequestId AND rq.CompanyId = @CompanyId
