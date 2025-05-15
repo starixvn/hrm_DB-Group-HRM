@@ -21,7 +21,7 @@ IF EXISTS (SELECT 1 FROM [dbo].[SystemConfigs] WHERE [Key] = 'SyncWorkingShift' 
 ELSE
     INSERT INTO [dbo].[SystemConfigs] (CompanyId, [Key], [Value])
     VALUES (@CompanyId, 'SyncWorkingShift', '{"Enable": false,"LocationCode": "CTS","Timezone": 7}')
-GO
+
 
 INSERT INTO dbo.SystemConfigs([Key], [Value], [CompanyId])
 	VALUES ('MailSetting', '{"Enable": false, "AppMailId": "0", "EmailSD": "", "EmailGo": ""}', @CompanyId)
