@@ -1,7 +1,7 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[AnnualLeave_GetTransByEmp] @EmpId INT
-	,@Year INT
+	,@fromDate DATETIME
 	,@excludedRequestTrans BIT
 AS
 /*
@@ -17,11 +17,26 @@ Param's Explanation:
 BEGIN
 	SET NOCOUNT ON;
 
-	DECLARE @fromdate DATETIME
-		,@todate DATETIME
+	DECLARE @fromdateRange DATETIME
+		,@todateRange DATETIME
 
-	SET @fromdate = cast(@year AS VARCHAR(4)) + '/01/01'
-	SET @todate = dateadd(yy, 1, @fromdate)
+	SELECT @fromdateRange = FromDate
+		,@todateRange = ISNULL(ToDate, DATEADD(YEAR, 1, DATEADD(YEAR, DATEDIFF(YEAR, 0, FromDate), 0)))
+	FROM (
+		SELECT 
+			FromDate,
+			ToDate,
+			ROW_NUMBER() OVER (ORDER BY FromDate ASC) AS rn
+		FROM dbo.LeaveTrans WITH (NOLOCK)
+		WHERE EmpId = @EmpId
+			AND FromDate <= @fromDate
+			AND ToDate > @fromDate
+			AND CreditDays > 0
+			AND RequestId IS NULL
+			AND ISNULL(Deleted, 0) = 0
+	) AS t
+	WHERE rn = 1
+
 
 	SELECT t.LeaveTransId
 		,RequestId
@@ -31,8 +46,9 @@ BEGIN
 		,ISNULL(t.ModifiedDate, t.CreatedDate) AS ModifiedDate
 	FROM dbo.LeaveTrans t WITH (NOLOCK)
 		INNER JOIN dbo.Employee e WITH (NOLOCK) ON e.EmpID = t.EmpId
-	WHERE fromdate >= @fromdate
-		AND fromdate < @todate
+	WHERE fromdate >= @fromdateRange
+		AND fromdate < @todateRange
+		AND ISNULL(ExtraDays, 0) = 0
 		AND t.EmpId = @EmpId
 		AND ISNULL(Deleted, 0) = 0
 		AND (
