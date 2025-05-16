@@ -91,9 +91,16 @@ BEGIN
 		LEFT JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON e.EmpId = es.EmpId
 		LEFT JOIN (
 		    SELECT EmpId, CreditDays, DeductDays, ExtraDays, FromDate
-		    FROM dbo.LeaveTrans WITH (NOLOCK)
-		    WHERE ISNULL(Deleted, 0) = 0
-			    AND FromDate < (SELECT RangeStartDate FROM #tmpLeaveRange WHERE EmpId = LeaveTrans.EmpId)
+		    FROM (
+			    SELECT EmpId, CreditDays, DeductDays, ExtraDays, FromDate,
+				    ROW_NUMBER() OVER (PARTITION BY EmpId ORDER BY FromDate DESC) AS rn
+			    FROM dbo.LeaveTrans WITH (NOLOCK)
+			    WHERE ISNULL(Deleted, 0) = 0
+				    AND FromDate < (SELECT RangeStartDate FROM #tmpLeaveRange WHERE EmpId = LeaveTrans.EmpId)
+				    AND CreditDays > 0
+				    AND RequestId IS NULL
+			) t
+			WHERE rn = 1
 		) tempdata ON e.EmpId = tempdata.Empid
 	WHERE (
 			@isLocal IS NULL

@@ -93,6 +93,27 @@ BEGIN
 		RETURN
 	END
 
+	DECLARE @ToDateValue DATETIME = @ToDate
+
+	IF @ToDate IS NULL
+	BEGIN
+		SELECT @ToDateValue = RangeEndDate 
+		FROM (
+			SELECT 
+				FromDate,
+				ToDate AS RangeEndDate,
+				ROW_NUMBER() OVER (ORDER BY FromDate ASC) AS rn
+			FROM dbo.LeaveTrans WITH (NOLOCK)
+			WHERE EmpId = @EmpId
+				AND FromDate <= @FromDate
+				AND ToDate > @FromDate
+				AND CreditDays > 0
+				AND RequestId IS NULL
+				AND ISNULL(Deleted, 0) = 0
+		) AS t
+		WHERE rn = 1
+	END
+
 	INSERT INTO dbo.LeaveTrans (
 		EmpId
 		,RequestId
@@ -101,7 +122,7 @@ BEGIN
 		,ToDate
 		,DeductDays
 		,CreditDays
-        ,Deleted
+		,Deleted
 		,CreatedDate
 		,CreatedBy
 		)
@@ -110,10 +131,10 @@ BEGIN
 		,@RequestId
 		,@Description
 		,@FromDate
-		,@ToDate
+		,@ToDateValue
 		,@DeductDays
 		,@CreditDays
-        ,0
+		,0
 		,@CreatedDate
 		,@CreatedBy
 		)

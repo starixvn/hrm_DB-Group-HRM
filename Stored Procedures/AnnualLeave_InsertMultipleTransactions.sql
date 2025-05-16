@@ -91,10 +91,39 @@ BEGIN
 		RETURN
 	END
 
+
+	CREATE TABLE #tmpLeaveRange (
+		EmpId INT PRIMARY KEY,
+		RangeStartDate DATETIME,
+		RangeEndDate DATETIME
+	)
+
+	INSERT INTO #tmpLeaveRange (EmpId, RangeStartDate, RangeEndDate)
+	SELECT 
+		EmpId,
+		FromDate AS RangeStartDate,
+		ToDate AS RangeEndDate
+	FROM (
+		SELECT 
+			EmpId,
+			FromDate,
+			ToDate,
+			ROW_NUMBER() OVER (PARTITION BY EmpId ORDER BY FromDate ASC) AS rn
+		FROM dbo.LeaveTrans WITH (NOLOCK)
+		WHERE EmpId IN (SELECT EmpId FROM #tblEmployeeIds)
+			AND FromDate <= @FromDate
+			AND ToDate > @FromDate
+			AND CreditDays > 0
+			AND RequestId IS NULL
+			AND ISNULL(Deleted, 0) = 0
+	) AS t
+	WHERE rn = 1
+
 	INSERT INTO dbo.LeaveTrans (
 		EmpId
 		,[Description]
 		,FromDate
+		,ToDate
 		,DeductDays
 		,CreditDays
 		,CreatedDate
@@ -103,12 +132,14 @@ BEGIN
 	SELECT emp.EmpId
 		,@Description
 		,@FromDate
+		,lr.RangeEndDate
 		,@DeductDays
 		,@CreditDays
 		,GETDATE()
 		,@ActorId
 	FROM dbo.Employee AS emp WITH (NOLOCK)
 		INNER JOIN #tblEmployeeIds AS empid ON emp.EmpId = empid.EmployeeId
+		INNER JOIN #tmpLeaveRange AS lr ON emp.EmpId = lr.EmpId
 	WHERE ISNULL(emp.isDeleted, 0) = 0
 
 	UPDATE dbo.EmployeeSummary WITH (ROWLOCK)
@@ -120,4 +151,5 @@ BEGIN
 			)
 	
 	DROP TABLE #tblEmployeeIds
+	DROP TABLE #tmpLeaveRange
 END
