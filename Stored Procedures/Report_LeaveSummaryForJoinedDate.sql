@@ -1,4 +1,3 @@
-
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Report_LeaveSummaryForJoinedDate] 
@@ -6,7 +5,7 @@ ALTER PROCEDURE [dbo].[Report_LeaveSummaryForJoinedDate]
     @CompanyId INT
     ,@empid INT = NULL
 	,@TeamIds VARCHAR(max) = ''
-	,@year INT
+	,@fromDate DATETIME
 	,@isLocal BIT = NULL
 	,@SupervisorId INT = NULL
 	,@role VARCHAR(max) = ''
@@ -19,6 +18,7 @@ AS
 
 	Revisions:
 	    20250515@Hank: Separate AL and Extra leave
+	    20250516@Hank: Modified to get active range (ToDate > @fromDate)
 	Param's Explanation:
 */
 BEGIN
@@ -28,10 +28,16 @@ BEGIN
 		-- keep in view type
 		@KeepInViewByDay TINYINT = 1
 
-
 	CREATE TABLE #tmpTeam (GroupId INT)
 
 	CREATE TABLE #tmpEmployee (EmpId INT PRIMARY KEY)
+
+	-- Create temp table for storing employee leave ranges
+	CREATE TABLE #tmpLeaveRange (
+		EmpId INT PRIMARY KEY,
+		RangeStartDate DATETIME,
+		RangeEndDate DATETIME
+	)
 
 	IF ISNULL(@TeamIds, '') <> ''
 	BEGIN
@@ -52,14 +58,29 @@ BEGIN
 		VALUES (@empid)
 	END
 
-	DECLARE @fromdate DATETIME
-		,@todate DATETIME
+	-- Get leave ranges for each employee
+	INSERT INTO #tmpLeaveRange (EmpId, RangeStartDate, RangeEndDate)
+	SELECT 
+		EmpId,
+		FromDate AS RangeStartDate,
+		ToDate AS RangeEndDate
+	FROM (
+		SELECT 
+			EmpId,
+			FromDate,
+			ToDate,
+			ROW_NUMBER() OVER (PARTITION BY EmpId ORDER BY FromDate ASC) AS rn
+		FROM dbo.LeaveTrans WITH (NOLOCK)
+		WHERE EmpId IN (SELECT EmpId FROM #tmpEmployee)
+			AND FromDate <= @fromDate
+			AND ToDate > @fromDate
+			AND CreditDays > 0
+			AND RequestId IS NULL
+			AND ISNULL(Deleted, 0) = 0
+	) AS t
+	WHERE rn = 1
 
-	-- get the first date of year
-	SET @fromdate = cast(@year AS VARCHAR(10)) + '/01/01'
-	SET @todate = DATEADD(yy, 1, @fromdate)
-
-	-- get the openning balace for annual leave to first date of year
+	-- get the openning balace for annual leave nearest range to @fromDate
 	SELECT e.EmpId AS Empid
 		,SUM(ISNULL(tempdata.CreditDays, 0) + ISNULL(tempdata.ExtraDays, 0) - ISNULL(tempdata.DeductDays, 0)) AS OpenBalance
 		,MIN(tempdata.FromDate) AS FromDate
@@ -72,7 +93,7 @@ BEGIN
 		    SELECT EmpId, CreditDays, DeductDays, ExtraDays, FromDate
 		    FROM dbo.LeaveTrans WITH (NOLOCK)
 		    WHERE ISNULL(Deleted, 0) = 0
-			    AND FromDate <= @fromdate
+			    AND FromDate < (SELECT RangeStartDate FROM #tmpLeaveRange WHERE EmpId = LeaveTrans.EmpId)
 		) tempdata ON e.EmpId = tempdata.Empid
 	WHERE (
 			@isLocal IS NULL
@@ -80,17 +101,16 @@ BEGIN
 			)
 		AND (
 			ISNULL(e.isDeleted, 0) = 0
-			OR YEAR(ResignedDate) >= year(@todate)
+			OR YEAR(ResignedDate) >= YEAR(@fromDate)
 			)
 	GROUP BY e.EmpId
 
-
-	-- calculate the balance form the first date of year to @todate
+	-- calculate the balance for the current range
 	SELECT e.EmpId
 		,ISNULL(CreditDays, 0) AS CreditDays
 		,ISNULL(ExtraDays, 0) AS ExtraDays
 		,SUM(ISNULL(DeductDays, 0)) AS DeductDays
-		,LEAST(MIN(cred.FromDate), MIN(extra.FromDate)) AS FromDate
+		,MIN(cred.FromDate) AS FromDate
 	INTO #tmpCurrenBalace
 	FROM dbo.Employee AS e WITH (NOLOCK)
         INNER JOIN #tmpEmployee AS tmpe WITH (NOLOCK) ON tmpe.EmpId = e.EmpId
@@ -101,7 +121,8 @@ BEGIN
 			,ltrans.FromDate
 		FROM dbo.LeaveTrans AS ltrans WITH (NOLOCK)
             INNER JOIN #tmpEmployee AS tmpe WITH (NOLOCK) ON tmpe.EmpId = ltrans.EmpId
-		WHERE YEAR(ltrans.FromDate) = @year
+		WHERE ltrans.FromDate >= (SELECT RangeStartDate FROM #tmpLeaveRange WHERE EmpId = ltrans.EmpId)
+			AND ltrans.ToDate <= (SELECT RangeEndDate FROM #tmpLeaveRange WHERE EmpId = ltrans.EmpId)
 			AND ISNULL(ltrans.Deleted, 0) = 0
 		) AS ded ON e.EmpId = ded.EmpId
 		LEFT JOIN (
@@ -110,8 +131,8 @@ BEGIN
 			,MIN(ltrans.FromDate) AS FromDate
 		FROM dbo.LeaveTrans AS ltrans WITH (NOLOCK)
             INNER JOIN #tmpEmployee AS tmpe WITH (NOLOCK) ON tmpe.EmpId = ltrans.EmpId
-		WHERE ltrans.FromDate >= @fromdate
-			AND ltrans.FromDate < @todate
+		WHERE ltrans.FromDate >= (SELECT RangeStartDate FROM #tmpLeaveRange WHERE EmpId = ltrans.EmpId)
+			AND ltrans.ToDate <= (SELECT RangeEndDate FROM #tmpLeaveRange WHERE EmpId = ltrans.EmpId)
 			AND ISNULL(ltrans.Deleted, 0) <> 1
 			AND ltrans.CreditDays > 0
 		GROUP BY ltrans.EmpId
@@ -122,8 +143,8 @@ BEGIN
 			,MIN(ltrans.FromDate) AS FromDate
 		FROM dbo.LeaveTrans AS ltrans WITH (NOLOCK)
             INNER JOIN #tmpEmployee AS tmpe WITH (NOLOCK) ON tmpe.EmpId = ltrans.EmpId
-		WHERE ltrans.FromDate >= @fromdate
-			AND ltrans.FromDate < @todate
+		WHERE ltrans.FromDate >= (SELECT RangeStartDate FROM #tmpLeaveRange WHERE EmpId = ltrans.EmpId)
+			AND ltrans.ToDate <= (SELECT RangeEndDate FROM #tmpLeaveRange WHERE EmpId = ltrans.EmpId)
 			AND ISNULL(ltrans.Deleted, 0) <> 1
 			AND ltrans.ExtraDays > 0
 		GROUP BY ltrans.EmpId
@@ -135,7 +156,7 @@ BEGIN
 			)
 		AND (
 			ISNULL(e.isDeleted, 0) = 0
-			OR YEAR(e.ResignedDate) >= year(@todate)
+			OR YEAR(e.ResignedDate) >= YEAR(@fromDate)
 			)
 	GROUP BY e.EmpId
 		,ISNULL(CreditDays, 0)
@@ -205,10 +226,8 @@ BEGIN
 		,e.[Code]
 
     DROP TABLE #tmpEmployee
-
 	DROP TABLE #tmpOpenBalance
-
 	DROP TABLE #tmpCurrenBalace
-
 	DROP TABLE #tmpTeam
+	DROP TABLE #tmpLeaveRange
 END
