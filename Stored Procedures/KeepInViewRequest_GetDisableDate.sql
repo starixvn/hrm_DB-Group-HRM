@@ -65,11 +65,7 @@ BEGIN
 			WHERE @RequestId IS NULL
 				OR r.RequestId <> @requestId
 			)
-		OR (
-			@typeId = 1 -- kiv by day
-			AND IsOffDay = 0
-			AND IsHoliday = 0
-			)
+		OR ShiftId IS NULL
 
 	DROP TABLE #tblEmployeeCalendar
 END
