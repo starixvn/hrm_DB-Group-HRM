@@ -57,24 +57,21 @@ BEGIN
 	-- Get leave ranges for each employee
 	INSERT INTO #tmpLeaveRange (EmpId, RangeStartDate, RangeEndDate)
 	SELECT 
-		EmpId,
-		FromDate AS RangeStartDate,
-		ToDate AS RangeEndDate
-	FROM (
-		SELECT 
-			EmpId,
-			FromDate,
-			ToDate,
-			ROW_NUMBER() OVER (PARTITION BY EmpId ORDER BY FromDate ASC) AS rn
-		FROM dbo.LeaveTrans WITH (NOLOCK)
-		WHERE EmpId IN (SELECT EmpId FROM #tmpEmployee)
-			AND FromDate <= @fromDate
-			AND ToDate > @fromDate
-			AND CreditDays > 0
-			AND RequestId IS NULL
-			AND ISNULL(Deleted, 0) = 0
-	) AS t
-	WHERE rn = 1
+		e.EmpId,
+		CASE 
+			WHEN DATEFROMPARTS(YEAR(@fromDate), MONTH(e.JoinedDate), DAY(e.JoinedDate)) < @fromDate
+			THEN DATEFROMPARTS(YEAR(@fromDate), MONTH(e.JoinedDate), DAY(e.JoinedDate))
+			ELSE DATEFROMPARTS(YEAR(@fromDate) - 1, MONTH(e.JoinedDate), DAY(e.JoinedDate))
+		END AS RangeStartDate,
+		DATEADD(yy, 1,
+			CASE 
+				WHEN DATEFROMPARTS(YEAR(@fromDate), MONTH(e.JoinedDate), DAY(e.JoinedDate)) < @fromDate
+				THEN DATEFROMPARTS(YEAR(@fromDate), MONTH(e.JoinedDate), DAY(e.JoinedDate))
+				ELSE DATEFROMPARTS(YEAR(@fromDate) - 1, MONTH(e.JoinedDate), DAY(e.JoinedDate))
+			END
+		) AS RangeEndDate
+	FROM dbo.Employee e WITH (NOLOCK)
+	WHERE e.EmpId IN (SELECT EmpId FROM #tmpEmployee)
 
 	-- calculate the balance for the current range
 	SELECT e.EmpId
@@ -138,7 +135,7 @@ BEGIN
 		,ISNULL(ExtraDays, 0) AS ExtraLeave
 		,ISNULL(DeductDays, 0) AS DeductDays
 		,ISNULL(CreditDays, 0) + ISNULL(ExtraDays, 0) - ISNULL(cb.DeductDays, 0) AS LeaveBalance
-		,cb.FromDate
+		,e.JoinedDate as FromDate
 		,'' AS Remark
 		,cb.EmpId
 		,e.Code
@@ -154,11 +151,14 @@ BEGIN
 		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON g.GroupId = e.GroupId
 		INNER JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId = g.DepartmentId
 		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON e.EmpId = es.EmpId
+
 	WHERE ISNULL(e.[Enabled], 0) = 1
 		AND (
 			@isLocal IS NULL
 			OR es.IsLocal = @isLocal
 			)
+	ORDER BY g.[Name]
+		,e.[Code]
 	
 
     DROP TABLE #tmpEmployee
