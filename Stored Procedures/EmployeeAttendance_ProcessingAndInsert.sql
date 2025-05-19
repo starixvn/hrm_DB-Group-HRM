@@ -1,17 +1,21 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[EmployeeAttendance_ProcessingAndInsert] @empId INT = NULL
+ALTER PROCEDURE [dbo].[EmployeeAttendance_ProcessingAndInsert]
+(
+    @empId INT = NULL
 	,@fromTime DATETIME
 	,@toTime DATETIME
 	,@onlyUpdate BIT = 0
     ,@CompanyId SMALLINT = NULL
+)
 AS
 /*
-Created:
-Task:
-DB: HRM
+    Created:
+    Task:
+    DB: bodb_HRM
 
-Revisions:
+    Revisions:
+        20250519@Tim: remove check JoinedDate
 
 */
 BEGIN
@@ -103,7 +107,7 @@ BEGIN
 		AND emp.isDeleted = 0
 		AND DATEADD(MINUTE, CAST(ISNULL(config.Value, @serverTimeZone) AS REAL) * 60, DATEADD(HOUR, ABS(@serverTimeZone), tr.RecordTime))
             BETWEEN DATEADD(HH, - 2, CONVERT(VARCHAR(10), @fromTime, 111)) AND DATEADD(d, 2, CONVERT(VARCHAR(10), @toTime, 111))
-		AND emp.JoinedDate <= CAST(tr.RecordTime AS DATE)
+		--AND emp.JoinedDate <= CAST(tr.RecordTime AS DATE)
 		AND (
 			@empId IS NULL
 			OR tr.EmpId = @empId
