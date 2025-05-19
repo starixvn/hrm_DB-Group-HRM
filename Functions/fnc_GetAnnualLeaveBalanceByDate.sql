@@ -19,24 +19,36 @@ AS
 BEGIN
 	DECLARE @CompanyId SMALLINT
         ,@LeaveBalanceDay NUMERIC(18, 2)
-		,@OutstandingLeaveDay NUMERIC(18, 2)
+		,@PendingLeaveDay NUMERIC(18, 2)
 		,@MaxMonth INT
 		,@CurrentAnnualLeaveCanBeUse NUMERIC(18, 2)
 		,@MaxCanBeUseInYear NUMERIC(18, 2)
-		,@IsUserHave6DaysAL BIT
-		,@Today DATE = GETDATE()
+		,@Today DATE
+        ,@AnnualLeaveResetTimelineType TINYINT
+        ,@AnnualLeaveResetTimelineByYear TINYINT = 1
+        ,@JoinedDate DATE
+        ,@serverTimeZone SMALLINT = -4
+        ,@clientTimeZone FLOAT
+        ,@AnnualLeaveTypeId SMALLINT = 2
 
     SELECT @CompanyId = ce.CompanyId
+        ,@JoinedDate = e.JoinedDate
     FROM dbo.Employee AS e WITH (NOLOCK)
         INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
     WHERE e.EmpId = @EmpId
 
-	SELECT @IsUserHave6DaysAL = CASE 
-			WHEN WorkingDays = 15 THEN 1
-			ELSE 0
-			END
-	FROM dbo.EmployeeSummary WITH (NOLOCK)
-	WHERE EmpId = @EmpID
+    SELECT @AnnualLeaveResetTimelineType = [Value]
+    FROM dbo.SystemConfigs WITH (NOLOCK)
+    WHERE CompanyId = @CompanyId
+        AND [Key] = 'AnnualLeaveResetTimeline'
+
+    SELECT @clientTimeZone = [Value]
+    FROM dbo.SystemConfigs WITH (NOLOCK)
+    WHERE CompanyId = @CompanyId
+        AND [Key] = 'TimeZone'
+
+    SET @AnnualLeaveResetTimelineType = ISNULL(@AnnualLeaveResetTimelineType, @AnnualLeaveResetTimelineByYear)
+    SET @Today = DATEADD(MINUTE, @clientTimeZone * 60, DATEADD(HOUR, ABS(@serverTimeZone), GETDATE()))
 
 	IF YEAR(@Today) = YEAR(@Date)
 	BEGIN
@@ -45,25 +57,53 @@ BEGIN
 				ELSE @Date END
 	END
 
-	SELECT @LeaveBalanceDay = SUM(ISNULL(CreditDays, 0)) - SUM(ISNULL(DeductDays, 0))
+    DECLARE @FromDate DATE
+        ,@ToDate DATE
+
+	IF @AnnualLeaveResetTimelineType = @AnnualLeaveResetTimelineByYear
+    BEGIN
+        SET @FromDate = DATEFROMPARTS(YEAR(@Date), 1, 1)
+    END
+    ELSE
+    BEGIN
+        SET @FromDate = DATEFROMPARTS(YEAR(@Date), MONTH(@JoinedDate), DAY(@JoinedDate))
+    END
+
+    SET @ToDate = DATEADD(YEAR, 1, @FromDate)
+
+    SELECT @LeaveBalanceDay = SUM(ISNULL(CreditDays, 0)) + SUM(ISNULL(ExtraDays, 0)) - SUM(ISNULL(DeductDays, 0))
 	FROM dbo.LeaveTrans WITH (NOLOCK)
 	WHERE EmpId = @EmpId
-		AND YEAR(FromDate) = YEAR(@Date)
-		AND ISNULL(Deleted, 0) <> 1
+		AND FromDate BETWEEN @FromDate AND @ToDate
+		AND ISNULL(Deleted, 0) = 0
 
-	SELECT @OutstandingLeaveDay = SUM(ISNULL(tmp.TOTALDAYS, 0))
-	FROM dbo.tmpLeaveBalance AS tmp WITH (NOLOCK)
-		INNER JOIN dbo.LeaveRequest AS lr WITH (NOLOCK) ON tmp.EmpId = lr.EmpId
-		AND tmp.RequestId = lr.RequestId
-	WHERE tmp.EmpId = @EmpId
-		AND tmp.[Status] = 0
-		AND tmp.InYear = YEAR(@Date)
-		AND (
+    SELECT @PendingLeaveDay = SUM(lr.TotalDays)
+    FROM dbo.WorkingTimeRequest AS r WITH (NOLOCK)
+        INNER JOIN dbo.LeaveRequest AS lr WITH (NOLOCK) ON r.RequestId = lr.RequestId
+    WHERE lr.LeaveType = @AnnualLeaveTypeId
+        AND lr.FromDate <= @FromDate
+        AND lr.ToDate > @ToDate
+        AND (
 			@RequestId IS NULL
-			OR tmp.RequestID <> @RequestId
+			OR r.RequestId != @RequestId
 			)
+        AND r.CurrentStatus IN (1, 2) -- pending/verified
 
-	SELECT @MaxCanBeUseInYear = ISNULL(@LeaveBalanceDay, 0) - ISNULL(@OutstandingLeaveDay, 0)
+    SELECT @PendingLeaveDay = ISNULL(@PendingLeaveDay, 0) + SUM(CASE WHEN ldt.IsHalfDay = 1 THEN 0.5 ELSE 1 END)
+    FROM dbo.WorkingTimeRequest AS r WITH (NOLOCK)
+        INNER JOIN dbo.LeaveRequest AS lr WITH (NOLOCK) ON r.RequestId = lr.RequestId
+        INNER JOIN dbo.LeaveRequestDetail AS ldt WITH (NOLOCK) ON lr.RequestId = ldt.RequestId
+    WHERE lr.LeaveType = 0 -- general leave
+        AND ldt.LeaveType = @AnnualLeaveTypeId
+        AND lr.FromDate <= @FromDate
+        AND lr.ToDate > @ToDate
+        AND (
+			@RequestId IS NULL
+			OR r.RequestId != @RequestId
+			)
+        AND r.CurrentStatus IN (1, 2) -- pending/verified
+
+	SELECT @MaxCanBeUseInYear = ISNULL(@LeaveBalanceDay, 0) - ISNULL(@PendingLeaveDay, 0)
 
 	IF EXISTS (
 			SELECT 1
@@ -77,17 +117,13 @@ BEGIN
 		RETURN ISNULL(@MaxCanBeUseInYear, 0)
 	END
 
-	IF @IsUserHave6DaysAL = 1
-	BEGIN
-		SELECT @MaxCanBeUseInYear = @MaxCanBeUseInYear * 2
-	END
-
 	IF EXISTS (
 			SELECT 1
 			FROM dbo.EmployeeSummary WITH (NOLOCK)
 			WHERE EmpId = @EmpId
 				AND IsLocal = 1
 			)
+        AND @AnnualLeaveResetTimelineType = @AnnualLeaveResetTimelineByYear
 	BEGIN
 		SELECT @MaxMonth = MAX(InMonth)
 		FROM dbo.tmpLeaveBalance WITH (NOLOCK)
@@ -96,7 +132,7 @@ BEGIN
 			AND InYear = YEAR(@Date)
 			AND (
 				@RequestId IS NULL
-				OR RequestID <> @RequestId
+				OR RequestId != @RequestId
 				)
 
 		SELECT @MaxMonth = CASE 
@@ -120,9 +156,9 @@ BEGIN
 			WHERE EmpID = @EmpID
 				AND YEAR(FromDate) = YEAR(@Date)
 				AND MONTH(FromDate) <= MONTH(@Date)
-				AND ISNULL(Deleted, 0) <> 1
+				AND ISNULL(Deleted, 0) = 0
 
-			SELECT @OutstandingLeaveDay = SUM(ISNULL(tmp.TOTALDAYS, 0))
+			SELECT @PendingLeaveDay = SUM(ISNULL(tmp.TotalDays, 0))
 			FROM dbo.tmpLeaveBalance AS tmp WITH (NOLOCK)
 				LEFT JOIN dbo.LeaveRequest AS lr WITH (NOLOCK) ON tmp.EmpId = lr.EmpId
 				AND tmp.RequestID = lr.RequestId
@@ -132,15 +168,10 @@ BEGIN
 				AND InMonth <= MONTH(@Date)
 				AND (
 					@RequestId IS NULL
-					OR tmp.RequestID <> @RequestId
+					OR tmp.RequestId != @RequestId
 					)
 
-			SELECT @LeaveBalanceDay = ISNULL(@LeaveBalanceDay, 0) - ISNULL(@OutstandingLeaveDay, 0)
-
-			IF @IsUserHave6DaysAL = 1
-			BEGIN
-				SELECT @LeaveBalanceDay = @LeaveBalanceDay * 2
-			END
+			SELECT @LeaveBalanceDay = ISNULL(@LeaveBalanceDay, 0) - ISNULL(@PendingLeaveDay, 0)
 
 			SELECT @CurrentAnnualLeaveCanBeUse = @LeaveBalanceDay - 7 + (CASE 
 					WHEN MONTH(@Date) > 7 THEN 7
@@ -164,11 +195,6 @@ BEGIN
 	ELSE
 	BEGIN
 		SET @LeaveBalanceDay = @MaxCanBeUseInYear
-	END
-
-	IF @IsUserHave6DaysAL = 1
-	BEGIN
-		SELECT @LeaveBalanceDay = @LeaveBalanceDay / 2.0
 	END
 
 	RETURN ISNULL(@LeaveBalanceDay, 0)
