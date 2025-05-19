@@ -37,42 +37,44 @@ AS
 */
 BEGIN
 	SET NOCOUNT ON;
-	SET XACT_ABORT ON;
 
 	DECLARE @RequestType TINYINT = 6
-		,@AnnualLeaveType TINYINT = 2
-		,@KIVLeaveType TINYINT = 10
-		,@KIVByHourLeaveType TINYINT = 48
-		,@PublicHolidayLeaveType TINYINT = 13
-		,@PaternityLeaveType TINYINT = 14
-		,@MaternityLeaveType INT = 12
-		,@UnpaidLeaveType TINYINT = 25
-		,@UnpaidLeaveInsuranceType TINYINT = 41
-		,@BusinessTripLeaveType TINYINT = 9
-		,@BusinessDuringWorkingLeaveType TINYINT = 26
-		,@SickLeaveTypeId TINYINT = 29
-		,@HospitalizationLeaveTypeId TINYINT = 39
-		,@OnbehalfActionType TINYINT = 5
-		,@VerifyActionType TINYINT = 2
-		,@ApproveActionType TINYINT = 3
-		,@LeaveWorkType TINYINT = 2
-		,@TotalDays_tmp NUMERIC(5, 1)
-		,@AnnualLeaveDay DECIMAL(18, 2)
-		,@SickLeaveDay DECIMAL(18, 2)
-		,@HospitalizationLeaveDay DECIMAL(18, 2)
-		,@KIVLeaveDay DECIMAL(18, 2)
-		,@KIVLeaveMinutes INT
-		,@isHalfDay BIT
-		,@ModifiedDate DATETIME
-		,@IsTopManager BIT
-		,@TmpFromDate DATE
-		,@TmpToDate DATE
-		,@DocHandler INT
-		,@OldTotalDays INT
-		,@TotalDaysPaternity INT
-		,@BalanceDaysPaternity INT
-		,@OldFromDate DATE
-		,@OldToDate DATE
+        ,@AnnualLeaveType TINYINT = 2
+        ,@KIVLeaveType TINYINT = 10
+        ,@KIVByHourLeaveType TINYINT = 48
+        ,@PublicHolidayLeaveType TINYINT = 13
+        ,@PaternityLeaveType TINYINT = 14
+        ,@MaternityLeaveType INT = 12
+        ,@UnpaidLeaveType TINYINT = 25
+        ,@UnpaidLeaveInsuranceType TINYINT = 41
+        ,@BusinessTripLeaveType TINYINT = 9
+        ,@BusinessDuringWorkingLeaveType TINYINT = 26
+        ,@SickLeaveTypeId TINYINT = 29
+        ,@HospitalizationLeaveTypeId TINYINT = 39
+        ,@OnbehalfActionType TINYINT = 5
+        ,@VerifyActionType TINYINT = 2
+        ,@ApproveActionType TINYINT = 3
+        ,@LeaveWorkType TINYINT = 2
+        ,@TotalDays_tmp NUMERIC(5, 1)
+        ,@AnnualLeaveDay DECIMAL(18, 2)
+        ,@SickLeaveDay DECIMAL(18, 2)
+        ,@HospitalizationLeaveDay DECIMAL(18, 2)
+        ,@KIVLeaveDay DECIMAL(18, 2)
+        ,@KIVLeaveMinutes INT
+        ,@isHalfDay BIT
+        ,@ModifiedDate DATETIME
+        ,@IsTopManager BIT
+        ,@TmpFromDate DATE
+        ,@TmpToDate DATE
+        ,@DocHandler INT
+        ,@OldTotalDays INT
+        ,@TotalDaysPaternity INT
+        ,@BalanceDaysPaternity INT
+        ,@OldFromDate DATE
+        ,@OldToDate DATE
+        ,@JoinedDate DATE
+        ,@AnnualLeaveResetTimelineType TINYINT
+        ,@AnnualLeaveResetTimelineByYear TINYINT = 1
 
 	CREATE TABLE #tblLeaveRequestDetail (
 		OnDate DATETIME
@@ -84,22 +86,16 @@ BEGIN
 		,ToTime DATETIME
 		)
 
-	-- check join date
-	DECLARE @JoinedDate DATE = (
-		SELECT JoinedDate
-		FROM Employee AS e
-		INNER JOIN CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = e.EmpId
-		WHERE e.EmpId = @EmpId
-			AND ce.CompanyId = @CompanyId
-	);
+    SELECT @JoinedDate = JoinedDate
+    FROM dbo.Employee AS e WITH (NOLOCK)
+        INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = e.EmpId
+    WHERE e.EmpId = @EmpId
+        AND ce.CompanyId = @CompanyId
 
-	IF CAST(@FromDate AS DATE) < @JoinedDate
-	BEGIN
-		SET @ErrCode = 120
-		SET @ErrMsg = 'You can not request leave earlier than your joined date.'
-
-		RETURN
-	END
+    SELECT @AnnualLeaveResetTimelineType = [Value]
+    FROM dbo.SystemConfigs WITH (NOLOCK)
+    WHERE CompanyId = @CompanyId
+        AND [Key] = 'AnnualLeaveResetTimeline'
 
 	SELECT @IsHalfDay = CASE 
 			WHEN @TotalDays = 0.5 THEN 1
@@ -110,16 +106,12 @@ BEGIN
 		,@TmpFromDate = CAST(@FromDate AS DATE)
 		,@TmpToDate = CAST(@ToDate AS DATE)
 
-	IF NOT EXISTS (
-			SELECT 1
-			FROM dbo.WorkingTimeRequest WITH (NOLOCK)
-			WHERE RequestId = @RequestId
-			)
+	IF CAST(@FromDate AS DATE) < @JoinedDate
 	BEGIN
-		SET @ErrCode = 100
-		SET @ErrMsg = 'Request does not exists.'
+		SET @ErrCode = 120
+		SET @ErrMsg = 'You can not request leave earlier than your joined date.'
 
-		RETURN;
+		RETURN
 	END
 
 	IF NOT EXISTS (
@@ -154,15 +146,24 @@ BEGIN
 		RETURN;
 	END
 
-	IF @FromDate IS NOT NULL
-		AND @ToDate IS NOT NULL
-		AND YEAR(@FromDate) <> YEAR(@ToDate)
+	IF @AnnualLeaveResetTimelineType = @AnnualLeaveResetTimelineByYear
+        AND YEAR(@FromDate) != YEAR(@ToDate)
 	BEGIN
 		SET @ErrCode = 102
-		SET @ErrMsg = 'You cannot submit a cross-year leave request. Please split them into 2 requests.'
+		SET @ErrMsg = 'You cannot submit a cross-year leave request. Please split it into 2 separate requests.'
 
 		RETURN;
 	END
+
+    IF @AnnualLeaveResetTimelineType != @AnnualLeaveResetTimelineByYear
+        AND DATEFROMPARTS(YEAR(@FromDate), MONTH(@JoinedDate), DAY(@JoinedDate)) >= @FromDate
+        AND DATEFROMPARTS(YEAR(@ToDate), MONTH(@JoinedDate), DAY(@JoinedDate)) < @ToDate
+    BEGIN
+        SET @ErrCode = 103
+        SET @ErrMsg = 'You cannot submit a cross-leave request based on your Group Date. Please split it into 2 separate requests.'
+
+		RETURN;
+    END
 
 	IF @EmpId <> @ModifiedBy
 		AND NOT EXISTS (

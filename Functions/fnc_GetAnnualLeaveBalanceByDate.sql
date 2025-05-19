@@ -67,6 +67,11 @@ BEGIN
     ELSE
     BEGIN
         SET @FromDate = DATEFROMPARTS(YEAR(@Date), MONTH(@JoinedDate), DAY(@JoinedDate))
+
+        IF @Date < @FromDate
+        BEGIN
+            SET @FromDate = DATEADD(YEAR, -1, @FromDate)
+        END
     END
 
     SET @ToDate = DATEADD(YEAR, 1, @FromDate)
@@ -74,15 +79,17 @@ BEGIN
     SELECT @LeaveBalanceDay = SUM(ISNULL(CreditDays, 0)) + SUM(ISNULL(ExtraDays, 0)) - SUM(ISNULL(DeductDays, 0))
 	FROM dbo.LeaveTrans WITH (NOLOCK)
 	WHERE EmpId = @EmpId
-		AND FromDate BETWEEN @FromDate AND @ToDate
+		AND FromDate >= @FromDate
+        AND (ToDate IS NULL OR ToDate < @ToDate)
 		AND ISNULL(Deleted, 0) = 0
 
     SELECT @PendingLeaveDay = SUM(lr.TotalDays)
     FROM dbo.WorkingTimeRequest AS r WITH (NOLOCK)
         INNER JOIN dbo.LeaveRequest AS lr WITH (NOLOCK) ON r.RequestId = lr.RequestId
-    WHERE lr.LeaveType = @AnnualLeaveTypeId
-        AND lr.FromDate <= @FromDate
-        AND lr.ToDate > @ToDate
+    WHERE lr.EmpId = @EmpId
+        AND lr.LeaveType = @AnnualLeaveTypeId
+        AND lr.FromDate >= @FromDate
+        AND lr.ToDate < @ToDate
         AND (
 			@RequestId IS NULL
 			OR r.RequestId != @RequestId
@@ -93,10 +100,11 @@ BEGIN
     FROM dbo.WorkingTimeRequest AS r WITH (NOLOCK)
         INNER JOIN dbo.LeaveRequest AS lr WITH (NOLOCK) ON r.RequestId = lr.RequestId
         INNER JOIN dbo.LeaveRequestDetail AS ldt WITH (NOLOCK) ON lr.RequestId = ldt.RequestId
-    WHERE lr.LeaveType = 0 -- general leave
+    WHERE lr.EmpId = @EmpId
+        AND lr.LeaveType = 0 -- general leave
         AND ldt.LeaveType = @AnnualLeaveTypeId
-        AND lr.FromDate <= @FromDate
-        AND lr.ToDate > @ToDate
+        AND lr.FromDate >= @FromDate
+        AND lr.ToDate < @ToDate
         AND (
 			@RequestId IS NULL
 			OR r.RequestId != @RequestId
