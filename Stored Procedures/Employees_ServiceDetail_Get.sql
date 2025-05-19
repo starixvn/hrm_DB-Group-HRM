@@ -2,8 +2,7 @@
 
 ALTER   PROCEDURE [dbo].[Employees_ServiceDetail_Get]
 (
-    @CompanyId INT,
-	@IsNewEmployee BIT
+    @CompanyId INT
 )
 AS
 /*
@@ -35,16 +34,4 @@ BEGIN
 			AND e.ResignedDate IS NULL
 		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON e.GroupId = g.GroupId AND g.CompanyId = @CompanyId
 	WHERE e.JoinedDate IS NOT NULL
-		AND (
-			(@IsNewEmployee = 1 AND NOT EXISTS(
-				SELECT 1 
-				FROM LeaveTrans lt
-				WHERE e.EmpId = lt.EmpId
-			)) OR
-			(@IsNewEmployee = 0 AND EXISTS(
-				SELECT 1 
-				FROM LeaveTrans lt
-				WHERE e.EmpId = lt.EmpId
-			))
-		)
 END
