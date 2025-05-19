@@ -1,6 +1,7 @@
 use bodb_HRM
 go
 
+/*
 UPDATE empca
 SET empca.IsHoliday = 1
 	,empca.ModifiedDate = GETDATE()
