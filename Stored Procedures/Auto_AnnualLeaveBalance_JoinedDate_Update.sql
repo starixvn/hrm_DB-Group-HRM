@@ -68,7 +68,7 @@ BEGIN
 	SELECT t.EmpId
 		,@Description
 		,DATEADD(YEAR, t.[Year] - YEAR(JoinedDate), JoinedDate) as FromDate
-		,DATEADD(YEAR, t.[Year] - YEAR(JoinedDate) + 1, JoinedDate) as ToDate
+		,DATEADD(DAY, -1, DATEADD(YEAR, t.[Year] - YEAR(JoinedDate) + 1, JoinedDate)) as ToDate
 		,0 AS DeductDays
 		,t.AnnualLeaves AS CreditDays
 		,t.ExtraLeaves AS ExtraDays
