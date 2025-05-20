@@ -34,4 +34,9 @@ BEGIN
 			AND e.ResignedDate IS NULL
 		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON e.GroupId = g.GroupId AND g.CompanyId = @CompanyId
 	WHERE e.JoinedDate IS NOT NULL
+		AND (
+			(es.IsLocal = 1 AND ISNULL(g.LocalBasicAnnualLeaveBalance, 0) > 0)
+			OR 
+			(es.IsLocal = 0 AND ISNULL(g.ExpatBasicAnnualLeaveBalance, 0) > 0)
+    )
 END

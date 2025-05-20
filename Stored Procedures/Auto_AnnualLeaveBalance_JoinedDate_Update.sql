@@ -38,6 +38,7 @@ BEGIN
 		EmpId INT,
 		[Year] INT
 	) AS j
+	WHERE j.AnnualLeaves > 0 
 
 	UPDATE es
 	SET es.AnnualLeaveBalance = ISNULL(es.AnnualLeaveBalance, 0) + t.AnnualLeaves + t.ExtraLeaves
