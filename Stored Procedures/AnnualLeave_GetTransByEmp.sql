@@ -42,14 +42,15 @@ BEGIN
     ELSE
     BEGIN
         SET @fromdateRange = DATEFROMPARTS(YEAR(@fromDate), MONTH(@JoinedDate), DAY(@JoinedDate))
-
+		
         IF @fromDate < @fromdateRange
         BEGIN
-            SET @fromdateRange = DATEADD(YEAR, -1, @FromDate)
+            SET @fromdateRange = DATEADD(YEAR, -1, @fromdateRange)
         END
     END
 
 	SET @todateRange = DATEADD(YEAR, 1, @fromdateRange)
+	
 
 	SELECT t.LeaveTransId
 		,RequestId
@@ -59,8 +60,8 @@ BEGIN
 		,ISNULL(t.ModifiedDate, t.CreatedDate) AS ModifiedDate
 	FROM dbo.LeaveTrans t WITH (NOLOCK)
 		INNER JOIN dbo.Employee e WITH (NOLOCK) ON e.EmpID = t.EmpId
-	WHERE fromdate >= @fromdateRange
-		AND fromdate < @todateRange
+	WHERE FromDate >= @fromdateRange
+		AND FromDate < @todateRange
 		AND (ISNULL(ExtraDays, 0) = 0 OR (ExtraDays > 0 AND CreditDays > 0))
 		AND t.EmpId = @EmpId
 		AND ISNULL(Deleted, 0) = 0
