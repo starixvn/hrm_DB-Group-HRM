@@ -1,25 +1,28 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[WorkingTimeRequest_GetRequestByCreateDate_AllType] @SupervisorID INT = NULL
-	,@empid INT = NULL
-	,@TeamIds VARCHAR(max) = ''
-	,@fromdate DATETIME
-	,@todate DATETIME
-	,@status VARCHAR(max) = NULL
-	,@role VARCHAR(max) = ''
-	,@isLocal BIT = NULL
-	,@requestType INT = NULL
-	,@leaveTypeId INT = NULL
-	,@CompanyId SMALLINT
+ALTER PROCEDURE [dbo].[WorkingTimeRequest_GetRequestByCreateDate_AllType]
+(
+    @CompanyId SMALLINT
+    ,@SupervisorId INT = NULL
+    ,@empid INT = NULL
+    ,@TeamIds VARCHAR(MAX) = ''
+    ,@fromdate DATETIME
+    ,@todate DATETIME
+    ,@status VARCHAR(MAX) = NULL
+    ,@role VARCHAR(MAX) = ''
+    ,@isLocal BIT = NULL
+    ,@requestType INT = NULL
+    ,@leaveTypeId INT = NULL
+)
 AS
 /*
-Created: Tom.Vo@2013-11-04
-Task: Get Request By Date
-DB: HRM
+    Created: Tom.Vo@2013-11-04
+    Task: Get Request By Date
+    DB: bodb_HRM
 
-Revisions:
-    20250403@Tim: remove section [Redmine: #222886]
-Param's Explanation:
+    Revisions:
+        20250403@Tim: remove section [Redmine: #222886]
+    Param's Explanation:
 */
 BEGIN
 	CREATE TABLE #tblstatus (Currentstatus TINYINT)
@@ -623,7 +626,7 @@ BEGIN
 		,r.ModifiedDate
 		,ISNULL(rd.IsWarning, 0) AS IsWarning
 		,r.ReworkCount
-		,dbo.fnc_GetAnnualLeaveBalanceByYear(r.EmpId, YEAR(rd.FromDate), r.RequestId) AS AnnualLeaveBalance
+		,dbo.fnc_GetAnnualLeaveBalance(r.EmpId, rd.FromDate, r.RequestId) AS AnnualLeaveBalance
 	FROM dbo.WorkingTimeRequest AS r WITH (NOLOCK)
 		INNER JOIN #tblRequestInDaily AS rd WITH (NOLOCK) ON r.RequestId = rd.RequestID
 		INNER JOIN #tblRequestId AS rq WITH (NOLOCK) ON r.RequestId = rq.RequestId

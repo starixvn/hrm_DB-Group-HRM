@@ -9,7 +9,7 @@ ALTER PROCEDURE [dbo].[LeaveRequest_GetLeaveBalance]
 AS
 /*
     Created: Quinn.Vo@20190417
-    Task: Get  Avaible Balance Leave From RequestId
+    Task: Get Avaible Balance Leave From RequestId
     DB: bodb_HRM
 
     Revisions:
@@ -30,29 +30,17 @@ BEGIN
 		,@WeekedLeaveDayTaken NUMERIC(18, 2)
 		,@HospitalizationLeaveBalance NUMERIC(18, 2)
 		,@SickLeaveBalance NUMERIC(18, 2)
-        ,@CompanyId SMALLINT
-        ,@AnnualLeaveResetTimelineType TINYINT
-        ,@AnnualLeaveResetTimelineByYear TINYINT = 1
-
-    SELECT @CompanyId = CompanyId
-    FROM dbo.CompanyEmployee WITH (NOLOCK)
-    WHERE EmpId = @EmpId
-    
-    SELECT @AnnualLeaveResetTimelineType = [Value]
-    FROM dbo.SystemConfigs WITH (NOLOCK)
-    WHERE CompanyId = @CompanyId
-        AND [Key] = 'AnnualLeaveResetTimeline'
 
 	SELECT @KIVBalance = dbo.fnc_GetKIVByDayBalance(@EmpId, @EffectedDay, @RequestId)
 		,@KIVByHourBalance = dbo.fnc_GetKIVByHourBalance(@EmpId, @EffectedDay, @RequestId)
-		,@LeaveBalanceDay = dbo.fnc_GetAnnualLeaveBalanceByYear(@EmpId, YEAR(@EffectedDay), @RequestId)
+		,@LeaveBalanceDay = dbo.fnc_GetAnnualLeaveBalance(@EmpId, @EffectedDay, @RequestId)
 		,@CurrenLeaveDay = dbo.fnc_GetAnnualLeaveBalanceByDate(@EmpId, @EffectedDay, @RequestId)
 		,@WeekedLeaveDayTaken = dbo.fnc_GetWeekendLeaveTaken(@EmpId, @EffectedDay, @RequestId)
 		,@HospitalizationLeaveBalance = dbo.fnc_GetHospitalizationLeaveBalance(@EmpId, YEAR(@EffectedDay), @RequestId)
 		,@SickLeaveBalance = dbo.fnc_GetSickLeaveBalance(@EmpId, YEAR(@EffectedDay), @RequestId)
 
 	SELECT @EmpId AS EmployeeId
-		,CASE WHEN @AnnualLeaveResetTimelineType = @AnnualLeaveResetTimelineByYear THEN @LeaveBalanceDay ELSE @CurrenLeaveDay END AS AnnualBalance
+		,@LeaveBalanceDay AS AnnualBalance
 		,@KIVBalance AS KeepInViewBalance
 		,@KIVByHourBalance AS KeepInViewByHourBalance
 		,@CurrenLeaveDay AS CurrentLeaveBalanceDay
