@@ -114,6 +114,11 @@ BEGIN
 		WHERE rn = 1
 	END
 
+	IF @ToDateValue IS NULL
+	BEGIN
+		SET @ToDateValue = DATEADD(DAY, -1, DATEADD(YEAR, 1, @FromDate))
+	END
+
 	INSERT INTO dbo.LeaveTrans (
 		EmpId
 		,RequestId

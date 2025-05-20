@@ -101,23 +101,29 @@ BEGIN
 	INSERT INTO #tmpLeaveRange (EmpId, RangeStartDate, RangeEndDate)
 	SELECT 
 		EmpId,
-		FromDate AS RangeStartDate,
+		ISNULL(FromDate, @FromDate) AS RangeStartDate,
 		ToDate AS RangeEndDate
 	FROM (
 		SELECT 
-			EmpId,
-			FromDate,
-			ToDate,
-			ROW_NUMBER() OVER (PARTITION BY EmpId ORDER BY FromDate ASC) AS rn
-		FROM dbo.LeaveTrans WITH (NOLOCK)
-		WHERE EmpId IN (SELECT EmpId FROM #tblEmployeeIds)
-			AND FromDate <= @FromDate
-			AND ToDate > @FromDate
-			AND CreditDays > 0
-			AND RequestId IS NULL
-			AND ISNULL(Deleted, 0) = 0
+			emp.EmpId,
+			lt.FromDate,
+			lt.ToDate,
+			ROW_NUMBER() OVER (PARTITION BY emp.EmpId ORDER BY lt.FromDate ASC) AS rn
+		FROM dbo.Employee AS emp WITH (NOLOCK)
+		INNER JOIN #tblEmployeeIds AS empid ON emp.EmpId = empid.EmployeeId
+		LEFT JOIN dbo.LeaveTrans AS lt WITH (NOLOCK) ON emp.EmpId = lt.EmpId
+			AND lt.FromDate <= @FromDate
+			AND lt.ToDate > @FromDate
+			AND lt.CreditDays > 0
+			AND lt.RequestId IS NULL
+			AND ISNULL(lt.Deleted, 0) = 0
 	) AS t
 	WHERE rn = 1
+
+	UPDATE #tmpLeaveRange
+	SET RangeEndDate = DATEADD(DAY, -1, DATEADD(YEAR, 1, RangeStartDate))
+	WHERE RangeEndDate IS NULL
+
 
 	INSERT INTO dbo.LeaveTrans (
 		EmpId

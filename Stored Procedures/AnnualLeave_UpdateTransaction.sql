@@ -36,7 +36,6 @@ BEGIN
 	UPDATE dbo.LeaveTrans WITH (ROWLOCK, UPDLOCK)
 	SET [Description] = @Description
 		,FromDate = @FromDate
-		,ToDate = @FromDate
 		,DeductDays = @DeductDays
 		,CreditDays = @CreditDays
 		,ModifiedDate = @ModifiedDate

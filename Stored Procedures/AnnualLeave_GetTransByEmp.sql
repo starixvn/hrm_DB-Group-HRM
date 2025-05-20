@@ -19,23 +19,37 @@ BEGIN
 
 	DECLARE @fromdateRange DATETIME
 		,@todateRange DATETIME
+		,@CompanyId SMALLINT
+        ,@JoinedDate DATE
+		,@AnnualLeaveResetTimelineType TINYINT
+		,@AnnualLeaveResetTimelineByYear TINYINT = 1
 
-	SELECT @fromdateRange = FromDate
-		,@todateRange = ISNULL(ToDate, DATEADD(YEAR, 1, DATEADD(YEAR, DATEDIFF(YEAR, 0, FromDate), 0)))
-	FROM (
-		SELECT 
-			FromDate,
-			ToDate,
-			ROW_NUMBER() OVER (ORDER BY FromDate ASC) AS rn
-		FROM dbo.LeaveTrans WITH (NOLOCK)
-		WHERE EmpId = @EmpId
-			AND FromDate <= @fromDate
-			AND ToDate > @fromDate
-			AND CreditDays > 0
-			AND RequestId IS NULL
-			AND ISNULL(Deleted, 0) = 0
-	) AS t
-	WHERE rn = 1
+		SELECT @CompanyId = ce.CompanyId
+        ,@JoinedDate = e.JoinedDate
+    FROM dbo.Employee AS e WITH (NOLOCK)
+        INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
+    WHERE e.EmpId = @EmpId
+
+	 SELECT @AnnualLeaveResetTimelineType = [Value]
+    FROM dbo.SystemConfigs WITH (NOLOCK)
+    WHERE CompanyId = @CompanyId
+        AND [Key] = 'AnnualLeaveResetTimeline'
+
+    IF @AnnualLeaveResetTimelineType = @AnnualLeaveResetTimelineByYear
+    BEGIN
+        SET @fromdateRange = DATEFROMPARTS(YEAR(@fromDate), 1, 1)
+    END
+    ELSE
+    BEGIN
+        SET @fromdateRange = DATEFROMPARTS(YEAR(@fromDate), MONTH(@JoinedDate), DAY(@JoinedDate))
+
+        IF @fromDate < @fromdateRange
+        BEGIN
+            SET @fromdateRange = DATEADD(YEAR, -1, @FromDate)
+        END
+    END
+
+	SET @todateRange = DATEADD(YEAR, 1, @FromDate)
 
 
 	SELECT t.LeaveTransId
@@ -47,7 +61,7 @@ BEGIN
 	FROM dbo.LeaveTrans t WITH (NOLOCK)
 		INNER JOIN dbo.Employee e WITH (NOLOCK) ON e.EmpID = t.EmpId
 	WHERE fromdate >= @fromdateRange
-		AND fromdate < @todateRange
+		AND ToDate < @todateRange
 		AND (ISNULL(ExtraDays, 0) = 0 OR (ExtraDays > 0 AND CreditDays > 0))
 		AND t.EmpId = @EmpId
 		AND ISNULL(Deleted, 0) = 0
