@@ -48,7 +48,7 @@ BEGIN
 		INNER JOIN dbo.Employee e WITH (NOLOCK) ON e.EmpID = t.EmpId
 	WHERE fromdate >= @fromdateRange
 		AND fromdate < @todateRange
-		AND ISNULL(ExtraDays, 0) = 0
+		AND (ISNULL(ExtraDays, 0) = 0 OR (ExtraDays > 0 AND CreditDays > 0))
 		AND t.EmpId = @EmpId
 		AND ISNULL(Deleted, 0) = 0
 		AND (
