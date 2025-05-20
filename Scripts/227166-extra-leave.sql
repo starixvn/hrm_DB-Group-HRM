@@ -60,7 +60,7 @@ GO
 
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE OR ALTER PROCEDURE [dbo].[Auto_AnnualLeaveBalance_JoinedDate_Update]
+CREATE OR ALTER   PROCEDURE [dbo].[Auto_AnnualLeaveBalance_JoinedDate_Update]
 (
 	@ListAnnualLeaveJson NVARCHAR(MAX)
 )
@@ -98,6 +98,7 @@ BEGIN
 		EmpId INT,
 		[Year] INT
 	) AS j
+	WHERE j.AnnualLeaves > 0 
 
 	UPDATE es
 	SET es.AnnualLeaveBalance = ISNULL(es.AnnualLeaveBalance, 0) + t.AnnualLeaves + t.ExtraLeaves
@@ -146,6 +147,18 @@ BEGIN
               AND lt.RequestId IS NULL
               AND lt.Deleted = 0
     )
+
+	UPDATE lt
+	SET lt.ExtraDays = t.ExtraLeaves
+	FROM dbo.LeaveTrans AS lt WITH (ROWLOCK, UPDLOCK)
+		INNER JOIN @TempListAnnualLeaves AS t ON t.EmpId = lt.EmpId
+	WHERE YEAR(lt.FromDate) = t.[Year]
+		AND lt.DeductDays = 0
+		AND lt.CreditDays > 0
+		AND lt.RequestId IS NULL
+		AND lt.Deleted = 0
+		AND t.ExtraLeaves > 0
+		AND (lt.ExtraDays = 0 OR lt.ExtraDays IS NULL)
 END
 
 GO
@@ -186,6 +199,11 @@ BEGIN
 			AND e.ResignedDate IS NULL
 		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON e.GroupId = g.GroupId AND g.CompanyId = @CompanyId
 	WHERE e.JoinedDate IS NOT NULL
+		AND (
+			(es.IsLocal = 1 AND ISNULL(g.LocalBasicAnnualLeaveBalance, 0) > 0)
+			OR 
+			(es.IsLocal = 0 AND ISNULL(g.ExpatBasicAnnualLeaveBalance, 0) > 0)
+    )
 END
 
 GO
