@@ -49,8 +49,7 @@ BEGIN
         END
     END
 
-	SET @todateRange = DATEADD(YEAR, 1, @FromDate)
-
+	SET @todateRange = DATEADD(YEAR, 1, @fromdateRange)
 
 	SELECT t.LeaveTransId
 		,RequestId
@@ -61,7 +60,7 @@ BEGIN
 	FROM dbo.LeaveTrans t WITH (NOLOCK)
 		INNER JOIN dbo.Employee e WITH (NOLOCK) ON e.EmpID = t.EmpId
 	WHERE fromdate >= @fromdateRange
-		AND ToDate < @todateRange
+		AND fromdate < @todateRange
 		AND (ISNULL(ExtraDays, 0) = 0 OR (ExtraDays > 0 AND CreditDays > 0))
 		AND t.EmpId = @EmpId
 		AND ISNULL(Deleted, 0) = 0
