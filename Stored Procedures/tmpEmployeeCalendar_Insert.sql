@@ -333,11 +333,6 @@ BEGIN
 			WHEN kiv.RequestId IS NULL THEN 0
 			ELSE 1
 			END
-		,empca.ShiftId = CASE 
-			WHEN kiv.KeepInViewType = @KeepInViewByDayTypeId
-				AND kiv.ShiftId IS NOT NULL THEN kiv.ShiftId
-			ELSE empca.ShiftId
-			END
 		,empca.ModifiedDate = GETDATE()
 	FROM dbo.tmpEmployeeCalendar AS empca WITH (ROWLOCK, UPDLOCK)
 		INNER JOIN #tempEmployeeIds AS tblemp WITH (NOLOCK) ON empca.EmpId = tblemp.EmpId
