@@ -3,7 +3,7 @@
 USE [bodb_HRM]
 GO
 
-DECLARE @CompanyId INT = 15;
+DECLARE @CompanyId INT = 12;
 
 -- Delete data in reverse order of insertion to maintain referential integrity
 

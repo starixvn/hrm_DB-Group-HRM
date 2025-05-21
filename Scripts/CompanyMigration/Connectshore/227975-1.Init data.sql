@@ -3,7 +3,7 @@ GO
 DECLARE @CompanyId INT;
 DECLARE @CurrentTimeZone NVARCHAR(50) = 'Taipei Standard Time';  /* SE Asia Standard Time (UTC+7) / Taipei Standard Time (UTC+8)  */
 DECLARE @TargetTimeZone NVARCHAR(50) = 'SA Western Standard Time'; 
-SET @CompanyId = 15;
+SET @CompanyId = 12;
 
 IF EXISTS (SELECT 1 FROM [dbo].[SystemConfigs] WHERE [Key] = 'TimeZone' AND CompanyId = @CompanyId)
     UPDATE [dbo].[SystemConfigs]
@@ -29,7 +29,8 @@ INSERT INTO [dbo].[CompanySite]
            ,[Domain]
            ,[ModifiedDate])
      VALUES
-           (@companyId, 19, 'U3UbTpq6F+UNQycd9Ww58XuZAZIsfIlmHA6pvSg7wd4=', 'https://hrm-digibytesky.nexdev.net', NULL)
+           (@companyId, 20, 'U3UbTpq6F+UNQycd9Ww58XuZAZIsfIlmHA6pvSg7wd4=', 'https://hrm-new.connectshorecorp.com', NULL),
+           (@companyId, 20, 'U3UbTpq6F+UNQycd9Ww58XuZAZIsfIlmHA6pvSg7wd4=', 'https://hrm.connectshorecorp.com', NULL)
 
 DECLARE @AppMailId INT;
 
@@ -40,8 +41,8 @@ INSERT INTO [dbo].[Mail_Config]
            ,[MailFrom]
            ,[IsEncrypt])
      VALUES
-           ('DigiByteSky'
-           ,'DigiByteSky'
+           ('Connectshore'
+           ,'Connectshore'
            ,2
            ,'hrm.admin@enpine.com'
            ,0)
