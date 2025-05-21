@@ -3,7 +3,7 @@ GO
 DECLARE @CompanyId INT;
 DECLARE @CurrentTimeZone NVARCHAR(50) = 'Taipei Standard Time';  /* SE Asia Standard Time (UTC+7) / Taipei Standard Time (UTC+8)  */
 DECLARE @TargetTimeZone NVARCHAR(50) = 'SA Western Standard Time'; 
-SET @CompanyId = 13;
+SET @CompanyId = 16;
 
 IF EXISTS (SELECT 1 FROM [dbo].[SystemConfigs] WHERE [Key] = 'TimeZone' AND CompanyId = @CompanyId)
     UPDATE [dbo].[SystemConfigs]
@@ -33,8 +33,8 @@ INSERT INTO [dbo].[CompanySite]
            ,[Domain]
            ,[ModifiedDate])
      VALUES
-           (@companyId, 21, 'db6Qh0emq4AUO2DHjoafA11yxXLhlj5b/110hPOGwFU=', 'https://hrm-new.cymabell.com', NULL),
-           (@companyId, 21, 'db6Qh0emq4AUO2DHjoafA11yxXLhlj5b/110hPOGwFU=', 'https://hrm.cymabell.com', NULL)
+           (@companyId, 22, 'U3UbTpq6F+UNQycd9Ww58XuZAZIsfIlmHA6pvSg7wd4=', 'https://hrm-new.elementsc.ph', NULL),
+           (@companyId, 22, 'U3UbTpq6F+UNQycd9Ww58XuZAZIsfIlmHA6pvSg7wd4=', 'https://hrm.elementsc.ph', NULL)
 
 SET IDENTITY_INSERT [dbo].[Mail_Config] ON 
 INSERT INTO [dbo].[Mail_Config]
@@ -45,9 +45,9 @@ INSERT INTO [dbo].[Mail_Config]
            ,[MailFrom]
            ,[IsEncrypt])
      VALUES
-           (6
-           ,'Cymabell'
-           ,'Cymabell'
+           (7
+           ,'Elements'
+           ,'Elements'
            ,2
            ,'hrm.admin@enpine.com'
 		   ,0)
