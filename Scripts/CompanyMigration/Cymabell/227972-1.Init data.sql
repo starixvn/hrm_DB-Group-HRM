@@ -23,8 +23,6 @@ ELSE
     VALUES (@CompanyId, 'SyncWorkingShift', '{"Enable": false,"LocationCode": "CTS","Timezone": 8}')
 
 
-INSERT INTO dbo.SystemConfigs([Key], [Value], [CompanyId])
-	VALUES ('MailSetting', '{"Enable": false, "AppMailId": "6", "EmailSD": "", "EmailGo": ""}', @CompanyId)
 
 INSERT INTO [dbo].[CompanySite]
            ([CompanyId]
@@ -36,22 +34,26 @@ INSERT INTO [dbo].[CompanySite]
            (@companyId, 21, 'db6Qh0emq4AUO2DHjoafA11yxXLhlj5b/110hPOGwFU=', 'https://hrm-new.cymabell.com', NULL),
            (@companyId, 21, 'db6Qh0emq4AUO2DHjoafA11yxXLhlj5b/110hPOGwFU=', 'https://hrm.cymabell.com', NULL)
 
-SET IDENTITY_INSERT [dbo].[Mail_Config] ON 
+
+DECLARE @AppMailId INT;
+
 INSERT INTO [dbo].[Mail_Config]
-           ([AppId]
-		   ,[AppName]
+           ([AppName]
            ,[Description]
            ,[SettingId]
            ,[MailFrom]
            ,[IsEncrypt])
      VALUES
-           (6
-           ,'Cymabell'
+           ('Cymabell'
            ,'Cymabell'
            ,2
            ,'hrm.admin@enpine.com'
-		   ,0)
+           ,0)
 
-SET IDENTITY_INSERT [dbo].[Mail_Config] OFF
+SELECT @AppMailId = SCOPE_IDENTITY()
+
+INSERT INTO dbo.SystemConfigs([Key], [Value], [CompanyId])
+    VALUES ('MailSetting', CONCAT('{"Enable": false, "AppMailId": "', @AppMailId, '", "EmailSD": "", "EmailGo": ""}'), @CompanyId)
+
 GO
 
