@@ -441,23 +441,14 @@ FROM CymabellHRM.dbo.TimeRecord AS tc WITH (NOLOCK)
     INNER JOIN @EmployeeMapping AS e ON tc.EmpId = e.OldEmpId
     INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
 WHERE ce.CompanyId = @CompanyId
-    AND NOT EXISTS (
-        SELECT 1
-        FROM dbo.TimeRecord AS t WITH (NOLOCK)
-        WHERE t.CompanyId = @CompanyId
-            AND t.OldId = tc.Id
-    )
+    
 
 INSERT INTO dbo.TimeRecordExt(Id, IPAddress, [Platform])
 SELECT tc.Id, ext.IPAddress, ext.[Platform]
 FROM CymabellHRM.dbo.TimeRecordExt AS ext WITH (NOLOCK)
     INNER JOIN dbo.TimeRecord AS tc WITH (NOLOCK) ON ext.Id = tc.OldId
 WHERE tc.CompanyId = @CompanyId
-    AND NOT EXISTS (
-        SELECT 1
-        FROM dbo.TimeRecordExt AS tc_ext WITH (NOLOCK)
-        WHERE tc.Id = tc_ext.Id
-    )
+  
 
 INSERT INTO dbo.SickLeaveTrans(EmpId, RequestId, [Description], FromDate, ToDate, DeductDays, CreditDays, IsDeleted, CreatedBy, CreatedDate, ModifiedBy, ModifiedDate)
 SELECT e.EmpId, rq.RequestId, st.[Description], st.FromDate, st.ToDate, st.DeductDays, st.CreditDays, st.IsDeleted, cr.EmpId,
@@ -474,12 +465,7 @@ FROM CymabellHRM.dbo.SickLeaveTrans AS st WITH (NOLOCK)
     LEFT JOIN dbo.CompanyEmployee AS md_ce WITH (NOLOCK) ON md.EmpId = md_ce.EmpId
     AND md_ce.CompanyId = @CompanyId
 WHERE ce.CompanyId = @CompanyId
-    AND NOT EXISTS (
-        SELECT 1
-        FROM dbo.SickLeaveTrans AS sicktrans WITH (NOLOCK)
-        WHERE e.EmpId = sicktrans.EmpId
-            AND rq.RequestId = sicktrans.RequestId
-    )
+    
 
 INSERT INTO dbo.RoleFunction(CompanyId, RoleId, FunctionId, IsRead, IsHost)
 SELECT @CompanyId, RoleId, FunctionId, IsRead, IsHost
