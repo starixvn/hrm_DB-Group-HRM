@@ -53,7 +53,7 @@ INSERT INTO [dbo].[Mail_Config]
 SELECT @AppMailId = SCOPE_IDENTITY()
 
 INSERT INTO dbo.SystemConfigs([Key], [Value], [CompanyId])
-    VALUES ('MailSetting', CONCAT('{"Enable": false, "AppMailId": "', @AppMailId, '", "EmailSD": "", "EmailGo": ""}'), @CompanyId)
+    VALUES ('MailSetting', CONCAT('{"Enable": true, "AppMailId": "', @AppMailId, '", "EmailSD": "", "EmailGo": ""}'), @CompanyId)
 
 GO
 
