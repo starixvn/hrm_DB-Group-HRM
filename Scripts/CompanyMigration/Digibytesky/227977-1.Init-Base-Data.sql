@@ -11,7 +11,7 @@ INSERT INTO [dbo].[SystemConfigs] (CompanyId, [Key], [Value])
 VALUES (@CompanyId, 'TimeZone', @TimeZoneOffset)
 
 INSERT INTO [dbo].[SystemConfigs] (CompanyId, [Key], [Value])
-VALUES (@CompanyId, 'SyncWorkingShift', '{"Enable": false,"LocationCode": "","Timezone":' + @TimeZoneOffset + '}')
+VALUES (@CompanyId, 'SyncWorkingShift', '{"Enable": true,"LocationCode": "DBS","Timezone":' + @TimeZoneOffset + '}')
 
 INSERT INTO dbo.Mail_Config(AppName, [Description], SettingId, MailFrom, IsEncrypt)
 VALUES ('Digibytesky', 'Digibytesky', 2, 'hrm.admin@enpine.com', 0)
