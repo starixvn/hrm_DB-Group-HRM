@@ -63,7 +63,7 @@ BEGIN
 			THEN DATEFROMPARTS(YEAR(@fromDate), MONTH(e.JoinedDate), DAY(e.JoinedDate))
 			ELSE DATEFROMPARTS(YEAR(@fromDate) - 1, MONTH(e.JoinedDate), DAY(e.JoinedDate))
 		END AS RangeStartDate,
-		DATEADD(yy, 1,
+		DATEADD(yy, 1, 
 			CASE 
 				WHEN DATEFROMPARTS(YEAR(@fromDate), MONTH(e.JoinedDate), DAY(e.JoinedDate)) < @fromDate
 				THEN DATEFROMPARTS(YEAR(@fromDate), MONTH(e.JoinedDate), DAY(e.JoinedDate))
@@ -72,6 +72,7 @@ BEGIN
 		) AS RangeEndDate
 	FROM dbo.Employee e WITH (NOLOCK)
 	WHERE e.EmpId IN (SELECT EmpId FROM #tmpEmployee)
+
 
 	-- calculate the balance for the current range
 	SELECT e.EmpId
@@ -129,6 +130,7 @@ BEGIN
 	GROUP BY e.EmpId
 		,ISNULL(CreditDays, 0)
 		,ISNULL(ExtraDays, 0)
+
 	
 	-- show the report
 	SELECT ISNULL(CreditDays, 0) AS [AnnualLeaveCurrentYear]

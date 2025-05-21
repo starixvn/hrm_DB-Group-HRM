@@ -120,9 +120,10 @@ BEGIN
 	) AS t
 	WHERE rn = 1
 
+
 	UPDATE #tmpLeaveRange
 	SET RangeEndDate = DATEADD(DAY, -1, DATEADD(YEAR, 1, RangeStartDate))
-	WHERE RangeEndDate IS NULL
+	WHERE RangeEndDate IS NULL;
 
 
 	INSERT INTO dbo.LeaveTrans (
@@ -147,6 +148,7 @@ BEGIN
 		INNER JOIN #tblEmployeeIds AS empid ON emp.EmpId = empid.EmployeeId
 		INNER JOIN #tmpLeaveRange AS lr ON emp.EmpId = lr.EmpId
 	WHERE ISNULL(emp.isDeleted, 0) = 0
+
 
 	UPDATE dbo.EmployeeSummary WITH (ROWLOCK)
 	SET AnnualLeaveBalance = ISNULL(AnnualLeaveBalance, 0) + ISNULL(@CreditDays, 0) - ISNULL(@DeductDays, 0)
