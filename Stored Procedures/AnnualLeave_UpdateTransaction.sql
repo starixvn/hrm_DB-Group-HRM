@@ -26,6 +26,12 @@ BEGIN
 	DECLARE @OldDeductDays NUMERIC(18, 1)
 		,@OldCreditDays NUMERIC(18, 1)
 		,@EmpId INT
+		,@CompanyId SMALLINT
+        ,@JoinedDate DATE
+		,@AnnualLeaveResetTimelineType TINYINT
+		,@AnnualLeaveResetTimelineByYear TINYINT = 1
+		,@toDateRange DATETIME
+		,@fromDateRange DATETIME
 
 	SELECT @EmpId = EmpId
 		,@OldDeductDays = ISNULL(DeductDays, 0)
@@ -33,9 +39,38 @@ BEGIN
 	FROM dbo.LeaveTrans WITH (NOLOCK)
 	WHERE LeaveTransId = @LeaveTransId
 
+	SELECT @CompanyId = ce.CompanyId
+        ,@JoinedDate = e.JoinedDate
+    FROM dbo.Employee AS e WITH (NOLOCK)
+        INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
+    WHERE e.EmpId = @EmpId
+
+
+	SELECT @AnnualLeaveResetTimelineType = [Value]
+    FROM dbo.SystemConfigs WITH (NOLOCK)
+    WHERE CompanyId = @CompanyId
+        AND [Key] = 'AnnualLeaveResetTimeline'
+
+    IF @AnnualLeaveResetTimelineType = @AnnualLeaveResetTimelineByYear
+    BEGIN
+        SET @fromdateRange = DATEFROMPARTS(YEAR(@FromDate), 1, 1)
+    END
+    ELSE
+    BEGIN
+        SET @fromDateRange = DATEFROMPARTS(YEAR(@FromDate), MONTH(@JoinedDate), DAY(@JoinedDate))
+		
+        IF @FromDate < @fromDateRange
+        BEGIN
+            SET @fromDateRange = DATEADD(YEAR, -1, @fromDateRange)
+        END
+    END
+
+	SET @toDateRange = DATEADD(DAY, -1, DATEADD(YEAR, 1, @fromDateRange))
+
 	UPDATE dbo.LeaveTrans WITH (ROWLOCK, UPDLOCK)
 	SET [Description] = @Description
 		,FromDate = @FromDate
+		,ToDate = @toDateRange
 		,DeductDays = @DeductDays
 		,CreditDays = @CreditDays
 		,ModifiedDate = @ModifiedDate
