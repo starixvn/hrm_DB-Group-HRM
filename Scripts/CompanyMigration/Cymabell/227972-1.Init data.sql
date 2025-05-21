@@ -24,7 +24,7 @@ ELSE
 
 
 INSERT INTO dbo.SystemConfigs([Key], [Value], [CompanyId])
-	VALUES ('MailSetting', '{"Enable": false, "AppMailId": "0", "EmailSD": "", "EmailGo": ""}', @CompanyId)
+	VALUES ('MailSetting', '{"Enable": false, "AppMailId": "6", "EmailSD": "", "EmailGo": ""}', @CompanyId)
 
 INSERT INTO [dbo].[CompanySite]
            ([CompanyId]
@@ -33,5 +33,25 @@ INSERT INTO [dbo].[CompanySite]
            ,[Domain]
            ,[ModifiedDate])
      VALUES
-           (@companyId, 21, 'db6Qh0emq4AUO2DHjoafA11yxXLhlj5b/110hPOGwFU=', 'https://hrm.smstower-vn.com', NULL)
+           (@companyId, 21, 'db6Qh0emq4AUO2DHjoafA11yxXLhlj5b/110hPOGwFU=', 'https://hrm-new.cymabell.com', NULL),
+           (@companyId, 21, 'db6Qh0emq4AUO2DHjoafA11yxXLhlj5b/110hPOGwFU=', 'https://hrm.cymabell.com', NULL)
+
+SET IDENTITY_INSERT [dbo].[Mail_Config] ON 
+INSERT INTO [dbo].[Mail_Config]
+           ([AppId]
+		   ,[AppName]
+           ,[Description]
+           ,[SettingId]
+           ,[MailFrom]
+           ,[IsEncrypt])
+     VALUES
+           (6
+           ,'Cymabell'
+           ,'Cymabell'
+           ,2
+           ,'hrm.admin@enpine.com'
+		   ,0)
+
+SET IDENTITY_INSERT [dbo].[Mail_Config] OFF
 GO
+
