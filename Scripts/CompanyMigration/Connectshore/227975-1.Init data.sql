@@ -16,11 +16,11 @@ ELSE
 -- Update or Insert SystemConfigs
 IF EXISTS (SELECT 1 FROM [dbo].[SystemConfigs] WHERE [Key] = 'SyncWorkingShift' AND CompanyId = @CompanyId)
     UPDATE [dbo].[SystemConfigs]
-    SET [Value] = '{"Enable": false,"LocationCode": "CTS","Timezone": 8}'
+    SET [Value] = '{"Enable": true,"LocationCode": "CSC","Timezone": 8}'
     WHERE [Key] = 'SyncWorkingShift' AND CompanyId = @CompanyId
 ELSE
     INSERT INTO [dbo].[SystemConfigs] (CompanyId, [Key], [Value])
-    VALUES (@CompanyId, 'SyncWorkingShift', '{"Enable": false,"LocationCode": "CTS","Timezone": 8}')
+    VALUES (@CompanyId, 'SyncWorkingShift', '{"Enable": true,"LocationCode": "CSC","Timezone": 8}')
 
 INSERT INTO [dbo].[CompanySite]
            ([CompanyId]
