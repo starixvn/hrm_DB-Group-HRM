@@ -1,6 +1,6 @@
 USE [bodb_HRM]
 GO
-DECLARE @LocationCode VARCHAR(10) = 'Xpeed Corp'
+DECLARE @LocationCode VARCHAR(10) = 'XPC'
 DECLARE @CompanyId INT = (SELECT TOP 1 CompanyId FROM Company WHERE Name = @LocationCode);
 DECLARE @CurrentTimeZone VARCHAR(50) = 'Taipei Standard Time';  /* SE Asia Standard Time (UTC+7) / Taipei Standard Time (UTC+8)  */
 DECLARE @TargetTimeZone VARCHAR(50) = 'SA Western Standard Time'; 
