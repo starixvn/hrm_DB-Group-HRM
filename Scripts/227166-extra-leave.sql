@@ -75,13 +75,13 @@ GO
 
 IF NOT EXISTS (
     SELECT 1 
-    FROM sys.columns 
+    FROM bodb_HRM.sys.columns 
     WHERE Name = N'ExtraDays' 
-      AND Object_ID = Object_ID(N'dbo.[LeaveTrans]')
+      AND Object_ID = OBJECT_ID(N'bodb_HRM.dbo.LeaveTrans')
 )
 BEGIN
-	ALTER TABLE bodb_HRM.dbo.LeaveTrans
-	ADD ExtraDays numberic(18,1) NULL
+    ALTER TABLE bodb_HRM.dbo.LeaveTrans
+    ADD ExtraDays numeric(18,1) NULL;
 END
 GO
 
