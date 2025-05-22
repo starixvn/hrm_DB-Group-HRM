@@ -12,6 +12,7 @@ DB: HRM
 Revisions:
 	20250310@Mira: filter by CompanyId [Redmine: #217976]
     20250403@Tim: remove section [Redmine: #222886]
+	20250515@Jay: add years of service for extra leave [Redmine: #227166]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -65,11 +66,13 @@ BEGIN
 		,g.LocalWorkingHours
 		,g.LocalOffDaysbyWeek
 		,g.LocalWorkingHoursByWeek
+		,LocalYearsOfServiceForExtraLeave
 		,g.ExpatBasicAnnualLeaveBalance
 		,g.ExpatWorkingDays
 		,g.ExpatWorkingHours
 		,g.ExpatOffDaysbyWeek
 		,g.ExpatWorkingHoursByWeek
+		,ExpatYearsOfServiceForExtraLeave
 	FROM dbo.[Group] AS g WITH (NOLOCK)
 		INNER JOIN dbo.Department AS d WITH (NOLOCK) ON g.DepartmentId = d.DepartmentId
 		LEFT JOIN dbo.Employee AS e WITH (NOLOCK) ON e.EmpId = g.PICEmpId
