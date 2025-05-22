@@ -73,8 +73,16 @@ VALUES('AnnualLeaveResetTimeLine', 1, @SMSId),
 ('AnnualLeaveResetTimeLine', 1, @WGIId)
 GO
 
-ALTER TABLE bodb_HRM.dbo.LeaveTrans
-ADD ExtraDays numberic(18,1) NULL
+IF NOT EXISTS (
+    SELECT 1 
+    FROM sys.columns 
+    WHERE Name = N'ExtraDays' 
+      AND Object_ID = Object_ID(N'dbo.[LeaveTrans]')
+)
+BEGIN
+	ALTER TABLE bodb_HRM.dbo.LeaveTrans
+	ADD ExtraDays numberic(18,1) NULL
+END
 GO
 
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
