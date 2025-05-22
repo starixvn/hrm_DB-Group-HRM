@@ -30,6 +30,8 @@ BEGIN
 	DECLARE @CompanyId SMALLINT
         ,@maximumBalanceForLocal SMALLINT
 		,@maximumBalanceForExpat SMALLINT
+		,@AnnualLeaveResetTimelineType TINYINT
+		,@AnnualLeaveResetTimelineByYear TINYINT = 1
 
     SELECT @CompanyId = ce.CompanyId
     FROM dbo.Employee AS e WITH (NOLOCK)
@@ -93,11 +95,19 @@ BEGIN
 		RETURN
 	END
 
+	SELECT @AnnualLeaveResetTimelineType = [Value]
+    FROM dbo.SystemConfigs WITH (NOLOCK)
+    WHERE CompanyId = @CompanyId
+        AND [Key] = 'AnnualLeaveResetTimeline'
+
 	DECLARE @ToDateValue DATETIME = @ToDate
 
 	IF @ToDate IS NULL
 	BEGIN
-		SELECT @ToDateValue = RangeEndDate 
+		SELECT @ToDateValue = CASE 
+			WHEN @AnnualLeaveResetTimelineType = @AnnualLeaveResetTimelineByYear THEN DATEFROMPARTS(YEAR(@FromDate), 12, 31)
+			ELSE RangeEndDate
+		END
 		FROM (
 			SELECT 
 				FromDate,

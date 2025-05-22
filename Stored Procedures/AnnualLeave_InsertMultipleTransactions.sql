@@ -27,6 +27,8 @@ BEGIN
 
 	DECLARE @maximumBalanceForLocal SMALLINT
 		,@maximumBalanceForExpat SMALLINT
+		,@AnnualLeaveResetTimelineType TINYINT
+		,@AnnualLeaveResetTimelineByYear TINYINT = 1
 
 	SELECT @maximumBalanceForLocal = Value
 	FROM dbo.RefResource WITH (NOLOCK)
@@ -98,11 +100,19 @@ BEGIN
 		RangeEndDate DATETIME
 	)
 
+	SELECT @AnnualLeaveResetTimelineType = [Value]
+    FROM dbo.SystemConfigs WITH (NOLOCK)
+    WHERE CompanyId = @CompanyId
+        AND [Key] = 'AnnualLeaveResetTimeline'
+
 	INSERT INTO #tmpLeaveRange (EmpId, RangeStartDate, RangeEndDate)
 	SELECT 
 		EmpId,
 		ISNULL(FromDate, @FromDate) AS RangeStartDate,
-		ToDate AS RangeEndDate
+		CASE 
+			WHEN @AnnualLeaveResetTimelineType = @AnnualLeaveResetTimelineByYear THEN DATEFROMPARTS(YEAR(@FromDate), 12, 31)
+			ELSE ToDate
+		END AS RangeEndDate
 	FROM (
 		SELECT 
 			emp.EmpId,
