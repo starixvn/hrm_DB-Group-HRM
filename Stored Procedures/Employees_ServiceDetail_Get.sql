@@ -1,6 +1,6 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER   PROCEDURE [dbo].[Employees_ServiceDetail_Get]
+CREATE OR  PROCEDURE [dbo].[Employees_ServiceDetail_Get]
 (
     @CompanyId INT
 )
