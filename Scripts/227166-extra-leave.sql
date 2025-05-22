@@ -24,19 +24,19 @@ UPDATE dbo.[RefResource]
 SET [Value] = 1
 WHERE CompanyId in (@AscentisId, @HyjayId, @LetstalkId, @NextFortuneId, @OneLabId, @SSIId, @EMCId)
 	AND RefName = 'EnableAdditionalAnnualLeaveBalance'
-	
-DECLARE @SMSId INT = (SELECT CompanyId FROM dbo.Company WITH(NOLOCK) WHERE [Name] = 'SMS')
-DECLARE @HMId INT = (SELECT CompanyId FROM dbo.Company WITH(NOLOCK) WHERE [Name] = N'Hồng Mã')
-DECLARE @CabintechId INT = (SELECT CompanyId FROM dbo.Company WITH(NOLOCK) WHERE [Name] = N'Cabintech')
-DECLARE @ConnectshoreCorpId INT = (SELECT CompanyId FROM dbo.Company WITH(NOLOCK) WHERE [Name] = N'Connectshore Corp')
-DECLARE @CymabellId INT = (SELECT CompanyId FROM dbo.Company WITH(NOLOCK) WHERE [Name] = N'Cymabell')
-DECLARE @DIGIBYTESKYId INT = (SELECT CompanyId FROM dbo.Company WITH(NOLOCK) WHERE [Name] = N'DIGIBYTESKY')
-DECLARE @ElementStrategiesId INT = (SELECT CompanyId FROM dbo.Company WITH(NOLOCK) WHERE [Name] = N'Element Strategies')
-DECLARE @LexfinId INT = (SELECT CompanyId FROM dbo.Company WITH(NOLOCK) WHERE [Name] = N'Lexfin')
-DECLARE @SandsdoverId INT = (SELECT CompanyId FROM dbo.Company WITH(NOLOCK) WHERE [Name] = N'Sandsdover')
-DECLARE @XPCId INT = (SELECT CompanyId FROM dbo.Company WITH(NOLOCK) WHERE [Name] = N'XPC')
-DECLARE @DARId INT = (SELECT CompanyId FROM dbo.Company WITH(NOLOCK) WHERE [Name] = N'DAR')
-DECLARE @WGIId INT = (SELECT CompanyId FROM dbo.Company WITH(NOLOCK) WHERE [Name] = N'WGI')
+
+DECLARE @SMSId INT = 3
+DECLARE @HMId INT = 4
+DECLARE @CabintechId INT = 9
+DECLARE @ConnectshoreCorpId INT = 12
+DECLARE @CymabellId INT = 13
+DECLARE @DIGIBYTESKYId INT = 15
+DECLARE @ElementStrategiesId INT = 16
+DECLARE @LexfinId INT = 6
+DECLARE @SandsdoverId INT = 26
+DECLARE @XPCId INT = 28
+DECLARE @DARId INT = 14
+DECLARE @WGIId INT = 8
 INSERT INTO SystemConfigs([Key], [Value], CompanyId)
 VALUES('AnnualLeaveResetTimeLine', 1, @SMSId),
 ('AnnualLeaveResetTimeLine', 1, @HMId),
@@ -50,6 +50,10 @@ VALUES('AnnualLeaveResetTimeLine', 1, @SMSId),
 ('AnnualLeaveResetTimeLine', 1, @XPCId),
 ('AnnualLeaveResetTimeLine', 1, @DARId),
 ('AnnualLeaveResetTimeLine', 1, @WGIId)
+GO
+
+ALTER TABLE bodb_HRM.dbo.LeaveTrans
+ADD ExtraDays numberic(18,1) NULL
 GO
 
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
