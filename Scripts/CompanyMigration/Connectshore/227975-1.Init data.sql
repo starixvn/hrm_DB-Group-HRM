@@ -29,8 +29,8 @@ INSERT INTO [dbo].[CompanySite]
            ,[Domain]
            ,[ModifiedDate])
      VALUES
-           (@companyId, 20, 'U3UbTpq6F+UNQycd9Ww58XuZAZIsfIlmHA6pvSg7wd4=', 'https://hrm-new.connectshorecorp.com', NULL),
-           (@companyId, 20, 'U3UbTpq6F+UNQycd9Ww58XuZAZIsfIlmHA6pvSg7wd4=', 'https://hrm.connectshorecorp.com', NULL)
+           (@companyId, 20, 'uTNb/bJ8Rbi2lD7+DDd6t1oZHKrQFKSUIza0dF7ReGo=', 'https://hrm-new.connectshorecorp.com', NULL),
+           (@companyId, 20, 'uTNb/bJ8Rbi2lD7+DDd6t1oZHKrQFKSUIza0dF7ReGo=', 'https://hrm.connectshorecorp.com', NULL)
 
 DECLARE @AppMailId INT;
 
