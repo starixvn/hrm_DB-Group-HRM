@@ -1,4 +1,4 @@
---BEGIN TRANSACTION
+-- BEGIN TRANSACTION
 
 USE [bodb_HRM]
 GO
@@ -1759,13 +1759,7 @@ INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
 LEFT JOIN dbo.WorkingTimeRequest AS rq WITH (NOLOCK) ON tmp.RequestId = rq.OldRequestId AND rq.CompanyId = @CompanyId
 LEFT JOIN dbo.[Shift] AS s WITH (NOLOCK) ON tmp.ShiftId = s.OldShiftId AND s.CompanyId = @CompanyId
 WHERE ce.CompanyId = @CompanyId
-	AND NOT EXISTS (
-			SELECT 1
-			FROM dbo.tmpEmployeeCalendar AS tmpempca WITH (NOLOCK)
-			WHERE e.EmpId = tmpempca.EmpId
-				AND tmp.WorkDate = tmpempca.WorkDate
-		)
 
 GO
 
---ROLLBACK
+-- ROLLBACK

@@ -11,7 +11,7 @@ INSERT INTO [dbo].[SystemConfigs] (CompanyId, [Key], [Value])
 VALUES (@CompanyId, 'TimeZone', @TimeZoneOffset)
 
 INSERT INTO [dbo].[SystemConfigs] (CompanyId, [Key], [Value])
-VALUES (@CompanyId, 'SyncWorkingShift', '{"Enable": true,"LocationCode": "' + @LocationCode + '","Timezone":' + @TimeZoneOffset + '}')
+VALUES (@CompanyId, 'SyncWorkingShift', '{"Enable": true,"LocationCode": "","Timezone":' + @TimeZoneOffset + '}')
 
 
 IF NOT EXISTS (SELECT 1 FROM [dbo].[SystemConfigs] WHERE [Key] = 'EnableGroupDate' AND Value = 'true' AND CompanyId = @CompanyId)
