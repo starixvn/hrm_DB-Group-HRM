@@ -1,8 +1,26 @@
 USE [bodb_HRM]
 GO
-ALTER TABLE dbo.[Group] 
-ADD LocalYearsOfServiceForExtraLeave INT,
-	ExpatYearsOfServiceForExtraLeave INT;
+IF NOT EXISTS (
+    SELECT 1 
+    FROM sys.columns 
+    WHERE Name = N'LocalYearsOfServiceForExtraLeave' 
+      AND Object_ID = Object_ID(N'dbo.[Group]')
+)
+BEGIN
+    ALTER TABLE dbo.[Group] 
+    ADD LocalYearsOfServiceForExtraLeave INT;
+END
+
+IF NOT EXISTS (
+    SELECT 1 
+    FROM sys.columns 
+    WHERE Name = N'ExpatYearsOfServiceForExtraLeave' 
+      AND Object_ID = Object_ID(N'dbo.[Group]')
+)
+BEGIN
+    ALTER TABLE dbo.[Group] 
+    ADD ExpatYearsOfServiceForExtraLeave INT;
+END
 
 DECLARE @AscentisId INT = (SELECT CompanyId FROM dbo.Company WITH(NOLOCK) WHERE [Name] = 'Ascentis')
 DECLARE @HyjayId INT = (SELECT CompanyId FROM dbo.Company WITH(NOLOCK) WHERE [Name] = 'Hyjay')
