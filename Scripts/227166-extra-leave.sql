@@ -22,6 +22,9 @@ BEGIN
     ADD ExpatYearsOfServiceForExtraLeave INT;
 END
 
+DELETE FROM dbo.SystemConfigs 
+WHERE [Key] = 'AnnualLeaveResetTimeLine'
+
 DECLARE @AscentisId INT = (SELECT CompanyId FROM dbo.Company WITH(NOLOCK) WHERE [Name] = 'Ascentis')
 DECLARE @HyjayId INT = (SELECT CompanyId FROM dbo.Company WITH(NOLOCK) WHERE [Name] = 'Hyjay')
 DECLARE @LetstalkId INT = (SELECT CompanyId FROM dbo.Company WITH(NOLOCK) WHERE [Name] = 'Letstalk')
