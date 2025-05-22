@@ -25,13 +25,13 @@ END
 DELETE FROM dbo.SystemConfigs 
 WHERE [Key] = 'AnnualLeaveResetTimeLine'
 
-DECLARE @AscentisId INT = (SELECT CompanyId FROM dbo.Company WITH(NOLOCK) WHERE [Name] = 'Ascentis')
-DECLARE @HyjayId INT = (SELECT CompanyId FROM dbo.Company WITH(NOLOCK) WHERE [Name] = 'Hyjay')
-DECLARE @LetstalkId INT = (SELECT CompanyId FROM dbo.Company WITH(NOLOCK) WHERE [Name] = 'Letstalk')
-DECLARE @NextFortuneId INT = (SELECT CompanyId FROM dbo.Company WITH(NOLOCK) WHERE [Name] = 'Next Fortune')
-DECLARE @OneLabId INT = (SELECT CompanyId FROM dbo.Company WITH(NOLOCK) WHERE [Name] = 'One Lab')
-DECLARE @SSIId INT = (SELECT CompanyId FROM dbo.Company WITH(NOLOCK) WHERE [Name] = 'SSI')
-DECLARE @EMCId INT = (SELECT CompanyId FROM dbo.Company WITH(NOLOCK) WHERE [Name] = 'EMC')
+DECLARE @AscentisId INT = 11
+DECLARE @HyjayId INT = 18
+DECLARE @LetstalkId INT = 19
+DECLARE @NextFortuneId INT = 20
+DECLARE @OneLabId INT = 22
+DECLARE @SSIId INT = 33
+DECLARE @EMCId INT = 31
 INSERT INTO SystemConfigs([Key], [Value], CompanyId)
 VALUES('AnnualLeaveResetTimeLine', 2, @AscentisId),
 ('AnnualLeaveResetTimeLine', 2, @HyjayId),
