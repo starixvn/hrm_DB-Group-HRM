@@ -24,12 +24,32 @@ UPDATE dbo.[RefResource]
 SET [Value] = 1
 WHERE CompanyId in (@AscentisId, @HyjayId, @LetstalkId, @NextFortuneId, @OneLabId, @SSIId, @EMCId)
 	AND RefName = 'EnableAdditionalAnnualLeaveBalance'
-
+	
 DECLARE @SMSId INT = (SELECT CompanyId FROM dbo.Company WITH(NOLOCK) WHERE [Name] = 'SMS')
 DECLARE @HMId INT = (SELECT CompanyId FROM dbo.Company WITH(NOLOCK) WHERE [Name] = N'Hồng Mã')
+DECLARE @CabintechId INT = (SELECT CompanyId FROM dbo.Company WITH(NOLOCK) WHERE [Name] = N'Cabintech')
+DECLARE @ConnectshoreCorpId INT = (SELECT CompanyId FROM dbo.Company WITH(NOLOCK) WHERE [Name] = N'Connectshore Corp')
+DECLARE @CymabellId INT = (SELECT CompanyId FROM dbo.Company WITH(NOLOCK) WHERE [Name] = N'Cymabell')
+DECLARE @DIGIBYTESKYId INT = (SELECT CompanyId FROM dbo.Company WITH(NOLOCK) WHERE [Name] = N'DIGIBYTESKY')
+DECLARE @ElementStrategiesId INT = (SELECT CompanyId FROM dbo.Company WITH(NOLOCK) WHERE [Name] = N'Element Strategies')
+DECLARE @LexfinId INT = (SELECT CompanyId FROM dbo.Company WITH(NOLOCK) WHERE [Name] = N'Lexfin')
+DECLARE @SandsdoverId INT = (SELECT CompanyId FROM dbo.Company WITH(NOLOCK) WHERE [Name] = N'Sandsdover')
+DECLARE @XPCId INT = (SELECT CompanyId FROM dbo.Company WITH(NOLOCK) WHERE [Name] = N'XPC')
+DECLARE @DARId INT = (SELECT CompanyId FROM dbo.Company WITH(NOLOCK) WHERE [Name] = N'DAR')
+DECLARE @WGIId INT = (SELECT CompanyId FROM dbo.Company WITH(NOLOCK) WHERE [Name] = N'WGI')
 INSERT INTO SystemConfigs([Key], [Value], CompanyId)
 VALUES('AnnualLeaveResetTimeLine', 1, @SMSId),
-('AnnualLeaveResetTimeLine', 1, @HMId)
+('AnnualLeaveResetTimeLine', 1, @HMId),
+('AnnualLeaveResetTimeLine', 1, @CabintechId),
+('AnnualLeaveResetTimeLine', 1, @ConnectshoreCorpId),
+('AnnualLeaveResetTimeLine', 1, @CymabellId),
+('AnnualLeaveResetTimeLine', 1, @DIGIBYTESKYId),
+('AnnualLeaveResetTimeLine', 1, @ElementStrategiesId),
+('AnnualLeaveResetTimeLine', 1, @LexfinId),
+('AnnualLeaveResetTimeLine', 1, @SandsdoverId),
+('AnnualLeaveResetTimeLine', 1, @XPCId),
+('AnnualLeaveResetTimeLine', 1, @DARId),
+('AnnualLeaveResetTimeLine', 1, @WGIId)
 GO
 
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
