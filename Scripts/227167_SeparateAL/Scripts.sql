@@ -1,7 +1,4 @@
 
-ALTER TABLE bodb_HRM.dbo.LeaveTrans  
-ADD ExtraDays numberic(18,1) NULL
-GO
 
 ALTER PROCEDURE [dbo].[AnnualLeave_GetTransByEmp] @EmpId INT
 	,@fromDate DATETIME
@@ -507,7 +504,7 @@ GO
 
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE PROCEDURE [dbo].[Report_LeaveSummaryForJoinedDate] 
+CREATE OR ALTER PROCEDURE [dbo].[Report_LeaveSummaryForJoinedDate] 
 (
     @CompanyId INT
     ,@empId INT = NULL
