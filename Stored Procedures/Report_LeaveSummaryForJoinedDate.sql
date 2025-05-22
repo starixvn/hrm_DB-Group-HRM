@@ -1,6 +1,6 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[Report_LeaveSummaryForJoinedDate] 
+CREATE PROCEDURE [dbo].[Report_LeaveSummaryForJoinedDate] 
 (
     @CompanyId INT
     ,@empId INT = NULL

@@ -81,3 +81,6 @@ BEGIN
 	SET AnnualLeaveBalance = ISNULL(AnnualLeaveBalance, 0) + @OldDeductDays - @OldCreditDays + ISNULL(@CreditDays, 0) - ISNULL(@DeductDays, 0)
 	WHERE EmpId = @EmpId
 END
+
+
+
