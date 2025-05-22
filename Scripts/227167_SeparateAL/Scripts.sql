@@ -252,6 +252,8 @@ END
 GO
 
 
+/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+
 ALTER PROCEDURE [dbo].[AnnualLeave_InsertTransaction]
 (
     @EmpId INT
@@ -415,6 +417,8 @@ GO
 
 
 
+/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+
 ALTER PROCEDURE [dbo].[AnnualLeave_UpdateTransaction] @LeaveTransId INT
 	,@Description NVARCHAR(4000) = ''
 	,@FromDate DATETIME
@@ -497,8 +501,11 @@ BEGIN
 	WHERE EmpId = @EmpId
 END
 
+
 GO
 
+
+/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 CREATE PROCEDURE [dbo].[Report_LeaveSummaryForJoinedDate] 
 (
@@ -672,6 +679,8 @@ END
 GO
 
 
+/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="1"></info>*/
+
 CREATE OR ALTER FUNCTION [dbo].[fnc_GetAnnualLeaveBalance]
 (
     @EmpId INT
@@ -765,6 +774,8 @@ BEGIN
 	RETURN ISNULL(@LeaveBalanceDay, 0)
 END
 GO
+
+/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="1"></info>*/
 
 ALTER FUNCTION [dbo].[fnc_GetAnnualLeaveBalanceByDate] (
 	@EmpId INT
@@ -978,6 +989,8 @@ GO
 
 
 
+/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="1"></info>*/
+
 ALTER FUNCTION [dbo].[fnc_GetAnnualLeaveBalanceByYear] (
 	@EmpID INT
 	,@Year INT
@@ -1067,6 +1080,8 @@ END
 
 GO
 
+
+/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Employee_GetEmployeeByID] @EmpId INT
 AS
@@ -1188,6 +1203,8 @@ BEGIN
 	WHERE e.EmpId = @EmpId
 END
 GO
+
+/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[EmployeeAttendance_ProcessingAndInsert]
 (
@@ -1538,9 +1555,10 @@ BEGIN
 
 	DROP TABLE #tmpLeaveRequestHalfDay
 END
-
 GO
 
+
+/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[LeaveRequest_GetLeaveBalance]
 (
@@ -1592,6 +1610,8 @@ BEGIN
 END
 GO
 
+
+/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[LeaveRequest_Insert]
 (
@@ -2467,6 +2487,8 @@ BEGIN
 	DROP TABLE #tblLeaveRequestDetail
 END
 GO
+
+/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[LeaveRequest_Update]
 (
@@ -3425,6 +3447,8 @@ BEGIN
 END
 GO
 
+/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+
 ALTER PROCEDURE [dbo].[SystemSetting_Get]
 (
     @CompanyId SMALLINT
@@ -3465,7 +3489,10 @@ BEGIN
 		,@EnableSickLeaveBalance AS EnableSickLeaveBalance
         ,@EnableLimitUseAnnualLeaveBalance AS EnableLimitUseAnnualLeaveBalance
 END
+
 GO
+
+/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[WorkingTimeRequest_GetRequestByCreateDate_AllType]
 (
