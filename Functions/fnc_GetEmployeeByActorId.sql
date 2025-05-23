@@ -100,7 +100,9 @@ RETURN WITH cteEmployee AS (
 			AND @IsShowUserInTeam = 1
 
 		UNION
-		SELECT @EmpId WHERE @EmpId IS NOT NULL
+		SELECT @EmpId
+		FROM dbo.CompanyEmployee ce WITH (NOLOCK)
+		WHERE ce.EmpId = @EmpId AND ce.CompanyId = @CompanyId
 		)
 
 SELECT EmpId

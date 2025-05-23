@@ -1,25 +1,28 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[WorkingTimeRequest_GetRequestByRequestDate_AllType] @SupervisorId INT = NULL
-	,@empid INT = NULL
-	,@TeamIds VARCHAR(max) = ''
-	,@fromdate DATETIME
-	,@todate DATETIME
-	,@status VARCHAR(max) = NULL
-	,@role VARCHAR(max) = ''
-	,@isLocal BIT = NULL
-	,@requestType INT = NULL
-	,@leaveTypeId INT = NULL
-	,@CompanyId SMALLINT
+ALTER PROCEDURE [dbo].[WorkingTimeRequest_GetRequestByRequestDate_AllType] 
+(
+    @CompanyId SMALLINT
+    ,@SupervisorId INT = NULL
+    ,@empid INT = NULL
+    ,@TeamIds VARCHAR(MAX) = ''
+    ,@fromdate DATETIME
+    ,@todate DATETIME
+    ,@status VARCHAR(MAX) = NULL
+    ,@role VARCHAR(MAX) = ''
+    ,@isLocal BIT = NULL
+    ,@requestType INT = NULL
+    ,@leaveTypeId INT = NULL
+)
 AS
 /*
-Created: Tom.Vo@2013-11-04
-Task: get all emp request list
-DB: HRM
+    Created: Tom.Vo@2013-11-04
+    Task: get all emp request list
+    DB: bodb_HRM
 
-Revisions:
-    20250403@Tim: remove section [Redmine: #222886]
-Param's Explanation:
+    Revisions:
+        20250403@Tim: remove section [Redmine: #222886]
+    Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -730,7 +733,7 @@ BEGIN
 		,r.ModifiedDate
 		,ISNULL(rd.IsWarning, 0) AS IsWarning
 		,r.ReworkCount
-		,dbo.fnc_GetAnnualLeaveBalanceByYear(r.EmpId, YEAR(rd.FromDate), r.RequestId) AS AnnualLeaveBalance
+		,dbo.fnc_GetAnnualLeaveBalance(r.EmpId, rd.FromDate, r.RequestId) AS AnnualLeaveBalance
 	FROM dbo.WorkingTimeRequest AS r WITH (NOLOCK)
 		INNER JOIN #tblRequestId AS rq ON r.RequestId = rq.RequestId
 		INNER JOIN #tblRequestInDaily AS rd ON r.RequestId = rd.RequestID
@@ -749,7 +752,7 @@ BEGIN
 		LEFT JOIN #tblTotalDaysRequestInMonth AS rm ON r.empID = rm.empid
 		AND r.RequestType = rm.RequestType
 		LEFT JOIN #tblGeneralLeaveDetail AS gdt ON r.RequestId = gdt.RequestId
-		LEFT JOIN dbo.EmployeeCalendar AS C WITH (NOLOCK) ON c.empid = r.empid
+		LEFT JOIN dbo.EmployeeCalendar AS c WITH (NOLOCK) ON c.empid = r.empid
 		AND c.WorkDate = convert(VARCHAR(10), rd.FromDate, 111)
 		LEFT JOIN dbo.[Shift] AS s1 WITH (NOLOCK) ON s1.ShiftID = rd.FromShift
 		LEFT JOIN dbo.[Shift] AS s2 WITH (NOLOCK) ON s2.ShiftID = rd.ToShift

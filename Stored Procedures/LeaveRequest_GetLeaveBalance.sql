@@ -1,18 +1,19 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[LeaveRequest_GetLeaveBalance] @EmpId INT
-	,@RequestId BIGINT = NULL
-	,@EffectedDay DATE = NULL
+ALTER PROCEDURE [dbo].[LeaveRequest_GetLeaveBalance]
+(
+    @EmpId INT
+    ,@RequestId BIGINT = NULL
+    ,@EffectedDay DATE = NULL
+)
 AS
 /*
-Created: Quinn.Vo@20190417
-Task: Get  Avaible Balance Leave From RequestId
-DB: HRM_SMS
-Original: 
+    Created: Quinn.Vo@20190417
+    Task: Get Avaible Balance Leave From RequestId
+    DB: bodb_HRM
 
-Revisions:
-Param's Explanation:
-
+    Revisions:
+    Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -32,7 +33,7 @@ BEGIN
 
 	SELECT @KIVBalance = dbo.fnc_GetKIVByDayBalance(@EmpId, @EffectedDay, @RequestId)
 		,@KIVByHourBalance = dbo.fnc_GetKIVByHourBalance(@EmpId, @EffectedDay, @RequestId)
-		,@LeaveBalanceDay = dbo.fnc_GetAnnualLeaveBalanceByYear(@EmpId, YEAR(@EffectedDay), @RequestId)
+		,@LeaveBalanceDay = dbo.fnc_GetAnnualLeaveBalance(@EmpId, @EffectedDay, @RequestId)
 		,@CurrenLeaveDay = dbo.fnc_GetAnnualLeaveBalanceByDate(@EmpId, @EffectedDay, @RequestId)
 		,@WeekedLeaveDayTaken = dbo.fnc_GetWeekendLeaveTaken(@EmpId, @EffectedDay, @RequestId)
 		,@HospitalizationLeaveBalance = dbo.fnc_GetHospitalizationLeaveBalance(@EmpId, YEAR(@EffectedDay), @RequestId)

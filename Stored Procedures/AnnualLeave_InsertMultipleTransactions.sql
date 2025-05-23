@@ -27,6 +27,8 @@ BEGIN
 
 	DECLARE @maximumBalanceForLocal SMALLINT
 		,@maximumBalanceForExpat SMALLINT
+		,@AnnualLeaveResetTimelineType TINYINT
+		,@AnnualLeaveResetTimelineByYear TINYINT = 1
 
 	SELECT @maximumBalanceForLocal = Value
 	FROM dbo.RefResource WITH (NOLOCK)
@@ -91,10 +93,54 @@ BEGIN
 		RETURN
 	END
 
+
+	CREATE TABLE #tmpLeaveRange (
+		EmpId INT PRIMARY KEY,
+		RangeStartDate DATETIME,
+		RangeEndDate DATETIME
+	)
+
+	SELECT @AnnualLeaveResetTimelineType = [Value]
+    FROM dbo.SystemConfigs WITH (NOLOCK)
+    WHERE CompanyId = @CompanyId
+        AND [Key] = 'AnnualLeaveResetTimeline'
+
+	INSERT INTO #tmpLeaveRange (EmpId, RangeStartDate, RangeEndDate)
+	SELECT 
+		EmpId,
+		ISNULL(FromDate, @FromDate) AS RangeStartDate,
+		CASE 
+			WHEN @AnnualLeaveResetTimelineType = @AnnualLeaveResetTimelineByYear THEN DATEFROMPARTS(YEAR(@FromDate), 12, 31)
+			ELSE ToDate
+		END AS RangeEndDate
+	FROM (
+		SELECT 
+			emp.EmpId,
+			lt.FromDate,
+			lt.ToDate,
+			ROW_NUMBER() OVER (PARTITION BY emp.EmpId ORDER BY lt.FromDate ASC) AS rn
+		FROM dbo.Employee AS emp WITH (NOLOCK)
+		INNER JOIN #tblEmployeeIds AS empid ON emp.EmpId = empid.EmployeeId
+		LEFT JOIN dbo.LeaveTrans AS lt WITH (NOLOCK) ON emp.EmpId = lt.EmpId
+			AND lt.FromDate <= @FromDate
+			AND lt.ToDate > @FromDate
+			AND lt.CreditDays > 0
+			AND lt.RequestId IS NULL
+			AND ISNULL(lt.Deleted, 0) = 0
+	) AS t
+	WHERE rn = 1
+
+
+	UPDATE #tmpLeaveRange
+	SET RangeEndDate = DATEADD(DAY, -1, DATEADD(YEAR, 1, RangeStartDate))
+	WHERE RangeEndDate IS NULL;
+
+
 	INSERT INTO dbo.LeaveTrans (
 		EmpId
 		,[Description]
 		,FromDate
+		,ToDate
 		,DeductDays
 		,CreditDays
 		,CreatedDate
@@ -103,13 +149,16 @@ BEGIN
 	SELECT emp.EmpId
 		,@Description
 		,@FromDate
+		,lr.RangeEndDate
 		,@DeductDays
 		,@CreditDays
 		,GETDATE()
 		,@ActorId
 	FROM dbo.Employee AS emp WITH (NOLOCK)
 		INNER JOIN #tblEmployeeIds AS empid ON emp.EmpId = empid.EmployeeId
+		INNER JOIN #tmpLeaveRange AS lr ON emp.EmpId = lr.EmpId
 	WHERE ISNULL(emp.isDeleted, 0) = 0
+
 
 	UPDATE dbo.EmployeeSummary WITH (ROWLOCK)
 	SET AnnualLeaveBalance = ISNULL(AnnualLeaveBalance, 0) + ISNULL(@CreditDays, 0) - ISNULL(@DeductDays, 0)
@@ -120,4 +169,5 @@ BEGIN
 			)
 	
 	DROP TABLE #tblEmployeeIds
+	DROP TABLE #tmpLeaveRange
 END

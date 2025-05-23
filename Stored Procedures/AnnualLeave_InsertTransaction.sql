@@ -30,6 +30,8 @@ BEGIN
 	DECLARE @CompanyId SMALLINT
         ,@maximumBalanceForLocal SMALLINT
 		,@maximumBalanceForExpat SMALLINT
+		,@AnnualLeaveResetTimelineType TINYINT
+		,@AnnualLeaveResetTimelineByYear TINYINT = 1
 
     SELECT @CompanyId = ce.CompanyId
     FROM dbo.Employee AS e WITH (NOLOCK)
@@ -93,6 +95,40 @@ BEGIN
 		RETURN
 	END
 
+	SELECT @AnnualLeaveResetTimelineType = [Value]
+    FROM dbo.SystemConfigs WITH (NOLOCK)
+    WHERE CompanyId = @CompanyId
+        AND [Key] = 'AnnualLeaveResetTimeline'
+
+	DECLARE @ToDateValue DATETIME = @ToDate
+
+	IF @ToDate IS NULL
+	BEGIN
+		SELECT @ToDateValue = CASE 
+			WHEN @AnnualLeaveResetTimelineType = @AnnualLeaveResetTimelineByYear THEN DATEFROMPARTS(YEAR(@FromDate), 12, 31)
+			ELSE RangeEndDate
+		END
+		FROM (
+			SELECT 
+				FromDate,
+				ToDate AS RangeEndDate,
+				ROW_NUMBER() OVER (ORDER BY FromDate ASC) AS rn
+			FROM dbo.LeaveTrans WITH (NOLOCK)
+			WHERE EmpId = @EmpId
+				AND FromDate <= @FromDate
+				AND ToDate > @FromDate
+				AND CreditDays > 0
+				AND RequestId IS NULL
+				AND ISNULL(Deleted, 0) = 0
+		) AS t
+		WHERE rn = 1
+	END
+
+	IF @ToDateValue IS NULL
+	BEGIN
+		SET @ToDateValue = DATEADD(DAY, -1, DATEADD(YEAR, 1, @FromDate))
+	END
+
 	INSERT INTO dbo.LeaveTrans (
 		EmpId
 		,RequestId
@@ -101,7 +137,7 @@ BEGIN
 		,ToDate
 		,DeductDays
 		,CreditDays
-        ,Deleted
+		,Deleted
 		,CreatedDate
 		,CreatedBy
 		)
@@ -110,10 +146,10 @@ BEGIN
 		,@RequestId
 		,@Description
 		,@FromDate
-		,@ToDate
+		,@ToDateValue
 		,@DeductDays
 		,@CreditDays
-        ,0
+		,0
 		,@CreatedDate
 		,@CreatedBy
 		)
