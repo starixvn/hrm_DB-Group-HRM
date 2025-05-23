@@ -1162,7 +1162,7 @@ SELECT
     ms.AllowSendHR,
     ms.AllowSendMailGroup
 FROM elementschrm.dbo.MailSettings AS ms
-    LEFT JOIN dbo.[Group] AS g ON ms.GroupId = g.OldGroupId AND g.CompanyId = @CompanyId
+    INNER JOIN dbo.[Group] AS g ON ms.GroupId = g.OldGroupId AND g.CompanyId = @CompanyId
 WHERE NOT EXISTS (
         SELECT 1
         FROM dbo.MailSettings AS setting WITH (NOLOCK)
