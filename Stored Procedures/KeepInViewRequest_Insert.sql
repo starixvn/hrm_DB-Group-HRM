@@ -10,7 +10,6 @@ ALTER PROCEDURE [dbo].[KeepInViewRequest_Insert] @EmpId INT
 	,@CreatedBy INT
 	,@VerifierId INT = NULL
 	,@ApproverId INT = NULL
-	,@ShiftId INT = NULL
 	,@RequestId BIGINT = 0 OUTPUT
 	,@ErrCode INT = 0 OUTPUT
 	,@ErrMsg NVARCHAR(200) = '' OUTPUT
@@ -45,6 +44,11 @@ BEGIN
 		,@VerifiedStatusId TINYINT = 2
 		,@ApprovedStatusId TINYINT = 4
 		,@ProcessedStatusId TINYINT = 6
+		-- day off
+		,@SumDayOff INT;
+	SET DATEFIRST 1;
+	DECLARE @WeekStartDate DATE = DATEADD(DAY, 1 - DATEPART(WEEKDAY, @OnDate), @OnDate);
+	DECLARE @WeekEndDate DATE = DATEADD(DAY, 6, @WeekStartDate);
 
 	IF @KeepInViewType = @KeepInViewByDay
 		AND @IsHalfDay = 0
@@ -87,12 +91,12 @@ BEGIN
 		RETURN
 	END
 
-	IF @KeepInViewType = @KeepInViewByDay
-		AND NOT EXISTS (
+	IF  EXISTS (
 			SELECT 1
 			FROM dbo.EmployeeCalendar WITH (NOLOCK)
 			WHERE WorkDate = @OnDate
 				AND EmpId = @EmpId
+				AND ShiftId IS NULL
 				AND (
 					IsHoliday = 1
 					OR IsOffDay = 1
@@ -100,9 +104,63 @@ BEGIN
 			)
 	BEGIN
 		SET @ErrCode = 101
-		SET @ErrMsg = 'Not off day or holiday ' + CONVERT(NVARCHAR(100), @OnDate, 106)
+		SET @ErrMsg = 'Can not select off day or holiday ' + CONVERT(NVARCHAR(100), @OnDate, 106)
 
 		RETURN
+	END
+
+	IF  EXISTS (
+			SELECT 1
+			FROM dbo.EmployeeCalendar WITH (NOLOCK)
+			WHERE WorkDate = @OnDate
+				AND EmpId = @EmpId
+				AND ShiftId IS NULL
+			)
+	BEGIN
+		SET @ErrCode = 108
+		SET @ErrMsg = 'Can not select non-shift working day ' + CONVERT(NVARCHAR(100), @OnDate, 106)
+
+		RETURN
+	END
+
+	IF @KeepInViewType = @KeepInViewByDay AND NOT EXISTS (
+			SELECT 1
+			FROM dbo.EmployeeCalendar WITH (NOLOCK)
+			WHERE WorkDate = @OnDate
+				AND EmpId = @EmpId
+				AND IsHoliday = 1
+			)
+	BEGIN
+		SELECT @SumDayOff = COUNT(*)
+		FROM (
+			SELECT DISTINCT WorkDate -- Count the number of off days (IsOffDay = 1) in the same week as @OnDate
+				FROM dbo.EmployeeCalendar WITH (NOLOCK)
+				WHERE WorkDate BETWEEN @WeekStartDate AND @WeekEndDate
+					AND EmpId = @EmpId
+					AND IsOffDay = 1
+					AND WorkDate <> @OnDate
+					AND IsHoliday = 0 -- not count PH
+			UNION
+			SELECT DISTINCT OnDate -- Count the number of pending working time requests in the same week
+			FROM dbo.WorkingTimeRequest AS r WITH (NOLOCK)
+			INNER JOIN dbo.KeepInViewRequest AS kiv WITH (NOLOCK) ON r.RequestId = kiv.RequestId
+			LEFT JOIN dbo.EmployeeCalendar c WITH (NOLOCK) ON c.WorkDate = kiv.OnDate AND c.EmpId = r.EmpId
+			LEFT JOIN dbo.tmpEmployeeCalendar ctmp WITH (NOLOCK) ON ctmp.WorkDate = kiv.OnDate AND ctmp.EmpId = r.EmpId
+			WHERE r.EmpId = @EmpId 
+				AND r.CurrentStatus IN (@PendingStatusId)
+				AND kiv.OnDate BETWEEN @WeekStartDate AND @WeekEndDate
+				AND kiv.OnDate <> @OnDate
+				AND (c.IsHoliday = 0 OR ctmp.IsHoliday = 0) -- not count PH
+		) AS CombinedDates;		
+		DECLARE @MaxOffdaySetting INT = (SELECT TOP(1) s.OffDaysbyWeek FROM EmployeeSummary s WHERE s.EmpId = @EmpId)
+		
+		IF @SumDayOff >= @MaxOffdaySetting
+			BEGIN		
+				SET @ErrCode = 109
+				SET @ErrMsg = 'The number of days off taken by the employee this week exceeds the setting limit'
+
+				RETURN
+			END
 	END
 
 	IF @EmpId <> @CreatedBy
@@ -271,7 +329,6 @@ BEGIN
 			,FromTime
 			,ToTime
 			,RefNo
-			,ShiftId
 			)
 		VALUES (
 			@RequestId
@@ -282,7 +339,6 @@ BEGIN
 			,@FromTime
 			,@ToTime
 			,@RefNo
-			,@ShiftId
 			)
 
 		IF @ApproverId IS NULL

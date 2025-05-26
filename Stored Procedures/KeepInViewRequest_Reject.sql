@@ -32,6 +32,9 @@ BEGIN
 		,@NotVerifiedStatusId TINYINT = 3
 		,@RejectedStatusId TINYINT = 5
 		,@VoidStatusId TINYINT = 7
+		,@ApprovedStatusId TINYINT = 4
+		-- keep in view type
+		,@KeepInViewByDay TINYINT = 1
 
 	SELECT @OnDate = OnDate
 		,@EmpId = EmpId
@@ -73,9 +76,12 @@ BEGIN
 
 		UPDATE empca
 		SET empca.IsKeepInView = 0
-			,empca.ShiftId = CASE WHEN kiv.ShiftId IS NOT NULL THEN NULL ELSE empca.ShiftId END
 			,empca.ModifiedBy = @ActorId
 			,empca.ModifiedDate = @ProcessedDate
+			,empca.IsOffDay = CASE WHEN kiv.KeepInViewType = @KeepInViewByDay AND empca.PreviousIsOffDay IS NOT NULL -- void request
+					THEN empca.PreviousIsOffDay 
+					ELSE empca.IsOffDay END
+			,empca.PreviousIsOffDay = NULL
 		FROM dbo.EmployeeCalendar AS empca WITH (ROWLOCK, UPDLOCK)
 			INNER JOIN dbo.KeepInViewRequest AS kiv WITH (NOLOCK) ON empca.WorkDate = kiv.OnDate
 			AND empca.EmpId = kiv.EmpId
