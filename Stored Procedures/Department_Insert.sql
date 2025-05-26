@@ -18,24 +18,13 @@ DB: HRM
 Original: 
 
 Revisions:  
-	20250421@Mira: add new Deparment - new structure [Redmine: #221568]
+	- 20250421@Mira: add new Deparment - new structure [Redmine: #221568]
+	- 20250526@Jay: Allow having the same code [Redmine: #228323]
 
 Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;
-
-	IF EXISTS (
-			SELECT 1
-			FROM dbo.Department WITH (NOLOCK)
-			WHERE Code = @Code AND IsDeleted = 0
-			)
-	BEGIN
-		SELECT @ErrCode = 1
-			,@ErrMsg = N'Department  ' + @Code + ' has already exists'
-
-		RETURN
-	END
 
 	IF EXISTS (
 			SELECT 1
