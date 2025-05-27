@@ -194,13 +194,13 @@ BEGIN
 				,@TempWorkDate
 				,1
 
-            EXEC dbo.Discipline_Insert @FromDate = @TempWorkDate
-                ,@ToDate = @TempWorkDate
-                ,@EmpId = @TempEmpId
-
 			SET @i = @i + 1
 		END
 	END
+
+    INSERT INTO dbo.tmpProcessDiscipline (EmpId, WorkDate, InsertedDate)
+    SELECT DISTINCT EmpId, WorkDate, GETDATE()
+    FROM #tmpEmpCalendar
 
     DROP TABLE #tmpEmployee
 
