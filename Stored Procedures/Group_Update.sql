@@ -31,26 +31,13 @@ DB: HRM_SMS
 Original:
 
 Revisions:
-	20250515@Jay: add years of service for extra leave [Redmine: #227166]
+	- 20250515@Jay: add years of service for extra leave [Redmine: #227166]
+	- 20250526@Jay: Allow having the same code [Redmine: #228323]
 Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;
 	SET XACT_ABORT ON;
-
-	IF EXISTS (
-			SELECT 1
-			FROM dbo.[Group] WITH (NOLOCK)
-			WHERE GroupId <> @TeamId
-				AND Code = @code
-				AND IsDeleted = 0
-			)
-	BEGIN
-		SELECT @ErrCode = 100
-			,@ErrMsg = N'Code "' + @code + '" have been used by other group.'
-
-		RETURN
-	END
 
 	IF EXISTS (
 			SELECT 1
