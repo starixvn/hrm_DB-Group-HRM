@@ -121,7 +121,7 @@ BEGIN
 	SELECT @totalRow = COUNT(*) FROM @Result
 
 	-- Final result
-	IF @pageSize IS NULL
+	IF @pageSize IS NULL OR @pageSize <= 0
 	BEGIN
 		SELECT * FROM @Result
 		ORDER BY UnitCode DESC, DepartmentCode DESC, TeamCode DESC
