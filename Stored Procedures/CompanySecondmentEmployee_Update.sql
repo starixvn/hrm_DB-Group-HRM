@@ -48,17 +48,6 @@ BEGIN
         RETURN;
     END
 
-    -- If OldEmpId is provided, verify it exists
-    IF @OldEmpId IS NOT NULL 
-    BEGIN
-        IF NOT EXISTS (SELECT 1 FROM dbo.CompanySecondmentEmployee WITH (NOLOCK) WHERE EmpId = @OldEmpId)
-        BEGIN
-            SET @ErrCode = 1;
-            SET @ErrMsg = 'Old employee record not found in secondment records.';
-            RETURN;
-        END
-    END
-
     -- If OldEmpId is provided and different from EmpId, update the old record
     IF @OldEmpId IS NOT NULL AND @OldEmpId <> @EmpId
     BEGIN
