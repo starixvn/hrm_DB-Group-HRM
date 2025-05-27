@@ -24,7 +24,6 @@ ALTER TABLE [dbo].[SystemConfigs] ADD CONSTRAINT [PK_SystemConfigs] PRIMARY KEY 
 	[Key] ASC
 ) ON [PRIMARY]
 GO
-*/
 
 CREATE NONCLUSTERED INDEX IX_EmployeeSupervisor_EmpId_ActionType_IsDeleted
 ON dbo.EmployeeSupervisor (EmpId, ActionType, IsDeleted)
@@ -44,4 +43,25 @@ GO
 
 CREATE NONCLUSTERED INDEX IX_Employee_EmpId_GroupId_Enabled_IsDeleted
 ON dbo.Employee (EmpId, GroupId, [Enabled], IsDeleted)
+GO
+*/
+
+CREATE NONCLUSTERED INDEX IX_tmpEmployeeAttendance_EmpId_WorkDate
+ON dbo.tmpEmployeeAttendace (EmpId, WorkDate)
+GO
+
+CREATE NONCLUSTERED INDEX IX_LeaveRequestDetail_EmpId_OnDate
+ON LeaveRequestDetail (EmpId, OnDate)
+GO
+
+CREATE NONCLUSTERED INDEX IX_TimeRecord_EmpId_RecordTime_InOutType
+ON TimeRecord (EmpId, RecordTime, InOutType)
+GO
+
+CREATE NONCLUSTERED INDEX IX_DisciplineIgnoreDetail_EmpId_WorkDate_DisciplineTypeId
+ON DisciplineIgnoreDetail (EmpId, WorkDate, DisciplineTypeId)
+GO
+
+CREATE NONCLUSTERED INDEX IX_DisciplineRequestTrans_EmpId_WorkDate_DisciplineTypeId
+ON DisciplineRequestTrans (EmpId, WorkDate, DisciplineTypeId)
 GO
