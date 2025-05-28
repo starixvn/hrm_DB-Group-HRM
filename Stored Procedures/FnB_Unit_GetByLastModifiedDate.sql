@@ -28,10 +28,7 @@ BEGIN
 		,u.IsActive
 		,u.ModifiedDate
 		,u.IsDeleted
-	FROM dbo.Unit AS u WITH (NOLOCK) 
-	LEFT JOIN dbo.Department AS d WITH (NOLOCK) ON d.UnitId = u.UnitId
-	INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON g.DepartmentId = d.DepartmentId
-		AND g.CompanyId = @CompanyId
+	FROM dbo.Unit AS u WITH (NOLOCK)
 	WHERE u.ModifiedDate > @LastModifiedDate
 END
 
