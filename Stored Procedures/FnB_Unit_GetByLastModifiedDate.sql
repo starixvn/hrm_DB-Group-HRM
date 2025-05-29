@@ -24,7 +24,7 @@ BEGIN
 
 	SELECT DISTINCT u.UnitId
 		,u.Code
-		,u.Name
+		,u.Code as [Name]
 		,u.IsActive
 		,u.ModifiedDate
 		,u.IsDeleted

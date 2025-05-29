@@ -28,7 +28,7 @@ GO
     ---------------Update EmpId For HongMa----------
 -- DELETE
 SELECT * FROM EmpCalendar
-WHERE CompanyID = 2 AND EmpId NOT IN (SELECT EmpId FROM Employee WHERE CompanyId = 2)
+WHERE CompanyID = 3 AND EmpId NOT IN (SELECT EmpId FROM Employee WHERE CompanyId = 3)
 GO 
 
 UPDATE ec
