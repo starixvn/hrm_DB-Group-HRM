@@ -48,7 +48,10 @@ BEGIN
 		,g.[Name]
 		,g.[Rank]
 		,ISNULL(g.IsDeleted, 0) AS IsDeleted
-		,NULL as ModifiedDate
+		,CASE 
+			WHEN g.ModifiedDate IS NULL THEN g.CreatedDate
+			ELSE g.ModifiedDate
+			END AS ModifiedDate
 		,g.GroupId AS TeamId
 		,2 as DataSource
 	FROM dbo.[Group] AS g WITH (NOLOCK)

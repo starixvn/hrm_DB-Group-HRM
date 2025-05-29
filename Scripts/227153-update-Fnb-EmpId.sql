@@ -1,6 +1,8 @@
 USE [FBM]
 GO
     ---------------Update EmpId For SMS----------
+ALTER TABLE Employee 
+ADD IsSecondment BIT NULL;
 
 -- DELETE
 SELECT * FROM EmpCalendar

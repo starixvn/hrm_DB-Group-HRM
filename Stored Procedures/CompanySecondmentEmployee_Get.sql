@@ -26,7 +26,8 @@ BEGIN
     INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON cse.EmpId = e.EmpId
     INNER JOIN dbo.Company AS c WITH (NOLOCK) ON cse.CompanyId = c.CompanyId
     INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON cse.EmpId = ce.EmpId
-    INNER JOIN dbo.Company AS c2 WITH (NOLOCK) ON ce.CompanyId = c2.CompanyId;
+    INNER JOIN dbo.Company AS c2 WITH (NOLOCK) ON ce.CompanyId = c2.CompanyId
+    ORDER BY cse.ModifiedDate DESC;
 END
 GO
 

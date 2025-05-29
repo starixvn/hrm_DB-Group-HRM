@@ -23,6 +23,7 @@ BEGIN
 
     DECLARE @CurrentCompanyId INT;
     DECLARE @ExistingEmpId INT;
+    
 
     SELECT @CurrentCompanyId = CompanyId 
     FROM dbo.CompanyEmployee WITH (NOLOCK)
@@ -48,6 +49,20 @@ BEGIN
         RETURN;
     END
 
+    DECLARE @xml XML
+		,@logData NVARCHAR(MAX)
+		,@logOldData NVARCHAR(MAX)
+
+    SET @xml = (
+        SELECT EmpId AS '@EmpId'
+            ,CompanyId as '@CompanyId'
+        FROM dbo.CompanySecondmentEmployee WITH (NOLOCK)
+        WHERE EmpId = @EmpId
+        FOR XML PATH('Row')
+            ,TYPE
+    )
+    SET @logOldData = REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"')
+
     -- If OldEmpId is provided and different from EmpId, update the old record
     IF @OldEmpId IS NOT NULL AND @OldEmpId <> @EmpId
     BEGIN
@@ -68,7 +83,23 @@ BEGIN
         WHERE EmpId = @EmpId;
     END
 
-    SET @ErrCode = 0;
-    SET @ErrMsg = 'Success';
+    SET @xml = (
+    SELECT EmpId AS '@EmpId'
+        ,CompanyId as '@CompanyId'
+    FROM dbo.CompanySecondmentEmployee WITH (NOLOCK)
+    WHERE EmpId = @EmpId
+    FOR XML PATH('Row')
+        ,TYPE
+    )
+    SET @logData = REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"')
+
+    EXEC dbo.ActivityLog_Insert
+		 @ObjectTypeId = 3
+		,@ObjectId = @EmpId
+        ,@UserId = @ModifiedBy
+		,@OldData = @logOldData
+		,@Data = @logData
+		,@ErrCode = @ErrCode OUTPUT
+		,@ErrMsg = @ErrMsg OUTPUT
 END
 GO

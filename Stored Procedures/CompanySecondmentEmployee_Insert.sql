@@ -47,7 +47,27 @@ BEGIN
     INSERT INTO dbo.CompanySecondmentEmployee (EmpId, CompanyId, CreatedBy, CreatedDate, ModifiedBy, ModifiedDate)
     VALUES (@EmpId, @CompanyId, @CreatedBy, GETDATE(), @CreatedBy, GETDATE());
 
-    SET @ErrCode = 0;
-    SET @ErrMsg = 'Success';
+
+	DECLARE @xml XML
+		,@logData NVARCHAR(MAX)
+
+	SET @xml = (
+			SELECT EmpId AS '@EmpId'
+				,CompanyId as '@CompanyId'
+			FROM dbo.CompanySecondmentEmployee WITH (NOLOCK)
+			WHERE EmpId = @EmpId
+			FOR XML PATH('Row')
+				,TYPE
+			)
+	SET @logData = REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"')
+
+	EXEC dbo.ActivityLog_Insert
+		@ObjectTypeId = 3
+		,@ObjectId = @EmpId
+		,@UserId = @CreatedBy
+		,@OldData = NULL
+		,@Data = @logData
+		,@ErrCode = @ErrCode OUTPUT
+		,@ErrMsg = @ErrMsg OUTPUT
 END
 GO

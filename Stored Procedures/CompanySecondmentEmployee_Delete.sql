@@ -2,6 +2,7 @@
 
 CREATE OR ALTER PROCEDURE [dbo].[CompanySecondmentEmployee_Delete]
   @EmpId INT,
+  @ModifiedBy INT,
   @ErrCode INT = 0 OUTPUT,
   @ErrMsg VARCHAR(200) = '' OUTPUT
 AS
@@ -18,10 +19,32 @@ BEGIN
     SET NOCOUNT ON;
     SET XACT_ABORT ON;
 
+    DECLARE @xml XML
+		,@logData NVARCHAR(MAX)
+		,@logOldData NVARCHAR(MAX)
+
+    SET @xml = (
+        SELECT EmpId AS '@EmpId'
+            ,CompanyId as '@CompanyId'
+        FROM dbo.CompanySecondmentEmployee WITH (NOLOCK)
+        WHERE EmpId = @EmpId
+        FOR XML PATH('Row')
+            ,TYPE
+    )
+    SET @logOldData = REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"')
+
+
     DELETE FROM dbo.CompanySecondmentEmployee
     WHERE EmpId = @EmpId;
 
-    SET @ErrCode = 0;
-    SET @ErrMsg = 'Success';
+    EXEC dbo.ActivityLog_Insert
+		@UserId = @ModifiedBy
+		,@ObjectTypeId = 3
+		,@ObjectId = @EmpId
+		,@OldData = @logOldData
+		,@Data = NULL
+		,@ErrCode = @ErrCode OUTPUT
+		,@ErrMsg = @ErrMsg OUTPUT
+
 END
 GO
