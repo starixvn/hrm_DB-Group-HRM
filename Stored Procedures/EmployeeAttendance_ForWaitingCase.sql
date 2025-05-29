@@ -3,12 +3,11 @@
 ALTER PROCEDURE [dbo].[EmployeeAttendance_ForWaitingCase] @CompanyId SMALLINT = NULL
 AS
 /*
-Created:
-Task:
-DB: HRM
+    Created:
+    Task:
+    DB: bodb_HRM
 
-Revisions:
-
+    Revisions:
 */
 BEGIN
 	SET XACT_ABORT ON;
@@ -43,16 +42,8 @@ BEGIN
 		INNER JOIN #tmpEmployee AS e WITH (NOLOCK) ON tmp.EmpId = e.EmpId
 	WHERE tmp.WorkDate = e.WorkDate
 
-	IF EXISTS (
-			SELECT 1
-			FROM INFORMATION_SCHEMA.TABLES
-			WHERE TABLE_NAME = '#tmpTimeRecord'
-			)
-	BEGIN
-		DROP TABLE #tmpTimeRecord
-	END
-
 	CREATE TABLE #tmpTimeRecord (Id INT, EmpId INT, RecordTime DATETIME, InOutType TINYINT)
+    CREATE NONCLUSTERED INDEX IX_tmpTimeRecord_EmpId_RecordTime_InOutType ON #tmpTimeRecord (EmpId, RecordTime, InOutType)
 
 	-- Get all in/out data into temp table to calculate
 	INSERT INTO #tmpTimeRecord (Id, EmpId, RecordTime, InOutType)
@@ -62,66 +53,29 @@ BEGIN
         LEFT JOIN dbo.SystemConfigs AS config WITH (NOLOCK) ON ce.CompanyId = config.CompanyId
         AND config.[Key] = 'TimeZone'
 	WHERE DATEADD(MINUTE, CAST(ISNULL(config.Value, @serverTimeZone) AS REAL) * 60, DATEADD(HOUR, ABS(@serverTimeZone), ti.RecordTime))
-        BETWEEN DATEADD(HH, - 2, CONVERT(VARCHAR(10), @fromDate, 111)) AND DATEADD(d, 2, CONVERT(VARCHAR(10), @toDate, 111))
-		AND EXISTS (
+            BETWEEN DATEADD(HOUR, - 2, CONVERT(VARCHAR(10), @fromDate, 111)) AND DATEADD(DAY, 2, CONVERT(VARCHAR(10), @toDate, 111))
+        AND EXISTS (
 			SELECT 1
-			FROM #tmpEmployee AS e WITH (NOLOCK)
+			FROM #tmpEmployee AS e
 			WHERE e.EmpId = ti.EmpId
 			)
 
-	IF EXISTS (
-			SELECT 1
-			FROM INFORMATION_SCHEMA.TABLES
-			WHERE TABLE_NAME = '#tmpLeaveRequestHalfDay'
-			)
-	BEGIN
-		DROP TABLE #tmpLeaveRequestHalfDay
-	END
-
 	CREATE TABLE #tmpLeaveRequestHalfDay (EmpId INT, OnDate DATETIME, FromTime DATETIME, ToTime DATETIME)
 
-	-- Get all leave request half day
 	INSERT INTO #tmpLeaveRequestHalfDay (EmpId, OnDate, FromTime, ToTime)
-	SELECT lv.EmpId, lv.OnDate, FromTime, ToTime
-	FROM dbo.LeaveRequestDetail AS lv WITH (NOLOCK)
-		INNER JOIN (
-		SELECT ldt.empId
-			,OnDate
-		FROM dbo.LeaveRequestDetail AS ldt WITH (NOLOCK)
-			INNER JOIN dbo.WorkingTimeRequest AS wrq WITH (NOLOCK) ON ldt.RequestId = wrq.RequestId
-		WHERE WorkType = 2
-			AND IsHalfDay = 1 -- 2: leave, 1: Half day
-			AND DATEDIFF(DD, @fromDate, OnDate) >= 0
-			AND DATEDIFF(DD, OnDate, DATEADD(DD, 2, @toDate)) >= 0
-			AND EXISTS (
-				SELECT 1
-				FROM #tmpEmployee AS tmp WITH (NOLOCK)
-				WHERE tmp.EmpId = ldt.EmpId
-				)
-			AND wrq.CurrentStatus IN (4, 6)
-		GROUP BY ldt.empId
-			,OnDate
-		HAVING COUNT(1) = 1
-		) a ON a.EmpId = lv.EmpId
-		AND a.OnDate = lv.OnDate
-		INNER JOIN dbo.WorkingTimeRequest AS rq WITH (NOLOCK) ON lv.RequestId = rq.RequestId
-	WHERE lv.IsHalfDay = 1
+	SELECT ldt.EmpId, ldt.OnDate, FromTime, ToTime
+	FROM dbo.LeaveRequestDetail AS ldt WITH (NOLOCK)
+		INNER JOIN dbo.WorkingTimeRequest AS rq WITH (NOLOCK) ON ldt.RequestId = rq.RequestId
+	WHERE ldt.WorkType = 2 -- leave
+		AND ldt.IsHalfDay = 1
+		AND ldt.OnDate >= @fromDate
+		AND ldt.OnDate <= DATEADD(DD, 2, @toDate)
 		AND EXISTS (
 			SELECT 1
-			FROM #tmpEmployee AS tmp WITH (NOLOCK)
-			WHERE tmp.EmpId = lv.EmpId
+			FROM #tmpEmployee AS tmp
+			WHERE tmp.EmpId = ldt.EmpId
 			)
 		AND rq.CurrentStatus IN (4, 6)
-
-	-- Get all calendars of employees into temp table
-	IF EXISTS (
-			SELECT *
-			FROM INFORMATION_SCHEMA.TABLES
-			WHERE TABLE_NAME = '#tmpEmpCalendar'
-			)
-	BEGIN
-		DROP TABLE #tmpEmpCalendar
-	END
 
 	CREATE TABLE #tmpEmpCalendar (
 		Id INT PRIMARY KEY IDENTITY(1, 1)
@@ -144,6 +98,7 @@ BEGIN
 		,BreakTimeMins INT
 		,LeaveDay DECIMAL(18, 1)
 		)
+    CREATE NONCLUSTERED INDEX IX_tmpEmpCalendar_EmpId_WorkDate ON #tmpEmpCalendar (EmpId, WorkDate)
 
 	INSERT INTO #tmpEmpCalendar (
 		EmpId
@@ -195,12 +150,10 @@ BEGIN
 			END AS EndCheckOutTime
 		,s.BreakTimeMins
 		,ec.LeaveDay
-	FROM #tmpEmployee AS e WITH (NOLOCK)
+	FROM #tmpEmployee AS e
 		LEFT JOIN dbo.EmployeeCalendar AS ec WITH (NOLOCK) ON ec.EmpId = e.EmpId
 		AND ec.WorkDate = e.WorkDate
 		LEFT JOIN dbo.[Shift] AS s WITH (NOLOCK) ON s.ShiftId = ec.ShiftId
-	ORDER BY e.EmpId
-		,e.WorkDate
 
     -- convert to server time zone
     UPDATE empca
@@ -212,21 +165,21 @@ BEGIN
             ELSE DATEADD(MINUTE, CASE WHEN config.[Value] IS NULL THEN 0 ELSE (-1.0 * config.[Value]) + @serverTimeZone END * 60, empca.BeginCheckOutTime) END
         ,empca.EndCheckOutTime = CASE WHEN empca.EndCheckOutTime IS NULL THEN NULL
             ELSE DATEADD(MINUTE, CASE WHEN config.[Value] IS NULL THEN 0 ELSE (-1.0 * config.[Value]) + @serverTimeZone END * 60, empca.EndCheckOutTime) END
-    FROM #tmpEmpCalendar AS empca WITH (ROWLOCK)
-        INNER JOIN #tmpEmployee AS emp WITH (NOLOCK) ON empca.EmpId = emp.EmpId
+    FROM #tmpEmpCalendar AS empca
+        INNER JOIN #tmpEmployee AS emp ON empca.EmpId = emp.EmpId
         LEFT JOIN dbo.SystemConfigs AS config WITH (NOLOCK) ON emp.CompanyId = config.CompanyId
         AND config.[Key] = 'TimeZone'
 
 	IF EXISTS (
 			SELECT 1
-			FROM #tmpEmpCalendar WITH (NOLOCK)
+			FROM #tmpEmpCalendar
 			)
 	BEGIN
 		SET @i = 1
 
 		WHILE EXISTS (
 				SELECT 1
-				FROM #tmpEmpCalendar WITH (NOLOCK)
+				FROM #tmpEmpCalendar
 				WHERE Id = @i
 				)
 		BEGIN
@@ -241,13 +194,13 @@ BEGIN
 				,@TempWorkDate
 				,1
 
-			EXEC dbo.Discipline_Insert @FromDate = @TempWorkDate
-				,@ToDate = @TempWorkDate
-				,@EmpId = @TempEmpId
-
 			SET @i = @i + 1
 		END
 	END
+
+    INSERT INTO dbo.tmpProcessDiscipline (EmpId, WorkDate, InsertedDate)
+    SELECT DISTINCT EmpId, WorkDate, GETDATE()
+    FROM #tmpEmpCalendar
 
     DROP TABLE #tmpEmployee
 
