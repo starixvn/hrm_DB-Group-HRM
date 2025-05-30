@@ -6,7 +6,7 @@ ALTER PROCEDURE [dbo].[Group_Update] @TeamId INT
 	,@ModifiedBy INT
 	,@ErrCode INT = 0 OUTPUT
 	,@ErrMsg NVARCHAR(200) = '' OUTPUT
-	,@PICEmpId INT
+	,@PICEmpId INT = NULL
 	,@DepartmentId INT
 	,@AccountableArea VARCHAR(200) = NULL
 	,@GroupTeamId INT
@@ -33,6 +33,7 @@ Original:
 Revisions:
 	- 20250515@Jay: add years of service for extra leave [Redmine: #227166]
 	- 20250526@Jay: Allow having the same code [Redmine: #228323]
+	- 20250530@Jay: allow PICEmpId be null [Redmine: #225528]
 Param's Explanation:
 */
 BEGIN

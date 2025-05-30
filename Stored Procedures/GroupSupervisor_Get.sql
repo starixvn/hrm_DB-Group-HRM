@@ -12,7 +12,8 @@ AS
     DB: bodb_HRM
 
     Revisions:
-        20250409@Tim: remove section [Redmine: #222886]
+    - 20250409@Tim: remove section [Redmine: #222886]
+	- 20250530@Jay: add company name for who come from different company [Redmine: #225528]
     Param's Explanation:
 */
 BEGIN
@@ -40,7 +41,11 @@ BEGIN
 	ORDER BY gr.Code
 
 	SELECT DISTINCT su.OwnerId
-		,emp.NickName
+		,CASE
+			WHEN ce.CompanyId != @CompanyId 
+				THEN emp.NickName + ' (' + c.[Name] + ')' 
+			ELSE emp.NickName
+		END AS NickName
 		,emp.FullName
 		,su.ActionType
 		,su.GroupId AS TeamId
@@ -48,10 +53,12 @@ BEGIN
         ,gr.[Name]
 	FROM dbo.GroupSupervisor AS su WITH (NOLOCK)
 		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON su.GroupId = gr.GroupId
-		AND ISNULL(gr.IsDeleted, 0) = 0
+			AND ISNULL(gr.IsDeleted, 0) = 0
 		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON su.OwnerId = emp.EmpId
-		AND ISNULL(emp.isDeleted, 0) = 0
-		AND emp.[Enabled] = 1
+			AND ISNULL(emp.isDeleted, 0) = 0
+			AND emp.[Enabled] = 1
+		LEFT JOIN dbo.CompanyEmployee ce WITH (NOLOCK) ON ce.EmpId = emp.EmpId
+		LEFT JOIN dbo.Company c WITH (NOLOCK) ON c.CompanyId = ce.CompanyId
 	WHERE gr.CompanyId = @CompanyId
         AND su.ActionType IN (2, 3, 4, 5, 8)
 		AND ISNULL(su.IsDeleted, 0) = 0
