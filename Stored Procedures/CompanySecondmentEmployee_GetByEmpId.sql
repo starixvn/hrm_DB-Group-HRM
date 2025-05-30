@@ -30,6 +30,7 @@ BEGIN
     INNER JOIN dbo.Company AS c2 WITH (NOLOCK) ON ce.CompanyId = c2.CompanyId
     WHERE cse.EmpId = @EmpId;
 END
+
 GO
 
 

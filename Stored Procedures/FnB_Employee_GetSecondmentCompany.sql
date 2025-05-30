@@ -1,6 +1,6 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE OR ALTER  PROCEDURE [dbo].[FnB_Employee_GetSecondmentCompany] 
+CREATE OR ALTER    PROCEDURE [dbo].[FnB_Employee_GetSecondmentCompany] 
 	@CompanyId SMALLINT
 AS
 /*

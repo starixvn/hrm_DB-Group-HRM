@@ -1,6 +1,6 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE OR ALTER   PROCEDURE [dbo].[FnB_Unit_GetByLastModifiedDate]
+CREATE OR ALTER     PROCEDURE [dbo].[FnB_Unit_GetByLastModifiedDate]
 	@LastModifiedDate DATETIME,
 	@CompanyId SMALLINT
 AS
