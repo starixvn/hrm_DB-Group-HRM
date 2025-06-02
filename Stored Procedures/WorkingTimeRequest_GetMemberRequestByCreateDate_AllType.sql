@@ -106,6 +106,7 @@ BEGIN
 		VALUES (@empid)
 	END
 
+
 	INSERT INTO #tblRequestId (RequestId)
 	SELECT r.RequestId
 	FROM dbo.WorkingTimeRequest AS r WITH (NOLOCK)
@@ -168,14 +169,7 @@ BEGIN
 				WHERE tblstatus.Currentstatus = r.CurrentStatus
 				)
 			)
-		AND (
-			e.GroupId IS NULL
-			OR EXISTS (
-				SELECT 1
-				FROM #tblGroupsList AS tblgr WITH (NOLOCK)
-				WHERE tblgr.GroupId = e.GroupId
-				)
-			)
+		
 		AND (
 			@isLocal IS NULL
 			OR e_s.IsLocal = @isLocal
@@ -195,11 +189,7 @@ BEGIN
 		INNER JOIN dbo.LateInEarlyOutRequest AS inout WITH (NOLOCK) ON wt.RequestId = inout.RequestId
 		INNER JOIN dbo.Employee AS ee WITH (NOLOCK) ON ee.EmpId = wt.EmpId
 	WHERE wt.currentstatus = 6
-		AND EXISTS (
-			SELECT 1
-			FROM #tblGroupsList AS tblgr WITH (NOLOCK)
-			WHERE tblgr.GroupId = ee.GroupId
-			)
+		
 		AND (
 			DATEDIFF(MM, inout.OnDate, @fromdate) = 0
 			OR DATEDIFF(MM, inout.OnDate, @todate) = 0
@@ -224,11 +214,6 @@ BEGIN
 		INNER JOIN dbo.LeaveRequest AS lr WITH (NOLOCK) ON wt.RequestId = lr.RequestId
 		INNER JOIN dbo.Employee AS ee WITH (NOLOCK) ON ee.EmpId = wt.EmpId
 	WHERE wt.currentstatus = 6
-		AND EXISTS (
-			SELECT GroupId
-			FROM #tblGroupsList AS tblgr WITH (NOLOCK)
-			WHERE tblgr.GroupId = ee.GroupId
-			)
 		AND (
 			DATEDIFF(MM, lr.FromDate, @fromdate) = 0
 			OR DATEDIFF(MM, lr.ToDate, @todate) = 0
@@ -299,11 +284,6 @@ BEGIN
 		INNER JOIN dbo.CheckInOutRequest AS lr WITH (NOLOCK) ON wt.RequestId = lr.RequestId
 		INNER JOIN dbo.Employee AS ee WITH (NOLOCK) ON ee.EmpId = wt.EmpId
 	WHERE wt.currentstatus = 6
-		AND EXISTS (
-			SELECT GroupId
-			FROM #tblGroupsList AS tblgr WITH (NOLOCK)
-			WHERE tblgr.GroupId = ee.GroupId
-			)
 		AND (
 			DATEDIFF(MM, lr.OnDate, @fromdate) = 0
 			OR DATEDIFF(MM, lr.OnDate, @todate) = 0
@@ -630,8 +610,8 @@ BEGIN
 	FROM dbo.WorkingTimeRequest AS r WITH (NOLOCK)
 		INNER JOIN #tblRequestInDaily AS rd WITH (NOLOCK) ON r.RequestId = rd.RequestID
 		INNER JOIN #tblRequestId AS rq WITH (NOLOCK) ON r.RequestId = rq.RequestId
-		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = r.EmpId
-		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.empID = r.empID
+		INNER JOIN #tblEmployeeId AS tmpEmp WITH (NOLOCK) ON tmpEmp.EmpId = r.EmpId
+		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.empID = tmpEmp.empID
 		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON e.GroupID = g.GroupID
 		INNER JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId = g.DepartmentId
 		INNER JOIN dbo.Unit AS u WITH (NOLOCK) ON u.UnitId = dep.UnitId
@@ -652,8 +632,7 @@ BEGIN
 		LEFT JOIN dbo.[Shift] AS s3 WITH (NOLOCK) ON s3.ShiftID = c.ShiftID
 		LEFT JOIN dbo.LeaveType AS lv WITH (NOLOCK) ON lv.LeaveTypeID = lr.LeaveType
         AND lv.CompanyId = @CompanyId
-	WHERE ce.CompanyId = @CompanyId 
-		AND (@leaveTypeId IS NULL OR lr.LeaveType = @leaveTypeId)
+	WHERE (@leaveTypeId IS NULL OR lr.LeaveType = @leaveTypeId)
 	ORDER BY r.CreatedDate DESC
 
 	SELECT csrd.RequestId
