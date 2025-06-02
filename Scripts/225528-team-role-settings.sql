@@ -1,20 +1,23 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[Group_Get] @CompanyId INT
+ALTER PROCEDURE [dbo].[Group_Get]
+(
+    @CompanyId INT
     ,@TeamId INT = NULL
 	,@keyWord varchar(20) = null
 	,@isDeleted BIT = NULL
+)
 AS
 /*
-Created: Tom.Vo@2013-10-21
-Task: get group
-DB: HRM
+    Created: Tom.Vo@2013-10-21
+    Task: get group
+    DB: bodb_HRM
 
-Revisions:
-	20250310@Mira: filter by CompanyId [Redmine: #217976]
-    20250403@Tim: remove section [Redmine: #222886]
-	20250515@Jay: add years of service for extra leave [Redmine: #227166]
-	20250530@Jay: show company name for employees from different company [Redmine: #225528]
+    Revisions:
+        20250310@Mira: filter by CompanyId [Redmine: #217976]
+        20250403@Tim: remove section [Redmine: #222886]
+        20250515@Jay: add years of service for extra leave [Redmine: #227166]
+        20250530@Jay: show company name for employees from different company [Redmine: #225528]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -139,32 +142,33 @@ GO
 
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[Group_Insert] @Code VARCHAR(20)
-	,@Name VARCHAR(150)
-	,@CreatedBy INT
-	,@ErrCode INT = 0 OUTPUT
-	,@ErrMsg VARCHAR(200) = '' OUTPUT
-	,@CompanyId SMALLINT
-	,@GroupTeamId INT
-	,@PICEmpId INT = NULL
-	,@DepartmentId INT
-	,@AccountableArea VARCHAR(200) = NULL
+ALTER PROCEDURE [dbo].[Group_Insert]
+(
+    @Code VARCHAR(20)
+    ,@Name VARCHAR(150)
+    ,@CreatedBy INT
+    ,@ErrCode INT = 0 OUTPUT
+    ,@ErrMsg VARCHAR(200) = '' OUTPUT
+    ,@CompanyId SMALLINT
+    ,@GroupTeamId INT
+    ,@PICEmpId INT = NULL
+    ,@DepartmentId INT
+    ,@AccountableArea VARCHAR(200) = NULL
+)
 AS
 /*
-Created: 20190515@Oliver.Dang
-Task: insert group 
-DB: HRM_SMS
-Original:
+    Created: 20190515@Oliver.Dang
+    Task: insert group 
+    DB: bodb_HRM
 
-Revisions:
+    Revisions:
         - 20250422@Jay: Apply create group team logic [Redmine: #221567]
         - 20250526@Jay: Allow having the same code [Redmine: #228323]
-		- 20250530@Jay: allow PICEmpId be null [Redmine: #225528]
-Param's Explanation:
+        - 20250530@Jay: allow PICEmpId be null [Redmine: #225528]
+    Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;
-	SET XACT_ABORT ON;
 
 	IF EXISTS (
 			SELECT 1
@@ -234,41 +238,43 @@ GO
 
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[Group_Update] @TeamId INT
-	,@Code VARCHAR(20)
-	,@Name NVARCHAR(150)
-	,@ModifiedBy INT
-	,@ErrCode INT = 0 OUTPUT
-	,@ErrMsg NVARCHAR(200) = '' OUTPUT
-	,@PICEmpId INT = NULL
-	,@DepartmentId INT
-	,@AccountableArea VARCHAR(200) = NULL
-	,@GroupTeamId INT
-	,@MailGroup VARCHAR(50) = ''
-	,@LocalBasicAnnualLeaveBalance TINYINT = NULL
-	,@LocalWorkingDays TINYINT = NULL
-	,@LocalWorkingHours TINYINT = NULL
-	,@LocalOffDaysbyWeek TINYINT = NULL
-	,@LocalWorkingHoursByWeek TINYINT = NULL
-	,@LocalYearsOfServiceForExtraLeave INT = NULL
-	,@ExpatBasicAnnualLeaveBalance TINYINT = NULL
-	,@ExpatWorkingDays TINYINT = NULL
-	,@ExpatWorkingHours TINYINT = NULL
-	,@ExpatOffDaysbyWeek TINYINT = NULL
-	,@ExpatWorkingHoursByWeek TINYINT = NULL
-	,@ExpatYearsOfServiceForExtraLeave INT = NULL
+ALTER PROCEDURE [dbo].[Group_Update]
+(
+    @TeamId INT
+    ,@Code VARCHAR(20)
+    ,@Name NVARCHAR(150)
+    ,@ModifiedBy INT
+    ,@ErrCode INT = 0 OUTPUT
+    ,@ErrMsg NVARCHAR(200) = '' OUTPUT
+    ,@PICEmpId INT = NULL
+    ,@DepartmentId INT
+    ,@AccountableArea VARCHAR(200) = NULL
+    ,@GroupTeamId INT
+    ,@MailGroup VARCHAR(50) = ''
+    ,@LocalBasicAnnualLeaveBalance TINYINT = NULL
+    ,@LocalWorkingDays TINYINT = NULL
+    ,@LocalWorkingHours TINYINT = NULL
+    ,@LocalOffDaysbyWeek TINYINT = NULL
+    ,@LocalWorkingHoursByWeek TINYINT = NULL
+    ,@LocalYearsOfServiceForExtraLeave INT = NULL
+    ,@ExpatBasicAnnualLeaveBalance TINYINT = NULL
+    ,@ExpatWorkingDays TINYINT = NULL
+    ,@ExpatWorkingHours TINYINT = NULL
+    ,@ExpatOffDaysbyWeek TINYINT = NULL
+    ,@ExpatWorkingHoursByWeek TINYINT = NULL
+    ,@ExpatYearsOfServiceForExtraLeave INT = NULL
+)
 AS
 /*
-Created: Tom.Vo@2013-10-23
-Task: Update group 
-DB: HRM_SMS
-Original:
+    Created: Tom.Vo@2013-10-23
+    Task: Update group 
+    DB: bodb_HRM
 
-Revisions:
-	- 20250515@Jay: add years of service for extra leave [Redmine: #227166]
-	- 20250526@Jay: Allow having the same code [Redmine: #228323]
-	- 20250530@Jay: allow PICEmpId be null [Redmine: #225528]
-Param's Explanation:
+    Revisions:
+        - 20250515@Jay: add years of service for extra leave [Redmine: #227166]
+        - 20250526@Jay: Allow having the same code [Redmine: #228323]
+        - 20250530@Jay: allow PICEmpId be null [Redmine: #225528]
+    Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -385,11 +391,11 @@ GO
 CREATE OR ALTER PROCEDURE [dbo].[GroupId_ByGroupTeamId_Get] @GroupTeamId VARCHAR(50)
 AS
 /*
-Created: 20250528@Jay.Do
-Task: get group id by group team id
-DB: HRM_SMS
-Original:
-Param's Explanation:
+    Created: 20250528@Jay.Do
+    Task: get group id by group team id
+    DB: bodb_HRM
+
+    Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -410,15 +416,14 @@ CREATE OR ALTER PROCEDURE [dbo].[GroupSupervisor_ByPIC_Insert] @TeamId INT
 	,@ErrMsg NVARCHAR(200) = '' OUTPUT
 AS
 /*
-Created: 20190612@Tim.Trinh
-Task: update group supervisor.
-DB: HRM_SMS
-Original:
+    Created: 20190612@Tim.Trinh
+    Task: update group supervisor.
+    DB: bodb_HRM
 
-Revisions:
-	- 20250530@Jay: add approvers/verifiers for PICEmpId [Redmine: #225528]
-Param's Explanation:
-    @SupervisorXml=N'<ROOT><Row OwnerId="1" RequestType="1" DisplayOrder="1" /></ROOT>
+    Revisions:
+        - 20250530@Jay: add approvers/verifiers for PICEmpId [Redmine: #225528]
+    Param's Explanation:
+        @SupervisorXml=N'<ROOT><Row OwnerId="1" RequestType="1" DisplayOrder="1" /></ROOT>
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -556,8 +561,8 @@ AS
     DB: bodb_HRM
 
     Revisions:
-    - 20250409@Tim: remove section [Redmine: #222886]
-	- 20250530@Jay: add company name for who come from different company [Redmine: #225528]
+        - 20250409@Tim: remove section [Redmine: #222886]
+        - 20250530@Jay: add company name for who come from different company [Redmine: #225528]
     Param's Explanation:
 */
 BEGIN
@@ -618,14 +623,13 @@ ALTER PROCEDURE [dbo].[GroupSupervisor_GetById] @TeamId INT,
 	@CompanyId INT = NULL
 AS
 /*
-Created: 20140723@Quinn.Vo
-Task: Get list supervisors by group.
-DB: HRM
-Original:
+    Created: 20140723@Quinn.Vo
+    Task: Get list supervisors by group.
+    DB: bodb_HRM
 
-Revisions:
-	- 20250530@Jay: add company name for who come from different company & add manage role for group space [Redmine: #225528]
-Param's Explanation:
+    Revisions:
+	    - 20250530@Jay: add company name for who come from different company & add manage role for group space [Redmine: #225528]
+    Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -737,18 +741,20 @@ GO
 
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[GroupSupervisor_GetByRole] @TeamId INT
-	,@Role TINYINT
+ALTER PROCEDURE [dbo].[GroupSupervisor_GetByRole]
+(
+    @TeamId INT
+    ,@Role TINYINT
+)
 AS
 /*
-Created: 20140723@Quinn.Vo
-Task: Get list supervisors by group and action type.
-DB: SMSHRM
-Original:
+    Created: 20140723@Quinn.Vo
+    Task: Get list supervisors by group and action type.
+    DB: bodb_HRM
 
-Revisions:
-	- 20250530@Jay: add company name for who come from different company [Redmine: #225528]
-Param's Explanation:
+    Revisions:
+        20250530@Jay: add company name for who come from different company [Redmine: #225528]
+    Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -818,14 +824,13 @@ ALTER PROCEDURE [dbo].[GroupSupervisor_Update] @TeamId INT
 	,@ErrMsg NVARCHAR(200) = '' OUTPUT
 AS
 /*
-Created: 20190612@Tim.Trinh
-Task: update group supervisor.
-DB: HRM_SMS
-Original:
+    Created: 20190612@Tim.Trinh
+    Task: update group supervisor.
+    DB: bodb_HRM
 
-Revisions:
-Param's Explanation:
-    @SupervisorXml=N'<ROOT><Row OwnerId="1" RequestType="1" DisplayOrder="1" /></ROOT>
+    Revisions:
+    Param's Explanation:
+        @SupervisorXml=N'<ROOT><Row OwnerId="1" RequestType="1" DisplayOrder="1" /></ROOT>
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -934,14 +939,14 @@ ALTER   PROCEDURE [dbo].[Group_UnitScope_Get]
 	@TeamId INT = NULL
 AS
 /*
-Created: Tom.Vo@2013-10-21
-Task: get group
-DB: HRM
+    Created: Tom.Vo@2013-10-21
+    Task: get group
+    DB: bodb_HRM
 
-Revisions:
-	20250310@Mira: filter by CompanyId [Redmine: #217976]
-    20250403@Tim: remove section [Redmine: #222886]
-	20250515@Jay: add years of service for extra leave [Redmine: #227166]
+    Revisions:
+        20250310@Mira: filter by CompanyId [Redmine: #217976]
+        20250403@Tim: remove section [Redmine: #222886]
+        20250515@Jay: add years of service for extra leave [Redmine: #227166]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -1036,16 +1041,15 @@ ALTER PROCEDURE [dbo].[Employee_GetVerifierAndApprover] @EmpId INT
 	,@CompanyId INT = NULL
 AS
 /*
-Created: 20160609@Quinn.Vo
-Task: Get list verifier and approver for employee when create/edit request.
-DB: HRM
-Original:
+    Created: 20160609@Quinn.Vo
+    Task: Get list verifier and approver for employee when create/edit request.
+    DB: bodb_HRM
 
-Revisions:
-Param's Explanation:
+    Revisions:
+    Param's Explanation:
 */
 BEGIN
-	SET NOCOUNT ON
+	SET NOCOUNT ON;
 
 	DECLARE @Verifiers TABLE (OwnerId INT)
 	DECLARE @Approvers TABLE (OwnerId INT)
