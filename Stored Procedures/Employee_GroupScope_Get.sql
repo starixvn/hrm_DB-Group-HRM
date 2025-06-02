@@ -115,8 +115,8 @@ BEGIN
 		(@enable IS NULL OR (ISNULL(e.isDeleted, 0) = 0 AND e.Enabled = @enable))
 		AND (@isDelete IS NULL OR e.isDeleted = @isDelete)
 		AND (@query IS NULL OR e.NickName LIKE '%' + @query + '%')
-		AND (NOT EXISTS (SELECT 1 FROM @GroupsList) OR e.GroupId IN (SELECT GroupId FROM @GroupsList))
-		AND (NOT EXISTS (SELECT 1 FROM @CompaniesList) OR ce.CompanyId IN (SELECT CompanyId FROM @CompaniesList))
+		AND (ISNULL( @teamIds, '') = ''  OR e.GroupId IN (SELECT GroupId FROM @GroupsList))
+		AND (ISNULL( @companyIds, '') = '' OR ce.CompanyId IN (SELECT CompanyId FROM @CompaniesList))
 
 	SELECT @totalRow = COUNT(*) FROM @Result
 
