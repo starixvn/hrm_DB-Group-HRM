@@ -1,7 +1,13 @@
 USE [bodb_HRM]
 GO
 
-
+IF NOT EXISTS (
+    SELECT * 
+    FROM INFORMATION_SCHEMA.TABLES 
+    WHERE TABLE_SCHEMA = 'dbo' 
+      AND TABLE_NAME = 'CompanySecondmentEmployee'
+)
+BEGIN
 CREATE TABLE [dbo].[CompanySecondmentEmployee](
 	[EmpId] [int] NOT NULL,
 	[CompanyId] [int] NOT NULL,
@@ -14,6 +20,8 @@ PRIMARY KEY CLUSTERED
 	[EmpId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
+END
+
 GO
 
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
@@ -456,7 +464,7 @@ BEGIN
 	END
 END
 
-
+GO
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER   PROCEDURE [dbo].[FnB_Department_GetByLastModifiedDate]
