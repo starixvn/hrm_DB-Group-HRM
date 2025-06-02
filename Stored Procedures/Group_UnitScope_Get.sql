@@ -51,6 +51,8 @@ BEGIN
 		,tbl.NoOfMembers
 		,g.PICEmpId
 		,e.NickName as TeamPIC
+		,cpic.[CompanyId] AS TeamPICCompanyId
+		,cpic.[Name] AS TeamPICCompany
 		,d.DepartmentId
         ,d.Code AS DepartmentCode
         ,d.[Name] AS DepartmentName
@@ -78,6 +80,8 @@ BEGIN
 		LEFT JOIN dbo.Employee AS e WITH (NOLOCK) ON e.EmpId = g.PICEmpId
 		INNER JOIN dbo.Unit AS u WITH (NOLOCK) ON u.UnitId = d.UnitId
 		LEFT JOIN dbo.Employee AS ed WITH (NOLOCK) ON ed.EmpId = d.PICEmpId
+		LEFT JOIN dbo.CompanyEmployee AS cepic WITH (NOLOCK) ON cepic.EmpId = g.PICEmpId
+		LEFT JOIN dbo.Company AS cpic WITH (NOLOCK) ON cepic.CompanyId = cpic.CompanyId
 		LEFT JOIN #tmpGroup AS tbl ON g.GroupId = tbl.GroupId
 		LEFT JOIN dbo.Company AS c ON g.CompanyId = c.CompanyId
 	WHERE (

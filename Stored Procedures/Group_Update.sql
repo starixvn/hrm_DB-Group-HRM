@@ -1,39 +1,41 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[Group_Update] @TeamId INT
-	,@Code VARCHAR(20)
-	,@Name NVARCHAR(150)
-	,@ModifiedBy INT
-	,@ErrCode INT = 0 OUTPUT
-	,@ErrMsg NVARCHAR(200) = '' OUTPUT
-	,@PICEmpId INT
-	,@DepartmentId INT
-	,@AccountableArea VARCHAR(200) = NULL
-	,@GroupTeamId INT
-	,@MailGroup VARCHAR(50) = ''
-	,@LocalBasicAnnualLeaveBalance TINYINT = NULL
-	,@LocalWorkingDays TINYINT = NULL
-	,@LocalWorkingHours TINYINT = NULL
-	,@LocalOffDaysbyWeek TINYINT = NULL
-	,@LocalWorkingHoursByWeek TINYINT = NULL
-	,@LocalYearsOfServiceForExtraLeave INT = NULL
-	,@ExpatBasicAnnualLeaveBalance TINYINT = NULL
-	,@ExpatWorkingDays TINYINT = NULL
-	,@ExpatWorkingHours TINYINT = NULL
-	,@ExpatOffDaysbyWeek TINYINT = NULL
-	,@ExpatWorkingHoursByWeek TINYINT = NULL
-	,@ExpatYearsOfServiceForExtraLeave INT = NULL
+CREATE OR ALTER PROCEDURE [dbo].[Group_Update]
+(
+    @TeamId INT
+    ,@Code VARCHAR(20)
+    ,@Name NVARCHAR(150)
+    ,@ModifiedBy INT
+    ,@ErrCode INT = 0 OUTPUT
+    ,@ErrMsg NVARCHAR(200) = '' OUTPUT
+    ,@PICEmpId INT = NULL
+    ,@DepartmentId INT
+    ,@AccountableArea VARCHAR(200) = NULL
+    ,@GroupTeamId INT
+    ,@MailGroup VARCHAR(50) = ''
+    ,@LocalBasicAnnualLeaveBalance TINYINT = NULL
+    ,@LocalWorkingDays TINYINT = NULL
+    ,@LocalWorkingHours TINYINT = NULL
+    ,@LocalOffDaysbyWeek TINYINT = NULL
+    ,@LocalWorkingHoursByWeek TINYINT = NULL
+    ,@LocalYearsOfServiceForExtraLeave INT = NULL
+    ,@ExpatBasicAnnualLeaveBalance TINYINT = NULL
+    ,@ExpatWorkingDays TINYINT = NULL
+    ,@ExpatWorkingHours TINYINT = NULL
+    ,@ExpatOffDaysbyWeek TINYINT = NULL
+    ,@ExpatWorkingHoursByWeek TINYINT = NULL
+    ,@ExpatYearsOfServiceForExtraLeave INT = NULL
+)
 AS
 /*
-Created: Tom.Vo@2013-10-23
-Task: Update group 
-DB: HRM_SMS
-Original:
+    Created: Tom.Vo@2013-10-23
+    Task: Update group 
+    DB: bodb_HRM
 
-Revisions:
-	- 20250515@Jay: add years of service for extra leave [Redmine: #227166]
-	- 20250526@Jay: Allow having the same code [Redmine: #228323]
-Param's Explanation:
+    Revisions:
+	    - 20250515@Jay: add years of service for extra leave [Redmine: #227166]
+	    - 20250526@Jay: Allow having the same code [Redmine: #228323]
+    Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;
