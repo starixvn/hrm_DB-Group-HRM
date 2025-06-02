@@ -13,6 +13,7 @@ CREATE OR ALTER PROCEDURE [dbo].[WorkingTimeRequest_GetMemberRequestByCreateDate
     ,@isLocal BIT = NULL
     ,@requestType INT = NULL
     ,@leaveTypeId INT = NULL
+	,@isGetCrossCompany BIT = 0
 )
 AS
 /*
@@ -29,7 +30,10 @@ BEGIN
 
 	CREATE TABLE #tblGroupsList (GroupId INT PRIMARY KEY)
 
-	CREATE TABLE #tblEmployeeId (EmpId INT PRIMARY KEY)
+	CREATE TABLE #tblEmployeeId (
+		EmpId INT PRIMARY KEY, 
+		CompanyId INT 
+	)
 
 	CREATE TABLE #tblRequestId (RequestId INT PRIMARY KEY)
 
@@ -106,6 +110,12 @@ BEGIN
 		VALUES (@empid)
 	END
 
+	
+	UPDATE #tblEmployeeId
+	SET CompanyId = ce.CompanyId
+	FROM #tblEmployeeId AS eid WITH (NOLOCK)
+	INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = eid.EmpId
+
 
 	INSERT INTO #tblRequestId (RequestId)
 	SELECT r.RequestId
@@ -169,7 +179,19 @@ BEGIN
 				WHERE tblstatus.Currentstatus = r.CurrentStatus
 				)
 			)
-		
+		AND (
+			e.GroupId IS NULL
+			OR EXISTS (
+				SELECT 1
+				FROM #tblGroupsList AS tblgr WITH (NOLOCK)
+				WHERE tblgr.GroupId = e.GroupId
+				)
+			OR (@isGetCrossCompany = 1 AND EXISTS (
+				SELECT 1
+				FROM #tblEmployeeId AS tblemp WITH (NOLOCK)
+				WHERE tblemp.EmpId = r.EmpId AND tblemp.CompanyId <> @CompanyId
+				))
+			)
 		AND (
 			@isLocal IS NULL
 			OR e_s.IsLocal = @isLocal
@@ -186,6 +208,7 @@ BEGIN
 		,wt.RequestType
 		,count(1)
 	FROM dbo.WorkingTimeRequest AS wt WITH (NOLOCK)
+		INNER JOIN #tblRequestId AS rq WITH (NOLOCK) ON wt.RequestId = rq.RequestId
 		INNER JOIN dbo.LateInEarlyOutRequest AS inout WITH (NOLOCK) ON wt.RequestId = inout.RequestId
 		INNER JOIN dbo.Employee AS ee WITH (NOLOCK) ON ee.EmpId = wt.EmpId
 	WHERE wt.currentstatus = 6
@@ -211,6 +234,7 @@ BEGIN
 		,wt.RequestType
 		,count(1)
 	FROM dbo.WorkingTimeRequest AS wt WITH (NOLOCK)
+		INNER JOIN #tblRequestId AS rq WITH (NOLOCK) ON wt.RequestId = rq.RequestId
 		INNER JOIN dbo.LeaveRequest AS lr WITH (NOLOCK) ON wt.RequestId = lr.RequestId
 		INNER JOIN dbo.Employee AS ee WITH (NOLOCK) ON ee.EmpId = wt.EmpId
 	WHERE wt.currentstatus = 6
@@ -258,6 +282,7 @@ BEGIN
 		,wt.RequestType
 		,count(1)
 	FROM dbo.WorkingTimeRequest AS wt WITH (NOLOCK)
+		INNER JOIN #tblRequestId AS rq WITH (NOLOCK) ON wt.RequestId = rq.RequestId
 		INNER JOIN dbo.KeepInViewRequest AS lr WITH (NOLOCK) ON wt.RequestId = lr.RequestId
 	WHERE wt.EmpId = @empid
 		AND wt.currentstatus = 6
@@ -281,6 +306,7 @@ BEGIN
 		,wt.RequestType
 		,count(1)
 	FROM dbo.WorkingTimeRequest AS wt WITH (NOLOCK)
+		INNER JOIN #tblRequestId AS rq WITH (NOLOCK) ON wt.RequestId = rq.RequestId
 		INNER JOIN dbo.CheckInOutRequest AS lr WITH (NOLOCK) ON wt.RequestId = lr.RequestId
 		INNER JOIN dbo.Employee AS ee WITH (NOLOCK) ON ee.EmpId = wt.EmpId
 	WHERE wt.currentstatus = 6
