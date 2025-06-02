@@ -615,14 +615,18 @@ BEGIN
 		,dep.DepartmentId
 		,dep.Code AS DepartmentCode
         ,dep.[Name] AS DepartmentName
+		,company.[Name] AS CompanyName
+		,tmpEmp.CompanyId
 		,verifier.EmpId AS VerifierId
 		,verifier.NickName AS VerifierNickName
 		,verifier.FullName AS VerifierFullName
+		,verifierCompany.[Name] AS VerifierCompanyName
 		,r.VerifiedDate
 		,r.VerifiedStatus
 		,approver.EmpId AS ApproverId
         ,approver.NickName AS ApproverNickName
 		,approver.FullName AS ApproverFullName
+		,approverCompany.[Name] AS ApproverCompanyName
 		,r.ApprovedDate
 		,r.ApprovedStatus
 		,hr.NickName AS ProcessedByNickName
@@ -638,6 +642,7 @@ BEGIN
 		INNER JOIN #tblRequestId AS rq WITH (NOLOCK) ON r.RequestId = rq.RequestId
 		INNER JOIN #tblEmployeeId AS tmpEmp WITH (NOLOCK) ON tmpEmp.EmpId = r.EmpId
 		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.empID = tmpEmp.empID
+		INNER JOIN dbo.Company AS company WITH (NOLOCK) ON company.CompanyId = tmpEmp.CompanyId
 		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON e.GroupID = g.GroupID
 		INNER JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId = g.DepartmentId
 		INNER JOIN dbo.Unit AS u WITH (NOLOCK) ON u.UnitId = dep.UnitId
@@ -646,7 +651,11 @@ BEGIN
 		LEFT JOIN dbo.CheckInOutRequest AS inoutmiss WITH (NOLOCK) ON r.RequestId = inoutmiss.RequestId
 		LEFT JOIN dbo.ChangeShiftRequest AS csr WITH (NOLOCK) ON r.RequestId = csr.RequestId
 		LEFT JOIN dbo.Employee AS verifier WITH (NOLOCK) ON verifier.empid = r.VerifierId
+		LEFT JOIN dbo.CompanyEmployee AS verifierCE WITH (NOLOCK) ON verifierCE.EmpId = verifier.EmpId
+		LEFT JOIN dbo.Company AS verifierCompany WITH (NOLOCK) ON verifierCompany.CompanyId = verifierCE.CompanyId
 		LEFT JOIN dbo.Employee AS approver WITH (NOLOCK) ON approver.empid = r.ApproverId
+		LEFT JOIN dbo.CompanyEmployee AS approverCE WITH (NOLOCK) ON approverCE.EmpId = approver.EmpId
+		LEFT JOIN dbo.Company AS approverCompany WITH (NOLOCK) ON approverCompany.CompanyId = approverCE.CompanyId
 		LEFT JOIN dbo.Employee AS hr WITH (NOLOCK) ON hr.empid = r.HRId
 		LEFT JOIN #tblTotalDaysRequestInMonth AS rm ON r.empID = rm.empid
 		AND r.RequestType = rm.RequestType
