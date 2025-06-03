@@ -39,10 +39,7 @@ BEGIN
 			END AS ModifiedDate
 		,es.Unit AS CostCenter
 		,e.JobLevelId
-		,CASE 
-			WHEN OldEmpId IS NULL THEN e.EmpId
-			ELSE OldEmpId
-		END AS EmpId
+		,e.EmpId
 	FROM dbo.Employee AS e WITH (NOLOCK)
 		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON e.EmpId = es.EmpId
 		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = e.EmpId

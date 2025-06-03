@@ -12,6 +12,7 @@ AS
     DB: bodb_HRM
 
     Revisions:
+    - 2024-03-21: Added support for secondment employee groups
     Param's Explanation:
 */
 BEGIN
@@ -22,6 +23,7 @@ BEGIN
 		SELECT @LastModifiedDate = DATEADD(HH, - 1, @LastModifiedDate)
 	END
 
+	-- Get regular employee groups
 	SELECT DISTINCT d.DepartmentId AS SectionId
 		,g.Code
 		,g.[Name]
@@ -32,8 +34,29 @@ BEGIN
 			ELSE g.ModifiedDate
 			END AS ModifiedDate
 		,g.GroupId AS TeamId
+		,1 as DataSource
 	FROM dbo.[Group] AS g WITH (NOLOCK)
 	    LEFT JOIN dbo.Department AS d WITH (NOLOCK) ON d.DepartmentId = g.DepartmentId
 	WHERE g.CompanyId = @CompanyId
 		AND (@LastModifiedDate IS NULL OR ISNULL(g.ModifiedDate, g.CreatedDate) > @LastModifiedDate)
+
+	UNION
+
+	-- Get secondment employee groups
+	SELECT DISTINCT d.DepartmentId AS SectionId
+		,g.Code
+		,g.[Name]
+		,g.[Rank]
+		,ISNULL(g.IsDeleted, 0) AS IsDeleted
+		,CASE 
+			WHEN g.ModifiedDate IS NULL THEN g.CreatedDate
+			ELSE g.ModifiedDate
+			END AS ModifiedDate
+		,g.GroupId AS TeamId
+		,2 as DataSource
+	FROM dbo.[Group] AS g WITH (NOLOCK)
+	    LEFT JOIN dbo.Department AS d WITH (NOLOCK) ON d.DepartmentId = g.DepartmentId
+	    INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.GroupId = g.GroupId
+	    INNER JOIN dbo.CompanySecondmentEmployee AS cse WITH (NOLOCK) ON cse.EmpId = e.EmpId
+	WHERE cse.CompanyId = @CompanyId
 END

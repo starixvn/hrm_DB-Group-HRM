@@ -30,7 +30,5 @@ BEGIN
 		,d.[DepartmentId]
 		,d.[DepartmentId]  AS [SectionId]
 	FROM dbo.Department AS d WITH (NOLOCK)
-		INNER JOIN [Group] AS g WITH (NOLOCK) ON g.DepartmentId = d.DepartmentId
-	WHERE CompanyId = @CompanyId
-		AND d.ModifiedDate > @LastModifiedDate
+	WHERE d.ModifiedDate > @LastModifiedDate
 END

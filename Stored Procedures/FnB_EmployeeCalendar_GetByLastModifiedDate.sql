@@ -1,6 +1,6 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE OR ALTER PROCEDURE [dbo].[FnB_EmployeeCalendar_GetByLastModifiedDate]
+CREATE OR ALTER   PROCEDURE [dbo].[FnB_EmployeeCalendar_GetByLastModifiedDate]
 	@CompanyId SMALLINT,
 	@LastModifiedDate DATETIME
 AS
@@ -67,7 +67,7 @@ BEGIN
 	(
 	SELECT
 	  tcl.[WorkDate]
-      , CASE WHEN e.OldEmpId IS NOT NULL THEN e.OldEmpId ELSE e.EmpId END AS UserId
+      ,e.EmpId AS UserId
       ,CASE WHEN s.OldShiftId IS NOT NULL THEN s.OldShiftId ELSE s.ShiftID END AS ShiftID
       ,tcl.[IsHoliday]
       ,CAST(CASE WHEN (tcl.[IsOffDay] = 1 OR wfh.EmployeeWorkFromHomeId IS NOT NULL) THEN 1 ELSE 0 END AS BIT) AS IsOffDay
