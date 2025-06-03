@@ -11,6 +11,7 @@ Task: get change shift request
 DB: HRM
 
 Revisions:
+	- Jay.Do: 20250602: Cross company
 Param's Explanation:
 */
 BEGIN
@@ -28,10 +29,18 @@ BEGIN
 		,emp.NickName
 		,emp.FullName
 		,verifier.EmpId AS VerifierId
-		,verifier.NickName
+		,CASE 
+			WHEN @CompanyId IS NOT NULL AND vec.CompanyId != @CompanyId 
+				THEN verifier.NickName + ' (' + vec.[Name]  +')'
+				ELSE verifier.NickName
+		END NickName
 		,verifier.FullName
 		,approver.EmpId AS ApproverId
-		,approver.NickName
+		,CASE 
+			WHEN @CompanyId IS NOT NULL AND apc.CompanyId != @CompanyId 
+				THEN approver.NickName + ' (' + apc.[Name]  +')'
+				ELSE approver.NickName
+		END NickName
 		,approver.FullName
 		,hr.EmpId AS HRId
 		,hr.NickName
@@ -58,7 +67,11 @@ BEGIN
 		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON cs.EmpId = emp.EmpId
 		AND emp.EmpId = @EmpId
 		LEFT JOIN dbo.Employee AS verifier WITH (NOLOCK) ON verifier.EmpId = wkr.VerifierId
+		LEFT JOIN dbo.CompanyEmployee AS vece WITH (NOLOCK) ON vece.EmpId = verifier.EmpId
+		LEFT JOIN dbo.Company vec WITH (NOLOCK) ON vec.CompanyId = vece.CompanyId
 		LEFT JOIN dbo.Employee AS approver WITH (NOLOCK) ON approver.EmpId = wkr.ApproverId
+		LEFT JOIN dbo.CompanyEmployee AS apce WITH (NOLOCK) ON apce.EmpId = approver.EmpId
+		LEFT JOIN dbo.Company apc WITH (NOLOCK) ON apc.CompanyId = apce.CompanyId
 		LEFT JOIN dbo.Employee AS hr WITH (NOLOCK) ON hr.EmpId = wkr.EmpId
 		LEFT JOIN dbo.Employee AS ap_AH WITH (NOLOCK) ON ap_AH.empid = (SELECT TOP 1 ModifiedBy FROM WorkingTimeRequestHistory WITH (NOLOCK) WHERE RequestId = cs.RequestId ORDER BY LogDate DESC)
 	ORDER BY wkr.CreatedDate DESC

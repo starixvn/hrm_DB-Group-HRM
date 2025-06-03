@@ -13,6 +13,7 @@ DB: HRM
 Original:
 
 Revisions:
+	- Jay.Do: 20250602: Cross company
 Param's Explanation:
 */
 BEGIN
@@ -81,31 +82,29 @@ BEGIN
 
 	SELECT OwnerId
 		,ee.FullName
-		-- ,CASE 
-		-- 	WHEN @CompanyId IS NOT NULL AND c.CompanyId != @CompanyId 
-		-- 		THEN ee.NickName + ' (' + c.[Name]  +')'
-		-- 		ELSE ee.NickName
-		-- END NickName
+		,CASE 
+			WHEN @CompanyId IS NOT NULL AND c.CompanyId != @CompanyId 
+				THEN ee.NickName + ' (' + c.[Name]  +')'
+				ELSE ee.NickName
+		END NickName
 		,ee.NickName
 		,ee.Email
 	FROM @Verifiers AS su
 		INNER JOIN dbo.Employee AS ee WITH (NOLOCK) ON su.OwnerId = ee.EmpId
 		 INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = ee.EmpId
-		-- INNER JOIN dbo.Company AS c WITH (NOLOCK) ON c.CompanyId = ce.CompanyId
-	WHERE @CompanyId = ce.CompanyId
+		INNER JOIN dbo.Company AS c WITH (NOLOCK) ON c.CompanyId = ce.CompanyId
 
 	SELECT OwnerId
 		,ee.FullName
-		-- ,CASE 
-		-- 	WHEN @CompanyId IS NOT NULL AND c.CompanyId != @CompanyId 
-		-- 		THEN ee.NickName + ' (' + c.[Name]  +')'
-		-- 		ELSE ee.NickName
-		-- END NickName
+		,CASE 
+			WHEN @CompanyId IS NOT NULL AND c.CompanyId != @CompanyId 
+				THEN ee.NickName + ' (' + c.[Name]  +')'
+				ELSE ee.NickName
+		END NickName
 		,ee.NickName
 		,ee.Email
 	FROM @Approvers AS su
 		INNER JOIN dbo.Employee AS ee WITH (NOLOCK) ON su.OwnerId = ee.EmpId
 		 INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = ee.EmpId
-		-- INNER JOIN dbo.Company AS c WITH (NOLOCK) ON c.CompanyId = ce.CompanyId
-	WHERE @CompanyId = ce.CompanyId
+		INNER JOIN dbo.Company AS c WITH (NOLOCK) ON c.CompanyId = ce.CompanyId
 END
