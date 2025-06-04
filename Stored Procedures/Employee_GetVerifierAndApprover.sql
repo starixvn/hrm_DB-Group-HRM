@@ -17,22 +17,20 @@ Param's Explanation:
 BEGIN
 	SET NOCOUNT ON
 
-	DECLARE @Verifiers TABLE (OwnerId INT)
-	DECLARE @Approvers TABLE (OwnerId INT)
+	DECLARE @Supervisors TABLE (OwnerId INT, ActionType INT)
 
-	INSERT INTO @Verifiers (OwnerId)
-	SELECT DISTINCT OwnerId
+	INSERT INTO @Supervisors (OwnerId, ActionType)
+	SELECT DISTINCT OwnerId, ActionType
 	FROM dbo.EmployeeSupervisor AS su WITH (NOLOCK)
 	WHERE su.EmpId = @EmpId
 		AND (
 			@RequestType IS NULL
 			OR su.RequestType = @RequestType
 			)
-		AND su.ActionType = 2
+		AND su.ActionType IN (2, 3)
 		AND su.IsDeleted = 0
-
-	INSERT INTO @Verifiers (OwnerId)
-	SELECT DISTINCT su.OwnerId
+	UNION
+	SELECT DISTINCT su.OwnerId, ActionType
 	FROM dbo.GroupSupervisor AS su WITH (NOLOCK)
 		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON su.GroupId = e.GroupId
 	WHERE e.EmpId = @EmpId
@@ -40,30 +38,7 @@ BEGIN
 			@RequestType IS NULL
 			OR su.RequestType = @RequestType
 			)
-		AND su.ActionType = 2
-		AND su.IsDeleted = 0
-
-	INSERT INTO @Approvers (OwnerId)
-	SELECT DISTINCT OwnerId
-	FROM dbo.EmployeeSupervisor AS su WITH (NOLOCK)
-	WHERE su.EmpId = @EmpId
-		AND (
-			@RequestType IS NULL
-			OR su.RequestType = @RequestType
-			)
-		AND su.ActionType = 3
-		AND su.IsDeleted = 0
-
-	INSERT INTO @Approvers (OwnerId)
-	SELECT DISTINCT su.OwnerId
-	FROM dbo.GroupSupervisor AS su WITH (NOLOCK)
-		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON su.GroupId = e.GroupId
-	WHERE e.EmpId = @EmpId
-		AND (
-			@RequestType IS NULL
-			OR su.RequestType = @RequestType
-			)
-		AND su.ActionType = 3
+		AND su.ActionType IN (2, 3)
 		AND su.IsDeleted = 0
 
 	SELECT DISTINCT OwnerId
@@ -74,10 +49,11 @@ BEGIN
 		 		ELSE ee.NickName
 		 END NickName
 		,ee.Email
-	FROM @Verifiers AS su
+	FROM @Supervisors AS su
 		INNER JOIN dbo.Employee AS ee WITH (NOLOCK) ON su.OwnerId = ee.EmpId
 		 INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = ee.EmpId
 		 INNER JOIN dbo.Company AS c WITH (NOLOCK) ON c.CompanyId = ce.CompanyId
+	WHERE ActionType = 2
 
 	SELECT DISTINCT OwnerId
 		,ee.FullName
@@ -87,8 +63,9 @@ BEGIN
 		 		ELSE ee.NickName
 		 END NickName
 		,ee.Email
-	FROM @Approvers AS su
+	FROM @Supervisors AS su
 		INNER JOIN dbo.Employee AS ee WITH (NOLOCK) ON su.OwnerId = ee.EmpId
 		 INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = ee.EmpId
 		 INNER JOIN dbo.Company AS c WITH (NOLOCK) ON c.CompanyId = ce.CompanyId
+	WHERE ActionType = 3
 END
