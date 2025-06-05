@@ -1,6 +1,6 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE OR ALTER PROCEDURE [dbo].[WorkingTimeRequest_GetMemberRequestByCreateDate_AllType]
+CREATE OR ALTER   PROCEDURE [dbo].[WorkingTimeRequest_GetMemberRequestByCreateDate_AllType]
 (
     @CompanyId SMALLINT
     ,@SupervisorId INT = NULL
@@ -13,7 +13,7 @@ CREATE OR ALTER PROCEDURE [dbo].[WorkingTimeRequest_GetMemberRequestByCreateDate
     ,@isLocal BIT = NULL
     ,@requestType INT = NULL
     ,@leaveTypeId INT = NULL
-	,@isGetCrossCompany BIT = 0
+	,@isShowCrossCompany BIT = 0
 )
 AS
 /*
@@ -84,7 +84,7 @@ BEGIN
 	IF @empid IS NULL
 	BEGIN
 		IF @SupervisorID IS NULL
-			OR @role LIKE '%6%'
+		OR @role LIKE '%6%'
 		BEGIN
 			INSERT INTO #tblEmployeeId (EmpID)
 			SELECT e.EmpId
@@ -186,11 +186,12 @@ BEGIN
 				FROM #tblGroupsList AS tblgr WITH (NOLOCK)
 				WHERE tblgr.GroupId = e.GroupId
 				)
-			OR (@isGetCrossCompany = 1 AND EXISTS (
+			OR (@isShowCrossCompany = 1 AND EXISTS (
 				SELECT 1
 				FROM #tblEmployeeId AS tblemp WITH (NOLOCK)
 				WHERE tblemp.EmpId = r.EmpId AND tblemp.CompanyId <> @CompanyId
-				))
+				AND (r.VerifierId = @SupervisorId OR r.ApproverId = @SupervisorId)
+			))
 			)
 		AND (
 			@isLocal IS NULL
@@ -607,7 +608,10 @@ BEGIN
 		,rd.ActualInOutMins
 		,r.CreatedDate
 		,e.EmpId AS RequesterId
-		,e.NickName AS RequesterNickName
+		,CASE
+            WHEN tmpEmp.CompanyId <> @CompanyId THEN e.NickName + ' (' + ISNULL(company.Name, '') + ')'
+            ELSE e.NickName
+        END AS RequesterNickName
 		,e.FullName AS RequesterFullName
 		,g.GroupId AS TeamId
 		,g.Code AS TeamCode
@@ -618,15 +622,19 @@ BEGIN
 		,company.[Name] AS CompanyName
 		,tmpEmp.CompanyId
 		,verifier.EmpId AS VerifierId
-		,verifier.NickName AS VerifierNickName
-		,verifier.FullName AS VerifierFullName
-		,verifierCompany.[Name] AS VerifierCompanyName
+		,CASE
+            WHEN verifierCE.CompanyId <> @CompanyId THEN verifier.NickName + ' (' + ISNULL(verifierCompany.Name, '') + ')'
+            ELSE verifier.NickName
+        END AS VerifierNickName
+        ,verifier.FullName AS VerifierFullName
 		,r.VerifiedDate
 		,r.VerifiedStatus
 		,approver.EmpId AS ApproverId
-        ,approver.NickName AS ApproverNickName
+        ,CASE
+            WHEN approverCE.CompanyId <> @CompanyId THEN approver.NickName + ' (' + ISNULL(approverCompany.Name, '') + ')'
+            ELSE approver.NickName
+        END AS ApproverNickName
 		,approver.FullName AS ApproverFullName
-		,approverCompany.[Name] AS ApproverCompanyName
 		,r.ApprovedDate
 		,r.ApprovedStatus
 		,hr.NickName AS ProcessedByNickName
