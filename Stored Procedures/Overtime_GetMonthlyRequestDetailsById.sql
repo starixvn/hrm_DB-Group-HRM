@@ -64,16 +64,26 @@ BEGIN
 		,empsum.WorkingHours
 		,empsum.SpecialOT
 		,ot.VerifierId
-		,verifier.NickName
+		,CASE 
+			WHEN ce_verifier.CompanyId <> @CompanyId THEN verifier.NickName + ' (' + ISNULL(c_verifier.Name, '') + ')'
+			ELSE verifier.NickName 
+		END AS NickName
 		,verifier.FullName
 		,ot.ApproverId
-		,approver.NickName
+		,CASE 
+			WHEN ce_approver.CompanyId <> @CompanyId THEN approver.NickName + ' (' + ISNULL(c_approver.Name, '') + ')'
+			ELSE approver.NickName 
+		END AS NickName
 		,approver.FullName
 	FROM dbo.OTMonthlyRequest AS ot WITH (NOLOCK)
 		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON ot.EmpId = emp.EmpId
 		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
 		INNER JOIN dbo.Employee AS verifier WITH (NOLOCK) ON ot.VerifierId = verifier.EmpId
+		LEFT JOIN dbo.CompanyEmployee AS ce_verifier WITH (NOLOCK) ON ce_verifier.EmpId = verifier.EmpId
+		LEFT JOIN dbo.Company AS c_verifier WITH (NOLOCK) ON c_verifier.CompanyId = ce_verifier.CompanyId
 		INNER JOIN dbo.Employee AS approver WITH (NOLOCK) ON ot.ApproverId = approver.EmpId
+		LEFT JOIN dbo.CompanyEmployee AS ce_approver WITH (NOLOCK) ON ce_approver.EmpId = approver.EmpId
+		LEFT JOIN dbo.Company AS c_approver WITH (NOLOCK) ON c_approver.CompanyId = ce_approver.CompanyId
 	WHERE ot.RequestId = @RequestId
 
 	SELECT empca.WorkDate
