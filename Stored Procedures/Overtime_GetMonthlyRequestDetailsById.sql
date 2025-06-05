@@ -21,10 +21,11 @@ BEGIN
 		,@toDate DATE
 		,@EmployeeId INT
 		,@NewRuleApplyFromMonth DATE = '2020/05/01'
+		,@empCompanyId INT
 
 	SELECT @Month = [Month]
 		,@EmployeeId = o.EmpId
-		,@CompanyId = c.CompanyId
+		,@empCompanyId = c.CompanyId
 	FROM dbo.OTMonthlyRequest o WITH (NOLOCK)
 	INNER JOIN dbo.CompanyEmployee c WITH (NOLOCK) ON c.EmpId = o.EmpId
 	WHERE RequestId = @RequestId
@@ -46,7 +47,7 @@ BEGIN
 		SET @toDate = CONVERT(VARCHAR(5), YEAR(@toDate)) + '/' + CONVERT(VARCHAR(2), MONTH(@toDate)) + '/20'
 	END
 
-	EXEC dbo.tmpEmployeeCalendar_Insert @CompanyId = @CompanyId
+	EXEC dbo.tmpEmployeeCalendar_Insert @CompanyId = @empCompanyId
 		,@fromDate = @fromDate
 		,@toDate = @toDate
 		,@empIds = @EmployeeId
@@ -59,7 +60,10 @@ BEGIN
 		,ot.SpecialHours
 		,ot.CurrentStatus AS StatusId
 		,emp.EmpId
-		,emp.NickName
+		,CASE 
+			WHEN ce_emp.CompanyId <> @CompanyId THEN emp.NickName + ' (' + ISNULL(c_emp.Name, '') + ')'
+			ELSE emp.NickName 
+		END AS NickName
 		,emp.FullName
 		,empsum.WorkingHours
 		,empsum.SpecialOT
@@ -77,6 +81,8 @@ BEGIN
 		,approver.FullName
 	FROM dbo.OTMonthlyRequest AS ot WITH (NOLOCK)
 		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON ot.EmpId = emp.EmpId
+		INNER JOIN dbo.CompanyEmployee AS ce_emp WITH (NOLOCK) ON ce_emp.EmpId = emp.EmpId
+		LEFT JOIN dbo.Company AS c_emp WITH (NOLOCK) ON c_emp.CompanyId = ce_emp.CompanyId
 		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
 		INNER JOIN dbo.Employee AS verifier WITH (NOLOCK) ON ot.VerifierId = verifier.EmpId
 		LEFT JOIN dbo.CompanyEmployee AS ce_verifier WITH (NOLOCK) ON ce_verifier.EmpId = verifier.EmpId
@@ -102,7 +108,6 @@ BEGIN
 		,empca.IsOffDay
 		,empca.IsKeepInView
 	FROM dbo.tmpEmployeeCalendar AS empca WITH (NOLOCK)
-		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON empca.EmpId = ce.EmpId
 		LEFT JOIN dbo.OTDailyRequest AS ot WITH (NOLOCK) ON empca.WorkDate = ot.OvertimeDate
 		AND ot.EmpId = empca.EmpId
 		LEFT JOIN dbo.[Shift] AS s WITH (NOLOCK) ON s.ShiftId = ot.[Schedule]
@@ -113,7 +118,6 @@ BEGIN
 	WHERE empca.EmpId = @employeeId
 		AND empca.WorkDate BETWEEN @fromDate
 			AND @toDate
-		AND ce.CompanyId = @CompanyId
 	ORDER BY empca.WorkDate
 END
 
