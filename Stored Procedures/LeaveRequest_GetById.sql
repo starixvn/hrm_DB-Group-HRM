@@ -37,9 +37,11 @@ BEGIN
 		,ve.EmpId AS VerifierId
 		,ve.NickName
 		,Ve.FullName
+		,vece.CompanyId
 		,ap.EmpId AS ApproverId
 		,ap.NickName
 		,ap.FullName
+		,apce.CompanyId
 		,pr.EmpId AS HRId
 		,pr.NickName
 		,pr.FullName
@@ -50,7 +52,9 @@ BEGIN
 		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON e.EmpId = empsum.EmpId
 		INNER JOIN dbo.LeaveType AS lv WITH (NOLOCK) ON lr.LeaveType = lv.LeaveTypeId
 		LEFT JOIN dbo.Employee AS ve WITH (NOLOCK) ON wk.VerifierId = ve.EmpId
+		LEFT JOIN dbo.CompanyEmployee AS vece WITH (NOLOCK) ON ve.EmpId = vece.EmpId
 		LEFT JOIN dbo.Employee AS ap WITH (NOLOCK) ON wk.ApproverId = ap.EmpId
+		LEFT JOIN dbo.CompanyEmployee AS apce WITH (NOLOCK) ON ap.EmpId = apce.EmpId
 		LEFT JOIN dbo.Employee AS pr WITH (NOLOCK) ON wk.HRId = pr.EmpId
 		LEFT JOIN dbo.HospitalLeave AS hl WITH (NOLOCK) ON hl.RequestId = lr.RequestId
 	WHERE lr.RequestId = @RequestId

@@ -666,7 +666,7 @@ BEGIN
 		LEFT JOIN dbo.[Shift] AS s2 WITH (NOLOCK) ON s2.ShiftID = rd.ToShift
 		LEFT JOIN dbo.[Shift] AS s3 WITH (NOLOCK) ON s3.ShiftID = c.ShiftID
 		LEFT JOIN dbo.LeaveType AS lv WITH (NOLOCK) ON lv.LeaveTypeID = lr.LeaveType
-        AND lv.CompanyId = @CompanyId
+        AND lv.CompanyId = tmpEmp.CompanyId
 	WHERE (@leaveTypeId IS NULL OR lr.LeaveType = @leaveTypeId)
 	ORDER BY r.CreatedDate DESC
 
