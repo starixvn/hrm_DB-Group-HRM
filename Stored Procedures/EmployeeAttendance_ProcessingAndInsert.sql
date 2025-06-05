@@ -3,9 +3,9 @@
 ALTER PROCEDURE [dbo].[EmployeeAttendance_ProcessingAndInsert]
 (
     @empId INT = NULL
-	,@fromTime DATETIME
-	,@toTime DATETIME
-	,@onlyUpdate BIT = 0
+    ,@fromTime DATETIME
+    ,@toTime DATETIME
+    ,@onlyUpdate BIT = 0
     ,@CompanyId SMALLINT = NULL
 )
 AS
@@ -60,35 +60,31 @@ BEGIN
 					)
 				AND tbldate.WorkDate IS NULL
 			)
-	BEGIN
-		DECLARE @ErrCode INT = 0
-			,@ErrMsg VARCHAR(200) = ''
+        BEGIN
+            DECLARE @ErrCode INT = 0
+                ,@ErrMsg VARCHAR(200) = ''
 
-		EXEC dbo.EmployeeCalendar_Insert @EmpId = @empId
-			,@fromdate = @fromTime
-			,@todate = @tempToDate
-			,@ErrCode = @ErrCode OUTPUT
-			,@ErrMsg = @ErrMsg OUTPUT
-	END
+            EXEC dbo.EmployeeCalendar_Insert @EmpId = @empId
+                ,@fromdate = @fromTime
+                ,@todate = @tempToDate
+                ,@ErrCode = @ErrCode OUTPUT
+                ,@ErrMsg = @ErrMsg OUTPUT
+        END
 
-	IF @empId IS NULL
-	BEGIN
-		INSERT INTO #tmpEmployee (EmpId)
-		SELECT e.EmpId
-		FROM dbo.Employee AS e WITH (NOLOCK)
-            INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
-		WHERE e.[Enabled] = 1
-		    AND e.isDeleted = 0
-            AND (
-			    @CompanyId IS NULL
-			    OR ce.CompanyId = @CompanyId
-			)
-	END
-	ELSE
-	BEGIN
-		INSERT INTO #tmpEmployee (EmpId)
-        VALUES (@EmpId)
-	END
+    INSERT INTO #tmpEmployee (EmpId)
+    SELECT e.EmpId
+    FROM dbo.Employee AS e WITH (NOLOCK)
+        INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
+    WHERE e.[Enabled] = 1
+        AND e.isDeleted = 0
+        AND (
+            @CompanyId IS NULL
+            OR ce.CompanyId = @CompanyId
+        )
+        AND (
+            @EmpId IS NULL
+            OR e.EmpId = @EmpId
+        )
 
     INSERT INTO dbo.tmpEmployeeAttendace (EmpId, WorkDate, InsertedDate)
     SELECT e.EmpId, d.WorkDate, GETDATE()
