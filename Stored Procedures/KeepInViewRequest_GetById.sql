@@ -60,7 +60,6 @@ BEGIN
 		AND kiv.OnDate = empca.WorkDate
 		LEFT JOIN dbo.Shift AS shift WITH (NOLOCK) ON empca.ShiftId = shift.ShiftId
 	WHERE kiv.RequestId = @RequestId
-		AND ce.CompanyId = @CompanyId
 END
 
 

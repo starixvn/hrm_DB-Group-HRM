@@ -59,7 +59,4 @@ BEGIN
 		LEFT JOIN dbo.CompanyEmployee AS apce WITH (NOLOCK) ON ap.EmpId = apce.EmpId
 		LEFT JOIN dbo.Employee AS pr WITH (NOLOCK) ON wk.HRId = pr.EmpId
 	WHERE cio.RequestId = @RequestId
-		AND ce.CompanyId = @CompanyId
 END
-
-
