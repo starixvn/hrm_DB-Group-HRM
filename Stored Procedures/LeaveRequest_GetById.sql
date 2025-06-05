@@ -32,6 +32,7 @@ BEGIN
 		,lr.EmpId
 		,e.NickName
 		,e.FullName
+		,ce.CompanyId
 		,empsum.IsTopManager
 		,ve.EmpId AS VerifierId
 		,ve.NickName
@@ -45,6 +46,7 @@ BEGIN
 	FROM dbo.LeaveRequest AS lr WITH (NOLOCK)
 		INNER JOIN dbo.WorkingTimeRequest AS wk WITH (NOLOCK) ON lr.RequestId = wk.RequestId
 		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON lr.EmpId = e.EmpId
+		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = lr.EmpId
 		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON e.EmpId = empsum.EmpId
 		INNER JOIN dbo.LeaveType AS lv WITH (NOLOCK) ON lr.LeaveType = lv.LeaveTypeId
 		LEFT JOIN dbo.Employee AS ve WITH (NOLOCK) ON wk.VerifierId = ve.EmpId
