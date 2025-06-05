@@ -10,7 +10,7 @@ DB: HRM
 Original:
 
 Revisions:
-	- Jay.Do: 20250602: Cross company
+- Jay.Do: 20250602: Cross company
 Param's Explanation:
 */
 BEGIN
@@ -31,7 +31,11 @@ BEGIN
 		,wk.HRDate AS ProcessedDate
 		,wk.LogDate AS InsertedDate
 		,mis.EmpId
-		,e.NickName
+		,CASE 
+			WHEN @CompanyId IS NOT NULL AND c.CompanyId != @CompanyId 
+				THEN e.NickName + ' (' + c.[Name]  +')'
+				ELSE e.NickName
+		END NickName
 		,e.FullName
 		,g.GroupId AS TeamId
 		,g.Code
@@ -62,6 +66,8 @@ BEGIN
 		AND mis.EmpId = cl.EmpId
 		LEFT JOIN dbo.[Shift] AS sh WITH (NOLOCK) ON cl.ShiftId = sh.ShiftID
 		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON mis.EmpId = e.EmpId
+		LEFT JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = e.EmpId
+		LEFT JOIN dbo.Company c WITH (NOLOCK) ON c.CompanyId = ce.CompanyId
 		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON e.GroupId = g.GroupId
 		LEFT JOIN dbo.Employee AS ve WITH (NOLOCK) ON wk.VerifierId = ve.EmpId
 		LEFT JOIN dbo.CompanyEmployee AS vece WITH (NOLOCK) ON vece.EmpId = ve.EmpId

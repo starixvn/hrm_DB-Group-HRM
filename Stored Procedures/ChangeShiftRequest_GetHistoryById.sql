@@ -9,7 +9,7 @@ Task: view request history
 DB: HRM
 
 Revisions:
-	- Jay.Do: 20250602: Cross company
+- Jay.Do: 20250602: Cross company
 Param's Explanation:
 */
 BEGIN
@@ -23,7 +23,11 @@ BEGIN
 		,r.CurrentStatus
 		,r.CreatedDate
 		,emp.EmpId
-		,emp.NickName
+		,CASE 
+			WHEN @CompanyId IS NOT NULL AND c.CompanyId != @CompanyId 
+				THEN emp.NickName + ' (' + c.[Name]  +')'
+				ELSE emp.NickName
+		END NickName
 		,emp.FullName
 		,gr.[Name] AS Team
 		,verifier.EmpId AS VerifierId
@@ -52,6 +56,8 @@ BEGIN
 		LEFT JOIN dbo.CompanyEmployee AS apce WITH (NOLOCK) ON apce.EmpId = approver.EmpId
 		LEFT JOIN dbo.Company apc WITH (NOLOCK) ON apc.CompanyId = apce.CompanyId
 		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON emp.EmpId = r.EmpId
+		LEFT JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = emp.EmpId
+		LEFT JOIN dbo.Company c WITH (NOLOCK) ON c.CompanyId = ce.CompanyId
 		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId
 		LEFT JOIN dbo.Employee AS m WITH (NOLOCK) ON ISNULL(r.ModifiedBy, r.CreatedBy) = m.EmpId
 	WHERE r.RequestId = @RequestId
