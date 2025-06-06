@@ -71,10 +71,10 @@ BEGIN
 		,@SyncDate
 	FROM #tmpTimeRecord AS tmp WITH (NOLOCK)
 	WHERE NOT EXISTS (
-        SELECT 1 
-        FROM dbo.tmpEmployeeAttendace AS att WITH (NOLOCK) 
-        WHERE att.EmpId = tmp.EmpId
-	        AND att.WorkDate = CAST(DATEADD(DD, -1, tmp.ClientRecordTime) AS DATE)
+            SELECT 1
+            FROM dbo.tmpEmployeeAttendace AS att WITH (NOLOCK)
+            WHERE att.EmpId = tmp.EmpId
+	            AND att.WorkDate = CAST(DATEADD(DD, -1, tmp.ClientRecordTime) AS DATE)
         )
         AND NOT EXISTS (
             SELECT 1
@@ -125,10 +125,12 @@ BEGIN
 	        AND DATEDIFF(SECOND, t.RecordTime, tmp.RecordTime) = 0
         )
 
-	SELECT EmpId
+	SELECT ce.EmpId
 	INTO #tmpEmployee
-	FROM dbo.EmployeeCalendar WITH (NOLOCK)
-	WHERE DATEDIFF(DD, WorkDate, @ToDate) = 0
+	FROM dbo.EmployeeCalendar AS empca WITH (NOLOCK)
+        INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON empca.EmpId = ce.EmpId
+	WHERE ce.CompanyId = @CompanyId
+        AND empca.WorkDate = CAST(@todate AS DATETIME)
 		AND (
 			ShiftId IS NOT NULL
 			OR IsOffDay = 1
@@ -136,53 +138,28 @@ BEGIN
 			OR IsLeaveDay = 1
 			)	
 
-	IF EXISTS (
+	INSERT INTO dbo.tmpEmployeeAttendace (
+		EmpId
+		,WorkDate
+		,InsertedDate
+		)
+	SELECT e.EmpId
+		,@todate
+		,@SyncDate
+	FROM dbo.Employee AS e WITH (NOLOCK)
+		INNER JOIN #tmpEmployee AS ec ON e.EmpId = ec.EmpId
+	WHERE e.[Enabled] = 1
+		AND DATEDIFF(DD, e.JoinedDate, @todate) > 0
+		AND (
+			e.ResignedDate IS NULL
+			OR DATEDIFF(DD, @todate, e.ResignedDate) > 0
+			)
+		AND NOT EXISTS (
 			SELECT 1
-			FROM dbo.Employee AS e WITH (NOLOCK)
-				INNER JOIN #tmpEmployee AS tmp ON e.EmpId = tmp.EmpId
-			WHERE e.[Enabled] = 1
-				AND DATEDIFF(DD, e.JoinedDate, @todate) > 0
-				AND (
-					e.ResignedDate IS NULL
-					OR DATEDIFF(DD, @todate, e.ResignedDate) > 0
-					)
-				AND e.EmpId NOT IN (
-					SELECT 1
-					FROM dbo.EmployeeAttendance AS att WITH (NOLOCK)
-					WHERE att.AttendanceDate = CAST(@todate AS DATETIME)
-						AND att.EmpId = e.EmpId
-					)
+			FROM dbo.EmployeeAttendance AS att WITH (NOLOCK)
+			WHERE att.AttendanceDate = CAST(@todate AS DATETIME)
+				AND att.EmpId = e.EmpId
 			)
-	BEGIN
-		INSERT INTO dbo.tmpEmployeeAttendace (
-			EmpId
-			,WorkDate
-			,InsertedDate
-			)
-		SELECT e.EmpId
-			,@todate
-			,@SyncDate
-		FROM dbo.Employee AS e WITH (NOLOCK)
-			INNER JOIN #tmpEmployee AS ec ON e.EmpId = ec.EmpId
-		WHERE e.[Enabled] = 1
-			AND DATEDIFF(DD, e.JoinedDate, @todate) > 0
-			AND (
-				e.ResignedDate IS NULL
-				OR DATEDIFF(DD, @todate, e.ResignedDate) > 0
-				)
-			AND e.EmpId NOT IN (
-				SELECT 1
-				FROM dbo.EmployeeAttendance AS att WITH (NOLOCK)
-				WHERE att.AttendanceDate = CAST(@todate AS DATETIME)
-					AND att.EmpId = e.EmpId
-				)
-            AND NOT EXISTS (
-                SELECT 1
-                FROM dbo.tmpEmployeeAttendace AS tmp WITH (NOLOCK)
-                WHERE e.EmpId = tmp.EmpId
-                    AND tmp.WorkDate = @todate
-            )
-	END
 
 	INSERT INTO dbo.tmpEmployeeAttendace (
 		EmpId
@@ -202,18 +179,18 @@ BEGIN
 		AND rul.DisciplineTypeId = 2
 	WHERE att.AttendanceDate BETWEEN CAST(@FromDate AS DATETIME)
 				AND CAST(@ToDate AS DATETIME)
-		AND ISNULL(att.ShiftId, '') <> ''
+		AND att.ShiftId IS NOT NULL
 		AND empca.LeaveDay <> 1
 		AND (
 			(
-				ISNULL(att.InFixed, '') = ''
-				AND ISNULL(att.OutFixed, '') <> ''
+				att.InFixed IS NULL
+				AND att.OutFixed IS NOT NULL
 				AND @SyncDate > att.ExpectedInTime
 				AND DATEDIFF(MI, att.ExpectedInTime, @SyncDate) < 480
 				)
 			OR (
-				ISNULL(att.InFixed, '') <> ''
-				AND ISNULL(att.OutFixed, '') = ''
+				att.InFixed IS NOT NULL
+				AND att.OutFixed IS NULL
 				AND @SyncDate > att.ExpectedOutTime
 				AND DATEDIFF(MI, att.ExpectedOutTime, @SyncDate) < 480
 				)
@@ -232,9 +209,9 @@ BEGIN
 		AND rul.DisciplineTypeId = 5
 	WHERE att.AttendanceDate BETWEEN CAST(@FromDate AS DATETIME)
 				AND CAST(@ToDate AS DATETIME)
-		AND ISNULL(att.ShiftId, '') <> ''
-		AND ISNULL(att.InFixed, '') = ''
-		AND ISNULL(att.OutFixed, '') = ''
+		AND att.ShiftId IS NOT NULL
+		AND att.InFixed IS NULL
+		AND att.OutFixed IS NULL
 		AND @SyncDate > att.ExpectedOutTime
 		AND DATEDIFF(MI, att.ExpectedOutTime, @SyncDate) < 480
 		AND ISNULL(att.LeaveDay, 0) <> 1
