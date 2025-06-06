@@ -1,6 +1,6 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE OR ALTER PROCEDURE Domain_ByCompanyId_Get 
+CREATE OR ALTER PROCEDURE [dbo].[Domain_ByCompanyId_Get] 
 	@CompanyId INT
 AS
 /*
@@ -21,4 +21,3 @@ BEGIN
 	FROM dbo.CompanySite WITH (NOLOCK)
 	WHERE CompanyId = @CompanyId
 END
-GO
