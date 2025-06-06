@@ -3,11 +3,11 @@
 ALTER PROCEDURE [dbo].[Auto_TimeRecord_Import]
 (
     @CompanyId SMALLINT
-	,@FromDate DATE
+    ,@FromDate DATE
     ,@ToDate DATE
     ,@TimeRecordXml NVARCHAR(MAX) = ''
     ,@ErrCode INT = 0 OUTPUT
-	,@ErrMsg NVARCHAR(200) = '' OUTPUT
+    ,@ErrMsg NVARCHAR(200) = '' OUTPUT
 )
 AS
 /*
@@ -17,6 +17,7 @@ AS
 
     Revisions:
         20250512@Tim: sync time record Hong Ma [Redmine: 226225]
+        20250606@Tim: enhance performance
     Param's Explanation:
         - @TimeRecordXml: "<Root>
 		        <Row EmpNo={0} InOutType={1} RecordTime={2} />
@@ -60,6 +61,52 @@ BEGIN
 
 	EXEC sp_xml_removedocument @DocHandler
 
+    INSERT INTO dbo.tmpEmployeeAttendace (
+		EmpId
+		,WorkDate
+		,InsertedDate
+		)
+	SELECT tmp.EmpId
+		,CAST(DATEADD(DD, -1, tmp.ClientRecordTime) AS DATE)
+		,@SyncDate
+	FROM #tmpTimeRecord AS tmp WITH (NOLOCK)
+	WHERE NOT EXISTS (
+        SELECT 1 
+        FROM dbo.tmpEmployeeAttendace AS att WITH (NOLOCK) 
+        WHERE att.EmpId = tmp.EmpId
+	        AND att.WorkDate = CAST(DATEADD(DD, -1, tmp.ClientRecordTime) AS DATE)
+        )
+        AND NOT EXISTS (
+            SELECT 1
+            FROM dbo.TimeRecord AS tr WITH (NOLOCK)
+            WHERE tmp.EmpId = tr.EmpId
+                AND tmp.RecordTime = tr.RecordTime
+                AND tmp.InOutType = tr.InOutType
+        )
+
+	INSERT INTO dbo.tmpEmployeeAttendace (
+		EmpId
+		,WorkDate
+		,InsertedDate
+		)
+	SELECT tmp.EmpId
+		,CAST(tmp.ClientRecordTime AS DATE)
+		,@SyncDate
+	FROM #tmpTimeRecord AS tmp WITH (NOLOCK)
+	WHERE NOT EXISTS (
+		SELECT 1 
+		FROM dbo.tmpEmployeeAttendace AS att WITH (NOLOCK) 
+		WHERE att.EmpId = tmp.EmpId 
+			AND att.WorkDate = CAST(tmp.ClientRecordTime AS DATE)
+		)
+        AND NOT EXISTS (
+            SELECT 1
+            FROM dbo.TimeRecord AS tr WITH (NOLOCK)
+            WHERE tmp.EmpId = tr.EmpId
+                AND tmp.RecordTime = tr.RecordTime
+                AND tmp.InOutType = tr.InOutType
+        )
+
     INSERT INTO dbo.TimeRecord (
 		EmpId
 		,InOutType
@@ -78,34 +125,6 @@ BEGIN
 	        AND DATEDIFF(SECOND, t.RecordTime, tmp.RecordTime) = 0
         )
 
-    INSERT INTO dbo.tmpEmployeeAttendace (
-		EmpId
-		,WorkDate
-		,InsertedDate
-		)
-	SELECT tmp.EmpId
-		,CAST(DATEADD(DD, -1, tmp.ClientRecordTime) AS DATE)
-		,@SyncDate
-	FROM #tmpTimeRecord AS tmp WITH (NOLOCK)
-	WHERE NOT EXISTS (
-        SELECT 1 
-        FROM dbo.tmpEmployeeAttendace AS att WITH (NOLOCK) 
-        WHERE att.EmpId = tmp.EmpId
-	        AND att.WorkDate = CAST(DATEADD(DD, -1, tmp.ClientRecordTime) AS DATE)
-        )
-
-	UNION
-	SELECT tmp.EmpId
-		,CAST(tmp.ClientRecordTime AS DATE)
-		,@SyncDate
-	FROM #tmpTimeRecord AS tmp WITH (NOLOCK)
-	WHERE NOT EXISTS (
-		SELECT 1 
-		FROM dbo.tmpEmployeeAttendace AS att WITH (NOLOCK) 
-		WHERE att.EmpId = tmp.EmpId 
-			AND att.WorkDate = CAST(tmp.ClientRecordTime AS DATE)
-		)
-
 	SELECT EmpId
 	INTO #tmpEmployee
 	FROM dbo.EmployeeCalendar WITH (NOLOCK)
@@ -115,7 +134,7 @@ BEGIN
 			OR IsOffDay = 1
 			OR IsHoliday = 1
 			OR IsLeaveDay = 1
-			)
+			)	
 
 	IF EXISTS (
 			SELECT 1
@@ -128,9 +147,9 @@ BEGIN
 					OR DATEDIFF(DD, @todate, e.ResignedDate) > 0
 					)
 				AND e.EmpId NOT IN (
-					SELECT EmpId
+					SELECT 1
 					FROM dbo.EmployeeAttendance AS att WITH (NOLOCK)
-					WHERE DATEDIFF(DD, att.AttendanceDate, @todate) = 0
+					WHERE att.AttendanceDate = CAST(@todate AS DATETIME)
 						AND att.EmpId = e.EmpId
 					)
 			)
@@ -152,9 +171,9 @@ BEGIN
 				OR DATEDIFF(DD, @todate, e.ResignedDate) > 0
 				)
 			AND e.EmpId NOT IN (
-				SELECT EmpId
+				SELECT 1
 				FROM dbo.EmployeeAttendance AS att WITH (NOLOCK)
-				WHERE DATEDIFF(DD, att.AttendanceDate, @todate) = 0
+				WHERE att.AttendanceDate = CAST(@todate AS DATETIME)
 					AND att.EmpId = e.EmpId
 				)
 	END
@@ -175,20 +194,20 @@ BEGIN
 		LEFT JOIN dbo.DisciplineGroupRule AS rul WITH (NOLOCK) ON e.GroupId = rul.GroupId
 		AND es.IsLocal = rul.IsLocal
 		AND rul.DisciplineTypeId = 2
-	WHERE att.AttendanceDate BETWEEN @FromDate
-				AND @ToDate
-		AND ISNULL(att.ShiftId, '') <> ''
+	WHERE att.AttendanceDate BETWEEN CAST(@FromDate AS DATETIME)
+				AND CAST(@ToDate AS DATETIME)
+		AND att.ShiftId IS NOT NULL
 		AND empca.LeaveDay <> 1
 		AND (
 			(
-				ISNULL(att.InFixed, '') = ''
-				AND ISNULL(att.OutFixed, '') <> ''
+				att.InFixed IS NULL
+				AND att.OutFixed IS NOT NULL
 				AND @SyncDate > att.ExpectedInTime
 				AND DATEDIFF(MI, att.ExpectedInTime, @SyncDate) < 480
 				)
 			OR (
-				ISNULL(att.InFixed, '') <> ''
-				AND ISNULL(att.OutFixed, '') = ''
+				att.InFixed IS NOT NULL
+				AND att.OutFixed IS NULL
 				AND @SyncDate > att.ExpectedOutTime
 				AND DATEDIFF(MI, att.ExpectedOutTime, @SyncDate) < 480
 				)
@@ -205,11 +224,11 @@ BEGIN
 		LEFT JOIN dbo.DisciplineGroupRule AS rul WITH (NOLOCK) ON e.GroupId = rul.GroupId
 		AND es.IsLocal = rul.IsLocal
 		AND rul.DisciplineTypeId = 5
-	WHERE att.AttendanceDate BETWEEN @FromDate
-				AND @ToDate
-		AND ISNULL(att.ShiftId, '') <> ''
-		AND ISNULL(att.InFixed, '') = ''
-		AND ISNULL(att.OutFixed, '') = ''
+	WHERE att.AttendanceDate BETWEEN CAST(@FromDate AS DATETIME)
+				AND CAST(@ToDate AS DATETIME)
+		AND att.ShiftId IS NOT NULL
+		AND att.InFixed IS NULL
+		AND att.OutFixed IS NULL
 		AND @SyncDate > att.ExpectedOutTime
 		AND DATEDIFF(MI, att.ExpectedOutTime, @SyncDate) < 480
 		AND ISNULL(att.LeaveDay, 0) <> 1
