@@ -9,6 +9,7 @@ ALTER PROCEDURE [dbo].[Overtime_GetMemberMonthlyRequest] @ActorId INT
 	,@OvertimeType SMALLINT = NULL
 	,@IsLocal BIT = NULL
 	,@CompanyId INT 
+	,@IsShowCrossCompany BIT = 0
 AS
 /*
 Created: Tim.Trinh@2019-07-05
@@ -38,7 +39,7 @@ BEGIN
 
 	DECLARE @tblStatusIds TABLE (StatusId TINYINT)
 
-	CREATE TABLE #tblEmployeeIds (EmployeeId INT)
+	CREATE TABLE #tblEmployeeIds (EmployeeId INT, CompanyId INT)
 
 	CREATE TABLE #tblGroupIds (GroupId INT)
 
@@ -69,7 +70,7 @@ BEGIN
 		BEGIN
 			INSERT INTO #tblEmployeeIds (EmployeeId)
 			SELECT EmpId
-			FROM dbo.fnc_GetEmployeeByActorId(@ActorId, 1, 0, @CompanyId)
+			FROM dbo.fnc_GetEmployeeByActorId_CrossCompany(@ActorId, 1, 0, @CompanyId)
 		END
 	END
 	ELSE
@@ -77,6 +78,11 @@ BEGIN
 		INSERT INTO #tblEmployeeIds (EmployeeId)
 		VALUES (@EmployeeId)
 	END
+
+	UPDATE #tblEmployeeIds
+	SET CompanyId = ce.CompanyId
+	FROM #tblEmployeeIds AS eid WITH (NOLOCK)
+	INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = eid.EmpId
 
 	INSERT INTO @tblStatusIds (StatusId)
 	SELECT value
@@ -117,25 +123,38 @@ BEGIN
         ,dep.[Name] AS DepartmentName
 		,u.Code AS UnitCode
 		,verifier.EmpId AS VerifierId
-		,verifier.NickName AS VerifierNickname
+		,CASE 
+			WHEN verifierCE.CompanyId <> @CompanyId THEN verifier.NickName + ' (' + verifierCompany.[Name] + ')'
+			ELSE verifier.NickName 
+		END AS VerifierNickname
 		,verifier.FullName AS VerifierFullName
 		,approver.EmpId AS ApproverId
-		,approver.NickName AS ApproverNickname
+		,CASE 
+			WHEN approverCE.CompanyId <> @CompanyId THEN approver.NickName + ' (' + approverCompany.[Name] + ')'
+			ELSE approver.NickName 
+		END AS ApproverNickname
 		,approver.FullName AS ApproverFullName
 		,req.CurrentStatus AS StatusId
 		,emp.EmpId
-		,emp.NickName
+		,CASE 
+			WHEN e.CompanyId <> @CompanyId THEN emp.NickName + ' (' + c.[Name] + ')'
+			ELSE emp.NickName 
+		END AS NickName
 		,emp.FullName
 	FROM dbo.OTMonthlyRequest AS req WITH (NOLOCK)
 		INNER JOIN #tblEmployeeIds e WITH (NOLOCK) ON req.EmpId = e.EmployeeId
 		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON req.EmpId = emp.EmpId
+		INNER JOIN dbo.Company AS c WITH (NOLOCK) ON c.CompanyId = e.CompanyId
 		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
-		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId
-		INNER JOIN #tblGroupIds AS tblgr WITH (NOLOCK) ON gr.GroupId = tblgr.GroupId
+		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON gr.GroupId = emp.GroupId
 		INNER JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId = gr.DepartmentId
 		INNER JOIN dbo.Unit AS u WITH (NOLOCK) ON u.UnitId = dep.UnitId
 		LEFT JOIN dbo.Employee AS verifier WITH (NOLOCK) ON verifier.EmpId = req.VerifierId
+		LEFT JOIN dbo.CompanyEmployee AS verifierCE WITH (NOLOCK) ON verifierCE.EmpId = verifier.EmpId
+		LEFT JOIN dbo.Company AS verifierCompany WITH (NOLOCK) ON verifierCompany.CompanyId = verifierCE.CompanyId
 		LEFT JOIN dbo.Employee AS approver WITH (NOLOCK) ON approver.EmpId = req.ApproverId
+		LEFT JOIN dbo.CompanyEmployee AS approverCE WITH (NOLOCK) ON approverCE.EmpId = approver.EmpId
+		LEFT JOIN dbo.Company AS approverCompany WITH (NOLOCK) ON approverCompany.CompanyId = ce_approver.CompanyId
 		LEFT JOIN (
 		SELECT DISTINCT ot.RequestId
 		FROM dbo.OTDailyRequest AS ot WITH (NOLOCK)
@@ -154,6 +173,19 @@ BEGIN
 			@IsLocal IS NULL
 			OR empsum.IsLocal = @IsLocal
 			)
+		AND (
+			EXISTS (
+				SELECT 1
+				FROM #tblGroupIds AS tblgr WITH (NOLOCK)
+				WHERE tblgr.GroupId = emp.GroupId
+				)
+			OR (@IsShowCrossCompany = 1 AND EXISTS (
+				SELECT 1
+				FROM #tblEmployeeIds AS tblemp WITH (NOLOCK)
+				WHERE tblemp.EmpId = emp.EmpId AND tblemp.CompanyId <> @CompanyId
+				AND (req.VerifierId = @ActorId OR req.ApproverId = @ActorId)
+			))
+		)
 		AND EXISTS (
 			SELECT 1
 			FROM @tblStatusIds AS tbl
