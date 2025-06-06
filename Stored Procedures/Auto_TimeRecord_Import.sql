@@ -176,6 +176,12 @@ BEGIN
 				WHERE att.AttendanceDate = CAST(@todate AS DATETIME)
 					AND att.EmpId = e.EmpId
 				)
+            AND NOT EXISTS (
+                SELECT 1
+                FROM dbo.tmpEmployeeAttendace AS tmp WITH (NOLOCK)
+                WHERE e.EmpId = tmp.EmpId
+                    AND tmp.WorkDate = @todate
+            )
 	END
 
 	INSERT INTO dbo.tmpEmployeeAttendace (
@@ -196,18 +202,18 @@ BEGIN
 		AND rul.DisciplineTypeId = 2
 	WHERE att.AttendanceDate BETWEEN CAST(@FromDate AS DATETIME)
 				AND CAST(@ToDate AS DATETIME)
-		AND att.ShiftId IS NOT NULL
+		AND ISNULL(att.ShiftId, '') <> ''
 		AND empca.LeaveDay <> 1
 		AND (
 			(
-				att.InFixed IS NULL
-				AND att.OutFixed IS NOT NULL
+				ISNULL(att.InFixed, '') = ''
+				AND ISNULL(att.OutFixed, '') <> ''
 				AND @SyncDate > att.ExpectedInTime
 				AND DATEDIFF(MI, att.ExpectedInTime, @SyncDate) < 480
 				)
 			OR (
-				att.InFixed IS NOT NULL
-				AND att.OutFixed IS NULL
+				ISNULL(att.InFixed, '') <> ''
+				AND ISNULL(att.OutFixed, '') = ''
 				AND @SyncDate > att.ExpectedOutTime
 				AND DATEDIFF(MI, att.ExpectedOutTime, @SyncDate) < 480
 				)
@@ -226,9 +232,9 @@ BEGIN
 		AND rul.DisciplineTypeId = 5
 	WHERE att.AttendanceDate BETWEEN CAST(@FromDate AS DATETIME)
 				AND CAST(@ToDate AS DATETIME)
-		AND att.ShiftId IS NOT NULL
-		AND att.InFixed IS NULL
-		AND att.OutFixed IS NULL
+		AND ISNULL(att.ShiftId, '') <> ''
+		AND ISNULL(att.InFixed, '') = ''
+		AND ISNULL(att.OutFixed, '') = ''
 		AND @SyncDate > att.ExpectedOutTime
 		AND DATEDIFF(MI, att.ExpectedOutTime, @SyncDate) < 480
 		AND ISNULL(att.LeaveDay, 0) <> 1
