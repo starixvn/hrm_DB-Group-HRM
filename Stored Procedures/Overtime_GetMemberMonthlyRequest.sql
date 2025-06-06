@@ -82,7 +82,7 @@ BEGIN
 	UPDATE #tblEmployeeIds
 	SET CompanyId = ce.CompanyId
 	FROM #tblEmployeeIds AS eid WITH (NOLOCK)
-	INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = eid.EmpId
+	INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = eid.EmployeeId
 
 	INSERT INTO @tblStatusIds (StatusId)
 	SELECT value
@@ -182,7 +182,7 @@ BEGIN
 			OR (@IsShowCrossCompany = 1 AND EXISTS (
 				SELECT 1
 				FROM #tblEmployeeIds AS tblemp WITH (NOLOCK)
-				WHERE tblemp.EmpId = emp.EmpId AND tblemp.CompanyId <> @CompanyId
+				WHERE tblemp.EmployeeId = emp.EmpId AND tblemp.CompanyId <> @CompanyId
 				AND (req.VerifierId = @ActorId OR req.ApproverId = @ActorId)
 			))
 		)
