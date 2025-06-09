@@ -1,14 +1,8 @@
 USE [FBM]
 GO
-    ---------------Update EmpId For SMS----------
-ALTER TABLE Employee 
-ADD IsSecondment BIT NULL;
-
-GO 
 
 CREATE OR ALTER PROCEDURE [dbo].[API_SYN_Employee_Secondment]	
 	@UserXML NVARCHAR(MAX)
-
 	,@ErrCode INT = 0 OUTPUT
 	,@ErrMsg nvarchar(200) = '' OUTPUT
 AS
@@ -39,6 +33,7 @@ BEGIN
 	SET @StartRun = GETDATE()
 	
 	DECLARE @DocHandler INT
+	DECLARE @CompanyId INT;
 
 	SELECT @UserXML = REPLACE(ISNULL(@UserXML,''),'&','&amp;')
 	
@@ -148,6 +143,8 @@ BEGIN
 		PRINT 1
 		RETURN
 	END CATCH;
+
+	SELECT TOP 1 @CompanyId = ER.CompanyID FROM #EmpRegister ER;
 	 
 	INSERT INTO [dbo].[Employee] (
 		UserId
@@ -235,7 +232,7 @@ BEGIN
 	SET FB.isDeleted = 1
 	FROM [dbo].[Employee] FB
 	LEFT JOIN  #EmpRegister ER WITH (NOLOCK) ON FB.EmpId = ER.EmpId
-	WHERE FB.IsSecondment = 1 AND ISNULL(FB.isDeleted, 0) = 0 AND ER.EmpId IS NULL
+	WHERE FB.IsSecondment = 1 AND FB.CompanyID = @CompanyId AND ISNULL(FB.isDeleted, 0) = 0 AND ER.EmpId IS NULL
 
 
 	INSERT INTO [dbo].[EmpRole](SysID,RoleId)
@@ -267,6 +264,5 @@ BEGIN
 			@OldData	= @LogTraderOldData
 
 END
-
 GO
 
