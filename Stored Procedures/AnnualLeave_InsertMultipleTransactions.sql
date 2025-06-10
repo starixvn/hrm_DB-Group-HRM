@@ -97,7 +97,8 @@ BEGIN
 	CREATE TABLE #tmpLeaveRange (
 		EmpId INT PRIMARY KEY,
 		RangeStartDate DATETIME,
-		RangeEndDate DATETIME
+		RangeEndDate DATETIME,
+		JoinedDate DATE
 	)
 
 	SELECT @AnnualLeaveResetTimelineType = [Value]
@@ -105,17 +106,20 @@ BEGIN
     WHERE CompanyId = @CompanyId
         AND [Key] = 'AnnualLeaveResetTimeline'
 
-	INSERT INTO #tmpLeaveRange (EmpId, RangeStartDate, RangeEndDate)
+	-- Get initial leave range data
+	INSERT INTO #tmpLeaveRange (EmpId, RangeStartDate, RangeEndDate, JoinedDate)
 	SELECT 
 		EmpId,
 		ISNULL(FromDate, @FromDate) AS RangeStartDate,
 		CASE 
 			WHEN @AnnualLeaveResetTimelineType = @AnnualLeaveResetTimelineByYear THEN DATEFROMPARTS(YEAR(@FromDate), 12, 31)
 			ELSE ToDate
-		END AS RangeEndDate
+		END AS RangeEndDate,
+		JoinedDate
 	FROM (
 		SELECT 
 			emp.EmpId,
+			emp.JoinedDate,
 			lt.FromDate,
 			lt.ToDate,
 			ROW_NUMBER() OVER (PARTITION BY emp.EmpId ORDER BY lt.FromDate ASC) AS rn
@@ -130,9 +134,27 @@ BEGIN
 	) AS t
 	WHERE rn = 1
 
-
+	-- Set initial range start date based on timeline type
 	UPDATE #tmpLeaveRange
-	SET RangeEndDate = DATEADD(DAY, -1, DATEADD(YEAR, 1, RangeStartDate))
+	SET RangeStartDate = CASE 
+			WHEN @AnnualLeaveResetTimelineType = @AnnualLeaveResetTimelineByYear 
+			THEN DATEFROMPARTS(YEAR(@FromDate), 1, 1)
+			ELSE DATEFROMPARTS(YEAR(@FromDate), MONTH(JoinedDate), DAY(JoinedDate))
+		END
+	WHERE RangeStartDate = @FromDate
+
+	-- Adjust start date for calendar year timeline if needed
+	UPDATE #tmpLeaveRange
+	SET RangeStartDate = DATEADD(YEAR, -1, RangeStartDate)
+	WHERE @FromDate < RangeStartDate 
+
+	-- Set end date based on timeline type
+	UPDATE #tmpLeaveRange
+	SET RangeEndDate = CASE 
+			WHEN @AnnualLeaveResetTimelineType = @AnnualLeaveResetTimelineByYear 
+			THEN DATEFROMPARTS(YEAR(@FromDate), 12, 31)
+			ELSE DATEADD(DAY, -1, DATEADD(YEAR, 1, RangeStartDate))
+		END
 	WHERE RangeEndDate IS NULL;
 
 

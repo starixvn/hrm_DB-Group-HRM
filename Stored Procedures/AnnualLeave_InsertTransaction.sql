@@ -32,11 +32,16 @@ BEGIN
 		,@maximumBalanceForExpat SMALLINT
 		,@AnnualLeaveResetTimelineType TINYINT
 		,@AnnualLeaveResetTimelineByYear TINYINT = 1
+		,@JoinedDate DATE
 
     SELECT @CompanyId = ce.CompanyId
     FROM dbo.Employee AS e WITH (NOLOCK)
         INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
     WHERE e.EmpId = @EmpId
+
+	SELECT @JoinedDate = e.JoinedDate
+	FROM dbo.Employee AS e WITH (NOLOCK)
+	WHERE e.EmpId = @EmpId
 
 	SELECT @maximumBalanceForLocal = Value
 	FROM dbo.RefResource WITH (NOLOCK)
@@ -104,6 +109,7 @@ BEGIN
 
 	IF @ToDate IS NULL
 	BEGIN
+		-- Try to get ToDate from existing LeaveTrans record
 		SELECT @ToDateValue = CASE 
 			WHEN @AnnualLeaveResetTimelineType = @AnnualLeaveResetTimelineByYear THEN DATEFROMPARTS(YEAR(@FromDate), 12, 31)
 			ELSE RangeEndDate
@@ -124,9 +130,21 @@ BEGIN
 		WHERE rn = 1
 	END
 
+	-- Set default ToDate if not found in LeaveTrans
 	IF @ToDateValue IS NULL
 	BEGIN
-		SET @ToDateValue = DATEADD(DAY, -1, DATEADD(YEAR, 1, @FromDate))
+		DECLARE @YearEndDate DATE = DATEFROMPARTS(YEAR(@FromDate), 12, 31)
+		DECLARE @fromdateRange DATE = DATEFROMPARTS(YEAR(@FromDate), MONTH(@JoinedDate), DAY(@JoinedDate))
+
+		IF @FromDate < @fromdateRange
+		BEGIN
+			SET @fromdateRange = DATEADD(YEAR, -1, @fromdateRange)
+		END
+
+		SET @ToDateValue = CASE 
+			WHEN @AnnualLeaveResetTimelineType = @AnnualLeaveResetTimelineByYear THEN @YearEndDate
+			ELSE DATEADD(DAY, -1, DATEADD(YEAR, 1, @fromdateRange))
+		END
 	END
 
 	INSERT INTO dbo.LeaveTrans (
