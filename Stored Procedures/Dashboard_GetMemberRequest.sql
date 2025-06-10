@@ -12,6 +12,7 @@ Original:
 
 Revisions:
 Param's Explanation:
+	-Jay.Do@20250603: Count member in different company
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -181,14 +182,12 @@ BEGIN
 		,MAX(req.CreatedDate) AS ToDate
 	FROM dbo.WorkingTimeRequest AS req WITH (NOLOCK)
 		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON req.EmpId = emp.EmpId
-		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = req.EmpId
 		AND emp.[Enabled] = 1
 		AND emp.isDeleted = 0
 	WHERE (
 			req.VerifierId = @EmployeeId
 			OR req.ApproverId = @EmployeeId
 			)
-		AND ce.CompanyId = @CompanyId
 		AND CASE 
 			WHEN req.VerifierId = @EmployeeId
 				AND req.CurrentStatus = @PendingStatusId THEN 1
@@ -270,12 +269,10 @@ BEGIN
 				END)
 	FROM dbo.WorkingTimeRequest AS req WITH (NOLOCK)
 		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON req.EmpId = emp.EmpId
-		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = req.EmpId
 		AND emp.[Enabled] = 1
 		AND emp.isDeleted = 0
 	WHERE req.CreatedDate >= @fromdate
 		AND req.CreatedDate < @toDate
-		AND ce.CompanyId = @CompanyId
 		AND (
 			req.VerifierId = @EmployeeId
 			OR req.ApproverId = @EmployeeId

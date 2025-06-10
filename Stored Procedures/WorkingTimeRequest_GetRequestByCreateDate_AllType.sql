@@ -13,6 +13,7 @@ ALTER PROCEDURE [dbo].[WorkingTimeRequest_GetRequestByCreateDate_AllType]
     ,@isLocal BIT = NULL
     ,@requestType INT = NULL
     ,@leaveTypeId INT = NULL
+	,@isShowCrossCompany BIT = 0
 )
 AS
 /*
@@ -29,7 +30,10 @@ BEGIN
 
 	CREATE TABLE #tblGroupsList (GroupId INT PRIMARY KEY)
 
-	CREATE TABLE #tblEmployeeId (EmpId INT PRIMARY KEY)
+	CREATE TABLE #tblEmployeeId (
+		EmpId INT PRIMARY KEY, 
+		CompanyId INT 
+	)
 
 	CREATE TABLE #tblRequestId (RequestId INT PRIMARY KEY)
 
@@ -80,7 +84,7 @@ BEGIN
 	IF @empid IS NULL
 	BEGIN
 		IF @SupervisorID IS NULL
-			OR @role LIKE '%6%'
+		OR @role LIKE '%6%'
 		BEGIN
 			INSERT INTO #tblEmployeeId (EmpID)
 			SELECT e.EmpId
@@ -105,6 +109,13 @@ BEGIN
 		INSERT INTO #tblEmployeeId (EmpID)
 		VALUES (@empid)
 	END
+
+	
+	UPDATE #tblEmployeeId
+	SET CompanyId = ce.CompanyId
+	FROM #tblEmployeeId AS eid WITH (NOLOCK)
+	INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = eid.EmpId
+
 
 	INSERT INTO #tblRequestId (RequestId)
 	SELECT r.RequestId
@@ -175,6 +186,12 @@ BEGIN
 				FROM #tblGroupsList AS tblgr WITH (NOLOCK)
 				WHERE tblgr.GroupId = e.GroupId
 				)
+			OR (@isShowCrossCompany = 1 AND EXISTS (
+				SELECT 1
+				FROM #tblEmployeeId AS tblemp WITH (NOLOCK)
+				WHERE tblemp.EmpId = r.EmpId AND tblemp.CompanyId <> @CompanyId
+				AND (r.VerifierId = @SupervisorId OR r.ApproverId = @SupervisorId)
+			))
 			)
 		AND (
 			@isLocal IS NULL
@@ -192,14 +209,11 @@ BEGIN
 		,wt.RequestType
 		,count(1)
 	FROM dbo.WorkingTimeRequest AS wt WITH (NOLOCK)
+		INNER JOIN #tblRequestId AS rq WITH (NOLOCK) ON wt.RequestId = rq.RequestId
 		INNER JOIN dbo.LateInEarlyOutRequest AS inout WITH (NOLOCK) ON wt.RequestId = inout.RequestId
 		INNER JOIN dbo.Employee AS ee WITH (NOLOCK) ON ee.EmpId = wt.EmpId
 	WHERE wt.currentstatus = 6
-		AND EXISTS (
-			SELECT 1
-			FROM #tblGroupsList AS tblgr WITH (NOLOCK)
-			WHERE tblgr.GroupId = ee.GroupId
-			)
+		
 		AND (
 			DATEDIFF(MM, inout.OnDate, @fromdate) = 0
 			OR DATEDIFF(MM, inout.OnDate, @todate) = 0
@@ -221,14 +235,10 @@ BEGIN
 		,wt.RequestType
 		,count(1)
 	FROM dbo.WorkingTimeRequest AS wt WITH (NOLOCK)
+		INNER JOIN #tblRequestId AS rq WITH (NOLOCK) ON wt.RequestId = rq.RequestId
 		INNER JOIN dbo.LeaveRequest AS lr WITH (NOLOCK) ON wt.RequestId = lr.RequestId
 		INNER JOIN dbo.Employee AS ee WITH (NOLOCK) ON ee.EmpId = wt.EmpId
 	WHERE wt.currentstatus = 6
-		AND EXISTS (
-			SELECT GroupId
-			FROM #tblGroupsList AS tblgr WITH (NOLOCK)
-			WHERE tblgr.GroupId = ee.GroupId
-			)
 		AND (
 			DATEDIFF(MM, lr.FromDate, @fromdate) = 0
 			OR DATEDIFF(MM, lr.ToDate, @todate) = 0
@@ -273,6 +283,7 @@ BEGIN
 		,wt.RequestType
 		,count(1)
 	FROM dbo.WorkingTimeRequest AS wt WITH (NOLOCK)
+		INNER JOIN #tblRequestId AS rq WITH (NOLOCK) ON wt.RequestId = rq.RequestId
 		INNER JOIN dbo.KeepInViewRequest AS lr WITH (NOLOCK) ON wt.RequestId = lr.RequestId
 	WHERE wt.EmpId = @empid
 		AND wt.currentstatus = 6
@@ -296,14 +307,10 @@ BEGIN
 		,wt.RequestType
 		,count(1)
 	FROM dbo.WorkingTimeRequest AS wt WITH (NOLOCK)
+		INNER JOIN #tblRequestId AS rq WITH (NOLOCK) ON wt.RequestId = rq.RequestId
 		INNER JOIN dbo.CheckInOutRequest AS lr WITH (NOLOCK) ON wt.RequestId = lr.RequestId
 		INNER JOIN dbo.Employee AS ee WITH (NOLOCK) ON ee.EmpId = wt.EmpId
 	WHERE wt.currentstatus = 6
-		AND EXISTS (
-			SELECT GroupId
-			FROM #tblGroupsList AS tblgr WITH (NOLOCK)
-			WHERE tblgr.GroupId = ee.GroupId
-			)
 		AND (
 			DATEDIFF(MM, lr.OnDate, @fromdate) = 0
 			OR DATEDIFF(MM, lr.OnDate, @todate) = 0
@@ -601,7 +608,10 @@ BEGIN
 		,rd.ActualInOutMins
 		,r.CreatedDate
 		,e.EmpId AS RequesterId
-		,e.NickName AS RequesterNickName
+		,CASE
+            WHEN tmpEmp.CompanyId <> @CompanyId THEN e.NickName + ' (' + ISNULL(company.Name, '') + ')'
+            ELSE e.NickName
+        END AS RequesterNickName
 		,e.FullName AS RequesterFullName
 		,g.GroupId AS TeamId
 		,g.Code AS TeamCode
@@ -609,13 +619,21 @@ BEGIN
 		,dep.DepartmentId
 		,dep.Code AS DepartmentCode
         ,dep.[Name] AS DepartmentName
+		,company.[Name] AS CompanyName
+		,tmpEmp.CompanyId
 		,verifier.EmpId AS VerifierId
-		,verifier.NickName AS VerifierNickName
-		,verifier.FullName AS VerifierFullName
+		,CASE
+            WHEN verifierCE.CompanyId <> @CompanyId THEN verifier.NickName + ' (' + ISNULL(verifierCompany.Name, '') + ')'
+            ELSE verifier.NickName
+        END AS VerifierNickName
+        ,verifier.FullName AS VerifierFullName
 		,r.VerifiedDate
 		,r.VerifiedStatus
 		,approver.EmpId AS ApproverId
-        ,approver.NickName AS ApproverNickName
+        ,CASE
+            WHEN approverCE.CompanyId <> @CompanyId THEN approver.NickName + ' (' + ISNULL(approverCompany.Name, '') + ')'
+            ELSE approver.NickName
+        END AS ApproverNickName
 		,approver.FullName AS ApproverFullName
 		,r.ApprovedDate
 		,r.ApprovedStatus
@@ -630,8 +648,9 @@ BEGIN
 	FROM dbo.WorkingTimeRequest AS r WITH (NOLOCK)
 		INNER JOIN #tblRequestInDaily AS rd WITH (NOLOCK) ON r.RequestId = rd.RequestID
 		INNER JOIN #tblRequestId AS rq WITH (NOLOCK) ON r.RequestId = rq.RequestId
-		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = r.EmpId
-		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.empID = r.empID
+		INNER JOIN #tblEmployeeId AS tmpEmp WITH (NOLOCK) ON tmpEmp.EmpId = r.EmpId
+		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.empID = tmpEmp.empID
+		INNER JOIN dbo.Company AS company WITH (NOLOCK) ON company.CompanyId = tmpEmp.CompanyId
 		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON e.GroupID = g.GroupID
 		INNER JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId = g.DepartmentId
 		INNER JOIN dbo.Unit AS u WITH (NOLOCK) ON u.UnitId = dep.UnitId
@@ -640,7 +659,11 @@ BEGIN
 		LEFT JOIN dbo.CheckInOutRequest AS inoutmiss WITH (NOLOCK) ON r.RequestId = inoutmiss.RequestId
 		LEFT JOIN dbo.ChangeShiftRequest AS csr WITH (NOLOCK) ON r.RequestId = csr.RequestId
 		LEFT JOIN dbo.Employee AS verifier WITH (NOLOCK) ON verifier.empid = r.VerifierId
+		LEFT JOIN dbo.CompanyEmployee AS verifierCE WITH (NOLOCK) ON verifierCE.EmpId = verifier.EmpId
+		LEFT JOIN dbo.Company AS verifierCompany WITH (NOLOCK) ON verifierCompany.CompanyId = verifierCE.CompanyId
 		LEFT JOIN dbo.Employee AS approver WITH (NOLOCK) ON approver.empid = r.ApproverId
+		LEFT JOIN dbo.CompanyEmployee AS approverCE WITH (NOLOCK) ON approverCE.EmpId = approver.EmpId
+		LEFT JOIN dbo.Company AS approverCompany WITH (NOLOCK) ON approverCompany.CompanyId = approverCE.CompanyId
 		LEFT JOIN dbo.Employee AS hr WITH (NOLOCK) ON hr.empid = r.HRId
 		LEFT JOIN #tblTotalDaysRequestInMonth AS rm ON r.empID = rm.empid
 		AND r.RequestType = rm.RequestType
@@ -651,9 +674,8 @@ BEGIN
 		LEFT JOIN dbo.[Shift] AS s2 WITH (NOLOCK) ON s2.ShiftID = rd.ToShift
 		LEFT JOIN dbo.[Shift] AS s3 WITH (NOLOCK) ON s3.ShiftID = c.ShiftID
 		LEFT JOIN dbo.LeaveType AS lv WITH (NOLOCK) ON lv.LeaveTypeID = lr.LeaveType
-        AND lv.CompanyId = @CompanyId
-	WHERE ce.CompanyId = @CompanyId 
-		AND (@leaveTypeId IS NULL OR lr.LeaveType = @leaveTypeId)
+        AND lv.CompanyId = tmpEmp.CompanyId
+	WHERE (@leaveTypeId IS NULL OR lr.LeaveType = @leaveTypeId)
 	ORDER BY r.CreatedDate DESC
 
 	SELECT csrd.RequestId
