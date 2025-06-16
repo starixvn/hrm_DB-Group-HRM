@@ -647,28 +647,12 @@ BEGIN
 		INNER JOIN dbo.LeaveType AS lv WITH (NOLOCK) ON lv.CompanyId = ce.CompanyId
         AND lrdt.LeaveType = lv.LeaveTypeId
 	WHERE (@CompanyId IS NULL OR ce.CompanyId = @CompanyId)
-        AND NOT EXISTS (
-			SELECT 1
-			FROM dbo.tmpEmployeeCalendar AS empca WITH (NOLOCK)
-			WHERE r.EmpId = empca.EmpId
-				AND lrdt.OnDate = empca.WorkDate
-				AND (
-					empca.LeaveDay = 1
-					OR (
-						empca.LeaveDay = 0.5
-						AND (
-							empca.LeaveTypeId = lrdt.LeaveType
-							OR empca.LeaveTypeId2 = lrdt.LeaveType
-							)
-						)
-					)
-			)
 
 	UPDATE empca
 	SET empca.RequestId = rq.RequestId
 		,empca.RequestTypeId = rq.RequestTypeId
-		,empca.IsLeaveDay = 1
-		,empca.LeaveDay = rq.LeaveDay
+		,empca.IsLeaveDay = CASE WHEN rq.RequestId IS NOT NULL THEN 1 ELSE 0 END
+		,empca.LeaveDay = CASE WHEN rq.RequestId IS NOT NULL THEN 0.5 ELSE 0 END
 		,empca.LeaveTypeId = rq.LeaveTypeId
 		,empca.FromTime = rq.FromTime
 		,empca.ToTime = rq.ToTime
@@ -677,10 +661,19 @@ BEGIN
 		,empca.ToTime2 = NULL
 		,empca.ModifiedDate = GETDATE()
 	FROM dbo.tmpEmployeeCalendar AS empca WITH (ROWLOCK)
-		INNER JOIN #tblHalfDayRequest AS rq ON empca.EmpId = rq.EmpId
+		LEFT JOIN #tblHalfDayRequest AS rq ON empca.EmpId = rq.EmpId
 		AND empca.WorkDate = rq.WorkDate
-	WHERE empca.LeaveTypeId IS NULL
-		OR empca.LeaveDay = 0.5
+	WHERE empca.WorkDate BETWEEN @fromDate AND @toDate
+        AND (
+            (
+                rq.RequestId IS NULL
+                AND empca.LeaveTypeId IS NOT NULL
+            )
+            OR (
+                rq.RequestId IS NOT NULL
+                AND empca.LeaveTypeId IS NULL
+            )
+        )
 
 	UPDATE empca
 	SET empca.LeaveDay = CASE 
@@ -695,7 +688,8 @@ BEGIN
 	FROM dbo.tmpEmployeeCalendar AS empca WITH (ROWLOCK)
 		INNER JOIN #tblHalfDayRequest AS rq ON empca.EmpId = rq.EmpId
 		AND empca.WorkDate = rq.WorkDate
-	WHERE empca.FromTime <> rq.FromTime
+	WHERE empca.WorkDate BETWEEN @fromDate AND @toDate
+        AND empca.FromTime <> rq.FromTime
 		AND empca.ToTime <> rq.ToTime
 
 	DROP TABLE #tempEmployeeIds
