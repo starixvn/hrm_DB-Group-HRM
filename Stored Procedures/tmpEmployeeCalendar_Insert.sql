@@ -668,6 +668,7 @@ BEGIN
             (
                 rq.RequestId IS NULL
                 AND empca.LeaveTypeId IS NOT NULL
+                AND empca.LeaveDay = 0.5
             )
             OR (
                 rq.RequestId IS NOT NULL
