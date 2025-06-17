@@ -58,6 +58,7 @@ ALTER PROCEDURE [dbo].[Employee_Information_update] @EmpId INT
 	,@ErrCode INT = 0 OUTPUT
 	,@ErrMsg NVARCHAR(200) = '' OUTPUT
 	,@CompanyId SMALLINT
+	,@SubCompanyId INT = NULL
 AS
 /*
 Created: TOM
@@ -194,8 +195,10 @@ BEGIN
 				,OffDaysbyWeek AS '@OffDaysbyWeek'
 				,MilitaryFromDate AS '@MilitaryFromDate'
 				,MilitaryToDate AS '@MilitaryToDate'
+				,SubCompanyId AS '@SubCompanyId'
 			FROM dbo.Employee AS emp WITH (NOLOCK)
 				INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
+				INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
 			WHERE emp.EmpId = @EmpId
 			FOR XML PATH('Row')
 				,TYPE
@@ -251,6 +254,10 @@ BEGIN
 		,PickupRemark = @PickupRemark
 		,PromotionDate = @PromotionDate
 		,TeamDate = @TeamDate
+	WHERE EmpId = @EmpId
+
+	UPDATE CompanyEmployee  WITH (ROWLOCK, UPDLOCK)
+	SET SubCompanyId = @SubCompanyId
 	WHERE EmpId = @EmpId
 
 	EXEC dbo.EmployeeRole_Update @EmployeeId = @EmpId
@@ -332,8 +339,10 @@ BEGIN
 				,OffDaysbyWeek AS '@OffDaysbyWeek'
 				,MilitaryFromDate AS '@MilitaryFromDate'
 				,MilitaryToDate AS '@MilitaryToDate'
+				,SubCompanyId AS '@SubCompanyId'
 			FROM dbo.Employee AS emp WITH (NOLOCK)
 				INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
+				INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
 			WHERE emp.EmpId = @EmpId
 			FOR XML PATH('Row')
 				,TYPE
@@ -348,7 +357,3 @@ BEGIN
 		,@ErrCode = @ErrCode OUTPUT
 		,@ErrMsg = @ErrMsg OUTPUT
 END
-
-
-
-
