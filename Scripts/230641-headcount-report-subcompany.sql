@@ -10,17 +10,19 @@ ADD SubCompanyId INT
 ALTER TABLE [Group] 
 ADD IsOutsource BIT NOT NULL DEFAULT 0
 
-INSERT INTO SubCompany 
-VALUES (9, 'CBT'),
-	(9, 'PSP'),
-	(9, 'PSB'),
-	(9, 'WGI'),
-	(3, 'SMS'),
-	(3, 'DAR'),
-	(23, 'SRM'),
-	(23, 'EXT'),
-	(22, 'OL'),
-	(22, 'OW')
+SET IDENTITY_INSERT SubCompany ON;
+
+INSERT INTO SubCompany (SubCompanyId, CompanyId, Name)
+VALUES
+	(1, 9, 'PSP'),
+	(2, 9, 'PSB'),
+	(3, 9, 'WGI'),
+	(4, 3, 'DAR'),
+	(5, 23, 'SRM'),
+	(6, 23, 'EXT'),
+	(7, 22, 'OW')
+
+SET IDENTITY_INSERT SubCompany OFF;
 
 INSERT INTO SystemConfigs
 VALUES('IsShowSubCompany', 'true', 9),
