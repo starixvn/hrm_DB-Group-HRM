@@ -44,10 +44,20 @@ BEGIN
 		,@NotVerifiedStatusId TINYINT = 3
 		,@RejectedStatusId TINYINT = 5
 		,@VoidStatusId TINYINT = 7
+		,@serverTimeZone SMALLINT = -4
+		,@clientTimeZone REAL
 	CREATE TABLE #tmpGroup (GroupId INT PRIMARY KEY)
 
 	CREATE TABLE #tmpEmployee (EmpId INT PRIMARY KEY)
 
+	SELECT @clientTimeZone = config.[Value]
+    FROM dbo.SystemConfigs AS config WITH (NOLOCK)
+    WHERE config.CompanyId = @companyId
+        AND config.[Key] = 'TimeZone'
+
+	SET @clientTimeZone = ISNULL(@clientTimeZone, @serverTimeZone)
+
+	
 	IF @isRealDate = 1
 	BEGIN
 		SET @fromtime = DATEADD(d, - 1, @fromtime)
@@ -79,7 +89,7 @@ BEGIN
 		VALUES (@EmpId)
 	END
 
-	SET @now = dateadd(hh, 7, GETUTCDATE())
+	SET @now = DATEADD(MINUTE, @clientTimeZone * 60, DATEADD(HOUR, ABS(@serverTimeZone), GETDATE()))
 	SET @today = convert(VARCHAR(10), @now, 111) -- use UTC because the server use GMT-4
 
 	CREATE TABLE #tmpDailyRequest (
@@ -499,7 +509,7 @@ BEGIN
 							AND isMissingCheckOut = 1
 							)
 						)
-					AND CONVERT(NVARCHAR(20), T.AttendanceDate1, 111) < CONVERT(NVARCHAR(20), GETDATE(), 111)
+					AND CONVERT(NVARCHAR(20), T.AttendanceDate1, 111) < CONVERT(NVARCHAR(20), @now, 111)
 					) THEN 1
 			ELSE 0 END
 			) AS IsWarning
@@ -527,7 +537,7 @@ BEGIN
 					) + (CASE 
 					WHEN AttendanceDate1 IS NOT NULL
 						AND isMissingCheckOut = 1
-						AND CONVERT(NVARCHAR(20), T.AttendanceDate1, 111) < CONVERT(NVARCHAR(20), GETDATE(), 111) THEN ', Missing Check-out'
+						AND CONVERT(NVARCHAR(20), T.AttendanceDate1, 111) < CONVERT(NVARCHAR(20), @now, 111) THEN ', Missing Check-out'
 					ELSE '' END
 					) + (CASE 
 					WHEN AttendanceDate1 IS NOT NULL
