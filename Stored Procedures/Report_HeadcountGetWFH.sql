@@ -1,0 +1,26 @@
+/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+
+CREATE OR ALTER PROCEDURE dbo.[Report_HeadcountGetWFH] @Year INT
+
+/*
+Created: 20250219@Mira
+Task : Group HRA report
+DB: bodb_HRM	
+
+Revisions:
+	20250219@Mira: Get data for headcount report - [Redmine: #231008]
+*/
+AS 
+
+BEGIN
+	SET NOCOUNT ON;
+	DECLARE @FromDate DATETIME = DATEFROMPARTS(@Year, 1, 1);
+	DECLARE @ToDate DATETIME = DATEFROMPARTS(@Year, 12, 31);
+
+	SELECT e.EmpId,
+		e.FromDate,
+		e.ToDate
+	FROM dbo.EmployeeWorkFromHome e WITH (NOLOCK)
+	WHERE e.FromDate <= @ToDate
+	  AND e.ToDate >= @FromDate;
+END
