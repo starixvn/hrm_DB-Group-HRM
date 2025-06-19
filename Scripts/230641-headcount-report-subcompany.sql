@@ -1,8 +1,12 @@
 CREATE TABLE SubCompany (
-	SubCompanyId INT PRIMARY KEY IDENTITY(1,1),
-	CompanyId INT,
-	[Name] NVARCHAR(200)
-)
+    SubCompanyId INT PRIMARY KEY IDENTITY(1,1),
+    CompanyId INT NOT NULL,
+    [Name] NVARCHAR(100),
+    CountryCode NVARCHAR(10),
+	IsActivated BIT NOT NULL DEFAULT 1,
+	ModifiedBy INT,
+	ModifiedDate DATETIME
+);
 
 ALTER TABLE CompanyEmployee 
 ADD SubCompanyId INT
@@ -10,25 +14,198 @@ ADD SubCompanyId INT
 ALTER TABLE [Group] 
 ADD IsOutsource BIT NOT NULL DEFAULT 0
 
+DECLARE @SMSCompanyId INT = 3;
+DECLARE @CabintechCompanyId INT = 9;
+DECLARE @OneLabCompanyId INT = 22;
+DECLARE @OseasCompanyId INT = 23;
+
 SET IDENTITY_INSERT SubCompany ON;
-
-INSERT INTO SubCompany (SubCompanyId, CompanyId, Name)
+INSERT INTO SubCompany (SubCompanyId, CompanyId, [Name], CountryCode)
 VALUES
-	(1, 9, 'PSP'),
-	(2, 9, 'PSB'),
-	(3, 9, 'WGI'),
-	(4, 3, 'DAR'),
-	(5, 23, 'SRM'),
-	(6, 23, 'EXT'),
-	(7, 22, 'OW')
-
+	(1, @CabintechCompanyId, 'PSP', 'KH'),
+	(2, @CabintechCompanyId, 'PSB', 'KH'),
+	(3, @CabintechCompanyId, 'WGI', 'KH'),
+	(4, @SMSCompanyId, 'DAR', 'VN'),
+	(5, @OseasCompanyId, 'SRM', 'MY'),
+	(6, @OseasCompanyId, 'EXT', 'MY'),
+	(7, @OneLabCompanyId, 'OW', 'TW')
 SET IDENTITY_INSERT SubCompany OFF;
 
 INSERT INTO SystemConfigs
-VALUES('IsShowSubCompany', 'true', 9),
-('IsShowSubCompany', 'true', 3),
-('IsShowSubCompany', 'true', 23),
-('IsShowSubCompany', 'true', 22)
+VALUES('IsShowSubCompany', 'true', @CabintechCompanyId),
+('IsShowSubCompany', 'true', @SMSCompanyId),
+('IsShowSubCompany', 'true', @OseasCompanyId),
+('IsShowSubCompany', 'true', @OneLabCompanyId)
+GO
+
+-------- SubCompany --------
+-- Cabintech PSP --
+DECLARE @PSPSubId INT = 1
+DECLARE @CabintechCompanyId INT = 9
+
+UPDATE ce 
+SET SubCompanyId = @PSPSubId
+FROM CompanyEmployee ce
+INNER JOIN Employee e ON ce.EmpId = e.EmpId
+WHERE Code IN
+('LM0111', 'LM0123', 'LM0076', 'LM0126', 'LM0119', 'LM0124', 'LM0122', 'LM0077', 
+'LM0125', 'LM0118', 'LM0117', 'LM0131', 'LM0132', 'LM0034', 'LM0116', 'LM0084', 
+'LM0113', 'LM0083', 'LM0068', 'LM0074', 'LM0112', 'LM0030', 'LM0134', 'LM0135', 
+'LM0025', 'LM0054', 'LM0044', 'LM0040', 'LM0079', 'LM0045', 'LM0032', 'LM0053', 
+'LM0136', 'LM0129', 'LM0139', 'LM0038', 'LM0037', 'LM0026', 'LM0021')
+AND CompanyId = @CabintechCompanyId
+GO
+
+-- Cabintech PSB --
+DECLARE @PSBSubId INT = 2
+DECLARE @CabintechCompanyId INT = 9
+
+UPDATE ce 
+SET SubCompanyId = @PSBSubId
+FROM CompanyEmployee ce
+INNER JOIN Employee e ON ce.EmpId = e.EmpId
+WHERE Code IN
+('EM0570', 'E16-828', 'E21-054', 'E12-293', 'EM0571', 'E22-162', 'E22-085', 'E22-094', 'E22-105', 
+'E16-805', 'EM0569', 'E24-009', 'E19-060', 'E13-395', 'E18-003', 'E22-125', 'E21-093', 'E23-003', 
+'E22-135', 'E23-095', 'E17-055', 'E20-056', 'E18-002', 'E22-020', 'E10-044', 'E23-119', 'E18-031', 
+'E23-065', 'E17-919', 'E13-334', 'E23-063', 'E22-160', 'E10-043', 'E22-043', 'E19-139', 'E10-002', 
+'E17-085', 'E22-161', 'E22-021', 'E21-055', 'E17-922', 'EM0565', 'E22-082', 'E21-035', 'E11-180', 
+'E19-083', 'E22-126', 'E16-887', 'E23-004', 'E22-019', 'E18-069', 'EM0564', 'E18-116', 'E22-180', 
+'E13-458', 'E23-118', 'E21-090', 'E23-169', 'E14-526', 'E23-059', 'E14-504', 'E19-046', 'E19-030', 
+'E23-061', 'E22-034', 'E14-539', 'E18-112', 'E22-007', 'E14-592', 'E22-117', 'EM0563', 'E22-031', 
+'E12-239', 'E22-057', 'E16-804', 'E18-095', 'E23-099', 'E17-945', 'E20-006', 'E15-686', 'EM0587', 
+'EM0589', 'EM0590', 'EM0558', 'EM0560', 'EM0577', 'EM0559', 'EM0578', 'EM0579', 'EM0580', 'EM0581', 
+'E16-846', 'E23-145', 'E22-030', 'E10-021', 'E22-029', 'E23-196', 'E18-131', 'E23-176', 'E22-118', 
+'E24-029', 'E18-133', 'E22-084', 'E16-803', 'E23-021', 'E23-177', 'E23-074', 'E16-904', 'E24-039', 
+'E16-802', 'E22-136', 'E10-012', 'E16-888', 'E17-090', 'E10-019', 'E10-017', 'EM0574', 'EM0572', 
+'EM0568', 'EM0575', 'E10-045', 'EM0573')
+AND CompanyId = @CabintechCompanyId
+GO
+
+-- Cabintech WGI --
+DECLARE @WGISubId INT = 3
+DECLARE @CabintechCompanyId INT = 9
+
+UPDATE ce 
+SET SubCompanyId = @WGISubId
+FROM CompanyEmployee ce
+INNER JOIN Employee e ON ce.EmpId = e.EmpId
+WHERE Code IN
+('EM0340', 'EM0333', 'EM0339', 'EM0429', 'EM0512', 'EM0425', 'EM0414', 'EM0438', 'EM0426', 
+'EM0474', 'EM0303', 'EM0486', 'EM0511', 'EM0394', 'EM0335', 'EM0403', 'EM0437', 'EM0439', 
+'EM0471', 'EM0517', 'EM0518', 'EM0404', 'EM0382', 'EM0374', 'EM0424', 'EM0391', 'EM0272', 
+'EM0252', 'EM0476', 'EM0383', 'EM0323', 'EM0525', 'EM0015', 'EM0485', 'EM0591', 'EM0522', 
+'EM0509', 'EM0557', 'EM0592', 'EM0585', 'EM0514', 'EM0401', 'EM0576', 'EM0367', 'EM0431', 
+'EM0099', 'EM0050', 'EM0315', 'EM0062', 'EM0361', 'EM0409', 'EM0204', 'EM0472', 'EM0500', 
+'EM0481', 'EM0451', 'EM0408', 'EM0343', 'EM0346', 'EM0455', 'EM0325', 'EM0508', 'EM0452', 
+'EM0491', 'EM0413', 'EM0393', 'EM0445', 'EM0064')
+AND CompanyId = @CabintechCompanyId
+GO
+
+-- SMS DAR --
+DECLARE @DarSubId INT = 4
+DECLARE @SMSCompanyId INT = 3
+UPDATE ce 
+SET SubCompanyId = @DarSubId
+FROM CompanyEmployee ce
+INNER JOIN Employee e ON ce.EmpId = e.EmpId
+WHERE Code IN
+('00031', '03282', '00054', '00049', '00145', '00036', '00067', '90003', '00121', '90031', '00044', 
+'00032', '00132', '00093', '00112', '90014', '90019', '00045', '00115', '00062', '00064', '00023', 
+'90008', '00103', '02196', '00111', '00090', '00058', '00080', '00085', '00081', '00088', '00091', 
+'00099', '00100', '00082', '00053', '90018', '00025', '00027', '00139')
+AND CompanyId = @SMSCompanyId
+GO
+
+-------- WFH --------
+-- Cabintech --
+INSERT INTO dbo.EmployeeWorkFromHome (
+    EmpId,
+    FromDate,
+    ToDate,
+    Remark,
+    ModifiedDate
+)
+SELECT 
+    e.EmpId,
+    '2025-01-01',
+    '2025-12-31',
+    CASE 
+        WHEN e.Code = 'E15-686' THEN 'WFH - China'
+        WHEN e.Code IN ('E16-803', 'E16-802') THEN 'WFH - India' 
+        WHEN e.Code = 'E10-017' THEN 'WFH - Malaysia'       
+		WHEN e.Code IN ('E24-009', 'E24-029', 'E18-133', 'E23-177', 'E22-136') THEN 'WFH - Philippines'
+        WHEN e.Code IN ('E23-176', 'E22-084', 'E23-074') THEN 'WFH - Vietnam'
+    END,
+    '2025-06-19'
+FROM dbo.Employee e
+WHERE e.Code IN ('E24-009', 'E15-686', 'E23-176', 'E24-029', 'E18-133', 'E22-084', 'E16-803', 'E23-177', 'E23-074', 'E16-802', 'E22-136', 'E10-017');
+
+-- WGI --
+DECLARE @WGICompanyId INT = 8
+INSERT INTO dbo.EmployeeWorkFromHome (
+    EmpId,
+    FromDate,
+    ToDate,
+	Remark,
+	ModifiedDate
+)
+SELECT 
+    e.EmpId,
+    '2025-01-01',         
+    '2025-12-31',
+	'WFH',
+	'2025-06-19'
+FROM dbo.Employee e
+INNER JOIN CompanyEmployee ce ON ce.EmpId = e.EmpId
+WHERE e.Code IN 
+('WGI0519', 'WGI0513', 'WGI0505', 'WGI0498', 'WGI0497', 'WGI0489', 'WGI0479', 'WGI0462', 'WGI0461', 'WGI0444', 
+'WGI0440', 'WGI0435', 'WGI0484', 'WGI0432', 'WGI0423', 'WGI0407', 'WGI0390', 'WGI0372', 'WGI0342', 'WGI0338', 
+'WGI0331', 'WGI0326', 'WGI0324', 'WGI0319', 'WGI0318', 'WGI0314', 'WGI0499', 'WGI0286', 'WGI0283', 'WGI0284', 
+'WGI0278', 'WGI0267', 'WGI0085', 'WGI0007', 'WGI0035', 'WGI0026', 'WGI0159', 'WGI0045', 'WGI0009', 'WGI0135', 
+'WGI0165', 'WGI0105', 'WGI0054', 'WGI0022', 'WGI0120', 'WGI0078', 'WGI0082', 'WGI0024', 'WGI0093', 'WGI0502', 
+'WGI0264', 'WGI0263', 'WGI0217', 'WGI0202', 'WGI0166', 'WGI0164', 'WGI0161', 'WGI0158', 'WGI0067', 'WGI0046', 
+'WGI0042', 'WGI0037', 'WGI0034', 'WGI0209', 'WGI0203', 'WGI0084', 'WGI0069', 'WGI0091', 'WGI0478', 'WGI0031', 
+'WGI0070', 'WGI0089', 'WGI0043', 'WGI0250', 'WGI0163', 'WGI0106', 'WGI0218', 'WGI0143', 'WGI0185', 'WGI0477', 
+'WGI0259', 'WGI0213', 'WGI0193', 'WGI0160', 'WGI0071', 'WGI0238', 'WGI0256', 'WGI0151', 'WGI0182', 'WGI0111', 
+'WGI0010', 'WGI0011', 'WGI0231', 'WGI0189', 'WGI0260', 'WGI0233', 'WGI0229', 'WGI0225', 'WGI0188', 'WGI0186', 
+'WGI0126', 'WGI0244', 'WGI0207', 'WGI0170', 'WGI0155', 'WGI0153', 'WGI0027', 'WGI0115', 'WGI0094', 'WGI0469', 
+'WGI0178', 'WGI0222', 'WGI0208', 'WGI0196', 'WGI0194', 'WGI0191', 'WGI0237', 'WGI0219', 'WGI0103', 'WGI0240', 
+'WGI0199', 'WGI0156', 'WGI0220', 'WGI0344', 'WGI0261', 'WGI0192', 'WGI0100', 'WGI0246', 'WGI0210', 'WGI0190', 
+'WGI0187', 'WGI0125', 'WGI0104', 'WGI0107', 'WGI0073', 'WGI0171', 'WGI0076', 'WGI0044', 'WGI0006', 'WGI0005', 
+'WGI0109', 'WGI0047', 'WGI0317', 'WGI0075', 'WGI0195', 'WGI0018', 'WGI0003', 'WGI0262', 'WGI0101', 'WGI0255', 
+'WGI0002', 'WGI0001', 'WGI0028', 'WGI0181', 'WGI0180')
+AND CompanyId = @WGICompanyId
+GO
+
+-- Digibyte --
+DECLARE @DigibyteCompanyId INT = 15
+INSERT INTO dbo.EmployeeWorkFromHome (
+    EmpId,
+    FromDate,
+    ToDate,
+	Remark,
+	ModifiedDate
+)
+SELECT 
+    e.EmpId,
+    '2025-01-01',         
+    '2025-12-31',
+	'WFH',
+	'2025-06-19'
+FROM dbo.Employee e
+INNER JOIN CompanyEmployee ce ON ce.EmpId = e.EmpId
+WHERE Code IN 
+('WFH_LM001', 'WFH_LM002', 'WFH_LM003', 'WFH_LM004', 'WFH_LM005', 'WFH_LM006', 'WFH_LM007', 'WFH_LM008', 
+'WFH_LM009', 'WFH_LM010', 'WFH_LM011', 'WFH_LM012', 'WFH_LM013', 'WFH_LM014', 'WFH_LM015', 'WFH_LM016', 
+'WFH_LM017', 'WFH_LM018', 'WFH_LM019', 'WFH_LM020', 'WFH_LM021', 'WFH_LM022', 'WFH_LM023', 'WFH_LM024', 
+'WFH_LM025', 'WFH_LM026', 'WFH_LM027', 'WFH_LM029', 'WFH_LM030', 'WFH_LM031', 'WFH_LM032', 'WFH_LM033', 
+'WFH_LM034', 'WFH_LM037', 'WFH_LM038', 'WFH_LM039', 'WFH_LM040', 'WFH_LM041', 'WFH_LM042', 'WFH_LM066', 
+'WFH_LM043', 'WFH_LM044', 'WFH_LM045', 'WFH_LM046', 'WFH_LM047', 'WFH_LM048', 'WFH_LM067', 'WFH_LM068', 
+'WFH_LM052', 'WFH_LM054', 'WFH_LM053', 'WFH_LM050', 'WFH_LM049', 'WFH_LM051', 'WFH_LM055', 'WFH_LM056', 
+'WFH_LM057', 'WFH_LM058', 'WFH_LM059', 'WFH_LM060', 'WFH_LM061', 'WFH_LM062', 'WFH_LM063', 'WFH_LM064', 
+'WFH_LM065', 'WFH_LM069')
+AND CompanyId = @DigibyteCompanyId
 GO
 
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
