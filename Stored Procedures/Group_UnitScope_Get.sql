@@ -75,6 +75,7 @@ BEGIN
 		,g.ExpatOffDaysbyWeek
 		,g.ExpatWorkingHoursByWeek
 		,ExpatYearsOfServiceForExtraLeave
+		,g.IsOutsource
 	FROM dbo.[Group] AS g WITH (NOLOCK)
 		INNER JOIN dbo.Department AS d WITH (NOLOCK) ON g.DepartmentId = d.DepartmentId
 		LEFT JOIN dbo.Employee AS e WITH (NOLOCK) ON e.EmpId = g.PICEmpId

@@ -160,7 +160,8 @@ BEGIN
       ,[Qualification]
       ,[Major]
       ,[PasswordReset]
-      ,[EmployeeCard]' + CHAR(13)
+      ,[EmployeeCard]
+	  ,sc.[Name] AS SubCompanyName' + CHAR(13)
 	  + ',s.[AnnualLeaveBalance]' + CHAR(13)
 	  + ',dbo.fnc_GetKIVBalance(e.EmpId,null) AS KeepInViewBalance' + CHAR(13)
 	  + ',s.[CanOT]' + CHAR(13)
@@ -190,6 +191,7 @@ BEGIN
 	  + ',dep.[Name] AS DepartmentName' + CHAR(13)
 	  + 'FROM dbo.Employee AS e WITH (NOLOCK)' + CHAR(13)
 	  + 'INNER JOIN dbo.CompanyEmployee ce WITH (NOLOCK) ON ce.EmpId = e.EmpId AND ce.CompanyId = ' + CAST(@companyId AS VARCHAR(10))  + CHAR(13)
+	  + 'LEFT JOIN dbo.SubCompany sc WITH (NOLOCK) ON ce.SubCompanyId = sc.SubCompanyId' + CHAR(13)
 	  + 'INNER JOIN dbo.EmployeeSummary AS s WITH (NOLOCK) ON s.EmpId = e.EmpId' + CHAR(13)
 	  + 'LEFT JOIN dbo.[Group] AS g WITH (NOLOCK) ON e.GroupID = g.GroupID' + CHAR(13)
 	  + 'INNER JOIN dbo.[Department] AS dep WITH (NOLOCK) ON dep.DepartmentId = g.DepartmentId' + CHAR(13)

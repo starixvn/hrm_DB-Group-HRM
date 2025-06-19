@@ -101,6 +101,8 @@ BEGIN
 		,unit.[Name] AS UnitName
 		,unit.[Code] AS UnitCode
 		,e.EmployeeCard
+		,c.[Name] AS CompanyName
+		, sc.[Name] AS SubCompanyName
 		,es.CompanyDate
 		,e.ConfirmedDate
 		,e.ResignedDate
@@ -131,6 +133,9 @@ BEGIN
 		,es.IsLocal
 	FROM #tmpEmployee AS tpl WITH (NOLOCK)
 		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON tpl.EmpId = e.EmpId
+		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = e.EmpId
+		INNER JOIN dbo.Company AS c WITH (NOLOCK) ON c.CompanyId = ce.CompanyId
+		LEFT JOIN dbo.SubCompany AS sc WITH (NOLOCK) ON sc.SubCompanyId = ce.SubCompanyId
 		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON e.GroupId = g.GroupId
 		INNER JOIN dbo.[Department] AS dep WITH (NOLOCK) ON g.DepartmentId = dep.DepartmentId
 		INNER JOIN dbo.Unit AS unit WITH (NOLOCK) ON dep.UnitId = unit.UnitId

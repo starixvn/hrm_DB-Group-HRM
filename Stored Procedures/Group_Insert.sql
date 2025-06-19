@@ -12,6 +12,7 @@ CREATE OR ALTER PROCEDURE [dbo].[Group_Insert]
     ,@PICEmpId INT = NULL
     ,@DepartmentId INT
     ,@AccountableArea VARCHAR(200) = NULL
+	,@IsOutsource BIT = 0
 )
 AS
 /*
@@ -51,6 +52,7 @@ BEGIN
 		,PICEmpId
 		,DepartmentId
 		,AccountableArea
+		,IsOutsource
 		)
 	VALUES (
 		@Code
@@ -62,6 +64,7 @@ BEGIN
 		,@PICEmpId
 		,@DepartmentId
 		,@AccountableArea
+		,@IsOutsource
 		)
 
 	DECLARE @id INT = cast(SCOPE_IDENTITY() AS INT)
@@ -77,6 +80,7 @@ BEGIN
 				,PICEmpId as '@PICEmpId'
 				,DepartmentId as '@DepartmentId'
 				,AccountableArea as '@AccountableArea'
+				,IsOutsource as '@IsOutsource'
 			FROM dbo.[Group] WITH (NOLOCK)
 			WHERE GroupId = @id
 			FOR XML PATH('Row')

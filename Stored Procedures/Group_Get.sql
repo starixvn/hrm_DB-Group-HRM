@@ -14,9 +14,10 @@ AS
     DB: bodb_HRM
 
     Revisions:
-	    20250310@Mira: filter by CompanyId [Redmine: #217976]
+        20250310@Mira: filter by CompanyId [Redmine: #217976]
         20250403@Tim: remove section [Redmine: #222886]
-	    20250515@Jay: add years of service for extra leave [Redmine: #227166]
+        20250515@Jay: add years of service for extra leave [Redmine: #227166]
+        20250530@Jay: show company name for employees from different company [Redmine: #225528]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -69,6 +70,7 @@ BEGIN
 		,g.Code
 		,g.[Rank]
 		,g.MailGroup
+		,g.IsOutsource
 		,g.LocalBasicAnnualLeaveBalance
 		,g.LocalWorkingDays
 		,g.LocalWorkingHours

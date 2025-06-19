@@ -25,6 +25,7 @@ CREATE OR ALTER PROCEDURE [dbo].[Group_Update]
     ,@ExpatOffDaysbyWeek TINYINT = NULL
     ,@ExpatWorkingHoursByWeek TINYINT = NULL
     ,@ExpatYearsOfServiceForExtraLeave INT = NULL
+	,@IsOutsource BIT = 0
 )
 AS
 /*
@@ -79,6 +80,7 @@ BEGIN
 				,ExpatOffDaysbyWeek AS '@ExpatOffDaysbyWeek'
 				,ExpatWorkingHoursByWeek AS '@ExpatWorkingHoursByWeek'
 				,ExpatYearsOfServiceForExtraLeave AS '@ExpatYearsOfServiceForExtraLeave'
+				,IsOutsource AS '@IsOutsource'
 			FROM dbo.[Group] WITH (NOLOCK)
 			WHERE GroupId = @TeamId
 			FOR XML PATH('Row')
@@ -108,6 +110,7 @@ BEGIN
 		,ExpatWorkingHoursByWeek = @ExpatWorkingHoursByWeek
 		,ExpatYearsOfServiceForExtraLeave = @ExpatYearsOfServiceForExtraLeave
 		,[MailGroup] = @MailGroup
+		,IsOutsource = @IsOutsource
 	WHERE GroupId = @TeamId
 
 	SET @xml = (
@@ -130,6 +133,7 @@ BEGIN
 				,ExpatOffDaysbyWeek AS '@ExpatOffDaysbyWeek'
 				,ExpatWorkingHoursByWeek AS '@ExpatWorkingHoursByWeek'
 				,ExpatYearsOfServiceForExtraLeave AS '@ExpatYearsOfServiceForExtraLeave'
+				,IsOutsource AS '@IsOutsource'
 			FROM dbo.[Group] WITH (NOLOCK)
 			WHERE GroupId = @TeamId
 			FOR XML PATH('Row')
