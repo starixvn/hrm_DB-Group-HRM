@@ -43,8 +43,11 @@ BEGIN
 		,@CompanyId SMALLINT
 
     SELECT @CompanyId = ce.CompanyId
-    FROM dbo.Employee AS e WITH (NOLOCK)
+    FROM dbo.WorkingTimeRequest AS wk WITH (NOLOCK)
+	INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON wk.EmpId = e.EmpId
         INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
+	WHERE wk.RequestId = @RequestId
+
 
 	SELECT @EmpId = l.EmpId
 		,@FromDate = FromDate
