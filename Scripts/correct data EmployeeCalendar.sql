@@ -5,7 +5,7 @@ DECLARE @fromDate DATE = '2025-06-01'
     ,@toDate DATE = '2025-12-31'
 DECLARE @LeaveDay TINYINT = 2
 
-CREATE TABLE #tmpDiscipline (EmpId INT, WorkDate DATE)
+CREATE TABLE #tmpAttendance (EmpId INT, WorkDate DATE)
 
 -- leave request
 CREATE TABLE #tblLeaveRequest (
@@ -94,7 +94,7 @@ SET empca.LeaveTypeId = lr.LeaveTypeId
 	,empca.LeaveTypeId2 = NULL
 	,empca.ModifiedDate = GETDATE()
 OUTPUT inserted.EmpId, inserted.WorkDate
-INTO #tmpDiscipline (EmpId, WorkDate)
+INTO #tmpAttendance (EmpId, WorkDate)
 FROM dbo.EmployeeCalendar AS empca WITH (ROWLOCK)
 	INNER JOIN #tblLeaveRequest AS lr ON empca.EmpId = lr.EmpId
 	AND empca.WorkDate = lr.WorkDate
@@ -140,7 +140,7 @@ SET empca.LeaveTypeId = lr.LeaveTypeId
 	,empca.LeaveDay = 0.5
 	,empca.ModifiedDate = GETDATE()
 OUTPUT inserted.EmpId, inserted.WorkDate
-INTO #tmpDiscipline (EmpId, WorkDate)
+INTO #tmpAttendance (EmpId, WorkDate)
 FROM dbo.EmployeeCalendar AS empca WITH (ROWLOCK)
 	INNER JOIN #tblHalfDayRequest AS lr ON empca.EmpId = lr.EmpId
     AND empca.WorkDate = lr.WorkDate
@@ -149,12 +149,16 @@ WHERE empca.WorkDate BETWEEN @fromDate AND @toDate
 	AND empca.IsOffDay = 0
 	AND empca.IsHoliday = 0
 
+INSERT INTO dbo.tmpEmployeeAttendace (EmpId, WorkDate, InsertedDate)
+SELECT EmpId, WorkDate, GETDATE()
+FROM #tmpAttendance
+
 INSERT INTO dbo.tmpProcessDiscipline (EmpId, WorkDate, InsertedDate)
 SELECT EmpId, WorkDate, GETDATE()
-FROM #tmpDiscipline
+FROM #tmpAttendance
 
 DROP TABLE #tblLeaveRequest
 
 DROP TABLE #tblHalfDayRequest
 
-DROP TABLE #tmpDiscipline
+DROP TABLE #tmpAttendance
