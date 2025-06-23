@@ -21,11 +21,13 @@ AS
 			SELECT e.*, g.DepartmentId
 			FROM dbo.Employee e WITH(NOLOCK) 
 			INNER JOIN dbo.[Group] g WITH(NOLOCK) ON g.GroupId = e.GroupId
+			INNER JOIN dbo.EmployeeSummary es WITH(NOLOCK) ON es.EmpId = e.EmpId
 			WHERE g.IsOutsource = 0 -- exclude the Outsource team 
 				AND (
 					ResignedDate >= @FromDate
 					OR (ResignedDate IS NULL AND Enabled = 1)
 				)
+				AND es.IsTopManager = 0
 		)
 		SELECT
 			e.EmpId,
