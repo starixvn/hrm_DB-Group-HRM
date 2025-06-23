@@ -44,7 +44,7 @@ AS
 				WHEN ISNULL(sub.Name, c.Name) IN ('WGI', 'BPO', 'SRM', 'EXT', 'OSEAS', NULL, '') THEN 'OTHER'
 				ELSE ct.CountryName
 			END AS Country,
-			ISNULL(CAST(ct.CountryCodeISO3 AS VARCHAR(10)), 'WFH') AS CountryCode,
+			ISNULL(CAST(ct.CountryCodeISO3 AS VARCHAR(10)), 'Other') AS CountryCode,
 			e.JoinedDate,
 			e.ConfirmedDate,
 			e.ResignedDate
