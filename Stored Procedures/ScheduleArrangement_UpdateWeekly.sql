@@ -128,7 +128,6 @@ BEGIN
 
 	DECLARE @EmployeeIds VARCHAR(MAX)
 
-	select * from #tblWeeklySchedule;
 	SELECT @EmployeeIds = COALESCE(@EmployeeIds + ',', '') + CAST(EmployeeId AS VARCHAR(10))
 	FROM (
 		SELECT DISTINCT EmployeeId
