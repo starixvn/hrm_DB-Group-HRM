@@ -1,5 +1,3 @@
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
-
 ALTER PROCEDURE [dbo].[ScheduleArrangement_UpdateWeekly] @CompanyId SMALLINT
     ,@ActorId INT
 	,@FromDate DATE
@@ -38,6 +36,18 @@ BEGIN
 		,@RejectedStatusId TINYINT = 5
 		,@ProcessedStatusId TINYINT = 6
 		,@VoidStatusId TINYINT = 7
+		,@serverTimeZone SMALLINT = -4
+		,@clientTimeZone REAL
+
+
+	SELECT @clientTimeZone = config.[Value]
+	FROM dbo.SystemConfigs AS config WITH (NOLOCK)
+	WHERE config.CompanyId = @CompanyId
+		AND config.[Key] = 'TimeZone'
+
+	SET @clientTimeZone = ISNULL(@clientTimeZone, @serverTimeZone)
+
+	SET @Today = DATEADD(MINUTE, @clientTimeZone * 60, DATEADD(HOUR, ABS(@serverTimeZone), GETDATE()))
 
 	CREATE TABLE #tblWeeklySchedule (
 		EmployeeId INT
@@ -212,7 +222,6 @@ BEGIN
 		LEFT JOIN dbo.tmpEmployeeAttendace AS att WITH (NOLOCK) ON tblweekly.EmployeeId = att.EmpId
 		AND tblweekly.WorkDate = att.WorkDate
 	WHERE att.EmpId IS NULL
-		AND DATEDIFF(DD, tblweekly.WorkDate, @Today) >= 0
 
 	UPDATE empca
 	SET empca.ShiftId = tblweekly.ShiftId
@@ -294,31 +303,6 @@ BEGIN
 		,@ToDate = @ToDate
 		,@ErrCode = @ErrCode OUTPUT
 		,@ErrMsg = @ErrMsg OUTPUT
-
-	DELETE
-	FROM #tblWeeklySchedule WITH (ROWLOCK, UPDLOCK)
-	WHERE WorkDate > @Today
-
-	WHILE EXISTS (
-		SELECT 1
-		FROM #tblWeeklySchedule WITH (NOLOCK)
-		)
-	BEGIN
-		DECLARE @EmpId INT, @WorkDate DATE
-		SELECT TOP 1 @EmpId = EmployeeId
-			,@WorkDate = WorkDate
-		FROM #tblWeeklySchedule WITH (NOLOCK)
-
-		EXEC dbo.EmployeeAttendance_ProcessingAndInsert @EmpId
-			,@WorkDate
-			,@WorkDate
-			,1
-
-		DELETE
-		FROM #tblWeeklySchedule WITH (ROWLOCK, UPDLOCK)
-		WHERE EmployeeId = @EmpId
-			AND WorkDate = @WorkDate
-	END
 
 	EXEC dbo.Log_WriteLog @LogActionId = 1002
 		,@LogDate = @ModifiedDate

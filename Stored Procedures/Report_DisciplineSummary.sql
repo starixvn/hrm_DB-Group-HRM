@@ -1,60 +1,80 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[Report_DisciplineSummary] @FromDate DATE
-	,@ToDate DATE
-	,@ApproverId INT
-	,@TeamIds VARCHAR(MAX) = ''
-	,@EmployeeId INT = NULL
-	,@ReasonId INT = NULL
-	,@IsLocal BIT = NULL
-	,@IsShowAll BIT = 0
-	,@CompanyId SMALLINT
+ALTER PROCEDURE [dbo].[Report_DisciplineSummary]
+(
+    @CompanyId SMALLINT
+    ,@FromDate DATE
+    ,@ToDate DATE
+    ,@ApproverId INT
+    ,@TeamIds VARCHAR(MAX) = ''
+    ,@EmployeeId INT = NULL
+    ,@ReasonId INT = NULL
+    ,@IsLocal BIT = NULL
+    ,@IsShowAll BIT = 0
     ,@RoleIds VARCHAR(1000) = ''
+)
 AS
 /*
-Created: 20191204@Tim.Trinh
-Task: get discipline summary
-DB: HRM
+    Created: 20191204@Tim.Trinh
+    Task: get discipline summary
+    DB: bodb_HRM
 
-Revisions:
-    20250404@Tim: add param @RoleIds [Redmine: #222886]
-Param's Explanation:
+    Revisions:
+        20250404@Tim: add param @RoleIds [Redmine: #222886]
+        20250627@Tim: fix bug rule ignored
+    Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;
+	-- discipline type
+	DECLARE @ChangeShiftId TINYINT = 1
+		,@MissingCheckInOutId TINYINT = 2
+		,@LateInId TINYINT = 3
+		,@EarlyOutId TINYINT = 4
+		,@AbsentId TINYINT = 5
+		,@UnpaidLeaveId TINYINT = 6
+		,@WorkingUnderTimeId TINYINT = 7
+		,@UnpaidLeaveAbsentId TINYINT = 8
+		,@UnplannedLeaveId TINYINT = 9
+		,@WeekendLeaveId TINYINT = 10
+		,@SevenDaysLeaveId TINYINT = 11
 
-	CREATE TABLE #tblGroupIds (GroupId INT)
+	CREATE TABLE #tmpGroupIds (GroupId INT)
 
 	IF ISNULL(@TeamIds, '') <> ''
 	BEGIN
-		INSERT INTO #tblGroupIds (GroupId)
+		INSERT INTO #tmpGroupIds (GroupId)
 		SELECT DISTINCT value
 		FROM STRING_SPLIT(@TeamIds, ',')
 	END
 
-	CREATE TABLE #tblEmployeeDiscipline (
+	CREATE TABLE #tmpEmployeeDiscipline (
 		WorkDate DATE
 		,EmpId INT
-		,ChangeShift INT
-		,MissingCheckInOut INT
-		,LateIn INT
-		,EarlyOut INT
-		,[Absent] INT
-		,UnplannedLeave INT
-		,WeekendLeave INT
-		,UnpaidLeave INT
-		,WorkingUnderTime INT
-		,UnpaidLeaveAbsent INT
-		,SevenDaysLeave INT
-		,VerbalWarning INT
-		,WrittenWarning INT
-		,OtherDiscipline INT
+        ,GroupId INT
+        ,IsLocal BIT
+		,ChangeShift TINYINT
+		,MissingCheckInOut TINYINT
+		,LateIn TINYINT
+		,EarlyOut TINYINT
+		,[Absent] TINYINT
+		,UnplannedLeave TINYINT
+		,WeekendLeave TINYINT
+		,UnpaidLeave TINYINT
+		,WorkingUnderTime TINYINT
+		,UnpaidLeaveAbsent TINYINT
+		,SevenDaysLeave TINYINT
+		,VerbalWarning TINYINT
+		,WrittenWarning TINYINT
+		,OtherDiscipline TINYINT
 		,OtherDisciplineScore DECIMAL(5, 2)
 		)
 
-	INSERT INTO #tblEmployeeDiscipline (
+	INSERT INTO #tmpEmployeeDiscipline (
 		WorkDate
 		,EmpId
+        ,GroupId
+        ,IsLocal
 		,ChangeShift
 		,MissingCheckInOut
 		,LateIn
@@ -73,132 +93,36 @@ BEGIN
 		)
 	SELECT d.WorkDate
 		,d.EmpId
-		,(CASE (
-				SELECT drule.[Value]
-				FROM dbo.DisciplineGroupRule AS drule WITH (NOLOCK)
-				WHERE drule.DisciplineTypeId = 1 -- change shift
-					AND drule.GroupId = emp.GroupId
-					AND drule.IsLocal = empSum.IsLocal
-				)
-			WHEN 1 THEN d.IsChangeShift
-			ELSE 0 END
-			) AS ChangeShift
-		,(CASE (
-				SELECT drule.[Value]
-				FROM dbo.DisciplineGroupRule AS drule WITH (NOLOCK)
-				WHERE drule.DisciplineTypeId = 2 -- missing check in / out
-					AND drule.GroupId = emp.GroupId
-					AND drule.IsLocal = empSum.IsLocal
-				)
-			WHEN 1 THEN d.IsMissingCheckInOut
-			ELSE 0 END
-			) AS MissingCheckInOut
-		,(CASE (
-				SELECT drule.[Value]
-				FROM dbo.DisciplineGroupRule AS drule WITH (NOLOCK)
-				WHERE drule.DisciplineTypeId = 3 -- late in
-					AND drule.GroupId = emp.GroupId
-					AND drule.IsLocal = empSum.IsLocal
-				)
-			WHEN 1 THEN d.IsLateIn
-			ELSE 0 END
-			) AS LateIn
-		,(CASE (
-				SELECT drule.[Value]
-				FROM dbo.DisciplineGroupRule AS drule WITH (NOLOCK)
-				WHERE drule.DisciplineTypeId = 4 -- early out
-					AND drule.GroupId = emp.GroupId
-					AND drule.IsLocal = empSum.IsLocal
-				)
-			WHEN 1 THEN d.IsEarlyOut
-			ELSE 0 END
-			) AS EarlyOut
-		,(CASE (
-				SELECT drule.[Value]
-				FROM dbo.DisciplineGroupRule AS drule WITH (NOLOCK)
-				WHERE drule.DisciplineTypeId = 5 -- absent
-					AND drule.GroupId = emp.GroupId
-					AND drule.IsLocal = empSum.IsLocal
-				)
-			WHEN 1 THEN d.IsAbsent
-			ELSE 0 END
-			) AS [Absent]
-		,(CASE (
-				SELECT drule.[Value]
-				FROM dbo.DisciplineGroupRule AS drule WITH (NOLOCK)
-				WHERE drule.DisciplineTypeId = 9 -- unplanned leave
-					AND drule.GroupId = emp.GroupId
-					AND drule.IsLocal = empSum.IsLocal
-				)
-			WHEN 1 THEN d.IsUnplannedLeave
-			ELSE 0 END
-			) AS UnplannedLeave
-		,(CASE (
-				SELECT drule.[Value]
-				FROM dbo.DisciplineGroupRule AS drule WITH (NOLOCK)
-				WHERE drule.DisciplineTypeId = 10 -- weekend leave
-					AND drule.GroupId = emp.GroupId
-					AND drule.IsLocal = empSum.IsLocal
-				)
-			WHEN 1 THEN d.IsWeekendLeave
-			ELSE 0 END
-			) AS WeekendLeave
-		,(CASE (
-				SELECT drule.[Value]
-				FROM dbo.DisciplineGroupRule AS drule WITH (NOLOCK)
-				WHERE drule.DisciplineTypeId = 6 -- unpaid leave
-					AND drule.GroupId = emp.GroupId
-					AND drule.IsLocal = empSum.IsLocal
-				)
-			WHEN 1 THEN d.IsUnpaidLeave
-			ELSE 0 END
-			) AS UnpaidLeave
-		,(CASE (
-				SELECT drule.[Value]
-				FROM dbo.DisciplineGroupRule AS drule WITH (NOLOCK)
-				WHERE drule.DisciplineTypeId = 7 -- working under time
-					AND drule.GroupId = emp.GroupId
-					AND drule.IsLocal = empSum.IsLocal
-				)
-			WHEN 1 THEN d.IsWorkingUndertime
-			ELSE 0 END
-			) AS WorkingUnderTime
-		,(CASE (
-				SELECT drule.[Value]
-				FROM dbo.DisciplineGroupRule AS drule WITH (NOLOCK)
-				WHERE drule.DisciplineTypeId = 8 -- unpaid leave absent
-					AND drule.GroupId = emp.GroupId
-					AND drule.IsLocal = empSum.IsLocal
-				)
-			WHEN 1 THEN d.IsUnpaidLeaveAbsent
-			ELSE 0 END
-			) AS UnpaidLeaveAbsent
-		,(CASE (
-				SELECT drule.[Value]
-				FROM dbo.DisciplineGroupRule AS drule WITH (NOLOCK)
-				WHERE drule.DisciplineTypeId = 11 -- seven days leave
-					AND drule.GroupId = emp.GroupId
-					AND drule.IsLocal = empSum.IsLocal
-				)
-			WHEN 1 THEN d.IsSevenDaysLeave
-			ELSE 0 END
-			) AS SevenDaysLeave
+        ,emp.GroupId
+        ,empsum.IsLocal
+		,d.IsChangeShift
+		,d.IsMissingCheckInOut
+		,d.IsLateIn
+		,d.IsEarlyOut
+		,d.IsAbsent
+		,d.IsUnplannedLeave
+		,d.IsWeekendLeave
+		,d.IsUnpaidLeave
+		,d.IsWorkingUndertime
+		,d.IsUnpaidLeaveAbsent
+		,d.IsSevenDaysLeave
 		,0 AS VerbalWarning
 		,0 AS WrittenWarning
 		,0 AS OtherDiscipline
 		,0 AS OtherDisciplineScore
 	FROM dbo.Discipline AS d WITH (NOLOCK)
 		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON d.EmpId = emp.EmpId
+        INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
 		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
 		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId
-	WHERE d.WorkDate BETWEEN @FromDate
-			AND @ToDate
+	WHERE ce.CompanyId = @CompanyId
+        AND d.WorkDate BETWEEN @FromDate AND @ToDate
 		AND emp.isDeleted = 0
 		AND emp.[Enabled] = 1
         AND d.IsDeleted = 0
 		AND EXISTS (
 			SELECT 1
-			FROM #tblGroupIds AS tbl WITH (NOLOCK)
+			FROM #tmpGroupIds AS tbl
 			WHERE emp.GroupId = tbl.GroupId
 			)
 		AND (@EmployeeId IS NULL OR emp.EmpId = @EmployeeId)
@@ -207,6 +131,8 @@ BEGIN
 	UNION ALL
 	SELECT dis.WorkDate
 		,dis.EmpId
+        ,emp.GroupId
+        ,empsum.IsLocal
 		,0 AS ChangeShift
 		,0 AS MissingCheckInOut
 		,0 AS LateIn
@@ -218,44 +144,52 @@ BEGIN
 		,0 AS WorkingUnderTime
 		,0 AS UnpaidLeaveAbsent
 		,0 AS SevenDaysLeave
-		,(CASE 
-			WHEN dis.DisciplineTypeId = - 1 THEN 1
-			ELSE 0 END
-			) AS VerbalWarning
-		,(CASE 
-			WHEN dis.DisciplineTypeId = - 2 THEN 1
-			ELSE 0 END
-			) AS WrittenWarning
-		,(CASE 
-			WHEN dis.DisciplineTypeId = - 3 THEN 1
-			ELSE 0 END
-			) AS OtherDiscipline
+		,(CASE WHEN dis.DisciplineTypeId = -1 THEN 1 ELSE 0 END) AS VerbalWarning
+		,(CASE WHEN dis.DisciplineTypeId = -2 THEN 1 ELSE 0 END) AS WrittenWarning
+		,(CASE WHEN dis.DisciplineTypeId = -3 THEN 1 ELSE 0 END) AS OtherDiscipline
 		,dis.Score AS OtherDisciplineScore
 	FROM dbo.OtherDiscipline AS dis WITH (NOLOCK)
 		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON dis.EmpId = emp.EmpId
+        INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
 		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
 		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId
-	WHERE dis.WorkDate BETWEEN @FromDate
-			AND @ToDate
+	WHERE ce.CompanyId = @CompanyId
+        AND dis.WorkDate BETWEEN @FromDate AND @ToDate
 		AND emp.isDeleted = 0
 		AND emp.[Enabled] = 1
         AND dis.IsDeleted = 0
 		AND EXISTS (
 			SELECT 1
-			FROM #tblGroupIds AS tbl WITH (NOLOCK)
+			FROM #tmpGroupIds AS tbl
 			WHERE emp.GroupId = tbl.GroupId
 			)
 		AND (@EmployeeId IS NULL OR emp.EmpId = @EmployeeId)
 		AND (@IsLocal IS NULL OR empsum.IsLocal = @IsLocal)
 
-	CREATE TABLE #tblEmployeeDisciplineFinalScore (
+    UPDATE tmpdis
+    SET tmpdis.ChangeShift = CASE WHEN drule.DisciplineTypeId = @ChangeShiftId AND ISNULL(drule.Value, 0) = 0 THEN 0 ELSE tmpdis.ChangeShift END
+        ,tmpdis.MissingCheckInOut = CASE WHEN drule.DisciplineTypeId = @MissingCheckInOutId AND ISNULL(drule.Value, 0) = 0 THEN 0 ELSE tmpdis.MissingCheckInOut END
+        ,tmpdis.LateIn = CASE WHEN drule.DisciplineTypeId = @LateInId AND ISNULL(drule.Value, 0) = 0 THEN 0 ELSE tmpdis.LateIn END
+        ,tmpdis.EarlyOut = CASE WHEN drule.DisciplineTypeId = @EarlyOutId AND ISNULL(drule.Value, 0) = 0 THEN 0 ELSE tmpdis.EarlyOut END
+        ,tmpdis.[Absent] = CASE WHEN drule.DisciplineTypeId = @AbsentId AND ISNULL(drule.Value, 0) = 0 THEN 0 ELSE tmpdis.[Absent] END
+        ,tmpdis.UnplannedLeave = CASE WHEN drule.DisciplineTypeId = @UnplannedLeaveId AND ISNULL(drule.Value, 0) = 0 THEN 0 ELSE tmpdis.UnplannedLeave END
+        ,tmpdis.UnpaidLeave = CASE WHEN drule.DisciplineTypeId = @UnpaidLeaveId AND ISNULL(drule.Value, 0) = 0 THEN 0 ELSE tmpdis.UnpaidLeave END
+        ,tmpdis.WorkingUnderTime = CASE WHEN drule.DisciplineTypeId = @WorkingUnderTimeId AND ISNULL(drule.Value, 0) = 0 THEN 0 ELSE tmpdis.WorkingUnderTime END
+        ,tmpdis.UnpaidLeaveAbsent = CASE WHEN drule.DisciplineTypeId = @UnpaidLeaveAbsentId AND ISNULL(drule.Value, 0) = 0 THEN 0 ELSE tmpdis.UnpaidLeaveAbsent END
+        ,tmpdis.WeekendLeave = CASE WHEN drule.DisciplineTypeId = @WeekendLeaveId AND ISNULL(drule.Value, 0) = 0 THEN 0 ELSE tmpdis.WeekendLeave END
+        ,tmpdis.SevenDaysLeave = CASE WHEN drule.DisciplineTypeId = @SevenDaysLeaveId AND ISNULL(drule.Value, 0) = 0 THEN 0 ELSE tmpdis.SevenDaysLeave END
+    FROM #tmpEmployeeDiscipline AS tmpdis
+        LEFT JOIN dbo.DisciplineGroupRule AS drule WITH (NOLOCK) ON tmpdis.GroupId = drule.GroupId
+        AND drule.IsLocal = tmpdis.IsLocal
+
+	CREATE TABLE #tmpEmployeeDisciplineFinalScore (
 		WorkDate DATE
 		,EmpId INT
 		,SystemSubtractScore FLOAT
 		,ApproverSubtractScore FLOAT
 		)
 
-	INSERT INTO #tblEmployeeDisciplineFinalScore (
+	INSERT INTO #tmpEmployeeDisciplineFinalScore (
 		WorkDate
 		,EmpId
 		,SystemSubtractScore
@@ -263,73 +197,38 @@ BEGIN
 		)
 	SELECT tbldis.WorkDate
 		,tbldis.EmpId
-		,(tbldis.ChangeShift * dbo.fncGetDisciplineScoreById(1)
-		  + tbldis.MissingCheckInOut * dbo.fncGetDisciplineScoreById(2)
-		  + tbldis.LateIn * dbo.fncGetDisciplineScoreById(3)
-		  + tbldis.EarlyOut * dbo.fncGetDisciplineScoreById(4)
-		  + tbldis.[Absent] * dbo.fncGetDisciplineScoreById(5)
-		  + tbldis.UnpaidLeave * dbo.fncGetDisciplineScoreById(6)
-		  + tbldis.WorkingUnderTime * dbo.fncGetDisciplineScoreById(7)
-		  + tbldis.UnpaidLeaveAbsent * dbo.fncGetDisciplineScoreById(8)
-		  + tbldis.UnplannedLeave * dbo.fncGetDisciplineScoreById(9)
-		  + tbldis.WeekendLeave * dbo.fncGetDisciplineScoreById(10)
-		  + tbldis.SevenDaysLeave * dbo.fncGetDisciplineScoreById(11)) AS SystemSubtractScore
-		,CASE 
-			WHEN ignored.ApproverSubtractScore IS NOT NULL THEN ignored.ApproverSubtractScore
-			ELSE 0
-			END
-	FROM #tblEmployeeDiscipline AS tbldis WITH (NOLOCK)
+		,(
+            tbldis.ChangeShift * dbo.fncGetDisciplineScoreById(1)
+		    + tbldis.MissingCheckInOut * dbo.fncGetDisciplineScoreById(2)
+		    + tbldis.LateIn * dbo.fncGetDisciplineScoreById(3)
+		    + tbldis.EarlyOut * dbo.fncGetDisciplineScoreById(4)
+		    + tbldis.[Absent] * dbo.fncGetDisciplineScoreById(5)
+		    + tbldis.UnpaidLeave * dbo.fncGetDisciplineScoreById(6)
+		    + tbldis.WorkingUnderTime * dbo.fncGetDisciplineScoreById(7)
+		    + tbldis.UnpaidLeaveAbsent * dbo.fncGetDisciplineScoreById(8)
+		    + tbldis.UnplannedLeave * dbo.fncGetDisciplineScoreById(9)
+		    + tbldis.WeekendLeave * dbo.fncGetDisciplineScoreById(10)
+		    + tbldis.SevenDaysLeave * dbo.fncGetDisciplineScoreById(11)
+        ) AS SystemSubtractScore
+		,CASE WHEN ignored.ApproverSubtractScore IS NOT NULL THEN ignored.ApproverSubtractScore ELSE 0 END
+	FROM #tmpEmployeeDiscipline AS tbldis WITH (NOLOCK)
 		OUTER APPLY (
 		SELECT dis.EmpId
 			,dis.WorkDate
 			,(
-				(CASE 
-					WHEN dis.IsChangeShift = 1
-						AND ignored.IsIgnoredChangeShift = 0 THEN dbo.fncGetDisciplineScoreById(1)
-					ELSE 0 END
-					) + (CASE 
-					WHEN dis.IsMissingCheckInOut = 1
-						AND ignored.IsIgnoredMissingCheckInOut = 0 THEN dbo.fncGetDisciplineScoreById(2)
-					ELSE 0 END
-					) + (CASE 
-					WHEN dis.IsLateIn = 1
-						AND ignored.IsIgnoredLateIn = 0 THEN dbo.fncGetDisciplineScoreById(3)
-					ELSE 0 END
-					) + (CASE 
-					WHEN dis.IsEarlyOut = 1
-						AND ignored.IsIgnoredEarlyOut = 0 THEN dbo.fncGetDisciplineScoreById(4)
-					ELSE 0 END
-					) + (CASE 
-					WHEN dis.IsAbsent = 1
-						AND ignored.IsIgnoredAbsent = 0 THEN dbo.fncGetDisciplineScoreById(5)
-					ELSE 0 END
-					) + (CASE 
-					WHEN dis.IsUnplannedLeave = 1
-						AND ignored.IsIgnoredUnplannedLeave = 0 THEN dbo.fncGetDisciplineScoreById(9)
-					ELSE 0 END
-					) + (CASE 
-					WHEN dis.IsUnpaidLeave = 1
-						AND ignored.IsIgnoredUnpaidLeave = 0 THEN dbo.fncGetDisciplineScoreById(6)
-					ELSE 0 END
-					) + (CASE 
-					WHEN dis.IsWorkingUndertime = 1
-						AND ignored.IsIgnoredWorkingUndertime = 0 THEN dbo.fncGetDisciplineScoreById(7)
-					ELSE 0 END
-					) + (CASE 
-					WHEN dis.IsUnpaidLeaveAbsent = 1
-						AND ignored.IsIgnoredUnpaidLeaveAbsent = 0 THEN dbo.fncGetDisciplineScoreById(8)
-					ELSE 0 END
-					) + (CASE 
-					WHEN dis.IsWeekendLeave = 1
-						AND ignored.IsIgnoredWeekendLeave = 0 THEN dbo.fncGetDisciplineScoreById(10)
-					ELSE 0 END
-					) + (CASE 
-					WHEN dis.IsSevenDaysLeave = 1
-						AND ignored.IsIgnoredSevenDaysLeave = 0 THEN dbo.fncGetDisciplineScoreById(11)
-					ELSE 0 END
-					)
-				) AS ApproverSubtractScore
-		FROM dbo.Discipline AS dis WITH (NOLOCK)
+				CASE WHEN dis.ChangeShift = 1 AND ignored.IsIgnoredChangeShift = 0 THEN dbo.fncGetDisciplineScoreById(1) ELSE 0 END
+				+ CASE WHEN dis.MissingCheckInOut = 1 AND ignored.IsIgnoredMissingCheckInOut = 0 THEN dbo.fncGetDisciplineScoreById(2) ELSE 0 END
+                + CASE WHEN dis.LateIn = 1 AND ignored.IsIgnoredLateIn = 0 THEN dbo.fncGetDisciplineScoreById(3) ELSE 0 END
+				+ CASE WHEN dis.EarlyOut = 1 AND ignored.IsIgnoredEarlyOut = 0 THEN dbo.fncGetDisciplineScoreById(4) ELSE 0 END
+				+ CASE WHEN dis.[Absent] = 1 AND ignored.IsIgnoredAbsent = 0 THEN dbo.fncGetDisciplineScoreById(5) ELSE 0 END
+				+ CASE WHEN dis.UnplannedLeave = 1 AND ignored.IsIgnoredUnplannedLeave = 0 THEN dbo.fncGetDisciplineScoreById(9) ELSE 0 END
+				+ CASE WHEN dis.UnpaidLeave = 1 AND ignored.IsIgnoredUnpaidLeave = 0 THEN dbo.fncGetDisciplineScoreById(6) ELSE 0 END
+				+ CASE WHEN dis.WorkingUndertime = 1 AND ignored.IsIgnoredWorkingUndertime = 0 THEN dbo.fncGetDisciplineScoreById(7) ELSE 0 END
+				+ CASE WHEN dis.UnpaidLeaveAbsent = 1 AND ignored.IsIgnoredUnpaidLeaveAbsent = 0 THEN dbo.fncGetDisciplineScoreById(8) ELSE 0 END
+				+ CASE WHEN dis.WeekendLeave = 1 AND ignored.IsIgnoredWeekendLeave = 0 THEN dbo.fncGetDisciplineScoreById(10) ELSE 0 END
+				+ CASE WHEN dis.SevenDaysLeave = 1 AND ignored.IsIgnoredSevenDaysLeave = 0 THEN dbo.fncGetDisciplineScoreById(11) ELSE 0 END
+			) AS ApproverSubtractScore
+		FROM #tmpEmployeeDiscipline AS dis
 			INNER JOIN dbo.DisciplineIgnore AS ignored WITH (NOLOCK) ON dis.EmpId = ignored.EmpId
 			AND dis.WorkDate = ignored.WorkDate
 		WHERE ignored.EmpId = tbldis.EmpId
@@ -351,7 +250,7 @@ BEGIN
 		AND tbldis.OtherDisciplineScore = 0
 
 	DECLARE @Is_HR_SA BIT
-	DECLARE @tblRole TABLE (RoleId INT)
+	DECLARE @tblRole TABLE (RoleId SMALLINT)
 
 	INSERT INTO @tblRole (RoleId)
 	SELECT value
@@ -428,16 +327,16 @@ BEGIN
 		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
 		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
 		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId
-		LEFT JOIN #tblEmployeeDiscipline AS empD WITH (NOLOCK) ON emp.EmpId = empD.EmpId
-		LEFT JOIN #tblEmployeeDisciplineFinalScore AS empF WITH (NOLOCK) ON empF.WorkDate = empD.WorkDate
+		LEFT JOIN #tmpEmployeeDiscipline AS empD ON emp.EmpId = empD.EmpId
+		LEFT JOIN #tmpEmployeeDisciplineFinalScore AS empF ON empF.WorkDate = empD.WorkDate
 		AND empF.EmpId = empD.EmpId
 	WHERE emp.[Enabled] = 1
 		AND emp.IsDeleted = 0
 		AND ce.CompanyId = @CompanyId
 		AND EXISTS (
 			SELECT 1
-			FROM #tblGroupIds AS tbl WITH (NOLOCK)
-			WHERE emp.GroupId = tbl.GroupId
+			FROM #tmpGroupIds AS tmpgr
+			WHERE emp.GroupId = tmpgr.GroupId
 			)
 		AND (@EmployeeId IS NULL OR emp.EmpId = @EmployeeId)
 		AND (@IsLocal IS NULL OR empsum.IsLocal = @IsLocal)
@@ -447,8 +346,8 @@ BEGIN
 				@IsShowAll = 0
 				AND EXISTS (
 					SELECT 1
-					FROM #tblEmployeeDiscipline WITH (NOLOCK)
-					WHERE emp.EmpId = EmpId
+					FROM #tmpEmployeeDiscipline AS tmpd
+					WHERE emp.EmpId = tmpd.EmpId
 					)
 				)
 			)
@@ -514,63 +413,21 @@ BEGIN
 				)
 			)
 		AND (
-			ISNULL(@ReasonId, '') = ''
-			OR (
-				@ReasonId = 1
-				AND empD.ChangeShift > 0
-				)
-			OR (
-				@ReasonId = 2
-				AND empD.MissingCheckInOut > 0
-				)
-			OR (
-				@ReasonId = 3
-				AND empD.LateIn > 0
-				)
-			OR (
-				@ReasonId = 4
-				AND empD.EarlyOut > 0
-				)
-			OR (
-				@ReasonId = 5
-				AND empD.[Absent] > 0
-				)
-			OR (
-				@ReasonId = 9
-				AND empD.UnplannedLeave > 0
-				)
-			OR (
-				@ReasonId = 10
-				AND empD.WeekendLeave > 0
-				)
-			OR (
-				@ReasonId = 6
-				AND empD.UnpaidLeave > 0
-				)
-			OR (
-				@ReasonId = 7
-				AND empD.WorkingUnderTime > 0
-				)
-			OR (
-				@ReasonId = 8
-				AND empD.UnpaidLeaveAbsent > 0
-				)
-			OR (
-				@ReasonId = 11
-				AND empD.SevenDaysLeave > 0
-				)
-			OR (
-				@ReasonId = - 1
-				AND empD.VerbalWarning > 0
-				)
-			OR (
-				@ReasonId = - 2
-				AND empD.WrittenWarning > 0
-				)
-			OR (
-				@ReasonId = - 3
-				AND empD.OtherDiscipline > 0
-				)
+			@ReasonId IS NULL
+			OR (@ReasonId = @ChangeShiftId AND empD.ChangeShift > 0)
+			OR (@ReasonId = @MissingCheckInOutId AND empD.MissingCheckInOut > 0)
+			OR (@ReasonId = @LateInId AND empD.LateIn > 0)
+			OR (@ReasonId = @EarlyOutId AND empD.EarlyOut > 0)
+			OR (@ReasonId = @AbsentId AND empD.[Absent] > 0)
+			OR (@ReasonId = @UnplannedLeaveId AND empD.UnplannedLeave > 0)
+			OR (@ReasonId = @WeekendLeaveId AND empD.WeekendLeave > 0)
+			OR (@ReasonId = @UnpaidLeaveId AND empD.UnpaidLeave > 0)
+			OR (@ReasonId = @WorkingUnderTimeId AND empD.WorkingUnderTime > 0)
+			OR (@ReasonId = @UnpaidLeaveAbsentId AND empD.UnpaidLeaveAbsent > 0)
+			OR (@ReasonId = @SevenDaysLeaveId AND empD.SevenDaysLeave > 0)
+			OR (@ReasonId = -1 AND empD.VerbalWarning > 0)
+			OR (@ReasonId = -2 AND empD.WrittenWarning > 0)
+			OR (@ReasonId = -3 AND empD.OtherDiscipline > 0)
 			)
 	GROUP BY empD.EmpId
 		,emp.EmpId
@@ -585,9 +442,9 @@ BEGIN
 		,gr.[Name] ASC
 		,emp.Code ASC
 
-	DROP TABLE #tblEmployeeDiscipline
+	DROP TABLE #tmpEmployeeDiscipline
 
-	DROP TABLE #tblEmployeeDisciplineFinalScore
+	DROP TABLE #tmpEmployeeDisciplineFinalScore
 
-	DROP TABLE #tblGroupIds
+	DROP TABLE #tmpGroupIds
 END

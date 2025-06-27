@@ -62,36 +62,18 @@ BEGIN
 
 	IF ISNULL(@empIds, '') <> ''
 	BEGIN
-		INSERT INTO #tempEmployeeIds (
-			EmpId
-			,JoinedDate
-			,ResignedDate
-			)
-		SELECT emp.EmpId
-			,emp.JoinedDate
-			,emp.ResignedDate
+		INSERT INTO #tempEmployeeIds (EmpId, JoinedDate, ResignedDate)
+		SELECT emp.EmpId, emp.JoinedDate, emp.ResignedDate
 		FROM STRING_SPLIT(@empIds, ',') AS tmp
 			INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON CAST(tmp.value AS INT) = emp.EmpId
 	END
 	ELSE
 	BEGIN
-		INSERT INTO #tempEmployeeIds (
-			EmpId
-			,JoinedDate
-			,ResignedDate
-			)
-		SELECT EmpId
-			,JoinedDate
-			,ResignedDate
+		INSERT INTO #tempEmployeeIds (EmpId, JoinedDate, ResignedDate)
+		SELECT EmpId, JoinedDate, ResignedDate
 		FROM dbo.Employee WITH (NOLOCK)
-		WHERE (
-				@isEnable IS NULL
-				OR [Enabled] = @isEnable
-				)
-			AND (
-				@isDelete IS NULL
-				OR isDeleted = @isDelete
-				)
+		WHERE (@isEnable IS NULL OR [Enabled] = @isEnable)
+			AND (@isDelete IS NULL OR isDeleted = @isDelete)
 	END
 
 	INSERT INTO #tempEmployeeCalendar (
@@ -108,12 +90,7 @@ BEGIN
 		,ISNULL(empca.IsHoliday, 0)
 	FROM dbo.EmployeeCalendar AS empca WITH (NOLOCK)
 		INNER JOIN #tempEmployeeIds AS emp ON empca.EmpId = emp.EmpId
-	WHERE empca.WorkDate BETWEEN @fromDate AND @toDate
-		--AND (
-		--	empca.ShiftId IS NOT NULL
-		--	OR empca.IsOffDay = 1
-		--	OR empca.IsHoliday = 1
-		--	)
+	WHERE empca.WorkDate BETWEEN CAST(@fromDate AS DATETIME) AND CAST(@toDate AS DATETIME)
 
 	WHILE @tempDate <= @toDate
 	BEGIN
@@ -164,13 +141,15 @@ BEGIN
 			    ELSE 0 END
 			    )
 		FROM dbo.Employee AS emp WITH (NOLOCK)
-			INNER JOIN #tempEmployeeIds AS tblemp ON emp.EmpId = tblemp.EmpId
+			INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
+            INNER JOIN #tempEmployeeIds AS tblemp ON emp.EmpId = tblemp.EmpId
 			INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
 			AND empsum.IsDefaultSchedule = 1
 			INNER JOIN dbo.EmployeeDefaultShift AS empshift WITH (NOLOCK) ON emp.EmpId = empshift.EmpId
-            LEFT JOIN dbo.Holiday AS holiday WITH (NOLOCK) ON holiday.CompanyId = @CompanyId
+            LEFT JOIN dbo.Holiday AS holiday WITH (NOLOCK) ON holiday.CompanyId = ce.CompanyId
             AND @tempDate BETWEEN holiday.FromDate AND holiday.ToDate
-		WHERE NOT EXISTS (
+		WHERE (@CompanyId IS NULL OR ce.CompanyId = @CompanyId)
+            AND NOT EXISTS (
 				SELECT 1
 				FROM #tempEmployeeCalendar AS tbl
 				WHERE tbl.EmpId = emp.EmpId
@@ -200,10 +179,11 @@ BEGIN
 			    ELSE 0 END
 			    )
 		FROM dbo.Employee AS emp WITH (NOLOCK)
+			INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
 			INNER JOIN #tempEmployeeIds AS tblemp ON emp.EmpId = tblemp.EmpId
 			INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
 			AND empsum.IsDefaultSchedule = 0
-            LEFT JOIN dbo.Holiday AS holiday WITH (NOLOCK) ON holiday.CompanyId = @CompanyId
+            LEFT JOIN dbo.Holiday AS holiday WITH (NOLOCK) ON holiday.CompanyId = ce.CompanyId
             AND @tempDate BETWEEN holiday.FromDate AND holiday.ToDate
 			OUTER APPLY (
 			SELECT TOP 1 empshift.ShiftId
@@ -213,7 +193,8 @@ BEGIN
 				AND empshift.FromDate <= @tempDate
 			ORDER BY empshift.FromDate DESC
 			) AS empshift
-		WHERE NOT EXISTS (
+		WHERE (@CompanyId IS NULL OR ce.CompanyId = @CompanyId)
+            AND NOT EXISTS (
 				SELECT 1
 				FROM #tempEmployeeCalendar AS tbl
 				WHERE tbl.EmpId = emp.EmpId
@@ -291,8 +272,7 @@ BEGIN
 	UPDATE dbo.tmpEmployeeCalendar WITH (ROWLOCK)
 	SET IsOffDay = 0
 		,ModifiedDate = GETDATE()
-	WHERE WorkDate BETWEEN @fromDate
-			AND @toDate
+	WHERE WorkDate BETWEEN @fromDate AND @toDate
 		AND IsOffDay = 1
 		AND IsHoliday = 1
 
