@@ -18,6 +18,7 @@ AS
 
     Revisions:
         20250603@Tim: fix bug update leave request
+        20250627@Mira: fix bug update leave request
     Param's Explanation:
 */
 BEGIN
@@ -592,7 +593,7 @@ BEGIN
 				)
 			OR (
 				lr.RequestId IS NOT NULL
-				AND empca.LeaveDay = 0
+				AND (empca.LeaveDay = 0 OR empca.LeaveTypeId <> lr.LeaveTypeId)
 				)
 			)
 
