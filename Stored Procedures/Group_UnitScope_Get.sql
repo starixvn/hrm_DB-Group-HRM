@@ -13,6 +13,7 @@ Revisions:
 	20250310@Mira: filter by CompanyId [Redmine: #217976]
     20250403@Tim: remove section [Redmine: #222886]
 	20250515@Jay: add years of service for extra leave [Redmine: #227166]
+	20250701@Tim: Show Nexcel, Lumiplus, NexVision [Redmine: #225531]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -22,20 +23,37 @@ BEGIN
 		,NoOfMembers INT
 		)
 
+	CREATE TABLE #tmpGroupEmployees (
+		GroupId INT,
+		EmpId INT,
+		PRIMARY KEY (GroupId, EmpId)
+	)
+
+	INSERT INTO #tmpGroupEmployees (GroupId, EmpId)
+	SELECT DISTINCT emp.GroupId, emp.EmpId
+	FROM dbo.Employee AS emp WITH (NOLOCK)
+		INNER JOIN dbo.EmployeeSummary AS esum WITH (NOLOCK) ON esum.EmpId = emp.EmpId
+	WHERE emp.GroupId IS NOT NULL
+		AND emp.isDeleted = 0 
+		AND emp.[Enabled] = 1
+		AND esum.IsLocal IS NOT NULL
+
+	INSERT INTO #tmpGroupEmployees (GroupId, EmpId)
+	SELECT DISTINCT ce.GroupId, ce.EmpId
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+	WHERE ce.GroupId IS NOT NULL
+		AND ce.IsDeleted = 0 
+		AND ce.[Enabled] = 1
+		AND ce.IsSpecialUser = 0
+
 	INSERT INTO #tmpGroup (
 		GroupId
 		,NoOfMembers
 		)
 	SELECT g.GroupId
-		,SUM(CASE 
-				WHEN esum.IsLocal IS NOT NULL THEN 1
-				ELSE 0
-				END) AS NoOfMembers
+		,ISNULL(COUNT(DISTINCT tge.EmpId), 0) AS NoOfMembers
 	FROM dbo.[Group] AS g WITH (NOLOCK)
-		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON emp.GroupId = g.GroupId
-		AND emp.isDeleted = 0
-		AND emp.[Enabled] = 1
-		INNER JOIN dbo.EmployeeSummary AS esum WITH (NOLOCK) ON esum.EmpId = emp.EmpId
+		LEFT JOIN #tmpGroupEmployees AS tge ON g.GroupId = tge.GroupId
 	WHERE (
 			 @TeamId IS NULL
 			OR g.GroupId =  @TeamId
@@ -99,4 +117,5 @@ BEGIN
 	ORDER BY d.Code
 
     DROP TABLE #tmpGroup
+    DROP TABLE #tmpGroupEmployees
 END
