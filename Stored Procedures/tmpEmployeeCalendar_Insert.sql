@@ -642,6 +642,7 @@ BEGIN
 		,empca.ToTime2 = NULL
 		,empca.ModifiedDate = GETDATE()
 	FROM dbo.tmpEmployeeCalendar AS empca WITH (ROWLOCK)
+		INNER JOIN #tempEmployeeIds AS tblemp ON empca.EmpId = tblemp.EmpId
 		LEFT JOIN #tblHalfDayRequest AS rq ON empca.EmpId = rq.EmpId
 		AND empca.WorkDate = rq.WorkDate
 	WHERE empca.WorkDate BETWEEN @fromDate AND @toDate
@@ -668,6 +669,7 @@ BEGIN
 		,empca.ToTime2 = rq.ToTime
 		,empca.ModifiedDate = GETDATE()
 	FROM dbo.tmpEmployeeCalendar AS empca WITH (ROWLOCK)
+		INNER JOIN #tempEmployeeIds AS tblemp ON empca.EmpId = tblemp.EmpId
 		INNER JOIN #tblHalfDayRequest AS rq ON empca.EmpId = rq.EmpId
 		AND empca.WorkDate = rq.WorkDate
 	WHERE empca.WorkDate BETWEEN @fromDate AND @toDate
