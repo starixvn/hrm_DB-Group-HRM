@@ -66,6 +66,7 @@ Task: UPDATE an employee Information
 DB: HRM
 
 Revisions:
+	-Henry- 19062025: fix ambiguous column error
 Param's Explanation:
 */
 BEGIN
@@ -112,8 +113,8 @@ BEGIN
 		AND Nickname = @nickname
 		AND c.CompanyId = @CompanyId
 		AND (
-			isDeleted = 0
-			OR [Enabled] = 1
+			e.isDeleted = 0
+			OR e.[Enabled] = 1
 			)
 
 	IF ISNULL(@EmpId_exist, 0) <> 0

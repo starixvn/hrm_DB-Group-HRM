@@ -14,8 +14,8 @@ Created: Tim.Trinh@2019-11-13
 Task: shift statistic detail
 DB: HRM_SMS
 Original:
-
 Revisions:
+	- 20250619@Henry: fix ambiguous column error migrate nex
 Param's Explanation:
 
 */
@@ -67,7 +67,7 @@ BEGIN
 		SELECT emp.EmpId
 		FROM dbo.Employee AS emp WITH (NOLOCK)
 		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = emp.EmpId AND ce.CompanyId = @CompanyId
-		WHERE [Enabled] = 1
+		WHERE emp.[Enabled] = 1
 	END
 
 	SELECT empca.WorkDate

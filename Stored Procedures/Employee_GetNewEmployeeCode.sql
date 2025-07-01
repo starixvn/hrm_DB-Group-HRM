@@ -10,17 +10,7 @@ DB: HRM
 Original:
 
 Revisions:
-*/
-ALTER PROCEDURE [dbo].[Employee_GetNewEmployeeCode]
-	@CompanyId SMALLINT
-AS
-/*
-Created: Tom.Vo@2013-10-21
-Task: get employee by code
-DB: HRM
-Original:
-
-Revisions:
+    - 20250619@Henry: fix ambiguous column error migrate nex
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -34,7 +24,7 @@ BEGIN
 		AS BIGINT))
 	FROM dbo.Employee AS e WITH(NOLOCK)
 		INNER JOIN CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = e.EmpId 
-	WHERE [Enabled] = 1 
+	WHERE e.[Enabled] = 1 
 		AND ISNULL(Code, '') != ''
 		AND ce.CompanyId = @CompanyId
 
@@ -42,7 +32,7 @@ BEGIN
 		SELECT TOP 1 @LastestPrefix = LEFT(Code, PATINDEX('%[0-9]%', Code) - 1)
 		FROM dbo.Employee AS e WITH(NOLOCK)
 		INNER JOIN CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = e.EmpId 
-		WHERE [Enabled] = 1 
+		WHERE e.[Enabled] = 1 
 			AND ISNULL(Code, '') != ''
 			AND ce.CompanyId = @CompanyId
 		ORDER BY e.EmpId DESC

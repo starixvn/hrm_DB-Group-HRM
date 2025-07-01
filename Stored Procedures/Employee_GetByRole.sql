@@ -12,6 +12,7 @@ DB: HRM
 Original:
 
 Revisions:
+    - 20250619@Henry: fix ambiguous column error migrate nex
 Param's Explanation:
 */
 BEGIN
@@ -64,7 +65,7 @@ BEGIN
 			@query IS NULL
 			OR NickName LIKE @q
 			OR FullName LIKE @q
-			OR DomainUsername LIKE @q
+			OR e.DomainUsername LIKE @q
 			OR e.Code LIKE @q
 			)
 
