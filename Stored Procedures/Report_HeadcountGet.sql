@@ -21,11 +21,13 @@ AS
 			SELECT e.*, g.DepartmentId
 			FROM dbo.Employee e WITH(NOLOCK) 
 			INNER JOIN dbo.[Group] g WITH(NOLOCK) ON g.GroupId = e.GroupId
+			INNER JOIN dbo.EmployeeSummary es WITH(NOLOCK) ON es.EmpId = e.EmpId
 			WHERE g.IsOutsource = 0 -- exclude the Outsource team 
 				AND (
 					ResignedDate >= @FromDate
 					OR (ResignedDate IS NULL AND Enabled = 1)
 				)
+				AND es.IsTopManager = 0
 		)
 		SELECT
 			e.EmpId,
@@ -42,7 +44,7 @@ AS
 				WHEN ISNULL(sub.Name, c.Name) IN ('WGI', 'BPO', 'SRM', 'EXT', 'OSEAS', NULL, '') THEN 'OTHER'
 				ELSE ct.CountryName
 			END AS Country,
-			ISNULL(CAST(ct.CountryCodeISO3 AS VARCHAR(10)), 'WFH') AS CountryCode,
+			ISNULL(CAST(ct.CountryCodeISO3 AS VARCHAR(10)), 'Other') AS CountryCode,
 			e.JoinedDate,
 			e.ConfirmedDate,
 			e.ResignedDate
