@@ -99,7 +99,7 @@ BEGIN
 		COALESCE(mg.[Name], ml.[Name]) AS ManagementLevel,
 		jg.[Name] AS JobLevel
 	FROM dbo.Employee AS e WITH (NOLOCK)
-		LEFT JOIN dbo.CompanyEmployee ce WITH (NOLOCK) ON ce.EmpId = e.EmpId 
+		LEFT JOIN dbo.CompanyEmployee ce WITH (NOLOCK) ON ce.EmpId = e.EmpId AND (ce.IsSpecialUser IS NULL OR ce.IsSpecialUser = 0)
 		LEFT JOIN dbo.EmployeeSummary AS s WITH (NOLOCK) ON s.EmpId = e.EmpId
 		LEFT JOIN dbo.[Group] AS g WITH (NOLOCK) ON COALESCE(e.GroupID, ce.GroupId) = g.GroupID
 		LEFT JOIN dbo.[Department] AS d WITH (NOLOCK) ON d.DepartmentId = g.DepartmentId
@@ -111,8 +111,8 @@ BEGIN
 		LEFT JOIN Employee eu WITH (NOLOCK) ON eu.EmpId = u.PICEmpId
 		LEFT JOIN Employee ed WITH (NOLOCK) ON ed.EmpId = d.PICEmpId
 		LEFT JOIN Employee eg WITH (NOLOCK) ON eg.EmpId = g.PICEmpId
-		LEFT JOIN HRM.dbo.EmployeeManagementGrade em WITH (NOLOCK) ON em.EmpId = e.EmpId AND em.IsCurrentUsed = 1 AND em.IsDeleted = 0
-		LEFT JOIN HRM.dbo.ManagementGrade mg WITH (NOLOCK) ON mg.ManagementGradeId = em.ManagementGradeId AND mg.IsDeleted = 0
+		LEFT JOIN HRM.dbo.EmployeeManagementGrade em WITH (NOLOCK) ON em.EmpId = e.EmpId AND em.IsCurrentUsed = 1 AND ISNULL(em.IsDeleted, 0) = 0
+		LEFT JOIN HRM.dbo.ManagementGrade mg WITH (NOLOCK) ON mg.ManagementGradeId = em.ManagementGradeId AND ISNULL(mg.IsDeleted, 0) = 0
 		LEFT JOIN ManagementLevel ml WITH (NOLOCK) ON e.ManagementLevelId = ml.ManagementLevelId
 		LEFT JOIN HRM.dbo.EmployeeJobGrade ejg WITH (NOLOCK) ON ejg.EmpId = e.EmpId AND ejg.IsCurrentUsed = 1 AND ISNULL(ejg.IsDeleted, 0) = 0
 		LEFT JOIN JobLevel jg WITH (NOLOCK) ON COALESCE(e.JobLevelId, ejg.JobGradeId) = jg.JobLevelId 
