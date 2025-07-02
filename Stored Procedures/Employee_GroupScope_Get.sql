@@ -42,13 +42,13 @@ BEGIN
 		NickName NVARCHAR(100),
 		JobTitleId INT,
 		[Enabled] BIT,
-		JoinedDate DATETIME,
-		ResignedDate DATETIME,
+		JoinedDate VARCHAR(50),
+		ResignedDate VARCHAR(50),
 		isDeleted BIT,
 		FullName NVARCHAR(200),
 		IsLocal BIT,
 		IsSpecial BIT,
-		CompanyDate DATETIME,
+		CompanyDate VARCHAR(50),
 		JobTitle NVARCHAR(100),
 		CompanyId INT,
 		Company NVARCHAR(200),
@@ -76,8 +76,8 @@ BEGIN
 		e.JobTitleId,
 		ISNULL(ce.[Enabled], e.[Enabled]) AS [Enabled],
 		e.JoinedDate,
-		CAST(ISNULL(ce.ResignedDate, e.ResignedDate) AS DATETIME) AS ResignedDate,
-		ISNULL(e.isDeleted, ce.isDeleted) AS isDeleted,
+		ISNULL(ce.ResignedDate, e.ResignedDate) AS ResignedDate,
+		ISNULL(ce.isDeleted, e.isDeleted) AS isDeleted,
 		e.FullName,
 		s.IsLocal,
 		s.IsTopManager AS IsSpecial,
@@ -118,7 +118,7 @@ BEGIN
 		LEFT JOIN JobLevel jg WITH (NOLOCK) ON COALESCE(e.JobLevelId, ejg.JobGradeId) = jg.JobLevelId 
 	WHERE 
 		(@enable IS NULL OR (ISNULL(ISNULL(ce.isDeleted, e.isDeleted), 0) = 0 AND COALESCE(ce.Enabled, e.Enabled) = @enable))
-		AND (@isDelete IS NULL OR ISNULL(ISNULL(e.isDeleted, ce.isDeleted), 0) = @isDelete)
+		AND (@isDelete IS NULL OR ISNULL(ISNULL(ce.isDeleted, e.isDeleted), 0) = @isDelete)
 		AND (@query IS NULL OR e.NickName LIKE '%' + @query + '%')
 		AND (ISNULL( @teamIds, '') = ''  OR COALESCE(ce.GroupId, e.GroupId) IN (SELECT GroupId FROM @GroupsList))
 		AND (ISNULL( @companyIds, '') = '' OR ce.CompanyId IN (SELECT CompanyId FROM @CompaniesList))
