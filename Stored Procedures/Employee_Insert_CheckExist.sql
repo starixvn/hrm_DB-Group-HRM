@@ -44,8 +44,8 @@ BEGIN
 	WHERE NickName = @Nickname
 		AND ce.CompanyId = @CompanyId
 		AND (
-			isDeleted = 0
-			OR [Enabled] = 1
+			e.isDeleted = 0
+			OR e.[Enabled] = 1
 			)
 
 	IF ISNULL(@EmpId_exist, 0) <> 0

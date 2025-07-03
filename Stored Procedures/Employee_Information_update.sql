@@ -66,6 +66,7 @@ Task: UPDATE an employee Information
 DB: HRM
 
 Revisions:
+	-Henry- 19062025: fix ambiguous column error
 Param's Explanation:
 */
 BEGIN
@@ -112,8 +113,8 @@ BEGIN
 		AND Nickname = @nickname
 		AND c.CompanyId = @CompanyId
 		AND (
-			isDeleted = 0
-			OR [Enabled] = 1
+			e.isDeleted = 0
+			OR e.[Enabled] = 1
 			)
 
 	IF ISNULL(@EmpId_exist, 0) <> 0
@@ -142,22 +143,22 @@ BEGIN
 
 	SET @xml = (
 			SELECT Code AS '@Code'
-				,DomainUsername AS '@DomainUsername'
+				,emp.DomainUsername AS '@DomainUsername'
 				,FullName AS '@FullName'
 				,Nickname AS '@Nickname'
 				,DOB AS '@DOB'
-				,Email AS '@Email'
+				,emp.Email AS '@Email'
 				,JobTitleId AS '@JobTitleId'
 				,JobLevelId AS '@JobLevelId'
 				,ManagementLevelId AS'@ManagementLevelId'
-				,[Enabled] AS '@Enabled'
+				,emp.[Enabled] AS '@Enabled'
 				,emp.isDeleted AS '@IsDeleted'
 				,Phone AS '@Phone'
 				,Gender AS '@Gender'
-				,GroupId AS '@TeamId'
+				,emp.GroupId AS '@TeamId'
 				,JoinedDate AS '@JoinedDate'
-				,ConfirmedDate AS '@ConfirmedDate'
-				,ResignedDate AS '@ResignedDate'
+				,emp.ConfirmedDate AS '@ConfirmedDate'
+				,emp.ResignedDate AS '@ResignedDate'
 				,ResignedReason AS '@ResignedReason'
 				,Skype AS '@Skype'
 				,LetsTalk AS '@LetsTalk'
@@ -189,7 +190,7 @@ BEGIN
 				,WorkingHours AS '@WorkingHours'
 				,WorkingHoursByWeek AS '@WorkingHoursByWeek'
 				,IsTopManager AS '@IsTopManager'
-				,CompanyDate AS '@CompanyDate'
+				,empsum.CompanyDate AS '@CompanyDate'
 				,CountryCode AS '@CountryCode'
 				,IsExpatUseHoliday AS '@IsExpatUseHoliday'
 				,OffDaysbyWeek AS '@OffDaysbyWeek'
@@ -286,22 +287,22 @@ BEGIN
 
 	SET @xml = (
 			SELECT Code AS '@Code'
-				,DomainUsername AS '@DomainUsername'
+				,emp.DomainUsername AS '@DomainUsername'
 				,FullName AS '@FullName'
 				,Nickname AS '@Nickname'
 				,DOB AS '@DOB'
-				,Email AS '@Email'
+				,emp.Email AS '@Email'
 				,JobTitleId AS '@JobTitleId'
 				,JobLevelId AS '@JobLevelId'
 				,ManagementLevelId AS '@ManagementLevelId'
-				,[Enabled] AS '@Enabled'
+				,emp.[Enabled] AS '@Enabled'
 				,emp.isDeleted AS '@IsDeleted'
 				,Phone AS '@Phone'
 				,Gender AS '@Gender'
-				,GroupId AS '@TeamId'
+				,emp.GroupId AS '@TeamId'
 				,JoinedDate AS '@JoinedDate'
-				,ConfirmedDate AS '@ConfirmedDate'
-				,ResignedDate AS '@ResignedDate'
+				,emp.ConfirmedDate AS '@ConfirmedDate'
+				,emp.ResignedDate AS '@ResignedDate'
 				,ResignedReason AS '@ResignedReason'
 				,Skype AS '@Skype'
 				,LetsTalk AS '@LetsTalk'
@@ -333,7 +334,7 @@ BEGIN
 				,WorkingHours AS '@WorkingHours'
 				,WorkingHoursByWeek AS '@WorkingHoursByWeek'
 				,IsTopManager AS '@IsTopManager'
-				,CompanyDate AS '@CompanyDate'
+				,empsum.CompanyDate AS '@CompanyDate'
 				,CountryCode AS '@CountryCode'
 				,IsExpatUseHoliday AS '@IsExpatUseHoliday'
 				,OffDaysbyWeek AS '@OffDaysbyWeek'

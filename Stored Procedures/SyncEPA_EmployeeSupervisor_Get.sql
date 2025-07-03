@@ -1,7 +1,7 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 
-CREATE PROCEDURE [dbo].[SyncEPA_EmployeeSupervisor_Get] @FromDate DATETIME = NULL
+CREATE OR ALTER PROCEDURE [dbo].[SyncEPA_EmployeeSupervisor_Get] @FromDate DATETIME = NULL
 	,@CompanyId INT 
 AS
 /*
@@ -30,7 +30,7 @@ BEGIN
 	FROM (
 		SELECT [OwnerId]
 			,es.[EmpId]
-			,ISNULL([IsDeleted], 0) AS IsDeleted
+			,ISNULL(es.[IsDeleted], 0) AS IsDeleted
 			,MAX(ModifiedDate) AS ModifiedDate
 		FROM dbo.[EmployeeSupervisor] AS es WITH (NOLOCK)
 		INNER JOIN dbo.CompanyEmployee AS ec WITH (NOLOCK) ON ec.EmpId = es.EmpId AND ec.CompanyId = @CompanyId
@@ -41,7 +41,7 @@ BEGIN
 				)
 		GROUP BY [OwnerId]
 			,es.[EmpId]
-			,[IsDeleted]
+			,es.[IsDeleted]
 		) AS m
 		INNER JOIN dbo.[EmployeeSupervisor] AS r WITH (NOLOCK) ON r.OwnerId = m.OwnerId
 		AND r.EmpId = m.EmpId

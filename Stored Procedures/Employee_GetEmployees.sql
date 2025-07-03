@@ -25,6 +25,7 @@ AS
 		-Otis - 03062023: get field ResignedReason
 		-Jay  - 04042025: remove Section
 		-Henry- 10042025: map Company
+		-Henry- 19062025: fix ambiguous column error
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -121,18 +122,18 @@ BEGIN
 
 	SELECT @SQL = 'SELECT e.[EmpId]
       ,e.[Code]
-      ,[DomainUsername]
+      ,e.[DomainUsername]
       ,[FullName]
       ,[NickName]
       ,[DOB]
-      ,[Email]
+      ,e.[Email]
       ,[JobTitleId]
-      ,[Enabled]
+      ,e.[Enabled]
       ,[Phone]
       ,[Gender]
       ,[JoinedDate]
-      ,[ConfirmedDate]
-      ,[ResignedDate]
+      ,e.[ConfirmedDate]
+      ,e.[ResignedDate]
 	  ,[ResignedReason]
       ,[Skype]
       ,[LetsTalk]
@@ -148,7 +149,7 @@ BEGIN
       ,[IdCardNumber]
       ,[PassportNo]
       ,[PassportExp]
-      ,[Password]
+      ,e.[Password]
       ,[ChineseName]
       ,[PlaceOfbirth]
       ,[Ethnic]
