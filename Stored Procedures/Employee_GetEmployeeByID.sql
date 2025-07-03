@@ -1,6 +1,6 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[Employee_GetEmployeeByID] @EmpId INT
+ALTER   PROCEDURE [dbo].[Employee_GetEmployeeByID] @EmpId INT
 AS
 /*
     Created: Tom.Vo@2013-10-21
@@ -48,6 +48,8 @@ BEGIN
 		,e.LetsTalk
 		,e.Marriage
 		,e.LastLogin
+		,c.CompanyId
+		,c.[Name] AS CompanyName
 		,@AnnualLeaveBalance AS AnnualLeaveBalance
 		,@KIVLeaveBalance AS KeepInViewBalance
 		,empsum.CountryCode
@@ -115,6 +117,7 @@ BEGIN
 	FROM dbo.Employee AS e WITH (NOLOCK)
 		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON empsum.EmpId = e.EmpId
 		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = e.EmpId
+		INNER JOIN dbo.Company AS c WITH (NOLOCK) ON c.CompanyId = ce.CompanyId
 		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON e.GroupId = g.GroupId
 		LEFT JOIN dbo.EmployeeContract AS e_cs WITH (NOLOCK) ON e_cs.EmpId = e.EmpId
 		LEFT JOIN dbo.Country AS ct WITH (NOLOCK) ON empsum.CountryCode = ct.CountryCode
