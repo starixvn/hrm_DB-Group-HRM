@@ -96,7 +96,7 @@ BEGIN
 						c.CompanyId
 					FROM [dbo].GroupSupervisor AS su WITH (NOLOCK)
 						INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON su.OwnerId = e.EmpId
-						LEFT JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.Empid = e.Empid AND ce.IsSpecialUser = 0
+						LEFT JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.Empid = e.Empid AND ISNULL(ce.IsSpecialUser, 0) = 0 AND ISNULL(ce.IsDeleted, 0) = 0 AND ISNULL(ce.Enabled, 1) = 1
 						LEFT JOIN dbo.Company AS c WITH (NOLOCK) ON c.CompanyId = ce.CompanyId
 					WHERE su.GroupId = @TeamId
 						AND su.ActionType IN (2, 3, 4, 5, 8)
