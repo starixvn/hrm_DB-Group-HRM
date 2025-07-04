@@ -17,6 +17,7 @@ BEGIN
 	FROM GroupSupervisor gs  WITH (NOLOCK)
 	INNER JOIN dbo.[Group] g WITH (NOLOCK) ON gs.GroupId = g.GroupId
 	WHERE gs.OwnerId = @EmpId
+	    AND gs.IsDeleted = 0
 END
 GO
 
