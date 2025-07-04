@@ -21,6 +21,26 @@ BEGIN
 		e.FromDate,
 		e.ToDate
 	FROM dbo.EmployeeWorkFromHome e WITH (NOLOCK)
-	WHERE e.FromDate <= @ToDate
-	  AND e.ToDate >= @FromDate;
+	WHERE e.FromDate <= @ToDate AND e.ToDate >= @FromDate
+	-- Nexcel
+	UNION 
+	SELECT e.EmpId,
+		e.FromDate,
+		e.ToDate
+	FROM NexHRM.dbo.WorkFromHomeRequest e WITH (NOLOCK)
+	WHERE e.FromDate <= @ToDate AND e.ToDate >= @FromDate
+	-- Lumi
+	UNION 
+	SELECT e.EmpId,
+		e.FromDate,
+		e.ToDate
+	FROM LumiHRM.dbo.WorkFromHomeRequest e WITH (NOLOCK)
+	WHERE e.FromDate <= @ToDate AND e.ToDate >= @FromDate
+	-- NexVision
+	UNION 
+	SELECT e.EmpId,
+		e.FromDate,
+		e.ToDate
+	FROM NexVisionHRM.dbo.WorkFromHomeRequest e WITH (NOLOCK)
+	WHERE e.FromDate <= @ToDate AND e.ToDate >= @FromDate
 END
