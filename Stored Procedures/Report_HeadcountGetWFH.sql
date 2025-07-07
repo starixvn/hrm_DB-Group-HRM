@@ -28,19 +28,19 @@ BEGIN
 		e.FromDate,
 		e.ToDate
 	FROM NexHRM.dbo.WorkFromHomeRequest e WITH (NOLOCK)
-	WHERE e.FromDate <= @ToDate AND e.ToDate >= @FromDate
+	WHERE e.FromDate <= @ToDate AND e.ToDate >= @FromDate AND e.Status <> 3
 	-- Lumi
 	UNION 
 	SELECT e.EmpId,
 		e.FromDate,
 		e.ToDate
 	FROM LumiHRM.dbo.WorkFromHomeRequest e WITH (NOLOCK)
-	WHERE e.FromDate <= @ToDate AND e.ToDate >= @FromDate
+	WHERE e.FromDate <= @ToDate AND e.ToDate >= @FromDate AND e.Status <> 3
 	-- NexVision
 	UNION 
 	SELECT e.EmpId,
 		e.FromDate,
 		e.ToDate
 	FROM NexVisionHRM.dbo.WorkFromHomeRequest e WITH (NOLOCK)
-	WHERE e.FromDate <= @ToDate AND e.ToDate >= @FromDate
+	WHERE e.FromDate <= @ToDate AND e.ToDate >= @FromDate AND e.Status <> 3
 END
