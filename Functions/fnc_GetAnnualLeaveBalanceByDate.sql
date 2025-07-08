@@ -47,7 +47,6 @@ BEGIN
     WHERE CompanyId = @CompanyId
         AND [Key] = 'TimeZone'
 
-    SET @AnnualLeaveResetTimelineType = ISNULL(@AnnualLeaveResetTimelineType, @AnnualLeaveResetTimelineByYear)
     SET @Today = DATEADD(MINUTE, @clientTimeZone * 60, DATEADD(HOUR, ABS(@serverTimeZone), GETDATE()))
 
 	IF YEAR(@Today) = YEAR(@Date)
