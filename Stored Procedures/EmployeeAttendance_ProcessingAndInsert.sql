@@ -21,14 +21,11 @@ AS
 BEGIN
 	SET NOCOUNT ON;
 
-	DECLARE @i INT
-		,@TempEmpId INT
-		,@tempFromDate DATE = @fromTime
+	DECLARE @tempFromDate DATE = @fromTime
 		,@tempToDate DATE = @toTime
-		,@today DATE = GETDATE()
-        ,@serverTimeZone SMALLINT = -4
+		,@today DATE = GETDATE() + 1
 	DECLARE @tblDateRange TABLE (WorkDate DATE)
-	CREATE TABLE #tmpEmployee (Id INT PRIMARY KEY IDENTITY(1, 1), EmpId INT)
+	CREATE TABLE #tmpEmployee (EmpId INT)
 
 	IF @tempToDate > @today
 	BEGIN
@@ -37,39 +34,33 @@ BEGIN
 
 	WHILE @tempFromDate <= @tempToDate
 	BEGIN
-		IF NOT EXISTS (
-				SELECT 1
-				FROM @tblDateRange
-				WHERE WorkDate = @tempFromDate
-				)
-		BEGIN
-			INSERT INTO @tblDateRange (WorkDate)
-			VALUES (@tempFromDate)
-		END
+		INSERT INTO @tblDateRange (WorkDate)
+		VALUES (@tempFromDate)
 
 		SET @tempFromDate = DATEADD(DAY, 1, @tempFromDate)
 	END
 
 	IF EXISTS (
-			SELECT EmpId
-			FROM dbo.EmployeeCalendar AS empca WITH (NOLOCK)
-				LEFT JOIN @tblDateRange AS tbldate ON empca.WorkDate = tbldate.WorkDate
-			WHERE (
-					@empId IS NULL
-					OR EmpId = @empId
-					)
-				AND tbldate.WorkDate IS NULL
-			)
-        BEGIN
-            DECLARE @ErrCode INT = 0
-                ,@ErrMsg VARCHAR(200) = ''
+		SELECT 1
+		FROM @tblDateRange AS tbldate
+		WHERE NOT EXISTS (
+                SELECT 1
+                FROM dbo.EmployeeCalendar AS empca WITH (NOLOCK)
+                    INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON empca.EmpId = ce.EmpId
+                WHERE empca.WorkDate = CAST(tbldate.WorkDate AS DATETIME)
+                    AND (@EmpId IS NULL OR empca.EmpId = @EmpId)
+            )
+		)
+    BEGIN
+        DECLARE @ErrCode INT = 0
+            ,@ErrMsg VARCHAR(200) = ''
 
-            EXEC dbo.EmployeeCalendar_Insert @EmpId = @empId
-                ,@fromdate = @fromTime
-                ,@todate = @tempToDate
-                ,@ErrCode = @ErrCode OUTPUT
-                ,@ErrMsg = @ErrMsg OUTPUT
-        END
+        EXEC dbo.EmployeeCalendar_Insert @EmpId = @EmpId
+            ,@fromdate = @fromTime
+            ,@todate = @tempToDate
+            ,@ErrCode = @ErrCode OUTPUT
+            ,@ErrMsg = @ErrMsg OUTPUT
+    END
 
     INSERT INTO #tmpEmployee (EmpId)
     SELECT e.EmpId
@@ -77,14 +68,8 @@ BEGIN
         INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
     WHERE e.[Enabled] = 1
         AND e.isDeleted = 0
-        AND (
-            @CompanyId IS NULL
-            OR ce.CompanyId = @CompanyId
-        )
-        AND (
-            @EmpId IS NULL
-            OR e.EmpId = @EmpId
-        )
+        AND (@CompanyId IS NULL OR ce.CompanyId = @CompanyId)
+        AND (@EmpId IS NULL OR e.EmpId = @EmpId)
 
     INSERT INTO dbo.tmpEmployeeAttendace (EmpId, WorkDate, InsertedDate)
     SELECT e.EmpId, d.WorkDate, GETDATE()
