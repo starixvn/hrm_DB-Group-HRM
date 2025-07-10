@@ -1,6 +1,6 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER   PROCEDURE [dbo].[Employee_GetEmployeeByID] @EmpId INT
+ALTER PROCEDURE [dbo].[Employee_GetEmployeeByID] @EmpId INT
 AS
 /*
     Created: Tom.Vo@2013-10-21
@@ -9,6 +9,7 @@ AS
 
     Revisions:
         03062023@Otis: get field ResignedReason
+        20250707@Tim: add salary structure [Redmine: #230542]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -48,8 +49,6 @@ BEGIN
 		,e.LetsTalk
 		,e.Marriage
 		,e.LastLogin
-		,c.CompanyId
-		,c.[Name] AS CompanyName
 		,@AnnualLeaveBalance AS AnnualLeaveBalance
 		,@KIVLeaveBalance AS KeepInViewBalance
 		,empsum.CountryCode
@@ -111,6 +110,8 @@ BEGIN
 		,lk.[Name] AS JobTitle
 		,ce.SubCompanyId
 		,e.ManagementLevelId
+        ,ce.SalaryStructureId
+        ,ce.Salary
 		,ISNULL(e.GroupId, - 1) AS [TeamId]
 		,g.Code
 		,g.[Name]

@@ -62,11 +62,12 @@ ALTER PROCEDURE [dbo].[Employee_Information_update]
     ,@CompanyId SMALLINT
     ,@SubCompanyId INT = NULL
     ,@SalaryStructureId INT = NULL
+    ,@Salary VARCHAR(100) = NULL
 )
 AS
 /*
     Created: TOM
-    Task: UPDATE an employee Information 
+    Task: update an employee Information 
     DB: bodb_HRM
 
     Revisions:
@@ -203,6 +204,7 @@ BEGIN
 				,empsum.MilitaryToDate AS '@MilitaryToDate'
 				,ce.SubCompanyId AS '@SubCompanyId'
                 ,ce.SalaryStructureId AS '@SalaryStructureId'
+                ,ce.Salary AS '@Salary'
 			FROM dbo.Employee AS emp WITH (NOLOCK)
 				INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
 				INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
@@ -266,6 +268,7 @@ BEGIN
 	UPDATE CompanyEmployee  WITH (ROWLOCK)
 	SET SubCompanyId = @SubCompanyId
         ,SalaryStructureId = @SalaryStructureId
+        ,Salary = @Salary
 	WHERE EmpId = @EmpId
 
 	EXEC dbo.EmployeeRole_Update @EmployeeId = @EmpId
@@ -349,6 +352,7 @@ BEGIN
 				,empsum.MilitaryToDate AS '@MilitaryToDate'
 				,ce.SubCompanyId AS '@SubCompanyId'
                 ,ce.SalaryStructureId AS '@SalaryStructureId'
+                ,ce.Salary AS '@Salary'
 			FROM dbo.Employee AS emp WITH (NOLOCK)
 				INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
 				INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
