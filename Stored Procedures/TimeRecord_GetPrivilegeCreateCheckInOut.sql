@@ -21,8 +21,8 @@ BEGIN
 
 	IF (EXISTS(SELECT 1 FROM dbo.EmployeeWorkFromHome WITH (NOLOCK) 
 		WHERE EmpId = @EmpId 
-			AND @CurrentDate > FromDate 
-			AND DATEADD (DD, -2, @CurrentDate) < ToDate))
+			AND @CurrentDate >= FromDate 
+			AND DATEADD (DD, -1, @CurrentDate) <= ToDate))
 	BEGIN
 		SET @IsPrivilegeCreateCheckInOut = 1
 	END
