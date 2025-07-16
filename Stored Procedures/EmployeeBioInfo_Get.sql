@@ -1,5 +1,5 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
-CREATE OR ALTER PROCEDURE [dbo].[EmployeeBioInfo_Get]
+CREATE ALTER   PROCEDURE [dbo].[EmployeeBioInfo_Get]
     @EmpId INT = NULL,
     @CompanyId INT,
     @CurrentDate DATETIME = NULL,
@@ -73,7 +73,6 @@ BEGIN
                 SELECT TOP 1 1
                 FROM dbo.CompanySecondmentEmployee WITH (NOLOCK)
                 WHERE EmpId = @EmpId
-                  AND CompanyId = @CompanyId
             ), 0)
             ELSE 0
         END AS IsSecondment;
