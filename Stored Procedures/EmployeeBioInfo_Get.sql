@@ -1,5 +1,6 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
-CREATE ALTER   PROCEDURE [dbo].[EmployeeBioInfo_Get]
+CREATE OR /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+ALTER   PROCEDURE [dbo].[EmployeeBioInfo_Get]
     @EmpId INT = NULL,
     @CompanyId INT,
     @CurrentDate DATETIME = NULL,
@@ -50,7 +51,8 @@ BEGIN
                 SELECT TOP 1 1
                 FROM dbo.EmployeeWorkFromHome ewfh WITH (NOLOCK)
                 WHERE ewfh.EmpId = @EmpId
-                  AND @CurrentDate BETWEEN ewfh.FromDate AND ewfh.ToDate
+				  AND @CurrentDate >= ewfh.FromDate 
+				  AND DATEADD(DD, -1, @CurrentDate) <= ewfh.ToDate
             ), 0)
             ELSE 0
         END AS IsWorkFromHome,
