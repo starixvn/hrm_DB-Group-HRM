@@ -62,11 +62,7 @@ BEGIN
 
 	SELECT DISTINCT OwnerId
 		,ee.FullName
-			,CASE 
-		 	WHEN @CompanyId IS NOT NULL AND c.CompanyId != @CompanyId 
-		 		THEN ee.NickName + ' (' + c.[Name]  +')'
-		 		ELSE ee.NickName
-			END NickName
+		,ee.NickName
 		,ee.Email
 	FROM @Supervisors AS su
 		INNER JOIN dbo.Employee AS ee WITH (NOLOCK) ON su.OwnerId = ee.EmpId
@@ -76,11 +72,7 @@ BEGIN
 
 	SELECT DISTINCT OwnerId
 		,ee.FullName
-		 ,CASE 
-		 	WHEN @CompanyId IS NOT NULL AND c.CompanyId != @CompanyId 
-		 		THEN ee.NickName + ' (' + c.[Name]  +')'
-		 		ELSE ee.NickName
-		 END NickName
+		,ee.NickName
 		,ee.Email
 	FROM @Supervisors AS su
 		INNER JOIN dbo.Employee AS ee WITH (NOLOCK) ON su.OwnerId = ee.EmpId

@@ -17,6 +17,7 @@ Revisions:
 	- 20200714@Merlin.Le: Get section and department code
 	- 20230704@Otis.Vu: Get supervisor and roles info
 	- 20250404@Jay.Do: Remove section
+	- 20250714@Mira: get joblevel and mGrade [#Redmine: 232030]
 Param's Explanation:
 */
 BEGIN
@@ -112,6 +113,7 @@ BEGIN
 		,es.MilitaryToDate
 		,jt.[Name] AS JobTitle
 		,jl.[Name] AS JobLevel
+		,ml.[Name] AS ManagementLevel
 		,e.TeamDate
 		,e.Ethnic
 		,e.[Native]
@@ -141,11 +143,10 @@ BEGIN
 		INNER JOIN dbo.Unit AS unit WITH (NOLOCK) ON dep.UnitId = unit.UnitId
 		LEFT JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON tpl.EmpId = es.EmpId
 		LEFT JOIN dbo.[Lookup] AS l WITH (NOLOCK) ON l.Code = 'JT'
-		LEFT JOIN dbo.[LookupData] AS jt WITH (NOLOCK) ON l.Id = jt.LookupId
-		AND e.JobTitleId = jt.Id
+		LEFT JOIN dbo.[LookupData] AS jt WITH (NOLOCK) ON l.Id = jt.LookupId AND e.JobTitleId = jt.Id
 		LEFT JOIN dbo.[Country] AS ctry WITH (NOLOCK) ON ctry.CountryCode = es.CountryCode
-		LEFT JOIN dbo.[JobLevel] AS jl WITH (NOLOCK) ON jl.JobLevelId = e.JobLevelId
-		AND jl.IsDeleted = 0
+		LEFT JOIN dbo.[JobLevel] AS jl WITH (NOLOCK) ON jl.JobLevelId = e.JobLevelId AND jl.IsDeleted = 0
+		LEFT JOIN dbo.ManagementLevel ml WITH (NOLOCK) ON e.ManagementLevelId = ml.ManagementLevelId
 	ORDER BY e.EmpId
 
 	INSERT INTO #tmpSupervisor(
