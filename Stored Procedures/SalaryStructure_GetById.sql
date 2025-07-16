@@ -18,12 +18,15 @@ BEGIN
 	SET NOCOUNT ON;
 
 	SELECT ss.SalaryStructureId,
-        ss.[Name],
-        ss.JobLevelId,
-        jl.[Name] AS JobLevelName,
-        ss.LocalSalary,
-        ss.ExpatSalary
+        ss.[Name]
     FROM dbo.SalaryStructure AS ss WITH (NOLOCK)
-        INNER JOIN dbo.JobLevel AS jl WITH (NOLOCK) ON ss.JobLevelId = jl.JobLevelId
     WHERE ss.SalaryStructureId = @SalaryStructureId
+
+    SELECT jl.JobLevelId, jl.[Name], dt.LocalSalary, dt.ExpatSalary
+    FROM dbo.JobLevel AS jl WITH (NOLOCK)
+        LEFT JOIN dbo.SalaryStructureDetail AS dt WITH (NOLOCK) ON jl.JobLevelId = dt.JobLevelId
+        AND dt.SalaryStructureId = @SalaryStructureId
+        LEFT JOIN dbo.SalaryStructure AS ss WITH (NOLOCK) ON ss.SalaryStructureId = dt.SalaryStructureId
+        AND ss.SalaryStructureId = @SalaryStructureId
+    WHERE jl.IsDeleted = 0
 END

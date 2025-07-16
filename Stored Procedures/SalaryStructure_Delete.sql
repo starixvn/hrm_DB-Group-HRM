@@ -38,13 +38,17 @@ BEGIN
     SET @xml = (
         SELECT CompanyId AS '@CompanyId'
 		    ,[Name] AS '@Name'
-		    ,JobLevelId AS '@JobLevelId'
-		    ,LocalSalary AS '@LocalSalary'
-		    ,ExpatSalary AS '@ExpatSalary'
+            ,(
+                SELECT JobLevelId AS '@JobLevelId'
+		            ,LocalSalary AS '@LocalSalary'
+		            ,ExpatSalary AS '@ExpatSalary'
+                FROM dbo.SalaryStructureDetail WITH (NOLOCK)
+                WHERE SalaryStructureId = @SalaryStructureId
+                FOR XML PATH('Row'), TYPE
+            ) AS Details
 		FROM dbo.SalaryStructure WITH (NOLOCK)
 		WHERE SalaryStructureId = @SalaryStructureId
-		FOR XML PATH('Row')
-			,TYPE
+		FOR XML PATH('Row'), TYPE
 		)
 	SET @logOldData = REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"')
 	

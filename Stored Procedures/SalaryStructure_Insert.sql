@@ -4,9 +4,7 @@ CREATE OR ALTER PROCEDURE [dbo].[SalaryStructure_Insert]
 (
     @CompanyId SMALLINT
 	,@Name NVARCHAR(255)
-	,@JobLevelId INT
-    ,@LocalSalary VARCHAR(100)
-    ,@ExpatSalary VARCHAR(100)
+    ,@Details VARCHAR(MAX)
 	,@CreatedBy INT
 	,@ErrCode INT = 0 OUTPUT
 	,@ErrMsg VARCHAR(200) = '' OUTPUT
@@ -33,7 +31,6 @@ BEGIN
 		FROM dbo.SalaryStructure WITH (NOLOCK)
 		WHERE CompanyId = @CompanyId
             AND [Name] = @Name
-            AND JobLevelId = @JobLevelId
 		)
 	BEGIN
 		SELECT @ErrCode = 1
@@ -41,13 +38,17 @@ BEGIN
 
 		RETURN
 	END
+
+    CREATE TABLE #tmpDetail (JobLevelId INT, LocalSalary VARCHAR(100), ExpatSalary VARCHAR(100))
+
+    INSERT INTO #tmpDetail (JobLevelId, LocalSalary, ExpatSalary)
+    SELECT JobLevelId, LocalSalary, ExpatSalary
+    FROM OPENJSON(@Details)
+    WITH (JobLevelId INT, LocalSalary VARCHAR(100), ExpatSalary VARCHAR(100))
 	
 	INSERT INTO dbo.SalaryStructure (
 		CompanyId
 		,[Name]
-		,JobLevelId
-		,LocalSalary
-		,ExpatSalary
 		,[IsActive]
 		,CreatedBy
 		,CreatedDate
@@ -55,9 +56,6 @@ BEGIN
 	VALUES (
 		@CompanyId
 		,@Name
-		,@JobLevelId
-		,@LocalSalary
-		,@ExpatSalary
 		,1
 		,@CreatedBy
 		,GETDATE()
@@ -65,16 +63,24 @@ BEGIN
 
     SELECT @SalaryStructureId = SCOPE_IDENTITY()
 
+    INSERT INTO dbo.SalaryStructureDetail (SalaryStructureId, JobLevelId, LocalSalary, ExpatSalary)
+    SELECT @SalaryStructureId, JobLevelId, LocalSalary, ExpatSalary
+    FROM #tmpDetail
+
     SET @xml = (
         SELECT CompanyId AS '@CompanyId'
 		    ,[Name] AS '@Name'
-		    ,JobLevelId AS '@JobLevelId'
-		    ,LocalSalary AS '@LocalSalary'
-		    ,ExpatSalary AS '@ExpatSalary'
+            ,(
+                SELECT JobLevelId AS '@JobLevelId'
+		            ,LocalSalary AS '@LocalSalary'
+		            ,ExpatSalary AS '@ExpatSalary'
+                FROM dbo.SalaryStructureDetail WITH (NOLOCK)
+                WHERE SalaryStructureId = @SalaryStructureId
+                FOR XML PATH('Row'), TYPE
+            ) AS Details
 		FROM dbo.SalaryStructure WITH (NOLOCK)
 		WHERE SalaryStructureId = @SalaryStructureId
-		FOR XML PATH('Row')
-			,TYPE
+		FOR XML PATH('Row'), TYPE
 		)
 	SET @logData = REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"')
 
@@ -85,4 +91,6 @@ BEGIN
 		,@Data = @logData
 		,@ErrCode = @ErrCode OUTPUT
 		,@ErrMsg = @ErrMsg OUTPUT
+
+    DROP TABLE #tmpDetail
 END
