@@ -12,6 +12,7 @@ DB: HRM
 
 Revisions:
 	- Jay.do@20250603: handle cross company [Redmine: #227151]
+	- Mira@20250716: remove company with nick name for employee in different company [#Redmine: 232030]
 Param's Explanation:
 */
 BEGIN
@@ -40,18 +41,10 @@ BEGIN
 		,request.SpecialHours
 		,request.CurrentStatus AS StatusId
 		,verifier.EmpId AS VerifierId
-		,CASE 
-			WHEN @CompanyId IS NOT NULL AND vec.CompanyId != @CompanyId 
-				THEN verifier.NickName + ' (' + vec.[Name]  +')'
-				ELSE verifier.NickName
-		END NickName
+		,verifier.NickName
 		,verifier.FullName
 		,approver.EmpId AS ApproverId
-		,CASE 
-			WHEN @CompanyId IS NOT NULL AND apc.CompanyId != @CompanyId 
-				THEN approver.NickName + ' (' + apc.[Name]  +')'
-				ELSE approver.NickName
-		END NickName
+		,approver.NickName
 		,approver.FullName
 	FROM #tblMonth AS cl
 		LEFT JOIN dbo.OTMonthlyRequest AS request WITH (NOLOCK) ON request.[Month] = cl.[Month]
