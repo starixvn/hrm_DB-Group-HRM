@@ -10,6 +10,7 @@ DB: HRM
 
 Revisions:
 - Jay.Do: 20250602: Cross company
+- Mira@20250716: remove company with nick name for employee in different company [#Redmine: 232030]
 Param's Explanation:
 */
 BEGIN
@@ -31,18 +32,10 @@ BEGIN
 		,emp.FullName
 		,gr.[Name] AS Team
 		,verifier.EmpId AS VerifierId
-		,CASE 
-			WHEN @CompanyId IS NOT NULL AND vec.CompanyId != @CompanyId 
-				THEN verifier.NickName + ' (' + vec.[Name]  +')'
-				ELSE verifier.NickName
-		END NickName
+		,verifier.NickName
 		,verifier.FullName
 		,approver.EmpId AS ApproverId
-		,CASE 
-			WHEN @CompanyId IS NOT NULL AND apc.CompanyId != @CompanyId 
-				THEN approver.NickName + ' (' + apc.[Name]  +')'
-				ELSE approver.NickName
-		END NickName
+		,approver.NickName
 		,approver.FullName
 		,m.EmpId AS ModifierId
 		,m.NickName

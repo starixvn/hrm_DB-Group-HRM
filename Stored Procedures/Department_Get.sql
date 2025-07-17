@@ -1,6 +1,7 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[Department_Get] @IsActive BIT = NULL
+ALTER PROCEDURE [dbo].[Department_Get] @IsActive BIT = NULL,
+	@UnitId INT = NULL
 AS
 /*
 Created: 20200521@Lilac.Nguyen
@@ -30,4 +31,5 @@ BEGIN
 		LEFT JOIN dbo.Employee AS e WITH (NOLOCK) ON dep.PICEmpId = e.EmpId
 	WHERE (@IsActive IS NULL OR dep.IsActive = @IsActive)
 		AND dep.IsDeleted = 0
+		AND (@UnitId IS NULL OR u.UnitId = @UnitId)
 END

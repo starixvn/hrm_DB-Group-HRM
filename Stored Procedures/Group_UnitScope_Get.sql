@@ -1,7 +1,7 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER   PROCEDURE [dbo].[Group_UnitScope_Get]
-	@keyWord varchar(20) = null,
+	@TeamIds varchar(MAX) = '',
 	@TeamId INT = NULL
 AS
 /*
@@ -17,6 +17,11 @@ Revisions:
 */
 BEGIN
 	SET NOCOUNT ON;
+	DECLARE @GroupsList TABLE (GroupId INT)
+
+	INSERT INTO @GroupsList (GroupId)
+	SELECT value
+	FROM STRING_SPLIT(@teamIds, ',')
 
 	CREATE TABLE #tmpGroup (
 		GroupId INT PRIMARY KEY
@@ -109,11 +114,7 @@ BEGIN
 			OR g.GroupId =  @TeamId
 			)
 		AND g.isDeleted != 1
-		AND (
-			 @keyWord IS NULL
-			 OR LOWER(g.[Name]) like LOWER('%' + @keyWord + '%') 
-			 OR LOWER(g.Code) like LOWER('%' + @keyWord + '%') 
-			)
+		AND (ISNULL( @teamIds, '') = ''  OR g.GroupId IN (SELECT GroupId FROM @GroupsList))
 	ORDER BY d.Code
 
     DROP TABLE #tmpGroup
