@@ -1,5 +1,5 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
-CREATE OR ALTER   PROCEDURE [dbo].[EmployeeBioInfo_Get]
+CREATE OR ALTER     PROCEDURE [dbo].[EmployeeBioInfo_Get]
     @EmpId INT = NULL,
     @CompanyId INT,
     @CurrentDate DATETIME = NULL,
@@ -21,9 +21,14 @@ BEGIN
     FROM dbo.SystemConfigs WITH (NOLOCK)
     WHERE [Key] = 'WhitelistIPs'
       AND CompanyId = @CompanyId;
-
+	  
+    -- Check if '*' is in the Whitelist JSON array
+    IF CHARINDEX('*', @WhitelistJson) > 0
+    BEGIN
+        SET @IsWhitelisted = 1;
+    END
     -- Check if client IP is in the whitelist JSON array
-    IF EXISTS (
+    ELSE IF EXISTS (
         SELECT 1
         FROM OPENJSON(@WhitelistJson)
         WHERE value = @ClientIp
