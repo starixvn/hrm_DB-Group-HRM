@@ -23,7 +23,7 @@ BEGIN
     FROM (SELECT DISTINCT [Key] FROM dbo.SystemConfigs) AS KeysList;
 
     SET @sql = '
-    SELECT 
+    SELECT c.CompanyId,
         c.[Name],
         cfg.*
     FROM dbo.Company c
