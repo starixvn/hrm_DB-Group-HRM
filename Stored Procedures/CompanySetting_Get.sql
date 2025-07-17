@@ -19,26 +19,33 @@ BEGIN
     DECLARE @cols NVARCHAR(MAX);
     DECLARE @sql NVARCHAR(MAX);
 
-    SELECT @cols = STRING_AGG(QUOTENAME([Key]), ',')
-    FROM (SELECT DISTINCT [Key] FROM dbo.SystemConfigs) AS KeysList;
+	SELECT @cols = STRING_AGG(QUOTENAME([Key]), ',')
+	FROM (
+		SELECT DISTINCT [Key]
+		FROM dbo.SystemConfigs
+	) AS KeysList;
 
-    SET @sql = '
-    SELECT c.CompanyId,
-        c.[Name],
-        cfg.*
-    FROM dbo.Company c
+	SET @sql = '
+	SELECT 
+		c.CompanyId,
+		c.[Name],
+		' + @cols + '
+	FROM dbo.Company c
+	LEFT JOIN (
+		SELECT CompanyId, ' + @cols + '
+		FROM (
+			SELECT CompanyId, [Key], [Value]
+			FROM dbo.SystemConfigs
+		) AS SourceData
+		PIVOT (
+			MAX([Value]) FOR [Key] IN (' + @cols + ')
+		) AS PivotedData
+	) AS cfg ON c.CompanyId = cfg.CompanyId
+	WHERE ISNULL(c.IsDeleted, 0) = 0
+	ORDER BY c.CompanyId;
+	';
 
-    LEFT JOIN (
-        SELECT CompanyId, ' + @cols + '
-        FROM (
-            SELECT CompanyId, [Key], [Value]
-            FROM dbo.SystemConfigs
-        ) AS SourceData
-        PIVOT (
-            MAX([Value]) FOR [Key] IN (' + @cols + ')
-        ) AS PivotedData
-    ) AS cfg ON c.CompanyId = cfg.CompanyId
-    ';
+	EXEC sp_executesql @sql;
 
-    EXEC sp_executesql @sql;
 END;
+
