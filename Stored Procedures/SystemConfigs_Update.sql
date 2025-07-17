@@ -1,17 +1,14 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE PROCEDURE [dbo].[SystemConfigs_UpdateCompanySetting]
+CREATE PROCEDURE [dbo].[SystemConfigs_Update]
     @CompanyId INT,
-    @HasBIO VARCHAR(10),
-    @EnableLetstalk VARCHAR(10),
-    @WhitelistIPs VARCHAR(MAX),
-    @Currency VARCHAR(MAX)
+    @SettingsJson NVARCHAR(MAX)
 AS
 
 /*
-Created: 20250715@Lilac.Nguyen
+Created: 20250717@Lilac.Nguyen
 Task: Update Setting Companys
-DB: HRM
+DB: bodb_HRM
 Original:
 
 Revisions:
@@ -22,16 +19,13 @@ BEGIN
     SET NOCOUNT ON;
 
     DECLARE @Configs TABLE (
-        [Key] VARCHAR(30),
+        [Key] VARCHAR(100),
         [Value] VARCHAR(MAX)
     );
 
     INSERT INTO @Configs ([Key], [Value])
-    VALUES 
-        ('HasBIO', LTRIM(RTRIM(@HasBIO))),
-        ('EnableLetstalk', LTRIM(RTRIM(@EnableLetstalk))),
-        ('WhitelistIPs', LTRIM(RTRIM(@WhitelistIPs))),
-        ('Currency', LTRIM(RTRIM(@Currency)));
+    SELECT [Key], [Value]
+    FROM OPENJSON(@SettingsJson);
 
     UPDATE sc
     SET sc.[Value] = cfg.[Value]
@@ -46,4 +40,4 @@ BEGIN
         SELECT 1 FROM dbo.SystemConfigs sc
         WHERE sc.CompanyId = @CompanyId AND sc.[Key] = cfg.[Key]
     );
-END
+END;
