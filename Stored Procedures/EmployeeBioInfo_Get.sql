@@ -1,6 +1,5 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
-CREATE OR /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
-ALTER   PROCEDURE [dbo].[EmployeeBioInfo_Get]
+CREATE OR ALTER   PROCEDURE [dbo].[EmployeeBioInfo_Get]
     @EmpId INT = NULL,
     @CompanyId INT,
     @CurrentDate DATETIME = NULL,
