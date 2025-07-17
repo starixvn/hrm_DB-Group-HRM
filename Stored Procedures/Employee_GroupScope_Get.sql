@@ -52,6 +52,7 @@ BEGIN
 		JobTitle NVARCHAR(100),
 		CompanyId INT,
 		Company NVARCHAR(200),
+		SubCompany NVARCHAR(200),
 		UnitId INT,
 		UnitCode NVARCHAR(50),
 		UnitPIC NVARCHAR(100),
@@ -85,6 +86,7 @@ BEGIN
 		COALESCE(ejt.[Name], jt.[Name]) AS JobTitle,
 		c.CompanyId,
 		c.[Name] AS Company,
+		sub.Name AS SubCompany,
 		u.GroupUnitId AS UnitId,
 		u.Code AS UnitCode,
 		eu.NickName AS UnitPIC,
@@ -108,6 +110,7 @@ BEGIN
 		LEFT JOIN dbo.LookupData jt WITH (NOLOCK) ON l.Id = jt.LookupId AND e.JobTitleId = jt.Id
 		LEFT JOIN HRM.dbo.JobTitle ejt WITH (NOLOCK) ON ejt.JobTitleId = e.JobTitleId AND ejt.IsDeleted = 0
 		LEFT JOIN dbo.Company c WITH (NOLOCK) ON c.CompanyId = ce.CompanyId
+		LEFT JOIN dbo.SubCompany sub WITH (NOLOCK) ON sub.SubCompanyId = ce.SubCompanyId
 		LEFT JOIN Employee eu WITH (NOLOCK) ON eu.EmpId = u.PICEmpId
 		LEFT JOIN Employee ed WITH (NOLOCK) ON ed.EmpId = d.PICEmpId
 		LEFT JOIN Employee eg WITH (NOLOCK) ON eg.EmpId = g.PICEmpId
