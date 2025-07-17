@@ -90,11 +90,13 @@ BEGIN
 		,cpic.[Name] AS PICCompanyName
 		,cpic.[CompanyId] AS PICCompanyId
 		,ld.NickName as PICNickName
+		,u.Code AS UnitCode
 		,dept.DepartmentId
         ,dept.Code
         ,dept.[Name]
 	FROM dbo.[Group] AS g WITH (NOLOCK)
 		INNER JOIN dbo.Department AS dept WITH (NOLOCK) ON g.DepartmentId = dept.DepartmentId
+		INNER JOIN dbo.Unit AS u WITH (NOLOCK) ON u.UnitId = dept.UnitId
 		LEFT JOIN dbo.Employee AS ld WITH (NOLOCK) ON ld.EmpId = g.PICEmpId
 		LEFT JOIN dbo.CompanyEmployee cepic WITH (NOLOCK) ON cepic.EmpId = g.PICEmpId
 		LEFT JOIN dbo.Company cpic WITH (NOLOCK) ON cpic.CompanyId = cepic.CompanyId
