@@ -2,8 +2,7 @@
 CREATE OR ALTER     PROCEDURE [dbo].[EmployeeBioInfo_Get]
     @EmpId INT = NULL,
     @CompanyId INT,
-    @CurrentDate DATETIME = NULL,
-    @ClientIp VARCHAR(100)
+    @CurrentDate DATETIME = NULL
 AS
 /*
 Created: 2025-07-14 @Jay.Do  
@@ -12,30 +11,6 @@ DB: HRM
 */
 BEGIN
     SET NOCOUNT ON;
-
-    DECLARE @WhitelistJson NVARCHAR(MAX);
-    DECLARE @IsWhitelisted BIT = 0;
-
-    -- Get Whitelist IPs from config (JSON array)
-    SELECT @WhitelistJson = [Value]
-    FROM dbo.SystemConfigs WITH (NOLOCK)
-    WHERE [Key] = 'WhitelistIPs'
-      AND CompanyId = @CompanyId;
-	  
-    -- Check if '*' is in the Whitelist JSON array
-    IF CHARINDEX('*', @WhitelistJson) > 0
-    BEGIN
-        SET @IsWhitelisted = 1;
-    END
-    -- Check if client IP is in the whitelist JSON array
-    ELSE IF EXISTS (
-        SELECT 1
-        FROM OPENJSON(@WhitelistJson)
-        WHERE value = @ClientIp
-    )
-    BEGIN
-        SET @IsWhitelisted = 1;
-    END
 
     SELECT
         -- 1. HasBio
@@ -46,10 +21,7 @@ BEGIN
               AND CompanyId = @CompanyId
         ), 'false') AS HasBio,
 
-        -- 2. IsWhitelisted (based on client IP)
-        CAST(@IsWhitelisted AS BIT) AS IsWhitelisted,
-
-        -- 3. IsWorkingFromHome
+        -- 2. IsWorkingFromHome
         CASE 
             WHEN @EmpId IS NOT NULL THEN ISNULL((
                 SELECT TOP 1 1
@@ -61,7 +33,7 @@ BEGIN
             ELSE 0
         END AS IsWorkFromHome,
 
-        -- 4. WFHNearlyExpired
+        -- 3. WFHNearlyExpired
         CASE 
             WHEN @EmpId IS NOT NULL THEN ISNULL((
                 SELECT TOP 1 1
@@ -73,7 +45,7 @@ BEGIN
             ELSE 0
         END AS IsWFHNearlyExpired,
 
-        -- 5. IsSecondment
+        -- 4. IsSecondment
         CASE 
             WHEN @EmpId IS NOT NULL THEN ISNULL((
                 SELECT TOP 1 1
