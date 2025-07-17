@@ -53,8 +53,9 @@ BEGIN
 					END) AS BIT) AS HasOvertime
 	FROM dbo.GroupSupervisor AS su WITH (NOLOCK)
 		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON su.OwnerId = e.EmpId
-		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON e.GroupId = g.GroupId
-		INNER JOIN dbo.[Company] AS c WITH (NOLOCK) ON c.CompanyId = g.CompanyId
+		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON @TeamId = g.GroupId
+		INNER JOIN dbo.[CompanyEmployee] AS ce WITH (NOLOCK) ON ce.EmpId = e.EmpId AND ISNULL(ce.IsSpecialUser, 0) = 0 AND ISNULL(ce.IsDeleted, 0) = 0 AND ISNULL(ce.Enabled, 1) = 1
+		INNER JOIN dbo.[Company] AS c WITH (NOLOCK) ON c.CompanyId = ce.CompanyId
 	WHERE su.GroupId = @TeamId
 		AND su.ActionType = @Role
 		AND ISNULL(su.IsDeleted, 0) = 0
