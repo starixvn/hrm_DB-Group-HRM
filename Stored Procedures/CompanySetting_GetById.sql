@@ -13,7 +13,6 @@ Original:
 Revisions:
 
 */
-
 BEGIN
     SET NOCOUNT ON;
 
@@ -21,12 +20,17 @@ BEGIN
     DECLARE @sql NVARCHAR(MAX);
 
     SELECT @cols = STRING_AGG(QUOTENAME([Key]), ',')
-    FROM (SELECT DISTINCT [Key] FROM dbo.SystemConfigs) AS KeysList;
+    FROM (
+        SELECT DISTINCT [Key]
+        FROM dbo.SystemConfigs
+        WHERE [Key] <> 'CompanyId'
+    ) AS KeysList;
 
     SET @sql = '
     SELECT 
+        c.CompanyId,
         c.[Name],
-        cfg.*
+        ' + @cols + '
     FROM dbo.Company c
     LEFT JOIN (
         SELECT CompanyId, ' + @cols + '
@@ -43,6 +47,5 @@ BEGIN
     ';
 
     EXEC sp_executesql @sql, N'@CompanyId INT', @CompanyId;
-
 END;
 
