@@ -1,6 +1,6 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[Employee_GetByRole] @CompanyId SMALLINT
+ALTER PROCEDURE [dbo].[Employee_GetByRole] @CompanyId SMALLINT = NULL
     ,@RoleIds VARCHAR(20)
 	,@query NVARCHAR(256)
 	,@ExcludeIds VARCHAR(2000)
@@ -47,7 +47,11 @@ BEGIN
 	FROM dbo.Employee AS e WITH (NOLOCK)
 		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
         INNER JOIN dbo.EmployeeRole AS r WITH (NOLOCK) ON r.EmployeeId = e.EmpId
-	WHERE ce.CompanyId = @CompanyId
+	WHERE 
+		(
+			@CompanyId IS NULL 
+			OR ce.CompanyId = @CompanyId
+		)
         AND r.RoleId IN (
 			SELECT RoleId
 			FROM #tmpRole
@@ -99,11 +103,15 @@ BEGIN
 		,e.PassportNo
 		,e.PassportExp
 		,e.[Password]
+		,c.[Name] AS CompanyName
+		,c.CompanyId
 		,ISNULL(e.GroupID, - 1) AS [TeamID]
 		,ISNULL(g.[Name], '') AS [Team]
 	FROM dbo.Employee AS e WITH (NOLOCK)
 		INNER JOIN #tmpEmployee AS e1 ON e1.EmpId = e.EmpId
 		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON e.GroupId = g.GroupId
+		LEFT JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = e.EmpId
+		LEFT JOIN dbo.Company AS c WITH (NOLOCK) ON c.CompanyId = ce.CompanyId
 
 	SELECT emRo.EmployeeId
 		,emRo.RoleId
@@ -111,7 +119,11 @@ BEGIN
 		,loDa.[Name]
 	FROM dbo.EmployeeRole AS emRo WITH (NOLOCK)
 		INNER JOIN dbo.LookupData AS loDa WITH (NOLOCK) ON emRo.RoleId = loDa.[Value]
-        AND loda.CompanyId = @CompanyId
+		AND 
+			(
+				@CompanyId IS NULL 
+				OR loda.CompanyId = @CompanyId
+			)
 		INNER JOIN dbo.[Lookup] look WITH (NOLOCK) ON look.Id = loDa.LookupId
 		AND look.Code = 'SR' -- System Role
 		INNER JOIN #tmpEmployee AS e ON e.EmpId = emRo.EmployeeId
