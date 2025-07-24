@@ -1,6 +1,9 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[Employee_GetEmployeeByID] @EmpId INT
+ALTER PROCEDURE [dbo].[Employee_GetEmployeeById](
+    @EmpId INT,
+    @CompanyId SMALLINT = 0
+)
 AS
 /*
     Created: Tom.Vo@2013-10-21
@@ -10,6 +13,7 @@ AS
     Revisions:
         03062023@Otis: get field ResignedReason
         20250707@Tim: add salary structure [Redmine: #230542]
+        20250722@Tim: add auto approve request [Remine: #233324]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -18,7 +22,7 @@ BEGIN
 		,@AnnualLeaveBalance NUMERIC(18, 2)
 		,@Today DATE = GETDATE()
 
-	SELECT @KIVLeaveBalance = dbo.fnc_GetKIVByDayBalance(@EmpID, @Today, NULL)
+	SELECT @KIVLeaveBalance = dbo.fnc_GetKIVByDayBalance(@EmpId, @Today, NULL)
 		,@AnnualLeaveBalance = dbo.fnc_GetAnnualLeaveBalance(@EmpId, @Today, NULL)
 
 	SELECT e.EmpId
@@ -112,6 +116,7 @@ BEGIN
 		,e.ManagementLevelId
         ,ce.SalaryStructureId
         ,ce.Salary
+        ,ce.AutoApproveRequest
 		,ISNULL(e.GroupId, - 1) AS [TeamId]
 		,g.Code
 		,g.[Name]
@@ -127,4 +132,5 @@ BEGIN
 		LEFT JOIN dbo.LookupData AS lk WITH (NOLOCK) ON e.JobTitleId = lk.Id
 		AND lk.LookupId = 1
 	WHERE e.EmpId = @EmpId
+        AND ce.CompanyId = @CompanyId
 END

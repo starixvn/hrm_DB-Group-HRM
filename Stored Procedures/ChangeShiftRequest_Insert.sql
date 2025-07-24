@@ -1,31 +1,34 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[ChangeShiftRequest_Insert] @EmpId INT
-	,@TypeId TINYINT
-	,@Remark NVARCHAR(2000)
-	,@FromDate DATE
-	,@ToDate DATE
-	,@ActorId INT
-	,@VerifierId INT = NULL
-	,@ApproverId INT = NULL
-	,@DetailXml NVARCHAR(MAX)
-	,@RequestId BIGINT = 0 OUTPUT
-	,@ErrCode INT = 0 OUTPUT
-	,@ErrMsg NVARCHAR(200) = '' OUTPUT
-	,@CompanyId SMALLINT
+ALTER PROCEDURE [dbo].[ChangeShiftRequest_Insert]
+(
+    @EmpId INT
+    ,@CompanyId SMALLINT
+    ,@TypeId TINYINT
+    ,@Remark NVARCHAR(2000)
+    ,@FromDate DATE
+    ,@ToDate DATE
+    ,@ActorId INT
+    ,@VerifierId INT = NULL
+    ,@ApproverId INT = NULL
+    ,@DetailXml NVARCHAR(MAX)
+    ,@RequestId BIGINT = 0 OUTPUT
+    ,@ErrCode INT = 0 OUTPUT
+    ,@ErrMsg NVARCHAR(200) = '' OUTPUT
+)
 AS
 /*
-Created: Quinn.Vo@20190624
-Task: create a change shift request
-DB: HRM
+    Created: Quinn.Vo@20190624
+    Task: create a change shift request
+    DB: bodb_HRM
 
-Revisions:
-Param's Explanation:
-    @DetailXml: '<ROOT><Row OnDate={0} FromShiftId={1} ToShiftId={2} Remark={3} ToDate={4} /></ROOT>'
+    Revisions:
+        20250722@Tim: auto approve request [Redmine: #233324]
+    Param's Explanation:
+        @DetailXml: '<ROOT><Row OnDate={0} FromShiftId={1} ToShiftId={2} Remark={3} ToDate={4} /></ROOT>'
 */
 BEGIN
 	SET NOCOUNT ON;
-	SET XACT_ABORT ON;
 
 	DECLARE @CreatedDate DATETIME = GETDATE()
 		,@RequestType TINYINT = 5
@@ -33,7 +36,7 @@ BEGIN
 		,@VerifyRequest TINYINT = 2
 		,@ApproveRequest TINYINT = 3
 		,@OnBehalfRequest TINYINT = 5
-		,@IsTopManager BIT
+		,@AutoApproveRequest BIT
 		-- change shift type
 		,@ChangeShift TINYINT = 1
 		,@MoveOffDay TINYINT = 2
@@ -96,15 +99,18 @@ BEGIN
 		RETURN
 	END
 
-	SELECT @IsTopManager = IsTopManager
-	FROM dbo.EmployeeSummary WITH (NOLOCK)
+	SELECT @AutoApproveRequest = AutoApproveRequest
+	FROM dbo.CompanyEmployee WITH (NOLOCK)
 	WHERE EmpId = @EmpId
+        AND CompanyId = @CompanyId
+
+    SET @AutoApproveRequest = ISNULL(@AutoApproveRequest, 0)
 
 	IF (
 			@ApproverId IS NULL
 			OR @VerifierId IS NULL
 			)
-		AND @IsTopManager = 0
+		AND @AutoApproveRequest = 0
 	BEGIN
 		SET @ErrCode = 102
 		SET @ErrMsg = 'Verifier, Approver is required.'
@@ -141,7 +147,7 @@ BEGIN
 		END
 	END
 
-	IF @IsTopManager = 0
+	IF @AutoApproveRequest = 0
 	BEGIN
 		IF NOT EXISTS (
 				SELECT 1
@@ -296,23 +302,23 @@ BEGIN
 		,@RequestType
 		,@Remark
 		,CASE 
-			WHEN @IsTopManager = 1
+			WHEN @AutoApproveRequest = 1
 				AND @VerifierId IS NOT NULL THEN @PendingStatusId
-			WHEN @IsTopManager = 1
+			WHEN @AutoApproveRequest = 1
 				AND @ApproverId IS NOT NULL THEN @VerifiedStatusId
-			WHEN @IsTopManager = 1
+			WHEN @AutoApproveRequest = 1
 				AND @ApproverId IS NULL THEN @ApprovedStatusId
 			ELSE @PendingStatusId
 			END
 		,@VerifierId
 		,@ApproverId
 		,CASE 
-			WHEN @IsTopManager = 1
+			WHEN @AutoApproveRequest = 1
 				AND @VerifierId IS NULL THEN @VerifiedStatusId
 			ELSE @PendingStatusId
 			END
 		,CASE 
-			WHEN @IsTopManager = 1
+			WHEN @AutoApproveRequest = 1
 				AND @ApproverId IS NULL THEN @VerifiedStatusId
 			ELSE @PendingStatusId
 			END
@@ -358,11 +364,11 @@ BEGIN
 
 	IF @ApproverId IS NULL
 		AND @VerifierId IS NULL
-		AND @IsTopManager = 1
+		AND @AutoApproveRequest = 1
 	BEGIN
 		EXEC dbo.ChangeShiftRequest_Approve @RequestId = @RequestId
 			,@RoleId = 3 -- approver
-			,@ActorId = @ActorId
+			,@ActorId = -1
 			,@ErrCode = @ErrCode OUTPUT
 			,@ErrMsg = @ErrMsg OUTPUT
 	END

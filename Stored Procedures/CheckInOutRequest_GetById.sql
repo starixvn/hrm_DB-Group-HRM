@@ -1,17 +1,18 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[CheckInOutRequest_GetById] 
+ALTER PROCEDURE [dbo].[CheckInOutRequest_GetById]
+(
 	@RequestId INT,
 	@CompanyId SMALLINT
+)
 AS
 /*
-Created: Quinn.Vo@20190624
-Task: Get Check in/out request by RequestId.
-DB: HRM
-Original:
+    Created: Quinn.Vo@20190624
+    Task: Get Check in/out request by RequestId.
+    DB: bodb_HRM
 
-Revisions:
-Param's Explanation:
+    Revisions:
+    Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -33,7 +34,7 @@ BEGIN
 		,emp.NickName
 		,emp.FullName
 		,ce.CompanyId
-		,empsum.IsTopManager
+		,ce.AutoApproveRequest
 		,ve.EmpId AS VerifierId
 		,ve.NickName
 		,vece.CompanyId
@@ -48,10 +49,10 @@ BEGIN
 	FROM dbo.CheckInOutRequest AS cio WITH (NOLOCK)
 		INNER JOIN dbo.WorkingTimeRequest AS wk WITH (NOLOCK) ON cio.RequestId = wk.RequestId
 		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON cio.EmpId = emp.EmpId
-		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
 		INNER JOIN dbo.EmployeeCalendar AS empca WITH (NOLOCK) ON cio.OnDate = empca.WorkDate
 		AND cio.EmpId = empca.EmpId
 		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = cio.EmpId
+        AND ce.CompanyId = @CompanyId
 		LEFT JOIN dbo.[Shift] AS sh WITH (NOLOCK) ON empca.ShiftId = sh.ShiftId
 		LEFT JOIN dbo.Employee AS ve WITH (NOLOCK) ON wk.VerifierId = ve.EmpId
 		LEFT JOIN dbo.CompanyEmployee AS vece WITH (NOLOCK) ON ve.EmpId = vece.EmpId

@@ -1,37 +1,39 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[KeepInViewRequest_Insert] @EmpId INT
-	,@Remark NVARCHAR(2000) = NULL
-	,@OnDate DATE
-	,@KeepInViewType TINYINT = NULL
-	,@IsHalfDay BIT = NULL
-	,@FromTime DATETIME = NULL
-	,@ToTime DATETIME = NULL
-	,@CreatedBy INT
-	,@VerifierId INT = NULL
-	,@ApproverId INT = NULL
-	,@RequestId BIGINT = 0 OUTPUT
-	,@ErrCode INT = 0 OUTPUT
-	,@ErrMsg NVARCHAR(200) = '' OUTPUT
-	,@CompanyId SMALLINT
+ALTER PROCEDURE [dbo].[KeepInViewRequest_Insert]
+(
+    @EmpId INT
+    ,@CompanyId SMALLINT
+    ,@Remark NVARCHAR(2000) = NULL
+    ,@OnDate DATE
+    ,@KeepInViewType TINYINT = NULL
+    ,@IsHalfDay BIT = NULL
+    ,@FromTime DATETIME = NULL
+    ,@ToTime DATETIME = NULL
+    ,@CreatedBy INT
+    ,@VerifierId INT = NULL
+    ,@ApproverId INT = NULL
+    ,@RequestId BIGINT = 0 OUTPUT
+    ,@ErrCode INT = 0 OUTPUT
+    ,@ErrMsg NVARCHAR(200) = '' OUTPUT
+)
 AS
 /*
-Created: Quinn.Vo@20190522
-Task: insert keep inview request
-DB: HRM
-Original:
+    Created: Quinn.Vo@20190522
+    Task: insert keep inview request
+    DB: bodb_HRM
 
-Revisions:
-Param's Explanation:
+    Revisions:
+        20250722@Tim: auto approve request [Redmine: #233324]
+    Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;
-	SET XACT_ABORT ON;
 
 	DECLARE @CreatedDate DATETIME = GETDATE()
 		,@KeepInViewRequestTypeId TINYINT = 7
 		,@RefNo NVARCHAR(200) = ''
-		,@IsTopManager BIT
+		,@AutoApproveRequest BIT
 		-- action type
 		,@VerifyRequest TINYINT = 2
 		,@ApproveRequest TINYINT = 3
@@ -94,7 +96,7 @@ BEGIN
 	IF  EXISTS (
 			SELECT 1
 			FROM dbo.EmployeeCalendar WITH (NOLOCK)
-			WHERE WorkDate = @OnDate
+			WHERE WorkDate = CAST(@OnDate AS DATETIME)
 				AND EmpId = @EmpId
 				AND ShiftId IS NULL
 				AND (
@@ -112,7 +114,7 @@ BEGIN
 	IF  EXISTS (
 			SELECT 1
 			FROM dbo.EmployeeCalendar WITH (NOLOCK)
-			WHERE WorkDate = @OnDate
+			WHERE WorkDate = CAST(@OnDate AS DATETIME)
 				AND EmpId = @EmpId
 				AND ShiftId IS NULL
 			)
@@ -123,10 +125,11 @@ BEGIN
 		RETURN
 	END
 
-	IF @KeepInViewType = @KeepInViewByDay AND NOT EXISTS (
+	IF @KeepInViewType = @KeepInViewByDay
+        AND NOT EXISTS (
 			SELECT 1
 			FROM dbo.EmployeeCalendar WITH (NOLOCK)
-			WHERE WorkDate = @OnDate
+			WHERE WorkDate = CAST(@OnDate AS DATETIME)
 				AND EmpId = @EmpId
 				AND IsHoliday = 1
 			)
@@ -134,25 +137,31 @@ BEGIN
 		SELECT @SumDayOff = COUNT(*)
 		FROM (
 			SELECT DISTINCT WorkDate -- Count the number of off days (IsOffDay = 1) in the same week as @OnDate
-				FROM dbo.EmployeeCalendar WITH (NOLOCK)
-				WHERE WorkDate BETWEEN @WeekStartDate AND @WeekEndDate
-					AND EmpId = @EmpId
-					AND IsOffDay = 1
-					AND WorkDate <> @OnDate
-					AND IsHoliday = 0 -- not count PH
+			FROM dbo.EmployeeCalendar WITH (NOLOCK)
+			WHERE WorkDate BETWEEN CAST(@WeekStartDate AS DATETIME) AND CAST(@WeekEndDate AS DATETIME)
+				AND EmpId = @EmpId
+				AND IsOffDay = 1
+				AND WorkDate <> CAST(@OnDate AS DATETIME)
+				AND IsHoliday = 0 -- not count PH
+
 			UNION
 			SELECT DISTINCT OnDate -- Count the number of pending working time requests in the same week
 			FROM dbo.WorkingTimeRequest AS r WITH (NOLOCK)
-			INNER JOIN dbo.KeepInViewRequest AS kiv WITH (NOLOCK) ON r.RequestId = kiv.RequestId
-			LEFT JOIN dbo.EmployeeCalendar c WITH (NOLOCK) ON c.WorkDate = kiv.OnDate AND c.EmpId = r.EmpId
-			LEFT JOIN dbo.tmpEmployeeCalendar ctmp WITH (NOLOCK) ON ctmp.WorkDate = kiv.OnDate AND ctmp.EmpId = r.EmpId
+			    INNER JOIN dbo.KeepInViewRequest AS kiv WITH (NOLOCK) ON r.RequestId = kiv.RequestId
+			    LEFT JOIN dbo.EmployeeCalendar c WITH (NOLOCK) ON c.WorkDate = kiv.OnDate AND c.EmpId = r.EmpId
+			    LEFT JOIN dbo.tmpEmployeeCalendar ctmp WITH (NOLOCK) ON ctmp.WorkDate = kiv.OnDate AND ctmp.EmpId = r.EmpId
 			WHERE r.EmpId = @EmpId 
-				AND r.CurrentStatus IN (@PendingStatusId)
+				AND r.CurrentStatus = @PendingStatusId
 				AND kiv.OnDate BETWEEN @WeekStartDate AND @WeekEndDate
 				AND kiv.OnDate <> @OnDate
 				AND (c.IsHoliday = 0 OR ctmp.IsHoliday = 0) -- not count PH
-		) AS CombinedDates;		
-		DECLARE @MaxOffdaySetting INT = (SELECT TOP(1) s.OffDaysbyWeek FROM EmployeeSummary s WHERE s.EmpId = @EmpId)
+		) AS CombinedDates;
+
+		DECLARE @MaxOffdaySetting INT = (
+            SELECT TOP(1) s.OffDaysbyWeek
+            FROM dbo.EmployeeSummary AS s WITH (NOLOCK)
+            WHERE s.EmpId = @EmpId
+            )
 		
 		IF @SumDayOff >= @MaxOffdaySetting
 			BEGIN		
@@ -192,15 +201,18 @@ BEGIN
 		END
 	END
 
-	SELECT @IsTopManager = IsTopManager
-	FROM dbo.EmployeeSummary WITH (NOLOCK)
+	SELECT @AutoApproveRequest = AutoApproveRequest
+	FROM dbo.CompanyEmployee WITH (NOLOCK)
 	WHERE EmpId = @EmpId
+        AND CompanyId = @CompanyId
+
+    SET @AutoApproveRequest = ISNULL(@AutoApproveRequest, 0)
 
 	IF (
 			@ApproverId IS NULL
 			OR @VerifierId IS NULL
 			)
-		AND @IsTopManager = 0
+		AND @AutoApproveRequest = 0
 	BEGIN
 		SET @ErrCode = 104
 		SET @ErrMsg = 'Verifier, Approver is required.'
@@ -208,7 +220,7 @@ BEGIN
 		RETURN;
 	END
 
-	IF @IsTopManager = 0
+	IF @AutoApproveRequest = 0
 	BEGIN
 		IF NOT EXISTS (
 				SELECT 1
@@ -274,104 +286,88 @@ BEGIN
 	EXEC dbo.WorkingTimeRequest_GetNewRefNoByRequestType @RefNo = @RefNo OUTPUT
 		,@RequestType = @KeepInViewRequestTypeId
 
-	BEGIN TRY
-		INSERT INTO dbo.WorkingTimeRequest (
-			EmpId
-			,RequestType
-			,Remark
-			,CurrentStatus
-			,VerifierId
-			,ApproverId
-			,VerifiedStatus
-			,ApprovedStatus
-			,HRStatus
-			,CreatedDate
-			,CreatedBy
-			)
-		VALUES (
-			@EmpId
-			,@KeepInViewRequestTypeId
-			,@Remark
-			,CASE 
-				WHEN @IsTopManager = 1
-					AND @VerifierId IS NOT NULL THEN @PendingStatusId
-				WHEN @IsTopManager = 1
-					AND @ApproverId IS NOT NULL THEN @VerifiedStatusId
-				WHEN @IsTopManager = 1
-					AND @ApproverId IS NULL THEN @ApprovedStatusId
-				ELSE @PendingStatusId
-				END
-			,@VerifierId
-			,@ApproverId
-			,CASE 
-				WHEN @IsTopManager = 1
-					AND @VerifierId IS NULL THEN @VerifiedStatusId
-				ELSE @PendingStatusId
-				END
-			,CASE 
-				WHEN @IsTopManager = 1
-					AND @ApproverId IS NULL THEN @VerifiedStatusId
-				ELSE @PendingStatusId
-				END
-			,@PendingStatusId
-			,@CreatedDate
-			,@CreatedBy
-			)
+	INSERT INTO dbo.WorkingTimeRequest (
+		EmpId
+		,RequestType
+		,Remark
+		,CurrentStatus
+		,VerifierId
+		,ApproverId
+		,VerifiedStatus
+		,ApprovedStatus
+		,HRStatus
+		,CreatedDate
+		,CreatedBy
+		)
+	VALUES (
+		@EmpId
+		,@KeepInViewRequestTypeId
+		,@Remark
+		,CASE 
+			WHEN @AutoApproveRequest = 1
+				AND @VerifierId IS NOT NULL THEN @PendingStatusId
+			WHEN @AutoApproveRequest = 1
+				AND @ApproverId IS NOT NULL THEN @VerifiedStatusId
+			WHEN @AutoApproveRequest = 1
+				AND @ApproverId IS NULL THEN @ApprovedStatusId
+			ELSE @PendingStatusId
+			END
+		,@VerifierId
+		,@ApproverId
+		,CASE 
+			WHEN @AutoApproveRequest = 1
+				AND @VerifierId IS NULL THEN @VerifiedStatusId
+			ELSE @PendingStatusId
+			END
+		,CASE 
+			WHEN @AutoApproveRequest = 1
+				AND @ApproverId IS NULL THEN @VerifiedStatusId
+			ELSE @PendingStatusId
+			END
+		,@PendingStatusId
+		,@CreatedDate
+		,@CreatedBy
+		)
 
-		SELECT @RequestId = cast(SCOPE_IDENTITY() AS BIGINT)
+	SELECT @RequestId = CAST(SCOPE_IDENTITY() AS BIGINT)
 
-		INSERT INTO dbo.KeepInViewRequest (
-			RequestId
-			,EmpId
-			,OnDate
-			,KeepInViewType
-			,IsHalfDay
-			,FromTime
-			,ToTime
-			,RefNo
-			)
-		VALUES (
-			@RequestId
-			,@EmpId
-			,@OnDate
-			,@KeepInViewType
-			,@IsHalfDay
-			,@FromTime
-			,@ToTime
-			,@RefNo
-			)
+	INSERT INTO dbo.KeepInViewRequest (
+		RequestId
+		,EmpId
+		,OnDate
+		,KeepInViewType
+		,IsHalfDay
+		,FromTime
+		,ToTime
+		,RefNo
+		)
+	VALUES (
+		@RequestId
+		,@EmpId
+		,@OnDate
+		,@KeepInViewType
+		,@IsHalfDay
+		,@FromTime
+		,@ToTime
+		,@RefNo
+		)
 
-		IF @ApproverId IS NULL
-			AND @VerifierId IS NULL
-			AND @IsTopManager = 1
-		BEGIN
-			EXEC dbo.KeepInViewRequest_Approve @RequestId = @RequestId
-				,@ActorId = @EmpId
-				,@RoleId = 3
-				,@ErrCode = @ErrCode OUTPUT
-				,@ErrMsg = @ErrMsg OUTPUT
-		END
+	IF @ApproverId IS NULL
+		AND @VerifierId IS NULL
+		AND @AutoApproveRequest = 1
+	BEGIN
+		EXEC dbo.KeepInViewRequest_Approve @RequestId = @RequestId
+			,@ActorId = -1
+			,@RoleId = 3
+			,@ErrCode = @ErrCode OUTPUT
+			,@ErrMsg = @ErrMsg OUTPUT
+	END
 
-		EXEC dbo.tmpEmployeeCalendar_Insert @CompanyId = @CompanyId
-			,@fromDate = @OnDate
-			,@toDate = @OnDate
-			,@empIds = @EmpId
-			,@isUpdateRequestData = 1
+	EXEC dbo.tmpEmployeeCalendar_Insert @CompanyId = @CompanyId
+		,@fromDate = @OnDate
+		,@toDate = @OnDate
+		,@empIds = @EmpId
+		,@isUpdateRequestData = 1
 
-		EXEC dbo.KeepInViewRequest_WriteLog @RequestId = @RequestId
-	END TRY
-
-	BEGIN CATCH
-		DELETE dbo.WorkingTimeRequest WITH (ROWLOCK)
-		WHERE RequestId = @RequestId
-
-		DELETE dbo.KeepInViewRequest WITH (ROWLOCK)
-		WHERE RequestId = @RequestId
-
-		DELETE dbo.KeepInViewRequestHistory WITH (ROWLOCK)
-		WHERE RequestId = @RequestId
-
-		SELECT @ErrCode = 108
-			,@ErrMsg = N'Create unsuccessfully.'
-	END CATCH
+	EXEC dbo.KeepInViewRequest_WriteLog @RequestId = @RequestId
 END

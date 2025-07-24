@@ -1,35 +1,37 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[LateInEarlyOutRequest_Update] @RequestId BIGINT
-	,@EmpId INT
-	,@OnDate DATE
-	,@RequestType SMALLINT
-	,@ReasonId TINYINT
-	,@LateInMins INT = NULL
-	,@EarlyOutMins INT = NULL
-	,@Remark NVARCHAR(2000) = NULL
-	,@ModifiedBy INT = NULL
-	,@VerifierId INT = NULL
-	,@ApproverId INT = NULL
-	,@ErrCode INT = 0 OUTPUT
-	,@ErrMsg NVARCHAR(200) = '' OUTPUT
-	,@CompanyId SMALLINT
+ALTER PROCEDURE [dbo].[LateInEarlyOutRequest_Update]
+(
+    @RequestId BIGINT
+    ,@CompanyId SMALLINT
+    ,@EmpId INT
+    ,@OnDate DATE
+    ,@RequestType SMALLINT
+    ,@ReasonId TINYINT
+    ,@LateInMins INT = NULL
+    ,@EarlyOutMins INT = NULL
+    ,@Remark NVARCHAR(2000) = NULL
+    ,@ModifiedBy INT = NULL
+    ,@VerifierId INT = NULL
+    ,@ApproverId INT = NULL
+    ,@ErrCode INT = 0 OUTPUT
+    ,@ErrMsg NVARCHAR(200) = '' OUTPUT
+)
 AS
 /*
-Created: Quinn.Vo@20190625
-Task: Edit a late in/early out request
-DB: HRM
-Original:
+    Created: Quinn.Vo@20190625
+    Task: Edit a late in/early out request
+    DB: bodb_HRM
 
-Revisions:
-Param's Explanation:
+    Revisions:
+        20250722@Tim: auto approve request [Redmine: #233324]
+    Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;
-	SET XACT_ABORT ON;
 
 	DECLARE @ModifiedDate DATETIME = GETDATE()
-		,@IsTopManager BIT
+		,@AutoApproveRequest BIT
 		-- leave type
 		,@AnnualLeaveTypeId TINYINT = 2
 		,@UnpaidLeaveTypeId TINYINT = 25
@@ -76,15 +78,18 @@ BEGIN
 		RETURN;
 	END
 
-	SELECT @IsTopManager = IsTopManager
-	FROM dbo.EmployeeSummary WITH (NOLOCK)
+	SELECT @AutoApproveRequest = AutoApproveRequest
+	FROM dbo.CompanyEmployee WITH (NOLOCK)
 	WHERE EmpId = @EmpId
+        AND CompanyId = @CompanyId
+
+    SET @AutoApproveRequest = ISNULL(@AutoApproveRequest, 0)
 
 	IF (
 			@ApproverId IS NULL
 			OR @VerifierId IS NULL
 			)
-		AND @IsTopManager = 0
+		AND @AutoApproveRequest = 0
 	BEGIN
 		SET @ErrCode = 102
 		SET @ErrMsg = 'Verifier, Approver is required.'
@@ -121,7 +126,7 @@ BEGIN
 		END
 	END
 
-	IF @IsTopManager = 0
+	IF @AutoApproveRequest = 0
 	BEGIN
 		IF NOT EXISTS (
 				SELECT TOP 1 1
@@ -204,23 +209,23 @@ BEGIN
 	UPDATE WorkingTimeRequest WITH (ROWLOCK, UPDLOCK)
 	SET Remark = @Remark
 		,CurrentStatus = CASE 
-			WHEN @IsTopManager = 1
+			WHEN @AutoApproveRequest = 1
 				AND @VerifierId IS NOT NULL THEN @PendingStatusId
-			WHEN @IsTopManager = 1
+			WHEN @AutoApproveRequest = 1
 				AND @ApproverId IS NOT NULL THEN @VerifiedStatusId
-			WHEN @IsTopManager = 1
+			WHEN @AutoApproveRequest = 1
 				AND @ApproverId IS NULL THEN @ApprovedStatusId
 			ELSE @PendingStatusId
 			END
 		,VerifierId = @VerifierId
 		,VerifiedStatus = CASE 
-			WHEN @IsTopManager = 1
+			WHEN @AutoApproveRequest = 1
 				AND @VerifierId IS NULL THEN @VerifiedStatusId
 			ELSE @PendingStatusId
 			END
 		,ApproverId = @ApproverId
 		,ApprovedStatus = CASE 
-			WHEN @IsTopManager = 1
+			WHEN @AutoApproveRequest = 1
 				AND @ApproverId IS NULL THEN @VerifiedStatusId
 			ELSE @PendingStatusId
 			END
@@ -238,10 +243,10 @@ BEGIN
 
 	IF @ApproverId IS NULL
 		AND @VerifierId IS NULL
-		AND @IsTopManager = 1
+		AND @AutoApproveRequest = 1
 	BEGIN
 		EXEC dbo.LateInEarlyOutRequest_Approve @RequestId = @RequestId
-			,@ActorId = @EmpId
+			,@ActorId = -1
 			,@RoleId = 3
 			,@ErrCode = @ErrCode OUTPUT
 			,@ErrMsg = @ErrMsg OUTPUT
@@ -249,6 +254,3 @@ BEGIN
 
 	EXEC dbo.LateInEarlyOutRequest_WriteLog @RequestId = @RequestId
 END
-
-
-

@@ -1,16 +1,18 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[LeaveRequest_GetById] @RequestId BIGINT,
-	@CompanyId SMALLINT
+ALTER PROCEDURE [dbo].[LeaveRequest_GetById]
+(
+    @RequestId BIGINT,
+    @CompanyId SMALLINT
+)
 AS
 /*
-Created: Quinn.Vo@20190617
-Task: Get Leave request by RequestId.
-DB: HRM
-Original:
+    Created: Quinn.Vo@20190617
+    Task: Get Leave request by RequestId.
+    DB: bodb_HRM
 
-Revisions:
-Param's Explanation:
+    Revisions:
+    Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -49,8 +51,10 @@ BEGIN
 		INNER JOIN dbo.WorkingTimeRequest AS wk WITH (NOLOCK) ON lr.RequestId = wk.RequestId
 		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON lr.EmpId = e.EmpId
 		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = lr.EmpId
+        AND ce.CompanyId = @CompanyId
 		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON e.EmpId = empsum.EmpId
 		INNER JOIN dbo.LeaveType AS lv WITH (NOLOCK) ON lr.LeaveType = lv.LeaveTypeId
+        AND lv.CompanyId = @CompanyId
 		LEFT JOIN dbo.Employee AS ve WITH (NOLOCK) ON wk.VerifierId = ve.EmpId
 		LEFT JOIN dbo.CompanyEmployee AS vece WITH (NOLOCK) ON ve.EmpId = vece.EmpId
 		LEFT JOIN dbo.Employee AS ap WITH (NOLOCK) ON wk.ApproverId = ap.EmpId
@@ -58,7 +62,6 @@ BEGIN
 		LEFT JOIN dbo.Employee AS pr WITH (NOLOCK) ON wk.HRId = pr.EmpId
 		LEFT JOIN dbo.HospitalLeave AS hl WITH (NOLOCK) ON hl.RequestId = lr.RequestId
 	WHERE lr.RequestId = @RequestId
-        AND lv.CompanyId = @CompanyId
 
 	SELECT ldt.RequestId
 		,ldt.OnDate
