@@ -1,8 +1,9 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[Employee_GetEmployeeById](
+ALTER PROCEDURE [dbo].[Employee_GetEmployeeByID]
+(
     @EmpId INT,
-    @CompanyId SMALLINT = 0
+    @CompanyId SMALLINT = NULL
 )
 AS
 /*
@@ -132,5 +133,5 @@ BEGIN
 		LEFT JOIN dbo.LookupData AS lk WITH (NOLOCK) ON e.JobTitleId = lk.Id
 		AND lk.LookupId = 1
 	WHERE e.EmpId = @EmpId
-        AND ce.CompanyId = @CompanyId
+		AND (@CompanyId IS NULL OR ce.CompanyId = @CompanyId)
 END
