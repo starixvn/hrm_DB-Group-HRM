@@ -1,6 +1,7 @@
 /*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[EmployeeSupervisor_GetDisciplineSettingById] @EmpId INT
+ALTER PROCEDURE [dbo].[EmployeeSupervisor_GetDisciplineSettingById] @EmpId INT,
+	@CompanyId INT = NULL
 AS
 /*
 Created: 20160621@Tim.Trinh
@@ -16,11 +17,19 @@ BEGIN
 
 	SELECT DISTINCT su.OwnerId
 		,emp.FullName
-		,emp.NickName
+		,CASE 
+			WHEN @CompanyId IS NOT NULL AND @CompanyId = c.CompanyId THEN emp.NickName
+				ELSE emp.NickName + ' (' + ISNULL(c.Name, '') + ')'
+			END AS NickName
 		,emp.Email
 		,c.[Name] AS CompanyName
 		,c.CompanyId
 		,ISNULL(su.OrderNo, 0) AS OrderNo
+		,CASE 
+			WHEN @CompanyId IS NOT NULL AND @CompanyId = c.CompanyId THEN 1
+			WHEN @CompanyId IS NULL THEN 1 -- group
+			ELSE 0
+		END AS CanRemove
 	FROM [dbo].[EmployeeSupervisor] AS su WITH (NOLOCK)
 		INNER JOIN [dbo].Employee AS emp WITH (NOLOCK) ON su.OwnerId = emp.EmpId
 		LEFT JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = su.OwnerId

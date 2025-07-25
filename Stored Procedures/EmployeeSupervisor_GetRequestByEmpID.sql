@@ -2,6 +2,7 @@
 
 ALTER PROCEDURE [dbo].[EmployeeSupervisor_GetRequestByEmpID] @EmpId INT
 	,@Role TINYINT = NULL
+	,@CompanyId INT = NULL
 AS
 /*
 Created: TOM.VO@2013/10/25
@@ -18,7 +19,10 @@ BEGIN
 	IF @Role IS NULL
 		SELECT su.OwnerId
 			,ee.FullName
-			,ee.NickName
+			,CASE 
+			WHEN @CompanyId IS NOT NULL AND @CompanyId = c.CompanyId THEN ee.NickName
+				ELSE ee.NickName + ' (' + ISNULL(c.Name, '') + ')'
+			END AS NickName
 			,su.ActionType
 			,ee.Email
 			,'' AS OrderCode
@@ -51,6 +55,11 @@ BEGIN
 					END) Overtimes
 			,isnull(g.GroupID, - 1) AS [TeamId]
 			,isnull(g.NAME, '') AS [TeamCode]
+			,CASE 
+				WHEN @CompanyId IS NOT NULL AND @CompanyId = c.CompanyId THEN 1
+				WHEN @CompanyId IS NULL THEN 1 -- group
+				ELSE 0
+			END AS CanRemove
 		FROM [dbo].[EmployeeSupervisor] su WITH (NOLOCK)
 			INNER JOIN [dbo].Employee ee WITH (NOLOCK) ON su.OwnerId = ee.EmpId
 			LEFT JOIN dbo.[Group] AS g WITH (NOLOCK) ON ee.GroupId = g.GroupId
@@ -70,7 +79,10 @@ BEGIN
 	ELSE IF @Role = 4
 		SELECT su.OwnerId
 			,ee.FullName
-			,ee.NickName
+			,CASE 
+			WHEN @CompanyId IS NOT NULL AND @CompanyId = c.CompanyId THEN ee.NickName
+				ELSE ee.NickName + ' (' + ISNULL(c.Name, '') + ')'
+			END AS NickName
 			,su.ActionType
 			,ee.Email
 			,su.OrderCode
@@ -85,6 +97,11 @@ BEGIN
 			,0 Overtimes
 			,isnull(g.GroupID, - 1) AS [TeamId]
 			,isnull(g.NAME, '') AS [TeamCode]
+			,CASE 
+				WHEN @CompanyId IS NOT NULL AND @CompanyId = c.CompanyId THEN 1
+				WHEN @CompanyId IS NULL THEN 1 -- group
+				ELSE 0
+			END AS CanRemove
 		FROM [dbo].[EmployeeSupervisor] su WITH (NOLOCK)
 			INNER JOIN [dbo].Employee ee WITH (NOLOCK) ON su.OwnerId = ee.EmpId
 			LEFT JOIN dbo.[Group] AS g WITH (NOLOCK) ON ee.GroupId = g.GroupId
@@ -119,10 +136,18 @@ BEGIN
 			,ROW_NUMBER() OVER (
 				ORDER BY MIN(ord.OrderNo)
 				) OrderNo
+			,CASE 
+				WHEN @CompanyId IS NOT NULL AND @CompanyId = su.CompanyId THEN 1
+				WHEN @CompanyId IS NULL THEN 1 -- group
+				ELSE 0
+			END AS CanRemove
 		FROM (
 			SELECT su.OwnerId
 				,ee.FullName
-				,ee.NickName
+				,CASE 
+					WHEN @CompanyId IS NOT NULL AND @CompanyId = c.CompanyId THEN ee.NickName
+						ELSE ee.NickName + ' (' + ISNULL(c.Name, '') + ')'
+					END AS NickName
 				,su.ActionType
 				,ee.Email
 				--,OrderNo
