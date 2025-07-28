@@ -67,7 +67,7 @@ BEGIN
 	SET @logData = REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"')
 
 	EXEC dbo.ActivityLog_Insert @UserId = @ModifiedBy
-		,@ObjectTypeId = 4
+		,@ObjectTypeId = 6
 		,@ObjectId = @SubCompanyId
 		,@OldData = @logOldData
 		,@Data = @logData

@@ -48,7 +48,7 @@ BEGIN
     WHERE SubCompanyId = @SubCompanyId
 
 	EXEC dbo.ActivityLog_Insert @UserId = @DeletedBy
-		,@ObjectTypeId = 4
+		,@ObjectTypeId = 6
 		,@ObjectId = @SubCompanyId
 		,@OldData = @logOldData
 		,@Data = NULL

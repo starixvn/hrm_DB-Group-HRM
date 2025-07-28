@@ -71,7 +71,7 @@ BEGIN
     BEGIN
         EXEC dbo.ActivityLog_Insert 
             @UserId = @ModifiedBy,
-            @ObjectTypeId = 4,
+            @ObjectTypeId = 5,
             @ObjectId = @CompanyId,
             @OldData = @logOldData,
             @Data = @logData,
@@ -102,7 +102,7 @@ BEGIN
     BEGIN
         EXEC dbo.ActivityLog_Insert 
             @UserId = @ModifiedBy,
-            @ObjectTypeId = 4,
+            @ObjectTypeId = 5,
             @ObjectId = @CompanyId,
             @OldData = NULL,
             @Data = @logData,
