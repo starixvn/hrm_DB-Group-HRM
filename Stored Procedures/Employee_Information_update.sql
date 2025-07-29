@@ -21,7 +21,6 @@ ALTER PROCEDURE [dbo].[Employee_Information_update]
     ,@ConfirmedDate DATE = NULL
     ,@ResignedDate DATE = NULL
     ,@ResignedReason NVARCHAR(200) = NULL
-    ,@Skype VARCHAR(100) = NULL
     ,@LetsTalk VARCHAR(100) = NULL
     ,@Marriage TINYINT = 1
     ,@ModifiedBy INT
@@ -63,16 +62,18 @@ ALTER PROCEDURE [dbo].[Employee_Information_update]
     ,@SubCompanyId INT = NULL
     ,@SalaryStructureId INT = NULL
     ,@Salary VARCHAR(100) = NULL
+    ,@AutoApproveRequest BIT = 0
 )
 AS
 /*
-    Created: TOM
+    Created: Tom
     Task: update an employee Information 
     DB: bodb_HRM
 
     Revisions:
         - 20250619@Henry: fix ambiguous column error
         - 20250707@Tim: add salary structure [Redmine: #230542]
+        - 20250722@Tim: add auto approve request [Remine: #233324]
     Param's Explanation:
 */
 BEGIN
@@ -166,7 +167,6 @@ BEGIN
 				,emp.ConfirmedDate AS '@ConfirmedDate'
 				,emp.ResignedDate AS '@ResignedDate'
 				,emp.ResignedReason AS '@ResignedReason'
-				,emp.Skype AS '@Skype'
 				,emp.LetsTalk AS '@LetsTalk'
 				,emp.Marriage AS '@Marriage'
 				,emp.PermanentAddress AS '@PermanentAddress'
@@ -202,12 +202,15 @@ BEGIN
 				,empsum.OffDaysbyWeek AS '@OffDaysbyWeek'
 				,empsum.MilitaryFromDate AS '@MilitaryFromDate'
 				,empsum.MilitaryToDate AS '@MilitaryToDate'
-				,ce.SubCompanyId AS '@SubCompanyId'
+				,sc.[Name] AS '@SubCompanyName'
                 ,ce.SalaryStructureId AS '@SalaryStructureId'
                 ,ce.Salary AS '@Salary'
+                ,ce.AutoApproveRequest AS '@AutoApproveRequest'
 			FROM dbo.Employee AS emp WITH (NOLOCK)
 				INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
 				INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
+					AND ce.CompanyId = @CompanyId
+				LEFT JOIN dbo.SubCompany AS sc WITH (NOLOCK) ON sc.SubCompanyId = ce.SubCompanyId AND sc.CompanyId = ce.CompanyId
 			WHERE emp.EmpId = @EmpId
 			FOR XML PATH('Row')
 				,TYPE
@@ -239,7 +242,6 @@ BEGIN
 		,ConfirmedDate = @ConfirmedDate
 		,ResignedDate = @ResignedDate
 		,ResignedReason = @ResignedReason
-		,Skype = @Skype
 		,LetsTalk = @LetsTalk
 		,Marriage = @Marriage
 		,ModifiedDate = GETDATE()
@@ -269,7 +271,9 @@ BEGIN
 	SET SubCompanyId = @SubCompanyId
         ,SalaryStructureId = @SalaryStructureId
         ,Salary = @Salary
+        ,AutoApproveRequest = @AutoApproveRequest
 	WHERE EmpId = @EmpId
+        AND CompanyId = @CompanyId
 
 	EXEC dbo.EmployeeRole_Update @EmployeeId = @EmpId
 		,@RoleIds = @Roles
@@ -314,7 +318,6 @@ BEGIN
 				,emp.ConfirmedDate AS '@ConfirmedDate'
 				,emp.ResignedDate AS '@ResignedDate'
 				,emp.ResignedReason AS '@ResignedReason'
-				,emp.Skype AS '@Skype'
 				,emp.LetsTalk AS '@LetsTalk'
 				,emp.Marriage AS '@Marriage'
 				,emp.PermanentAddress AS '@PermanentAddress'
@@ -350,12 +353,15 @@ BEGIN
 				,empsum.OffDaysbyWeek AS '@OffDaysbyWeek'
 				,empsum.MilitaryFromDate AS '@MilitaryFromDate'
 				,empsum.MilitaryToDate AS '@MilitaryToDate'
-				,ce.SubCompanyId AS '@SubCompanyId'
+				,sc.[Name] AS '@SubCompanyName'
                 ,ce.SalaryStructureId AS '@SalaryStructureId'
                 ,ce.Salary AS '@Salary'
+                ,ce.AutoApproveRequest AS '@AutoApproveRequest'
 			FROM dbo.Employee AS emp WITH (NOLOCK)
 				INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
 				INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
+					AND ce.CompanyId = @CompanyId
+				LEFT JOIN dbo.SubCompany AS sc WITH (NOLOCK) ON sc.SubCompanyId = ce.SubCompanyId AND sc.CompanyId = ce.CompanyId
 			WHERE emp.EmpId = @EmpId
 			FOR XML PATH('Row')
 				,TYPE
