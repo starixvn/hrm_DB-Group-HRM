@@ -97,10 +97,7 @@ BEGIN
 
     SET @AutoApproveRequest = ISNULL(@AutoApproveRequest, 0)
 
-	IF (
-			@ApproverId IS NULL
-			OR @VerifierId IS NULL
-			)
+	IF (@ApproverId IS NULL OR @VerifierId IS NULL)
 		AND @AutoApproveRequest = 0
 	BEGIN
 		SET @ErrCode = 102
@@ -164,67 +161,17 @@ BEGIN
 		END
 	END
 
-	INSERT INTO dbo.WorkingTimeRequest (
-		EmpId
-		,RequestType
-		,Remark
-		,CurrentStatus
-		,VerifierId
-		,ApproverId
-		,VerifiedStatus
-		,ApprovedStatus
-		,HRStatus
-		,CreatedDate
-		,CreatedBy
-		)
-	VALUES (
-		@EmpId
-		,@RequestType
-		,@Remark
-		,CASE 
-			WHEN @AutoApproveRequest = 1
-				AND @VerifierId IS NOT NULL THEN @PendingStatusId
-			WHEN @AutoApproveRequest = 1
-				AND @ApproverId IS NOT NULL THEN @VerifiedStatusId
-			WHEN @AutoApproveRequest = 1
-				AND @ApproverId IS NULL THEN @ApprovedStatusId
-			ELSE 1
-			END
-		,@VerifierId
-		,@ApproverId
-		,CASE 
-			WHEN @AutoApproveRequest = 1
-				AND @VerifierId IS NULL THEN @VerifiedStatusId
-			ELSE @PendingStatusId
-			END
-		,CASE 
-			WHEN @AutoApproveRequest = 1
-				AND @ApproverId IS NULL THEN @VerifiedStatusId
-			ELSE @PendingStatusId
-			END
-		,@PendingStatusId
-		,@CreatedDate
-		,@CreatedBy
-		)
+	INSERT INTO dbo.WorkingTimeRequest (EmpId, RequestType, Remark, CurrentStatus, VerifierId, ApproverId, VerifiedStatus, ApprovedStatus, HRStatus, CreatedDate, CreatedBy)
+	VALUES (@EmpId, @RequestType, @Remark, @PendingStatusId, @VerifierId,
+        CASE WHEN @AutoApproveRequest = 1 AND @ApproverId IS NULL THEN -1 ELSE @ApproverId END,
+        @PendingStatusId, @PendingStatusId, @PendingStatusId, @CreatedDate, @CreatedBy)
 
 	SELECT @RequestId = cast(SCOPE_IDENTITY() AS BIGINT)
 
-	INSERT INTO dbo.CheckInOutRequest (
-		RequestId
-		,EmpId
-		,OnDate
-		,RequestTime
-		,RefNo
-		,ReasonId
-		)
-	VALUES (
-		@RequestId
-		,@EmpId
-		,@OnDate
-		,@RequestTime
-		,@RefNo
-		,@ReasonId
-		)
+	INSERT INTO dbo.CheckInOutRequest (RequestId, EmpId, OnDate, RequestTime, RefNo, ReasonId)
+	VALUES (@RequestId, @EmpId, @OnDate, @RequestTime, @RefNo, @ReasonId)
+
+	EXEC dbo.CheckInOutRequest_WriteLog @RequestId = @RequestId
 
 	IF @ApproverId IS NULL
 		AND @VerifierId IS NULL
@@ -236,6 +183,4 @@ BEGIN
 			,@ErrCode = @ErrCode OUTPUT
 			,@ErrMsg = @ErrMsg OUTPUT
 	END
-
-	EXEC dbo.CheckInOutRequest_WriteLog @RequestId = @RequestId
 END

@@ -214,14 +214,10 @@ BEGIN
 					AND wk.RequestType = @RequestType
 					AND wk.CurrentStatus IN (@PendingStatusId, @VerifiedStatusId, @ApprovedStatusId, @ProcessedStatusId)
 					AND (
-						@FromDate BETWEEN cs.FromDate
-							AND cs.ToDate
-						OR @ToDate BETWEEN cs.FromDate
-							AND cs.ToDate
-						OR cs.FromDate BETWEEN @FromDate
-							AND @ToDate
-						OR cs.ToDate BETWEEN @FromDate
-							AND @ToDate
+						@FromDate BETWEEN cs.FromDate AND cs.ToDate
+						OR @ToDate BETWEEN cs.FromDate AND cs.ToDate
+						OR cs.FromDate BETWEEN @FromDate AND @ToDate
+						OR cs.ToDate BETWEEN @FromDate AND @ToDate
 						)
 				)
 			OR (
@@ -233,10 +229,8 @@ BEGIN
 						AND cs.EmpId = @EmpId
 						INNER JOIN dbo.WorkingTimeRequest AS wk WITH (NOLOCK) ON cs.RequestId = wk.RequestId
 						AND wk.CurrentStatus IN (@PendingStatusId, @VerifiedStatusId, @ApprovedStatusId, @ProcessedStatusId)
-					WHERE csdt.OnDate BETWEEN @FromDate
-							AND @ToDate
-						OR csdt.ToDate BETWEEN @FromDate
-							AND @ToDate
+					WHERE csdt.OnDate BETWEEN @FromDate AND @ToDate
+						OR csdt.ToDate BETWEEN @FromDate AND @ToDate
 					)
 				)
 			)
@@ -254,8 +248,7 @@ BEGIN
 				FROM #tblChangeShiftDetail AS csd
 					INNER JOIN dbo.ChangeShiftRequest AS cs WITH (NOLOCK) ON cs.TypeId = @ChangeShift
 					AND cs.EmpId = @EmpId
-					AND csd.OnDate BETWEEN cs.FromDate
-						AND cs.ToDate
+					AND csd.OnDate BETWEEN cs.FromDate AND cs.ToDate
 					INNER JOIN dbo.WorkingTimeRequest AS wk WITH (NOLOCK) ON cs.RequestId = wk.RequestId
 					AND wk.CurrentStatus IN (@PendingStatusId, @VerifiedStatusId, @ApprovedStatusId, @ProcessedStatusId)
 				)
@@ -284,83 +277,21 @@ BEGIN
 		RETURN
 	END
 
-	INSERT INTO dbo.WorkingTimeRequest (
-		EmpId
-		,RequestType
-		,Remark
-		,CurrentStatus
-		,VerifierId
-		,ApproverId
-		,VerifiedStatus
-		,ApprovedStatus
-		,HRStatus
-		,CreatedDate
-		,CreatedBy
-		)
-	VALUES (
-		@EmpId
-		,@RequestType
-		,@Remark
-		,CASE 
-			WHEN @AutoApproveRequest = 1
-				AND @VerifierId IS NOT NULL THEN @PendingStatusId
-			WHEN @AutoApproveRequest = 1
-				AND @ApproverId IS NOT NULL THEN @VerifiedStatusId
-			WHEN @AutoApproveRequest = 1
-				AND @ApproverId IS NULL THEN @ApprovedStatusId
-			ELSE @PendingStatusId
-			END
-		,@VerifierId
-		,@ApproverId
-		,CASE 
-			WHEN @AutoApproveRequest = 1
-				AND @VerifierId IS NULL THEN @VerifiedStatusId
-			ELSE @PendingStatusId
-			END
-		,CASE 
-			WHEN @AutoApproveRequest = 1
-				AND @ApproverId IS NULL THEN @VerifiedStatusId
-			ELSE @PendingStatusId
-			END
-		,@PendingStatusId
-		,@CreatedDate
-		,@ActorId
-		)
+	INSERT INTO dbo.WorkingTimeRequest (EmpId, RequestType, Remark, CurrentStatus, VerifierId, ApproverId, VerifiedStatus, ApprovedStatus, HRStatus, CreatedDate, CreatedBy)
+	VALUES (@EmpId, @RequestType, @Remark, @PendingStatusId, @VerifierId,
+        CASE WHEN @AutoApproveRequest = 1 AND @ApproverId IS NULL THEN -1 ELSE @ApproverId END,
+        @PendingStatusId, @PendingStatusId, @PendingStatusId, @CreatedDate, @ActorId)
 
 	SELECT @RequestId = CAST(SCOPE_IDENTITY() AS BIGINT)
 
-	INSERT INTO dbo.ChangeShiftRequest (
-		RequestId
-		,EmpId
-		,FromDate
-		,ToDate
-		,TypeId
-		)
-	VALUES (
-		@RequestId
-		,@EmpId
-		,@FromDate
-		,@ToDate
-		,@TypeId
-		)
+	INSERT INTO dbo.ChangeShiftRequest (RequestId, EmpId, FromDate, ToDate, TypeId)
+	VALUES (@RequestId, @EmpId, @FromDate, @ToDate, @TypeId)
 
-	INSERT INTO dbo.ChangeShiftRequestDetail (
-		EmpId
-		,OnDate
-		,RequestId
-		,FromShift
-		,ToShift
-		,Remark
-		,ToDate
-		)
-	SELECT @EmpId
-		,OnDate
-		,@RequestId
-		,FromShiftId
-		,ToShiftId
-		,Remark
-		,ToDate
+	INSERT INTO dbo.ChangeShiftRequestDetail (EmpId, OnDate, RequestId, FromShift, ToShift, Remark, ToDate)
+	SELECT @EmpId, OnDate, @RequestId, FromShiftId, ToShiftId, Remark, ToDate
 	FROM #tblChangeShiftDetail
+
+	EXEC dbo.ChangeShiftRequest_WriteLog @RequestId = @RequestId
 
 	IF @ApproverId IS NULL
 		AND @VerifierId IS NULL
@@ -393,8 +324,6 @@ BEGIN
 		,@toDate = @ToDate
 		,@empIds = @EmpId
 		,@isUpdateRequestData = 1
-
-	EXEC dbo.ChangeShiftRequest_WriteLog @RequestId = @RequestId
 
 	DROP TABLE #tblChangeShiftDetail
 END

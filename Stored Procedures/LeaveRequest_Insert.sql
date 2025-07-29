@@ -70,6 +70,8 @@ BEGIN
         ,@JoinedDate DATE
         ,@AnnualLeaveResetTimelineType TINYINT
         ,@AnnualLeaveResetTimelineByYear TINYINT = 1
+		-- request status
+		,@PendingStatusId TINYINT = 1
 
 	CREATE TABLE #tblLeaveRequestDetail (
 		OnDate DATE
@@ -270,22 +272,8 @@ BEGIN
 				,@ErrMsg = @ErrMsg OUTPUT
 		END
 
-		INSERT INTO #tblLeaveRequestDetail (
-			OnDate
-			,ShiftId
-			,LeaveType
-			,WorkType
-			,IsHalfDay
-			,FromTime
-			,ToTime
-			)
-		SELECT d.OnDate
-			,ISNULL(d.ShiftId, ec.ShiftId) AS ShiftId
-			,d.LeaveType
-			,d.WorkType
-			,d.IsHalfDay
-			,d.FromTime
-			,d.ToTime
+		INSERT INTO #tblLeaveRequestDetail (OnDate, ShiftId, LeaveType, WorkType, IsHalfDay, FromTime, ToTime)
+		SELECT d.OnDate,ISNULL(d.ShiftId, ec.ShiftId) AS ShiftId, d.LeaveType, d.WorkType, d.IsHalfDay, d.FromTime, d.ToTime
 		FROM OPENXML(@DocHandler, '/ROOT/Row', 1) WITH (OnDate DATETIME, ShiftId INT, LeaveType INT, IsHalfDay BIT, WorkType TINYINT, FromTime DATETIME, ToTime DATETIME) AS d
 			LEFT JOIN dbo.EmployeeCalendar ec WITH (NOLOCK) ON ec.WorkDate = d.OnDate
 			AND ec.EmpId = @EmpId
@@ -320,10 +308,7 @@ BEGIN
 			FROM #tblLeaveRequestDetail WITH (NOLOCK)
 			)
 	BEGIN
-		SELECT @TotalDays_tmp = SUM(CASE lrd.IsHalfDay
-					WHEN 1 THEN 0.5
-					ELSE 1
-					END)
+		SELECT @TotalDays_tmp = SUM(CASE lrd.IsHalfDay WHEN 1 THEN 0.5 ELSE 1 END)
 		FROM dbo.EmployeeCalendar AS cl WITH (NOLOCK)
 			INNER JOIN #tblLeaveRequestDetail AS lrd WITH (NOLOCK) ON cl.WorkDate = lrd.OnDate
 		WHERE cl.EmpId = @EmpId
@@ -335,46 +320,25 @@ BEGIN
 
 		IF @TotalDays_tmp IS NULL
 		BEGIN
-			SELECT @TotalDays_tmp = SUM(CASE lrd.IsHalfDay
-						WHEN 1 THEN 0.5
-						ELSE 1
-						END)
+			SELECT @TotalDays_tmp = SUM(CASE lrd.IsHalfDay WHEN 1 THEN 0.5 ELSE 1 END)
 			FROM #tblLeaveRequestDetail lrd WITH (NOLOCK)
 			WHERE lrd.WorkType = @LeaveWorkType
 		END
 
 		SELECT @AnnualLeaveDay = SUM(CASE 
-					WHEN LeaveType = @AnnualLeaveType THEN CASE 
-							WHEN IsHalfDay = 1 THEN 0.5
-							ELSE 1
-							END
-					ELSE 0
-					END)
+					WHEN LeaveType = @AnnualLeaveType THEN CASE WHEN IsHalfDay = 1 THEN 0.5 ELSE 1 END
+					ELSE 0 END)
 			,@SickLeaveDay = SUM(CASE 
-					WHEN LeaveType = @SickLeaveTypeId THEN CASE 
-							WHEN IsHalfDay = 1 THEN 0.5
-							ELSE 1
-							END
-					ELSE 0
-					END)
+					WHEN LeaveType = @SickLeaveTypeId THEN CASE WHEN IsHalfDay = 1 THEN 0.5 ELSE 1 END
+					ELSE 0 END)
 			,@HospitalizationLeaveDay = SUM(CASE 
-					WHEN LeaveType = @HospitalizationLeaveTypeId THEN CASE 
-							WHEN IsHalfDay = 1 THEN 0.5
-							ELSE 1
-							END
-					ELSE 0
-					END)
+					WHEN LeaveType = @HospitalizationLeaveTypeId THEN CASE WHEN IsHalfDay = 1 THEN 0.5 ELSE 1 END
+					ELSE 0 END)
 			,@KIVLeaveDay = SUM(CASE 
-					WHEN LeaveType = @KIVByDayLeaveType THEN CASE IsHalfDay
-							WHEN 1 THEN 0.5
-							ELSE 1
-							END
-					ELSE 0
-					END)
-			,@KIVLeaveMinutes = SUM(CASE 
-					WHEN LeaveType = @KIVByHourLeaveType THEN DATEDIFF(MI, FromTime, ToTime)
-					ELSE 0
-					END)
+					WHEN LeaveType = @KIVByDayLeaveType THEN CASE IsHalfDay WHEN 1 THEN 0.5 ELSE 1 END
+                    ELSE 0 END)
+			,@KIVLeaveMinutes = SUM(CASE WHEN LeaveType = @KIVByHourLeaveType THEN DATEDIFF(MI, FromTime, ToTime)
+                    ELSE 0 END)
 		FROM #tblLeaveRequestDetail WITH (NOLOCK)
 	END
 	ELSE
@@ -737,74 +701,18 @@ BEGIN
 		,@RequestType = @RequestType
 
 	BEGIN TRY
-		INSERT INTO dbo.WorkingTimeRequest (
-			[EmpId]
-			,[RequestType]
-			,[Remark]
-			,[CurrentStatus]
-			,[VerifierId]
-			,[ApproverId]
-			,[VerifiedStatus]
-			,[ApprovedStatus]
-			,[HRStatus]
-			,[CreatedDate]
-			,[CreatedBy]
-			)
-		VALUES (
-			@EmpId
-			,@RequestType
-			,@Remark
-			,CASE 
-				WHEN @AutoApproveRequest = 1
-					AND @VerifierId IS NOT NULL THEN 1
-				WHEN @AutoApproveRequest = 1
-					AND @ApproverId IS NOT NULL THEN 2
-				WHEN @AutoApproveRequest = 1
-					AND @ApproverId IS NULL THEN 4
-				ELSE 1
-				END
-			,@VerifierId
-			,@ApproverId
-			,CASE 
-				WHEN @AutoApproveRequest = 1
-					AND @VerifierId IS NULL THEN 2
-				ELSE 1
-				END
-			,CASE 
-				WHEN @AutoApproveRequest = 1
-					AND @ApproverId IS NULL THEN 1
-				ELSE 1
-				END
-			,1
-			,@CreatedDate
-			,@CreatedBy
-			)
+		INSERT INTO dbo.WorkingTimeRequest (EmpId, RequestType, [Remark], CurrentStatus, VerifierId, ApproverId, VerifiedStatus, ApprovedStatus, HRStatus, CreatedDate, CreatedBy)
+		VALUES (@EmpId, @RequestType, @Remark, @PendingStatusId, @VerifierId,
+			CASE WHEN @AutoApproveRequest = 1 AND @ApproverId IS NULL THEN -1 ELSE @ApproverId END,
+            @PendingStatusId, @PendingStatusId, @PendingStatusId, @CreatedDate, @CreatedBy)
 
 		SELECT @RequestId = CAST(SCOPE_IDENTITY() AS BIGINT)
 
-		INSERT INTO [dbo].[LeaveRequest] ([RequestId], [EmpId], [FromDate], [ToDate], [LeaveType], [TotalDays], [RefNo])
+		INSERT INTO [dbo].[LeaveRequest] (RequestId, EmpId, FromDate, ToDate, LeaveType, TotalDays, RefNo)
 		VALUES (@RequestId, @EmpId, @FromDate, @ToDate, @LeaveTypeId, @TotalDays, @RefNo)
 
-		INSERT INTO [dbo].[LeaveRequestDetail] (
-			[RequestId]
-			,[EmpId]
-			,[OnDate]
-			,[ShiftId]
-			,[LeaveType]
-			,[IsHalfDay]
-			,[FromTime]
-			,[ToTime]
-			,WorkType
-			)
-		SELECT @RequestId
-			,@EmpId
-			,OnDate
-			,ShiftId
-			,LeaveType
-			,IsHalfDay
-			,FromTime
-			,ToTime
-			,WorkType
+		INSERT INTO [dbo].[LeaveRequestDetail] (RequestId, EmpId, OnDate, ShiftId, LeaveType, IsHalfDay, FromTime, ToTime, WorkType)
+		SELECT @RequestId, @EmpId, OnDate, ShiftId, LeaveType, IsHalfDay, FromTime, ToTime, WorkType
 		FROM #tblLeaveRequestDetail WITH (NOLOCK)
 
 		EXEC dbo.LeaveRequest_EmployeeCalendar_UpdateOffDay @RequestId
@@ -822,6 +730,8 @@ BEGIN
 
 		EXEC dbo.LeaveRequest_InsertWeekendLeaveTrans @RequestId = @RequestId
 
+		EXEC dbo.LeaveRequest_WriteLog @RequestId
+
 		IF @ApproverId IS NULL
 			AND @VerifierId IS NULL
 			AND @AutoApproveRequest = 1
@@ -838,8 +748,6 @@ BEGIN
 			,@toDate = @ToDate
 			,@empIds = @EmpId
 			,@isUpdateRequestData = 1
-
-		EXEC dbo.LeaveRequest_WriteLog @RequestId
 	END TRY
 
 	BEGIN CATCH

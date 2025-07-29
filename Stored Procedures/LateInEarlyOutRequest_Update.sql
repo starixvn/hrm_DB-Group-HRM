@@ -85,10 +85,7 @@ BEGIN
 
     SET @AutoApproveRequest = ISNULL(@AutoApproveRequest, 0)
 
-	IF (
-			@ApproverId IS NULL
-			OR @VerifierId IS NULL
-			)
+	IF (@ApproverId IS NULL OR @VerifierId IS NULL)
 		AND @AutoApproveRequest = 0
 	BEGIN
 		SET @ErrCode = 102
@@ -208,27 +205,11 @@ BEGIN
 
 	UPDATE WorkingTimeRequest WITH (ROWLOCK, UPDLOCK)
 	SET Remark = @Remark
-		,CurrentStatus = CASE 
-			WHEN @AutoApproveRequest = 1
-				AND @VerifierId IS NOT NULL THEN @PendingStatusId
-			WHEN @AutoApproveRequest = 1
-				AND @ApproverId IS NOT NULL THEN @VerifiedStatusId
-			WHEN @AutoApproveRequest = 1
-				AND @ApproverId IS NULL THEN @ApprovedStatusId
-			ELSE @PendingStatusId
-			END
+		,CurrentStatus = @PendingStatusId
 		,VerifierId = @VerifierId
-		,VerifiedStatus = CASE 
-			WHEN @AutoApproveRequest = 1
-				AND @VerifierId IS NULL THEN @VerifiedStatusId
-			ELSE @PendingStatusId
-			END
-		,ApproverId = @ApproverId
-		,ApprovedStatus = CASE 
-			WHEN @AutoApproveRequest = 1
-				AND @ApproverId IS NULL THEN @VerifiedStatusId
-			ELSE @PendingStatusId
-			END
+		,VerifiedStatus = @PendingStatusId
+		,ApproverId = CASE WHEN @AutoApproveRequest = 1 AND @ApproverId IS NULL THEN -1 ELSE @ApproverId END
+		,ApprovedStatus = @PendingStatusId
 		,ModifiedBy = @ModifiedBy
 		,ModifiedDate = @ModifiedDate
 	WHERE RequestId = @RequestId
@@ -241,6 +222,8 @@ BEGIN
 		,ReasonId = @ReasonId
 	WHERE RequestId = @RequestId
 
+	EXEC dbo.LateInEarlyOutRequest_WriteLog @RequestId = @RequestId
+
 	IF @ApproverId IS NULL
 		AND @VerifierId IS NULL
 		AND @AutoApproveRequest = 1
@@ -251,6 +234,4 @@ BEGIN
 			,@ErrCode = @ErrCode OUTPUT
 			,@ErrMsg = @ErrMsg OUTPUT
 	END
-
-	EXEC dbo.LateInEarlyOutRequest_WriteLog @RequestId = @RequestId
 END

@@ -73,6 +73,8 @@ BEGIN
         ,@JoinedDate DATE
         ,@AnnualLeaveResetTimelineType TINYINT
         ,@AnnualLeaveResetTimelineByYear TINYINT = 1
+		-- request status
+		,@PendingStatusId TINYINT = 1
 
 	CREATE TABLE #tblLeaveRequestDetail (
 		OnDate DATETIME
@@ -295,32 +297,15 @@ BEGIN
 				,@ErrMsg = @ErrMsg OUTPUT
 		END
 
-		INSERT INTO #tblLeaveRequestDetail (
-			OnDate
-			,ShiftID
-			,LeaveType
-			,WorkType
-			,IsHalfDay
-			,FromTime
-			,ToTime
-			)
-		SELECT data.OnDate
-			,ISNULL(data.ShiftId, ec.ShiftId)
-			,data.LeaveType
-			,data.WorkType
-			,data.IsHalfDay
-			,data.FromTime
-			,data.ToTime
-		FROM OPENXML(@DocHandler, '/ROOT/Row', 1) WITH (OnDate DATETIME, ShiftId INT, LeaveType INT, IsHalfDay BIT, WorkType TINYINT, FromTime DATETIME, ToTime DATETIME) AS data
-			LEFT JOIN dbo.EmployeeCalendar ec WITH (NOLOCK) ON ec.WorkDate = data.OnDate
+		INSERT INTO #tblLeaveRequestDetail (OnDate, ShiftId, LeaveType, WorkType, IsHalfDay, FromTime, ToTime)
+		SELECT d.OnDate, ISNULL(d.ShiftId, ec.ShiftId), d.LeaveType, d.WorkType, d.IsHalfDay, d.FromTime, d.ToTime
+		FROM OPENXML(@DocHandler, '/ROOT/Row', 1) WITH (OnDate DATETIME, ShiftId INT, LeaveType INT, IsHalfDay BIT, WorkType TINYINT, FromTime DATETIME, ToTime DATETIME) AS d
+			LEFT JOIN dbo.EmployeeCalendar AS ec WITH (NOLOCK) ON ec.WorkDate = d.OnDate
 			AND ec.EmpId = @EmpId
 
 		IF @@ROWCOUNT <> 0
 		BEGIN
-			SELECT @TotalDays_tmp = SUM(CASE lrd.IsHalfDay
-						WHEN 1 THEN 0.5
-						ELSE 1
-						END)
+			SELECT @TotalDays_tmp = SUM(CASE lrd.IsHalfDay WHEN 1 THEN 0.5 ELSE 1 END)
 			FROM dbo.EmployeeCalendar AS cl WITH (NOLOCK)
 				INNER JOIN #tblLeaveRequestDetail AS lrd WITH (NOLOCK) ON cl.WorkDate = lrd.OnDate
 			WHERE cl.EmpId = @EmpId
@@ -331,10 +316,7 @@ BEGIN
 		END
 
 		IF @TotalDays_tmp IS NULL
-			SELECT @TotalDays = SUM(CASE lrd.IsHalfDay
-						WHEN 1 THEN 0.5
-						ELSE 1
-						END)
+			SELECT @TotalDays = SUM(CASE lrd.IsHalfDay WHEN 1 THEN 0.5 ELSE 1 END)
 			FROM #tblLeaveRequestDetail lrd WITH (NOLOCK)
 			WHERE lrd.WorkType = @LeaveWorkType
 
@@ -368,10 +350,7 @@ BEGIN
 			FROM #tblLeaveRequestDetail WITH (NOLOCK)
 			)
 	BEGIN
-		SELECT @TotalDays_tmp = SUM(CASE lrd.IsHalfDay
-					WHEN 1 THEN 0.5
-					ELSE 1
-					END)
+		SELECT @TotalDays_tmp = SUM(CASE lrd.IsHalfDay WHEN 1 THEN 0.5 ELSE 1 END)
 		FROM dbo.EmployeeCalendar AS cl WITH (NOLOCK)
 			INNER JOIN #tblLeaveRequestDetail AS lrd WITH (NOLOCK) ON cl.WorkDate = lrd.OnDate
 		WHERE cl.EmpId = @EmpId
@@ -383,46 +362,26 @@ BEGIN
 
 		IF @TotalDays_tmp IS NULL
 		BEGIN
-			SELECT @TotalDays_tmp = SUM(CASE lrd.IsHalfDay
-						WHEN 1 THEN 0.5
-						ELSE 1
-						END)
+			SELECT @TotalDays_tmp = SUM(CASE lrd.IsHalfDay WHEN 1 THEN 0.5 ELSE 1 END)
 			FROM #tblLeaveRequestDetail lrd WITH (NOLOCK)
 			WHERE lrd.WorkType = @LeaveWorkType
 		END
 
 		SELECT @AnnualLeaveDay = SUM(CASE 
-					WHEN LeaveType = @AnnualLeaveType THEN CASE 
-							WHEN IsHalfDay = 1 THEN 0.5
-							ELSE 1
-							END
-					ELSE 0
-					END)
+					WHEN LeaveType = @AnnualLeaveType THEN CASE WHEN IsHalfDay = 1 THEN 0.5 ELSE 1 END
+					ELSE 0 END)
 			,@SickLeaveDay = SUM(CASE 
-					WHEN LeaveType = @SickLeaveTypeId THEN CASE 
-							WHEN IsHalfDay = 1 THEN 0.5
-							ELSE 1
-							END
-					ELSE 0
-					END)
+					WHEN LeaveType = @SickLeaveTypeId THEN CASE WHEN IsHalfDay = 1 THEN 0.5 ELSE 1 END
+					ELSE 0 END)
 			,@HospitalizationLeaveDay = SUM(CASE 
-					WHEN LeaveType = @HospitalizationLeaveTypeId THEN CASE 
-							WHEN IsHalfDay = 1 THEN 0.5
-							ELSE 1
-							END
-					ELSE 0
-					END)
+					WHEN LeaveType = @HospitalizationLeaveTypeId THEN CASE WHEN IsHalfDay = 1 THEN 0.5 ELSE 1 END
+					ELSE 0 END)
 			,@KIVLeaveDay = SUM(CASE 
-					WHEN LeaveType = @KIVLeaveType THEN CASE IsHalfDay
-							WHEN 1 THEN 0.5
-							ELSE 1
-							END
-					ELSE 0
-					END)
+					WHEN LeaveType = @KIVLeaveType THEN CASE IsHalfDay WHEN 1 THEN 0.5 ELSE 1 END
+					ELSE 0 END)
 			,@KIVLeaveMinutes = SUM(CASE 
 					WHEN LeaveType = @KIVByHourLeaveType THEN DATEDIFF(MI, FromTime, ToTime)
-					ELSE 0
-					END)
+					ELSE 0 END)
 		FROM #tblLeaveRequestDetail WITH (NOLOCK)
 	END
 	ELSE
@@ -827,35 +786,19 @@ BEGIN
 	BEGIN TRY
 		BEGIN TRANSACTION Update_LeaveMultiRequest
 
-		UPDATE WorkingTimeRequest WITH (ROWLOCK, UPDLOCK)
+		UPDATE WorkingTimeRequest WITH (ROWLOCK)
 		SET Remark = @Remark
-			,[CurrentStatus] = CASE 
-				WHEN @AutoApproveRequest = 1
-					AND @VerifierId IS NOT NULL THEN 1
-				WHEN @AutoApproveRequest = 1
-					AND @ApproverId IS NOT NULL THEN 2
-				WHEN @AutoApproveRequest = 1
-					AND @ApproverId IS NULL THEN 4
-				ELSE 1
-				END
+			,[CurrentStatus] = @PendingStatusId
 			,VerifierId = @VerifierId
-			,[VerifiedStatus] = CASE 
-				WHEN @AutoApproveRequest = 1
-					AND @VerifierId IS NULL THEN 2
-				ELSE 1
-				END
-			,ApproverId = @ApproverId
-			,[ApprovedStatus] = CASE 
-				WHEN @AutoApproveRequest = 1
-					AND @ApproverId IS NULL THEN 2
-				ELSE 1
-				END
+			,[VerifiedStatus] = @PendingStatusId
+			,ApproverId = CASE WHEN @AutoApproveRequest = 1 AND @ApproverId IS NULL THEN -1 ELSE @ApproverId END
+			,[ApprovedStatus] = @PendingStatusId
 			,HRId = @HRId
 			,ModifiedBy = @ModifiedBy
 			,ModifiedDate = @ModifiedDate
 		WHERE RequestId = @RequestId
 
-		UPDATE dbo.LeaveRequest WITH (ROWLOCK, UPDLOCK)
+		UPDATE dbo.LeaveRequest WITH (ROWLOCK)
 		SET FromDate = @FromDate
 			,ToDate = @ToDate
 			,LeaveType = @LeaveTypeId
@@ -866,26 +809,8 @@ BEGIN
 		FROM dbo.LeaveRequestDetail
 		WHERE RequestId = @RequestId
 
-		INSERT INTO dbo.LeaveRequestDetail (
-			RequestId
-			,EmpId
-			,OnDate
-			,ShiftId
-			,LeaveType
-			,IsHalfDay
-			,FromTime
-			,ToTime
-			,WorkType
-			)
-		SELECT @RequestId
-			,@EmpId
-			,OnDate
-			,ShiftId
-			,LeaveType
-			,IsHalfDay
-			,FromTime
-			,ToTime
-			,WorkType
+		INSERT INTO dbo.LeaveRequestDetail (RequestId, EmpId, OnDate, ShiftId, LeaveType, IsHalfDay, FromTime, ToTime, WorkType)
+		SELECT @RequestId, @EmpId, OnDate, ShiftId, LeaveType, IsHalfDay, FromTime, ToTime, WorkType
 		FROM #tblLeaveRequestDetail WITH (NOLOCK)
 
 		EXEC dbo.LeaveRequest_EmployeeCalendar_UpdateOffDay @RequestId
@@ -902,6 +827,8 @@ BEGIN
 		EXEC dbo.LeaveRequest_InsertKIVLeaveTrans @RequestId = @RequestId
 
 		EXEC dbo.LeaveRequest_InsertWeekendLeaveTrans @RequestId = @RequestId
+
+		EXEC dbo.LeaveRequest_WriteLog @RequestId
 
 		IF @ApproverId IS NULL
 			AND @VerifierId IS NULL
@@ -929,8 +856,6 @@ BEGIN
 			,@toDate = @ToDate
 			,@empIds = @EmpId
 			,@isUpdateRequestData = 1
-
-		EXEC dbo.LeaveRequest_WriteLog @RequestId
 
 		COMMIT TRANSACTION Update_LeaveMultiRequest;
 	END TRY

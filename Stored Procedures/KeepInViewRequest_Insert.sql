@@ -286,71 +286,17 @@ BEGIN
 	EXEC dbo.WorkingTimeRequest_GetNewRefNoByRequestType @RefNo = @RefNo OUTPUT
 		,@RequestType = @KeepInViewRequestTypeId
 
-	INSERT INTO dbo.WorkingTimeRequest (
-		EmpId
-		,RequestType
-		,Remark
-		,CurrentStatus
-		,VerifierId
-		,ApproverId
-		,VerifiedStatus
-		,ApprovedStatus
-		,HRStatus
-		,CreatedDate
-		,CreatedBy
-		)
-	VALUES (
-		@EmpId
-		,@KeepInViewRequestTypeId
-		,@Remark
-		,CASE 
-			WHEN @AutoApproveRequest = 1
-				AND @VerifierId IS NOT NULL THEN @PendingStatusId
-			WHEN @AutoApproveRequest = 1
-				AND @ApproverId IS NOT NULL THEN @VerifiedStatusId
-			WHEN @AutoApproveRequest = 1
-				AND @ApproverId IS NULL THEN @ApprovedStatusId
-			ELSE @PendingStatusId
-			END
-		,@VerifierId
-		,@ApproverId
-		,CASE 
-			WHEN @AutoApproveRequest = 1
-				AND @VerifierId IS NULL THEN @VerifiedStatusId
-			ELSE @PendingStatusId
-			END
-		,CASE 
-			WHEN @AutoApproveRequest = 1
-				AND @ApproverId IS NULL THEN @VerifiedStatusId
-			ELSE @PendingStatusId
-			END
-		,@PendingStatusId
-		,@CreatedDate
-		,@CreatedBy
-		)
+	INSERT INTO dbo.WorkingTimeRequest (EmpId, RequestType, Remark, CurrentStatus, VerifierId, ApproverId, VerifiedStatus, ApprovedStatus, HRStatus, CreatedDate, CreatedBy)
+	VALUES (@EmpId, @KeepInViewRequestTypeId, @Remark, @PendingStatusId, @VerifierId,
+		CASE WHEN @AutoApproveRequest = 1 AND @ApproverId IS NULL THEN -1 ELSE @ApproverId END,
+		@PendingStatusId, @PendingStatusId, @PendingStatusId, @CreatedDate, @CreatedBy)
 
 	SELECT @RequestId = CAST(SCOPE_IDENTITY() AS BIGINT)
 
-	INSERT INTO dbo.KeepInViewRequest (
-		RequestId
-		,EmpId
-		,OnDate
-		,KeepInViewType
-		,IsHalfDay
-		,FromTime
-		,ToTime
-		,RefNo
-		)
-	VALUES (
-		@RequestId
-		,@EmpId
-		,@OnDate
-		,@KeepInViewType
-		,@IsHalfDay
-		,@FromTime
-		,@ToTime
-		,@RefNo
-		)
+	INSERT INTO dbo.KeepInViewRequest (RequestId, EmpId, OnDate, KeepInViewType, IsHalfDay, FromTime, ToTime, RefNo)
+	VALUES (@RequestId, @EmpId, @OnDate, @KeepInViewType, @IsHalfDay, @FromTime, @ToTime, @RefNo)
+
+	EXEC dbo.KeepInViewRequest_WriteLog @RequestId = @RequestId
 
 	IF @ApproverId IS NULL
 		AND @VerifierId IS NULL
@@ -368,6 +314,4 @@ BEGIN
 		,@toDate = @OnDate
 		,@empIds = @EmpId
 		,@isUpdateRequestData = 1
-
-	EXEC dbo.KeepInViewRequest_WriteLog @RequestId = @RequestId
 END
