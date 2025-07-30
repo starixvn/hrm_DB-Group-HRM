@@ -1,4 +1,4 @@
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Group_Insert] @Code VARCHAR(20)
 	,@Name VARCHAR(150)
@@ -92,7 +92,7 @@ BEGIN
 END
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Group_Update] @TeamId INT
 	,@Code VARCHAR(20)
@@ -239,7 +239,7 @@ BEGIN
 END
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Department_Insert] @Code VARCHAR(50)
 	,@Name NVARCHAR(200)
@@ -306,7 +306,7 @@ BEGIN
 END
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Department_Update] @DepartmentId INT
 	,@Code VARCHAR(20)

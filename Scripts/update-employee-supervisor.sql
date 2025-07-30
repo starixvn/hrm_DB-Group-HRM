@@ -1,6 +1,6 @@
 USE [bodb_HRM]
 GO
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="1"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="1"></info>*/
 
 ALTER FUNCTION [dbo].[fnc_GetEmployeeByActorId] (
 	@EmpId INT = NULL
@@ -266,7 +266,7 @@ BEGIN
 END
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Employee_GetMemberByManager] @supervisorId INT
 	,@excludedManager BIT
@@ -355,7 +355,7 @@ BEGIN
 END
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[ScheduleArrangement_GetWeekly] @ActorId INT
 	,@fromtime DATE

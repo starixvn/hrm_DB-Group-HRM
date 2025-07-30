@@ -249,7 +249,7 @@ END
 GO
 
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[AnnualLeave_InsertTransaction]
 (
@@ -414,7 +414,7 @@ GO
 
 
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[AnnualLeave_UpdateTransaction] @LeaveTransId INT
 	,@Description NVARCHAR(4000) = ''
@@ -502,7 +502,7 @@ END
 GO
 
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 CREATE OR ALTER PROCEDURE [dbo].[Report_LeaveSummaryForJoinedDate] 
 (
@@ -676,7 +676,7 @@ END
 GO
 
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="1"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="1"></info>*/
 
 CREATE OR ALTER FUNCTION [dbo].[fnc_GetAnnualLeaveBalance]
 (
@@ -772,7 +772,7 @@ BEGIN
 END
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="1"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="1"></info>*/
 
 ALTER FUNCTION [dbo].[fnc_GetAnnualLeaveBalanceByDate] (
 	@EmpId INT
@@ -986,7 +986,7 @@ GO
 
 
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="1"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="1"></info>*/
 
 ALTER FUNCTION [dbo].[fnc_GetAnnualLeaveBalanceByYear] (
 	@EmpID INT
@@ -1078,7 +1078,7 @@ END
 GO
 
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Employee_GetEmployeeByID] @EmpId INT
 AS
@@ -1201,7 +1201,7 @@ BEGIN
 END
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[EmployeeAttendance_ProcessingAndInsert]
 (
@@ -1555,7 +1555,7 @@ END
 GO
 
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[LeaveRequest_GetLeaveBalance]
 (
@@ -1608,7 +1608,7 @@ END
 GO
 
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[LeaveRequest_Insert]
 (
@@ -2485,7 +2485,7 @@ BEGIN
 END
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[LeaveRequest_Update]
 (
@@ -3444,7 +3444,7 @@ BEGIN
 END
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[SystemSetting_Get]
 (
@@ -3489,7 +3489,7 @@ END
 
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[WorkingTimeRequest_GetRequestByCreateDate_AllType]
 (

@@ -1,7 +1,7 @@
 use bodb_HRM
 go
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[CheckInOutRequest_Reject]
 (
@@ -115,7 +115,7 @@ BEGIN
 END
 go
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[AnnualLeave_InsertMultipleTransactions]
 (
@@ -240,7 +240,7 @@ BEGIN
 END
 go
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[AnnualLeave_InsertTransaction]
 (
@@ -366,7 +366,7 @@ BEGIN
 END
 go
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Auto_AnnualLeaveBalance_Update]
 (
@@ -590,7 +590,7 @@ BEGIN
 END
 go
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[LeaveRequest_CheckHospitalizationLeaveBalance]
 (
@@ -638,7 +638,7 @@ BEGIN
 END
 go
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[LeaveRequest_CheckSickLeaveBalance]
 (
@@ -686,7 +686,7 @@ BEGIN
 END
 go
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[SystemSetting_Get]
 (
@@ -724,7 +724,7 @@ BEGIN
 END
 go
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="1"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="1"></info>*/
 
 ALTER FUNCTION [dbo].[fnc_GetAnnualLeaveBalanceByDate] (
 	@EmpId INT
@@ -900,7 +900,7 @@ BEGIN
 	RETURN ISNULL(@LeaveBalanceDay, 0)
 END
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[LookupData_JobTitle_SELECT]
 	@JobTitle NVARCHAR(100)	= '',

@@ -1,4 +1,4 @@
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Section_Insert] @Code VARCHAR(50)
 	,@Name NVARCHAR(200)

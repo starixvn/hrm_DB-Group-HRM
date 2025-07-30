@@ -1,7 +1,7 @@
 USE [bodb_HRM]
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="1"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="1"></info>*/
 
 CREATE OR ALTER FUNCTION [dbo].[fnc_GetEmployeeByActorId_CrossCompany] (
 	@EmpId INT = NULL
@@ -91,7 +91,7 @@ WHERE (
 
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[ChangeShiftRequest_GetByEmployee] @EmpId INT,
 	@FromDate DATE,
@@ -171,7 +171,7 @@ BEGIN
 END
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[ChangeShiftRequest_GetById] 
 	@RequestId BIGINT,
@@ -224,7 +224,7 @@ END
 
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[ChangeShiftRequest_GetHistoryById] @RequestId BIGINT,
 	@CompanyId INT = NULL
@@ -292,7 +292,7 @@ END
 
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[CheckInOutRequest_GetByDate] @EmpId INT,
 	@FromDate DATE,
@@ -375,7 +375,7 @@ END
 
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[CheckInOutRequest_GetById] 
 	@RequestId INT,
@@ -440,7 +440,7 @@ END
 
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[CheckInOutRequest_GetHistoryById] @RequestId BIGINT,
 	@CompanyId INT = NULL
@@ -525,7 +525,7 @@ END
 
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Dashboard_GetMemberRequest] @EmployeeId INT,
 	@Date DATE,
@@ -858,7 +858,7 @@ BEGIN
 END
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 CREATE OR ALTER PROCEDURE [dbo].[Domain_ByCompanyId_Get] 
 	@CompanyId INT
@@ -884,7 +884,7 @@ END
 
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Employee_GetVerifierAndApprover] @EmpId INT
 	,@RequestType TINYINT
@@ -958,7 +958,7 @@ END
 
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[KeepInViewRequest_GetByDate] @EmpId INT,
 	@FromDate DATE,
@@ -1038,7 +1038,7 @@ END
 
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[KeepInViewRequest_GetById] @RequestId INT,
 	@CompanyId SMALLINT
@@ -1104,7 +1104,7 @@ END
 
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[KeepInViewRequest_GetHistoryById] @RequestId INT,
 	@CompanyId INT = NULL
@@ -1181,7 +1181,7 @@ BEGIN
 END
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[LateInEarlyOutRequest_GetByDate] @EmpId INT,
 	@FromDate DATE,
@@ -1271,7 +1271,7 @@ END
 
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[LateInEarlyOutRequest_GetById] @RequestId INT
 AS
@@ -1331,7 +1331,7 @@ END
 
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[LateInEarlyOutRequest_GetHistoryById] @RequestId BIGINT,
 	@CompanyId INT = NULL
@@ -1421,7 +1421,7 @@ END
 
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[LeaveRequest_GetByDate] @EmpId INT,
 	@FromDate DATETIME,
@@ -1546,7 +1546,7 @@ BEGIN
 END
 
 GO
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[LeaveRequest_GetById] @RequestId BIGINT,
 	@CompanyId SMALLINT
@@ -1624,7 +1624,7 @@ END
 
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[LeaveRequest_GetHistoryById] @RequestId BIGINT
 	,@CompanyId SMALLINT
@@ -1721,7 +1721,7 @@ END
 
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Overtime_GetMemberMonthlyRequest] @ActorId INT
 	,@EmployeeId INT = NULL
@@ -1933,7 +1933,7 @@ END
 
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Overtime_GetMonthlyRequestByEmpId] @EmployeeId INT,
 	@FromDate DATE,
@@ -2015,7 +2015,7 @@ END
 
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Overtime_GetMonthlyRequestDetailsById] 
 	@RequestId BIGINT,
@@ -2140,7 +2140,7 @@ END
 
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[WorkingTimeRequest_GetRequestByCreateDate_AllType]
 (
@@ -2845,7 +2845,7 @@ END
 GO
 
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[WorkingTimeRequest_GetRequestByRequestDate_AllType] 
 (

@@ -1,4 +1,4 @@
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Group_Get]
 (
@@ -140,7 +140,7 @@ BEGIN
 END
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Group_Insert]
 (
@@ -236,7 +236,7 @@ BEGIN
 END
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Group_Update]
 (
@@ -386,7 +386,7 @@ BEGIN
 END
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 CREATE OR ALTER PROCEDURE [dbo].[GroupId_ByGroupTeamId_Get] @GroupTeamId VARCHAR(50)
 AS
@@ -407,7 +407,7 @@ BEGIN
 END
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 CREATE OR ALTER PROCEDURE [dbo].[GroupSupervisor_ByPIC_Insert] @TeamId INT
 	,@SupervisorXml NVARCHAR(MAX) = ''
@@ -547,7 +547,7 @@ BEGIN
 END
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[GroupSupervisor_Get]
 (
@@ -616,7 +616,7 @@ BEGIN
 END
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[GroupSupervisor_GetById] @TeamId INT,
 	@IsGroupSpace BIT = 0,
@@ -739,7 +739,7 @@ BEGIN
 END
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[GroupSupervisor_GetByRole]
 (
@@ -814,7 +814,7 @@ BEGIN
 END
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[GroupSupervisor_Update] @TeamId INT
 	,@RoleId TINYINT
@@ -932,7 +932,7 @@ BEGIN
 END
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER   PROCEDURE [dbo].[Group_UnitScope_Get]
 	@keyWord varchar(20) = null,
@@ -1034,7 +1034,7 @@ BEGIN
 END
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Employee_GetVerifierAndApprover] @EmpId INT
 	,@RequestType TINYINT

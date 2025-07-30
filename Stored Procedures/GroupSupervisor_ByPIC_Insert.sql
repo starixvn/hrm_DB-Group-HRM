@@ -1,4 +1,4 @@
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 CREATE OR ALTER PROCEDURE [dbo].[GroupSupervisor_ByPIC_Insert] @TeamId INT
 	,@SupervisorXml NVARCHAR(MAX) = ''

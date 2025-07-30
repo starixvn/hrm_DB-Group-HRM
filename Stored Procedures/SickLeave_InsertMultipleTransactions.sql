@@ -1,4 +1,4 @@
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[SickLeave_InsertMultipleTransactions] @EmployeeIds VARCHAR(MAX)
 	,@Description NVARCHAR(4000) = ''

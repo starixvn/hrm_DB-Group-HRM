@@ -1,4 +1,4 @@
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 CREATE OR ALTER PROCEDURE [dbo].[Department_GetNextGroupDeptId]
 AS
@@ -14,7 +14,7 @@ BEGIN
 	FROM [dbo].[Department]
 END
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 GO
 CREATE OR ALTER PROCEDURE [dbo].[Employee_GetEmployeeForPIC] 
 AS
@@ -42,7 +42,7 @@ BEGIN
 	ORDER BY e.[NickName], e.[Code]
 END
 GO
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 CREATE OR ALTER PROCEDURE [dbo].[Group_GetNextGroupTeamId]
 AS
@@ -58,7 +58,7 @@ BEGIN
 	FROM [dbo].[Group]
 END
 GO
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 CREATE OR ALTER PROCEDURE [dbo].[Unit_GetNextGroupUnitId]
 AS
@@ -74,7 +74,7 @@ BEGIN
     FROM [dbo].[Unit]
 END
 GO
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Unit_Get] @IsActive BIT = NULL
 AS
@@ -112,7 +112,7 @@ BEGIN
 	ORDER BY u.GroupUnitId, u.Code
 END
 GO
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Department_Delete] @DepartmentId INT
 	,@ModifiedBy INT
@@ -153,7 +153,7 @@ BEGIN
 
 END
 GO
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Department_Get] @IsActive BIT = NULL
 AS
@@ -187,7 +187,7 @@ BEGIN
 		AND dep.IsDeleted = 0
 END
 GO
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Department_GetById]
 	@Id INT
@@ -221,7 +221,7 @@ BEGIN
 
 END
 GO
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Department_Insert] @Code VARCHAR(50)
 	,@Name NVARCHAR(200)
@@ -298,7 +298,7 @@ BEGIN
 		)
 END
 GO
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Department_Update] @DepartmentId INT
 	,@Code VARCHAR(20)
@@ -365,7 +365,7 @@ BEGIN
 	WHERE DepartmentId = @DepartmentId
 END
 GO
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 CREATE OR ALTER   PROCEDURE [dbo].[Company_GetAll] 
 AS
@@ -387,7 +387,7 @@ BEGIN
 	WHERE ISNULL(IsDeleted, 0) = 0
 END
 GO
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Group_Insert] @Code VARCHAR(20)
 	,@Name VARCHAR(150)
@@ -492,7 +492,7 @@ BEGIN
 		,@ErrMsg = @ErrMsg OUTPUT
 END
 GO
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 CREATE OR ALTER PROCEDURE [dbo].[Group_UnitScope_Get]
 	@keyWord varchar(20) = null,
@@ -586,7 +586,7 @@ BEGIN
     DROP TABLE #tmpGroup
 END
 GO
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Group_Update] @TeamId INT
 	,@Code VARCHAR(20)
