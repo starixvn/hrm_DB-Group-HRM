@@ -9,6 +9,7 @@ DB: bodb_HRM
 
 Revisions:
 	20250219@Mira: Get data for HRA report - [Redmine: #179302]
+	20250730@Mira: Get local, expat for HRA report - [Redmine: #234522]
 */
 
 AS
@@ -29,7 +30,11 @@ AS
 			g.DepartmentId,
 			safeDates.JoinedDate,
 			safeDates.ConfirmedDate,
-			safeDates.ResignedDate
+			safeDates.ResignedDate,
+			CASE
+				WHEN e.EmpId IN (6081, 6596) THEN 0 -- Sean, Yves nexcel
+				ELSE ISNULL(es.IsLocal, 1) 
+			END AS IsLocal
 		FROM dbo.Employee e WITH(NOLOCK)
 		INNER JOIN dbo.CompanyEmployee ce WITH(NOLOCK) ON ce.EmpId = e.EmpId AND (ce.IsSpecialUser IS NULL OR ce.IsSpecialUser = 0)
 		OUTER APPLY (
@@ -80,7 +85,8 @@ AS
 		ISNULL(CAST(ct.CountryCodeISO3 AS VARCHAR(10)), 'Other') AS CountryCode,
 		e.JoinedDate,
 		e.ConfirmedDate,
-		e.ResignedDate
+		e.ResignedDate,
+		e.IsLocal
 	FROM ActiveOrResignedEmployees e
 	LEFT JOIN dbo.Company c WITH(NOLOCK) ON c.CompanyId = e.CompanyId
 	LEFT JOIN dbo.SubCompany sub WITH(NOLOCK) ON sub.SubCompanyId = e.SubCompanyId
