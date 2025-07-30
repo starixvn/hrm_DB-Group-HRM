@@ -23,6 +23,7 @@ AS
 
     Revisions:
         20250403@Tim: remove section [Redmine: #222886]
+        20250722@Tim: auto approve request [Redmine: #233324]
     Param's Explanation:
 */
 BEGIN
@@ -37,10 +38,7 @@ BEGIN
 
 	CREATE TABLE #tblGroupsList (GroupId INT)
 
-	CREATE TABLE #tblEmployeeId (
-		EmpId INT PRIMARY KEY, 
-		CompanyId INT
-	)
+	CREATE TABLE #tblEmployeeId (EmpId INT, CompanyId INT)
 
 	CREATE TABLE #tblRequestId (RequestId INT)
 
@@ -736,7 +734,7 @@ BEGIN
         ,verifier.FullName AS VerifierFullName
 		,r.VerifiedDate
 		,r.VerifiedStatus
-		,approver.EmpId AS ApproverId
+		,r.ApproverId
         ,CASE
             WHEN approverCE.CompanyId <> @CompanyId THEN approver.NickName + ' (' + ISNULL(approverCompany.Name, '') + ')'
             ELSE approver.NickName
@@ -753,6 +751,7 @@ BEGIN
 		,ISNULL(rd.IsWarning, 0) AS IsWarning
 		,r.ReworkCount
 		,dbo.fnc_GetAnnualLeaveBalance(r.EmpId, rd.FromDate, r.RequestId) AS AnnualLeaveBalance
+		,sct.[Value] AS RequestTimeZone
 	FROM dbo.WorkingTimeRequest AS r WITH (NOLOCK)
 		INNER JOIN #tblRequestId AS rq ON r.RequestId = rq.RequestId
 		INNER JOIN #tblRequestInDaily AS rd ON r.RequestId = rd.RequestID
@@ -783,6 +782,7 @@ BEGIN
 		LEFT JOIN dbo.[Shift] AS s3 WITH (NOLOCK) ON s3.ShiftID = c.ShiftID
 		LEFT JOIN dbo.LeaveType AS lv WITH (NOLOCK) ON lv.LeaveTypeID = lr.LeaveType
         AND lv.CompanyId = tmpEmp.CompanyId
+		LEFT JOIN dbo.SystemConfigs AS sct WITH (NOLOCK) ON sct.CompanyId = tmpEmp.CompanyId AND [Key] = 'TimeZone'
 	WHERE (@leaveTypeId IS NULL OR lr.LeaveType = @leaveTypeId)
 	ORDER BY r.CreatedDate DESC
 
