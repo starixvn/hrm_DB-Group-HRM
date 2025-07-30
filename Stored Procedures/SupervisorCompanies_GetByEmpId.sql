@@ -8,6 +8,7 @@ Task: get supervisor companies
 DB: HRM
 
 Revisions:
+	- 20250730@Jay: Add personal filter [Redmine: #233324]
 Param's Explanation:
 */
 BEGIN

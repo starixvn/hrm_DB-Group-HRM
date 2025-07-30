@@ -10,6 +10,7 @@ DB: SMSHRM
 Original:
 
 Revisions:
+	- 20250730@Jay: Add company name for personal setting page [Redmine: #233324]
 Param's Explanation:
 */
 BEGIN
