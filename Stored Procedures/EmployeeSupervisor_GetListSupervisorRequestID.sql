@@ -14,7 +14,8 @@ AS
     Revisions:
 	    2023-03-20@Teddy.Le: get Letstalk
         20250509@Tim: remove HR
-        20250115@Henry: check company Letstalk config per person
+        20250715@Henry: check company Letstalk config per person
+        20250730@Henry: add companyId to MailSettings
     Param's Explanation:
 */
 BEGIN
@@ -110,6 +111,7 @@ BEGIN
 			,ms.AllowSendHR
 			,ms.AllowSendMailGroup
 			,cs.Domain AS CallbackUrl
+			,ce.CompanyId
 		FROM dbo.MailSettings ms WITH (NOLOCK)
 		LEFT JOIN dbo.CompanyEmployee ce WITH (NOLOCK) ON ce.EmpId = @EmpId AND ISNULL(ce.IsDeleted, 0) = 0 AND ISNULL(ce.Enabled, 1) = 1
 		LEFT JOIN dbo.CompanySite cs WITH (NOLOCK) ON ce.CompanyId = cs.CompanyId
@@ -126,6 +128,7 @@ BEGIN
 			,ms.AllowSendHR
 			,ms.AllowSendMailGroup
 			,cs.Domain AS CallbackUrl
+			,ce.CompanyId
 		FROM dbo.MailSettings ms WITH (NOLOCK)
 		LEFT JOIN dbo.CompanyEmployee ce WITH (NOLOCK) ON ce.EmpId = @EmpId AND ISNULL(ce.IsDeleted, 0) = 0 AND ISNULL(ce.Enabled, 1) = 1
 		LEFT JOIN dbo.CompanySite cs WITH (NOLOCK) ON ce.CompanyId = cs.CompanyId
