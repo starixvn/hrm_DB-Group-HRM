@@ -85,7 +85,7 @@ BEGIN
 END
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 CREATE OR ALTER   PROCEDURE [dbo].[AnnualLeave_ResetConfigs_Get]
 AS
@@ -111,7 +111,7 @@ END
 
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 CREATE OR ALTER   PROCEDURE [dbo].[Auto_AnnualLeaveBalance_JoinedDate_Update]
 (
@@ -216,7 +216,7 @@ END
 
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 CREATE OR ALTER   PROCEDURE [dbo].[Employees_ServiceDetail_Get]
 (

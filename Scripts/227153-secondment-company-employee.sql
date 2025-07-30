@@ -24,7 +24,7 @@ END
 
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 CREATE OR ALTER PROCEDURE [dbo].[CompanySecondmentEmployee_Delete]
   @EmpId INT,
@@ -75,7 +75,7 @@ BEGIN
 END
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 CREATE OR ALTER PROCEDURE[dbo].[CompanySecondmentEmployee_Get]
   AS
@@ -109,7 +109,7 @@ END
 GO
 
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 CREATE OR ALTER PROCEDURE[dbo].[CompanySecondmentEmployee_GetByEmpId]
   @EmpId INT
@@ -144,7 +144,7 @@ END
 
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 CREATE OR ALTER PROCEDURE [dbo].[CompanySecondmentEmployee_Insert]
   @EmpId INT,
@@ -219,7 +219,7 @@ END
 
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 CREATE OR ALTER PROCEDURE[dbo].[CompanySecondmentEmployee_Update]
   @EmpId INT,
@@ -327,7 +327,7 @@ END
 GO
 
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 CREATE OR ALTER PROCEDURE [dbo].[Employee_GroupScope_Get] 
 	@query NVARCHAR(256) = NULL,
@@ -465,7 +465,7 @@ BEGIN
 END
 
 GO
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER   PROCEDURE [dbo].[FnB_Department_GetByLastModifiedDate]
 	@CompanyId SMALLINT,
@@ -502,7 +502,7 @@ END
 
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER   PROCEDURE [dbo].[FnB_Employee_GetByLastModifiedDate] 
 	@CompanyId SMALLINT,
@@ -558,7 +558,7 @@ END
 
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 CREATE OR ALTER  PROCEDURE [dbo].[FnB_Employee_GetSecondmentCompany] 
 	@CompanyId SMALLINT
@@ -607,7 +607,7 @@ END
 
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 CREATE OR ALTER PROCEDURE [dbo].[FnB_EmployeeCalendar_GetByLastModifiedDate]
 	@CompanyId SMALLINT,
@@ -704,7 +704,7 @@ END
 
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[FnB_EmployeeGroup_GetByLastModifiedDate]
 (
@@ -769,7 +769,7 @@ END
 
 GO
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER   PROCEDURE [dbo].[FnB_Section_GetByLastModifiedDate]
 	@CompanyId SMALLINT,
@@ -807,7 +807,7 @@ END
 GO
 
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 CREATE OR ALTER   PROCEDURE [dbo].[FnB_Unit_GetByLastModifiedDate]
 	@LastModifiedDate DATETIME,

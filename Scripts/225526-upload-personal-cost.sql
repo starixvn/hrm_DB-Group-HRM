@@ -40,7 +40,7 @@ CREATE TABLE [dbo].[EmployeePayroll](
 GO
 
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 CREATE PROCEDURE [dbo].[EmployeePayroll_Import]
     @employeeListJson VARCHAR(MAX),
@@ -204,7 +204,7 @@ END
 GO
 
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 CREATE PROCEDURE [dbo].[EmployeePayroll_Get]
     @Month DATE = NULL,
@@ -250,7 +250,7 @@ END
 GO
 
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 CREATE PROCEDURE [dbo].[EmployeePayroll_ConfirmUpload]
     @Month DATE,
@@ -326,7 +326,7 @@ END
 GO
 
 
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 CREATE PROCEDURE [dbo].[SalaryUploadHistory_Get]
     @CompanyId INT
