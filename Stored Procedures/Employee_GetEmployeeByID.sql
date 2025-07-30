@@ -114,6 +114,7 @@ BEGIN
 		,e.JobLevelId
 		,lk.[Name] AS JobTitle
 		,ce.SubCompanyId
+		,c.[Name] AS CompanyName
 		,e.ManagementLevelId
         ,ce.SalaryStructureId
         ,ce.Salary
