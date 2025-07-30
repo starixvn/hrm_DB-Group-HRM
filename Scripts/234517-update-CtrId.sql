@@ -3,11 +3,13 @@ GO
 
 UPDATE Employee SET CtrId = NULL;
 
-UPDATE e
-SET e.CtrId = x.NewCtrId
-FROM Employee e
-JOIN (
-    VALUES
+CREATE TABLE #TempEmployeeCtrId (
+    UserId INT,
+    NewCtrId INT
+);
+
+INSERT INTO #TempEmployeeCtrId (UserId, NewCtrId)
+VALUES
 (6290, 1000),
 (5172, 1076),
 (5027, 91),
@@ -1003,7 +1005,11 @@ JOIN (
 (6021, 2126),
 (6052, 508),
 (4723, 2032),
-(384, 326),
+(384, 326);
+
+
+INSERT INTO #TempEmployeeCtrId (UserId, NewCtrId)
+VALUES
 (5695, 2282),
 (4102, 1822),
 (3799, 1652),
@@ -1969,4 +1975,11 @@ JOIN (
 (5770, 609),
 (441, 368),
 (5201, 1527)
-) AS x(UserId, NewCtrId) ON e.UserId = x.UserId;
+;
+
+UPDATE e
+SET e.CtrId = temp.NewCtrId
+FROM Employee e
+INNER JOIN #TempEmployeeCtrId temp ON e.EmpId = temp.UserId;
+
+DROP TABLE #TempEmployeeCtrId;
