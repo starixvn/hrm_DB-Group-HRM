@@ -12,6 +12,7 @@ AS
     DB: bodb_HRM
 
     Revisions:
+        20250722@Tim: auto approve request [Redmine: #233324]
     Param's Explanation:
 */
 BEGIN

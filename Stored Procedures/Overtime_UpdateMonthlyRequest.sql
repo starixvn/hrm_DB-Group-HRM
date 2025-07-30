@@ -1,45 +1,52 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[Overtime_UpdateMonthlyRequest] @EmployeeId INT
-	,@Month DATE
-	,@VerifierId INT
-	,@ApproverId INT
-	,@DailyDetailsXml NVARCHAR(MAX)
-	,@ActorId INT
-	,@ErrCode INT = 0 OUTPUT
-	,@ErrMsg NVARCHAR(200) = '' OUTPUT
+ALTER PROCEDURE [dbo].[Overtime_UpdateMonthlyRequest]
+(
+    @EmployeeId INT
+    ,@Month DATE
+    ,@VerifierId INT
+    ,@ApproverId INT
+    ,@DailyDetailsXml NVARCHAR(MAX)
+    ,@ActorId INT
+    ,@ErrCode INT = 0 OUTPUT
+    ,@ErrMsg NVARCHAR(200) = '' OUTPUT
+)
 AS
 /*
-Created: Tom.Vo@2013-11-04
-Task: update monthly overtime request
-DB: HRM
+    Created: Tom.Vo@2013-11-04
+    Task: update monthly overtime request
+    DB: bodb_HRM
 
-Revisions:
-Param's Explanation:
-    @DailyDetailsXml:
-        <Root><Row WorkDate="2019-01-01" ShiftId="1" TimeIn="07:46" TimeOut=17:00"
-	       ActualWorkingHours="9" NormalHours="1" OffHours="1" PublicHours="1" SpecialHours="1" Remark="remark" /></Root>
+    Revisions:
+        20250722@Tim: auto approve request [Redmine: #233324]
+    Param's Explanation:
+        @DailyDetailsXml:
+            <Root><Row WorkDate="2019-01-01" ShiftId="1" TimeIn="07:46" TimeOut=17:00"
+	           ActualWorkingHours="9" NormalHours="1" OffHours="1" PublicHours="1" SpecialHours="1" Remark="remark" /></Root>
 */
 BEGIN
 	SET NOCOUNT ON;
-	SET XACT_ABORT ON;
 
-	DECLARE @IsTopManager BIT
+	DECLARE @AutoApproveRequest BIT
 		,@CanOT BIT
 		,@ModifiedDate DATETIME = GETDATE()
         ,@CompanyId SMALLINT
-
-	SELECT @IsTopManager = IsTopManager
-		,@CanOT = CanOT
-	FROM dbo.EmployeeSummary WITH (NOLOCK)
-	WHERE EmpId = @EmployeeId
 
     SELECT @CompanyId = ce.CompanyId
     FROM dbo.Employee AS emp WITH (NOLOCK)
         INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
     WHERE emp.EmpId = @EmployeeId
 
-	IF @CanOT = 0
+	SELECT @AutoApproveRequest = ce.AutoApproveRequest
+		,@CanOT = es.CanOT
+	FROM dbo.EmployeeSummary AS es WITH (NOLOCK)
+        INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON es.EmpId = ce.EmpId
+	WHERE es.EmpId = @EmployeeId
+        AND ce.CompanyId = @CompanyId
+
+    SET @AutoApproveRequest = ISNULL(@AutoApproveRequest, 0)
+
+	IF ISNULL(@CanOT, 0) = 0
 	BEGIN
 		SELECT @ErrCode = 100
 			,@ErrMsg = 'You don''t have permission.'
@@ -130,12 +137,12 @@ BEGIN
 			)
 	BEGIN
 		DELETE daily
-		FROM dbo.OTDailyRequest AS daily WITH (ROWLOCK, UPDLOCK)
+		FROM dbo.OTDailyRequest AS daily WITH (ROWLOCK)
 		WHERE daily.EmpId = @EmployeeId
 			AND daily.RequestId = @RequestId
 
 		DELETE monthly
-		FROM dbo.OTMonthlyRequest AS monthly WITH (ROWLOCK, UPDLOCK)
+		FROM dbo.OTMonthlyRequest AS monthly WITH (ROWLOCK)
 		WHERE monthly.EmpId = @EmployeeId
 			AND monthly.RequestId = @RequestId
 
@@ -170,12 +177,12 @@ BEGIN
 			,@VerifierId
 			,@ApproverId
 			,(CASE 
-				WHEN @IsTopManager = 1
+				WHEN @AutoApproveRequest = 1
 					AND @VerifierId IS NULL THEN 2
 				ELSE 1 END
 				) AS VerifiedStatus
 			,(CASE 
-				WHEN @IsTopManager = 1
+				WHEN @AutoApproveRequest = 1
 					AND @ApproverId IS NULL THEN 2
 				ELSE 1 END
 				) AS ApprovedStatus
@@ -190,23 +197,23 @@ BEGIN
 	BEGIN
 		UPDATE ot
 		SET ot.CurrentStatus = (CASE 
-				WHEN @IsTopManager = 1
+				WHEN @AutoApproveRequest = 1
 					AND @VerifierId IS NOT NULL THEN 1
-				WHEN @IsTopManager = 1
+				WHEN @AutoApproveRequest = 1
 					AND @ApproverId IS NOT NULL THEN 2
-				WHEN @IsTopManager = 1
+				WHEN @AutoApproveRequest = 1
 					AND @ApproverId IS NULL THEN 4
 				ELSE 1 END
 				)
 			,ot.VerifierId = @VerifierId
 			,ot.VerifiedStatus = (CASE 
-				WHEN @IsTopManager = 1
+				WHEN @AutoApproveRequest = 1
 					AND @VerifierId IS NULL THEN 2
 				ELSE 1 END
 				)
 			,ot.ApproverId = @ApproverId
 			,ot.ApprovedStatus = (CASE 
-				WHEN @IsTopManager = 1
+				WHEN @AutoApproveRequest = 1
 					AND @ApproverId IS NULL THEN 2
 				ELSE 1 END
 				)
