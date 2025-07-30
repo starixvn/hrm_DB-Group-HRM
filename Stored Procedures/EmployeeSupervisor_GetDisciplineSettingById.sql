@@ -10,6 +10,7 @@ DB: HRM_SMS
 Original:
 
 Revisions:
+	- 20250730@Jay: Add company name for group filter [Redmine: #233324]
 Param's Explanation:
 */
 BEGIN
