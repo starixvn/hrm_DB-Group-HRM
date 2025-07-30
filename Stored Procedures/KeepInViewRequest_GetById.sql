@@ -52,7 +52,7 @@ BEGIN
 		INNER JOIN dbo.WorkingTimeRequest AS wk WITH (NOLOCK) ON kiv.RequestId = wk.RequestId
 		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON kiv.EmpId = emp.EmpId
 		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
-        AND ce.CompanyId = @CompanyId
+        --AND ce.CompanyId = @CompanyId
 		LEFT JOIN dbo.Employee AS ve WITH (NOLOCK) ON wk.VerifierId = ve.EmpId
 		LEFT JOIN dbo.CompanyEmployee AS vece WITH (NOLOCK) ON ve.EmpId = vece.EmpId
 		LEFT JOIN dbo.Employee AS ap WITH (NOLOCK) ON wk.ApproverId = ap.EmpId

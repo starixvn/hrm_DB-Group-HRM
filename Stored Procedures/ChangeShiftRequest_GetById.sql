@@ -43,7 +43,7 @@ BEGIN
 		INNER JOIN dbo.ChangeShiftRequest AS cs WITH (NOLOCK) ON wkr.RequestId = cs.RequestId
 		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON cs.EmpId = emp.EmpId
 		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = cs.EmpId
-        AND ce.CompanyId = @CompanyId
+        --AND ce.CompanyId = @CompanyId
 		LEFT JOIN dbo.Employee AS verifier WITH (NOLOCK) ON verifier.EmpId = wkr.VerifierId
 		LEFT JOIN dbo.CompanyEmployee AS vece WITH (NOLOCK) ON verifier.EmpId = vece.EmpId
 		LEFT JOIN dbo.Employee AS approver WITH (NOLOCK) ON approver.EmpId = wkr.ApproverId

@@ -35,7 +35,7 @@ BEGIN
 		,e.NickName
 		,e.FullName
 		,ce.CompanyId
-		,empsum.IsTopManager
+		,ce.AutoApproveRequest
 		,ve.EmpId AS VerifierId
 		,ve.NickName
 		,Ve.FullName
@@ -51,7 +51,7 @@ BEGIN
 		INNER JOIN dbo.WorkingTimeRequest AS wk WITH (NOLOCK) ON lr.RequestId = wk.RequestId
 		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON lr.EmpId = e.EmpId
 		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = lr.EmpId
-        AND ce.CompanyId = @CompanyId
+        --AND ce.CompanyId = @CompanyId
 		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON e.EmpId = empsum.EmpId
 		INNER JOIN dbo.LeaveType AS lv WITH (NOLOCK) ON lr.LeaveType = lv.LeaveTypeId
         AND lv.CompanyId = @CompanyId
