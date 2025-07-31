@@ -202,15 +202,14 @@ BEGIN
 				,empsum.OffDaysbyWeek AS '@OffDaysbyWeek'
 				,empsum.MilitaryFromDate AS '@MilitaryFromDate'
 				,empsum.MilitaryToDate AS '@MilitaryToDate'
-				,sc.[Name] AS '@SubCompanyName'
+				,ce.SubCompanyId AS '@SubCompanyId'
                 ,ce.SalaryStructureId AS '@SalaryStructureId'
                 ,ce.Salary AS '@Salary'
                 ,ce.AutoApproveRequest AS '@AutoApproveRequest'
 			FROM dbo.Employee AS emp WITH (NOLOCK)
 				INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
 				INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
-					AND ce.CompanyId = @CompanyId
-				LEFT JOIN dbo.SubCompany AS sc WITH (NOLOCK) ON sc.SubCompanyId = ce.SubCompanyId AND sc.CompanyId = ce.CompanyId
+                AND ce.CompanyId = @CompanyId
 			WHERE emp.EmpId = @EmpId
 			FOR XML PATH('Row')
 				,TYPE
@@ -353,15 +352,14 @@ BEGIN
 				,empsum.OffDaysbyWeek AS '@OffDaysbyWeek'
 				,empsum.MilitaryFromDate AS '@MilitaryFromDate'
 				,empsum.MilitaryToDate AS '@MilitaryToDate'
-				,sc.[Name] AS '@SubCompanyName'
+				,ce.SubCompanyId AS '@SubCompanyId'
                 ,ce.SalaryStructureId AS '@SalaryStructureId'
                 ,ce.Salary AS '@Salary'
                 ,ce.AutoApproveRequest AS '@AutoApproveRequest'
 			FROM dbo.Employee AS emp WITH (NOLOCK)
 				INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
 				INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
-					AND ce.CompanyId = @CompanyId
-				LEFT JOIN dbo.SubCompany AS sc WITH (NOLOCK) ON sc.SubCompanyId = ce.SubCompanyId AND sc.CompanyId = ce.CompanyId
+                AND ce.CompanyId = @CompanyId
 			WHERE emp.EmpId = @EmpId
 			FOR XML PATH('Row')
 				,TYPE
