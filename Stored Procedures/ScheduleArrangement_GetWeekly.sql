@@ -8,6 +8,7 @@ ALTER PROCEDURE [dbo].[ScheduleArrangement_GetWeekly] @ActorId INT
 	,@IsIFrame BIT = 0
 	,@isLocal BIT = NULL
 	,@CompanyId SMALLINT
+	,@CurrentCompanyId SMALLINT = NULL
     ,@IsEditScheduleUnlimited BIT = 0
 AS
 /*
@@ -17,6 +18,7 @@ AS
 
 	Revisions:
 		Henry.Dinh@2025-04-24: Merge action type 2, 3, 4, 5
+		Mira@20250731: setting cross company 
 	Param's Explanation:
 
 */
@@ -90,7 +92,7 @@ BEGIN
 			)
 
 	IF @IsIFrame = 1
-		OR @IsEditScheduleUnlimited = 1
+		OR (@IsEditScheduleUnlimited = 1 AND @CompanyId = @CurrentCompanyId)  
 	BEGIN
 		INSERT INTO #tblEmployeeIds (EmpId)
 		SELECT EmpId
