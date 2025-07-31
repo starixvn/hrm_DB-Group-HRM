@@ -1,26 +1,25 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[ScheduleArrangement_GetWeekly] @ActorId INT
-	,@fromtime DATE
-	,@totime DATE
-	,@EmpId INT = NULL
-	,@TeamIds VARCHAR(MAX) = ''
-	,@IsIFrame BIT = 0
-	,@isLocal BIT = NULL
-	,@CompanyId SMALLINT
-	,@CurrentCompanyId SMALLINT = NULL
+    ,@fromtime DATE
+    ,@totime DATE
+    ,@EmpId INT = NULL
+    ,@TeamIds VARCHAR(MAX) = ''
+    ,@IsIFrame BIT = 0
+    ,@isLocal BIT = NULL
+    ,@CompanyId SMALLINT
+    ,@CurrentCompanyId SMALLINT = NULL
     ,@IsEditScheduleUnlimited BIT = 0
 AS
 /*
-	Created: Tim.Trinh@2019-04-12
-	Task: Get weekly schedules
-	DB: HRM
+    Created: 2019-04-12@Tim
+    Task: Get weekly schedules
+    DB: bodb_HRM
 
-	Revisions:
-		Henry.Dinh@2025-04-24: Merge action type 2, 3, 4, 5
-		Mira@20250731: setting cross company 
-	Param's Explanation:
-
+    Revisions:
+        2025-04-24@Henry: Merge action type 2, 3, 4, 5
+        20250731@Mira: setting cross company [Redmine: #233324]
+    Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -92,7 +91,7 @@ BEGIN
 			)
 
 	IF @IsIFrame = 1
-		OR (@IsEditScheduleUnlimited = 1 AND @CompanyId = @CurrentCompanyId)  
+		OR (@IsEditScheduleUnlimited = 1 AND @CompanyId = @CurrentCompanyId)
 	BEGIN
 		INSERT INTO #tblEmployeeIds (EmpId)
 		SELECT EmpId
