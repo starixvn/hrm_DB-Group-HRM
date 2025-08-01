@@ -23,6 +23,7 @@ AS
 
     Revisions:
         20250403@Tim: remove section [Redmine: #222886]
+        20250722@Tim: auto approve request [Redmine: #233324]
     Param's Explanation:
 */
 BEGIN
@@ -30,18 +31,11 @@ BEGIN
 
 	CREATE TABLE #tblGroupsList (GroupId INT PRIMARY KEY)
 
-	CREATE TABLE #tblEmployeeId (
-		EmpId INT PRIMARY KEY, 
-		CompanyId INT 
-	)
+	CREATE TABLE #tblEmployeeId (EmpId INT, CompanyId INT)
 
 	CREATE TABLE #tblRequestId (RequestId INT PRIMARY KEY)
 
-	CREATE TABLE #tblTotalDaysRequestInMonth (
-		EmpId INT
-		,RequestType TINYINT
-		,TotalDaysRequest INT
-		)
+	CREATE TABLE #tblTotalDaysRequestInMonth (EmpId INT, RequestType TINYINT, TotalDaysRequest INT)
 
 	CREATE TABLE #tblRequestInDaily (
 		RequestID BIGINT
@@ -77,7 +71,7 @@ BEGIN
 	IF ISNULL(@TeamIds, '') <> ''
 	BEGIN
 		INSERT INTO #tblGroupsList (GroupId)
-		SELECT value
+		SELECT DISTINCT value
 		FROM STRING_SPLIT(@TeamIds, ',')
 	END
 
@@ -212,8 +206,7 @@ BEGIN
 		INNER JOIN #tblRequestId AS rq WITH (NOLOCK) ON wt.RequestId = rq.RequestId
 		INNER JOIN dbo.LateInEarlyOutRequest AS inout WITH (NOLOCK) ON wt.RequestId = inout.RequestId
 		INNER JOIN dbo.Employee AS ee WITH (NOLOCK) ON ee.EmpId = wt.EmpId
-	WHERE wt.currentstatus = 6
-		
+	WHERE wt.currentstatus = 6		
 		AND (
 			DATEDIFF(MM, inout.OnDate, @fromdate) = 0
 			OR DATEDIFF(MM, inout.OnDate, @todate) = 0
@@ -629,11 +622,10 @@ BEGIN
         ,verifier.FullName AS VerifierFullName
 		,r.VerifiedDate
 		,r.VerifiedStatus
-		,approver.EmpId AS ApproverId
+		,r.ApproverId
         ,CASE
             WHEN approverCE.CompanyId <> @CompanyId THEN approver.NickName + ' (' + ISNULL(approverCompany.Name, '') + ')'
-            ELSE approver.NickName
-        END AS ApproverNickName
+            ELSE approver.NickName END AS ApproverNickName
 		,approver.FullName AS ApproverFullName
 		,r.ApprovedDate
 		,r.ApprovedStatus
@@ -645,6 +637,7 @@ BEGIN
 		,ISNULL(rd.IsWarning, 0) AS IsWarning
 		,r.ReworkCount
 		,dbo.fnc_GetAnnualLeaveBalance(r.EmpId, rd.FromDate, r.RequestId) AS AnnualLeaveBalance
+		,sct.[Value] AS RequestTimeZone
 	FROM dbo.WorkingTimeRequest AS r WITH (NOLOCK)
 		INNER JOIN #tblRequestInDaily AS rd WITH (NOLOCK) ON r.RequestId = rd.RequestID
 		INNER JOIN #tblRequestId AS rq WITH (NOLOCK) ON r.RequestId = rq.RequestId
@@ -661,20 +654,21 @@ BEGIN
 		LEFT JOIN dbo.Employee AS verifier WITH (NOLOCK) ON verifier.empid = r.VerifierId
 		LEFT JOIN dbo.CompanyEmployee AS verifierCE WITH (NOLOCK) ON verifierCE.EmpId = verifier.EmpId
 		LEFT JOIN dbo.Company AS verifierCompany WITH (NOLOCK) ON verifierCompany.CompanyId = verifierCE.CompanyId
-		LEFT JOIN dbo.Employee AS approver WITH (NOLOCK) ON approver.empid = r.ApproverId
+		LEFT JOIN dbo.Employee AS approver WITH (NOLOCK) ON approver.EmpId = r.ApproverId
 		LEFT JOIN dbo.CompanyEmployee AS approverCE WITH (NOLOCK) ON approverCE.EmpId = approver.EmpId
 		LEFT JOIN dbo.Company AS approverCompany WITH (NOLOCK) ON approverCompany.CompanyId = approverCE.CompanyId
-		LEFT JOIN dbo.Employee AS hr WITH (NOLOCK) ON hr.empid = r.HRId
-		LEFT JOIN #tblTotalDaysRequestInMonth AS rm ON r.empID = rm.empid
+		LEFT JOIN dbo.Employee AS hr WITH (NOLOCK) ON hr.EmpId = r.HRId
+		LEFT JOIN #tblTotalDaysRequestInMonth AS rm ON r.EmpId = rm.EmpId
 		AND r.RequestType = rm.RequestType
 		LEFT JOIN #tblGeneralLeaveDetail AS gdt ON r.RequestId = gdt.RequestId
-		LEFT JOIN dbo.EmployeeCalendar AS C WITH (NOLOCK) ON c.empid = r.empid
+		LEFT JOIN dbo.EmployeeCalendar AS C WITH (NOLOCK) ON c.EmpId = r.EmpId
 		AND c.WorkDate = convert(VARCHAR(10), rd.FromDate, 111)
 		LEFT JOIN dbo.[Shift] AS s1 WITH (NOLOCK) ON s1.ShiftID = rd.FromShift
 		LEFT JOIN dbo.[Shift] AS s2 WITH (NOLOCK) ON s2.ShiftID = rd.ToShift
 		LEFT JOIN dbo.[Shift] AS s3 WITH (NOLOCK) ON s3.ShiftID = c.ShiftID
 		LEFT JOIN dbo.LeaveType AS lv WITH (NOLOCK) ON lv.LeaveTypeID = lr.LeaveType
         AND lv.CompanyId = tmpEmp.CompanyId
+		LEFT JOIN dbo.SystemConfigs AS sct WITH (NOLOCK) ON sct.CompanyId = tmpEmp.CompanyId AND [Key] = 'TimeZone'
 	WHERE (@leaveTypeId IS NULL OR lr.LeaveType = @leaveTypeId)
 	ORDER BY r.CreatedDate DESC
 

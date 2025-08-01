@@ -1,6 +1,10 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[Employee_GetEmployeeByID] @EmpId INT
+ALTER PROCEDURE [dbo].[Employee_GetEmployeeByID]
+(
+    @EmpId INT,
+    @CompanyId SMALLINT = NULL
+)
 AS
 /*
     Created: Tom.Vo@2013-10-21
@@ -10,6 +14,7 @@ AS
     Revisions:
         03062023@Otis: get field ResignedReason
         20250707@Tim: add salary structure [Redmine: #230542]
+        20250722@Tim: add auto approve request [Remine: #233324]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -18,7 +23,7 @@ BEGIN
 		,@AnnualLeaveBalance NUMERIC(18, 2)
 		,@Today DATE = GETDATE()
 
-	SELECT @KIVLeaveBalance = dbo.fnc_GetKIVByDayBalance(@EmpID, @Today, NULL)
+	SELECT @KIVLeaveBalance = dbo.fnc_GetKIVByDayBalance(@EmpId, @Today, NULL)
 		,@AnnualLeaveBalance = dbo.fnc_GetAnnualLeaveBalance(@EmpId, @Today, NULL)
 
 	SELECT e.EmpId
@@ -109,20 +114,25 @@ BEGIN
 		,e.JobLevelId
 		,lk.[Name] AS JobTitle
 		,ce.SubCompanyId
+		,c.[Name] AS CompanyName
 		,e.ManagementLevelId
         ,ce.SalaryStructureId
         ,ce.Salary
+        ,ce.AutoApproveRequest
 		,ISNULL(e.GroupId, - 1) AS [TeamId]
 		,g.Code
 		,g.[Name]
 	FROM dbo.Employee AS e WITH (NOLOCK)
-		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON empsum.EmpId = e.EmpId
+		LEFT JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON empsum.EmpId = e.EmpId
 		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = e.EmpId
 		INNER JOIN dbo.Company AS c WITH (NOLOCK) ON c.CompanyId = ce.CompanyId
-		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON e.GroupId = g.GroupId
+        INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON 
+            (e.GroupId IS NOT NULL AND e.GroupId = g.GroupId) OR 
+            (e.GroupId IS NULL AND ce.GroupId = g.GroupId)
 		LEFT JOIN dbo.EmployeeContract AS e_cs WITH (NOLOCK) ON e_cs.EmpId = e.EmpId
 		LEFT JOIN dbo.Country AS ct WITH (NOLOCK) ON empsum.CountryCode = ct.CountryCode
 		LEFT JOIN dbo.LookupData AS lk WITH (NOLOCK) ON e.JobTitleId = lk.Id
 		AND lk.LookupId = 1
 	WHERE e.EmpId = @EmpId
+		AND (@CompanyId IS NULL OR ce.CompanyId = @CompanyId)
 END

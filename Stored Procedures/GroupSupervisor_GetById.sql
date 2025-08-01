@@ -11,7 +11,8 @@ DB: HRM
 Original:
 
 Revisions:
-	- 20250530@Jay: add company name for who come from different company & add manage role for group space [Redmine: #225528]
+	20250530@Jay: add company name for who come from different company & add manage role for group space [Redmine: #225528]
+	20250721@Mira: get shift arrangement setting and discipline setting for group space [Redmine: #232922]
 Param's Explanation:
 */
 BEGIN
@@ -45,15 +46,14 @@ BEGIN
 		,3
 		) -- approve
 			
-	IF (@IsGroupSpace = 0)
-		INSERT INTO @SupervisorActions (
-			GroupId
-			,ActionType
-			)
-		VALUES (
-			@TeamId
-			,4
-			) -- shift
+	INSERT INTO @SupervisorActions (
+		GroupId
+		,ActionType
+		)
+	VALUES (
+		@TeamId
+		,4
+		) -- shift
 
 	IF (@IsGroupSpace = 0)
 		INSERT INTO @SupervisorActions (
@@ -65,15 +65,14 @@ BEGIN
 			,5
 			) -- on behalf request
 			
-	IF (@IsGroupSpace = 0)
-		INSERT INTO @SupervisorActions (
-			GroupId
-			,ActionType
-			)
-		VALUES (
-			@TeamId
-			,8
-			) -- edit discipline
+	INSERT INTO @SupervisorActions (
+		GroupId
+		,ActionType
+		)
+	VALUES (
+		@TeamId
+		,8
+		) -- edit discipline
 
 	INSERT INTO @Supervisors (
 		GroupId

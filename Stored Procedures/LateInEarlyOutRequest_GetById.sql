@@ -1,15 +1,19 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[LateInEarlyOutRequest_GetById] @RequestId INT
+ALTER PROCEDURE [dbo].[LateInEarlyOutRequest_GetById]
+(
+    @RequestId INT
+    ,@CompanyId INT = 0
+)
 AS
 /*
-Created: Quinn.Vo@20190626
-Task: Get late in/early out request by RequestId.
-DB: HRM
-Original:
+    Created: Quinn.Vo@20190626
+    Task: Get late in/early out request by RequestId.
+    DB: bodb_HRM
 
-Revisions:
-Param's Explanation:
+    Revisions:
+        20250722@Tim: auto approve request [Redmine: #233324]
+    Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -31,7 +35,7 @@ BEGIN
 		,emp.NickName
 		,emp.FullName
         ,ce.CompanyId
-		,empsum.IsTopManager
+		,ce.AutoApproveRequest
 		,ve.EmpId AS VerifierId
 		,ve.NickName
 		,vece.CompanyId
@@ -47,7 +51,7 @@ BEGIN
 		INNER JOIN dbo.WorkingTimeRequest AS wk WITH (NOLOCK) ON lieo.RequestId = wk.RequestId
 		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON lieo.EmpId = emp.EmpId
 		LEFT JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = lieo.EmpId
-		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
+        --AND ce.CompanyId = @CompanyId
 		LEFT JOIN dbo.Employee AS ve WITH (NOLOCK) ON wk.VerifierId = ve.EmpId
 		LEFT JOIN dbo.CompanyEmployee AS vece WITH (NOLOCK) ON ve.EmpId = vece.EmpId
 		LEFT JOIN dbo.Employee AS ap WITH (NOLOCK) ON wk.ApproverId = ap.EmpId

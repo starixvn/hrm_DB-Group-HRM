@@ -1,16 +1,19 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[ChangeShiftRequest_GetById] 
+ALTER PROCEDURE [dbo].[ChangeShiftRequest_GetById]
+(
 	@RequestId BIGINT,
 	@CompanyId SMALLINT
+)
 AS
 /*
-Created: Tim.Trinh@2019-09-20
-Task: get request by id
-DB: HRM
+    Created: Tim.Trinh@2019-09-20
+    Task: get request by id
+    DB: bodb_HRM
 
-Revisions:
-Param's Explanation:
+    Revisions:
+        20250722@Tim: auto approve request [Redmine: #233324]
+    Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -28,7 +31,7 @@ BEGIN
 		,emp.NickName
 		,emp.FullName
 		,ce.CompanyId
-		,empsum.IsTopManager
+		,ce.AutoApproveRequest
 		,verifier.EmpId AS VerifierId
 		,verifier.NickName
 		,verifier.FullName
@@ -41,7 +44,7 @@ BEGIN
 		INNER JOIN dbo.ChangeShiftRequest AS cs WITH (NOLOCK) ON wkr.RequestId = cs.RequestId
 		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON cs.EmpId = emp.EmpId
 		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = cs.EmpId
-		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
+        --AND ce.CompanyId = @CompanyId
 		LEFT JOIN dbo.Employee AS verifier WITH (NOLOCK) ON verifier.EmpId = wkr.VerifierId
 		LEFT JOIN dbo.CompanyEmployee AS vece WITH (NOLOCK) ON verifier.EmpId = vece.EmpId
 		LEFT JOIN dbo.Employee AS approver WITH (NOLOCK) ON approver.EmpId = wkr.ApproverId

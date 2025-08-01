@@ -1,9 +1,10 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE OR ALTER PROCEDURE [dbo].[GroupSupervisor_GetByRole]
+ALTER   PROCEDURE [dbo].[GroupSupervisor_GetByRole]
 (
     @TeamId INT
     ,@Role TINYINT
+	,@CompanyId SMALLINT = NULL
 )
 AS
 /*
@@ -12,13 +13,17 @@ AS
     DB: bodb_HRM
 
     Revisions:
+	- 20250730@Jay: Add company name for group filter [Redmine: #233324]
     Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;
 
 	SELECT e.EmpId
-		,e.NickName
+		,CASE 
+			WHEN @CompanyId IS NOT NULL AND @CompanyId = c.CompanyId THEN e.NickName
+			ELSE e.NickName + ' (' + ISNULL(c.Name, '') + ')'
+		END AS NickName
 		,e.FullName
 		,g.GroupId AS TeamId
 		,g.Code
@@ -51,6 +56,11 @@ BEGIN
 					WHEN su.RequestType = 8 THEN 1
 					ELSE 0
 					END) AS BIT) AS HasOvertime
+		,CASE 
+			WHEN @CompanyId IS NOT NULL AND @CompanyId = c.CompanyId THEN 1
+			WHEN @CompanyId IS NULL THEN 1 -- group
+			ELSE 0
+		END AS CanRemove
 	FROM dbo.GroupSupervisor AS su WITH (NOLOCK)
 		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON su.OwnerId = e.EmpId
 		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON @TeamId = g.GroupId

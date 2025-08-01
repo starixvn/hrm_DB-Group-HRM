@@ -1,19 +1,23 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[EmployeeSupervisor_GetByQuery] @CompanyId SMALLINT
+ALTER PROCEDURE [dbo].[EmployeeSupervisor_GetByQuery]
+(
+    @CompanyId SMALLINT
     ,@EmpId INT
-	,@Role TINYINT = NULL
-	,@RequestType TINYINT = NULL
-	,@query NVARCHAR(256) = ''
-	,@includeLoginUser BIT = 1
+    ,@Role TINYINT = NULL
+    ,@RequestType TINYINT = NULL
+    ,@query NVARCHAR(256) = ''
+    ,@includeLoginUser BIT = 1
+)
 AS
 /*
-Created: Quinn.Vo@2013/11/11
-Task: Get list supervisor
-DB: HRM
+    Created: Quinn.Vo@2013/11/11
+    Task: Get list supervisor
+    DB: bodb_HRM
 
-Revisions:
-Param's Explanation:
+    Revisions:
+        20250722@Tim: auto approve request [Redmine: #233324]
+    Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -119,10 +123,11 @@ BEGIN
 	SELECT OwnerId
 		,emp.Nickname
 		,emp.FullName
-		,empsum.IsTopManager
+		,ce.AutoApproveRequest
 	FROM #tblSupervisors AS tbl
 		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON tbl.OwnerId = emp.EmpId
-		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
+		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
+        AND ce.CompanyId = @CompanyId
 	ORDER BY Nickname
 
 	DROP TABLE #tblSupervisors

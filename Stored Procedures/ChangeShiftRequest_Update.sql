@@ -1,32 +1,34 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[ChangeShiftRequest_Update] @RequestId BIGINT
-	,@EmpId INT
-	,@TypeId TINYINT
-	,@Remark NVARCHAR(2000)
-	,@FromDate DATE
-	,@ToDate DATE
-	,@ActorId INT
-	,@VerifierId INT = NULL
-	,@ApproverId INT = NULL
-	,@DetailXml NVARCHAR(MAX)
-	,@ErrCode INT = 0 OUTPUT
-	,@ErrMsg NVARCHAR(200) = '' OUTPUT
-	,@CompanyId SMALLINT
+ALTER PROCEDURE [dbo].[ChangeShiftRequest_Update]
+(
+    @RequestId BIGINT
+    ,@CompanyId SMALLINT
+    ,@EmpId INT
+    ,@TypeId TINYINT
+    ,@Remark NVARCHAR(2000)
+    ,@FromDate DATE
+    ,@ToDate DATE
+    ,@ActorId INT
+    ,@VerifierId INT = NULL
+    ,@ApproverId INT = NULL
+    ,@DetailXml NVARCHAR(MAX)
+    ,@ErrCode INT = 0 OUTPUT
+    ,@ErrMsg NVARCHAR(200) = '' OUTPUT
+)
 AS
 /*
-Created: Tim.Trinh@2019-09-20
-Task: update request
-DB: HRM_SMS
-Original:
+    Created: Tim.Trinh@2019-09-20
+    Task: update request
+    DB: bodb_HRM
 
-Revisions:
-Param's Explanation:
-	@DetailXml: '<ROOT><Row OnDate={0} FromShiftId={1} ToShiftId={2} Remark={3} ToDate={4} /></ROOT>'
+    Revisions:
+        20250722@Tim: auto approve request [Redmine: #233324]
+    Param's Explanation:
+	    @DetailXml: '<ROOT><Row OnDate={0} FromShiftId={1} ToShiftId={2} Remark={3} ToDate={4} /></ROOT>'
 */
 BEGIN
 	SET NOCOUNT ON;
-	SET XACT_ABORT ON;
 
 	DECLARE @ModifiedDate DATETIME = GETDATE()
 		,@RequestType TINYINT = 5
@@ -36,7 +38,7 @@ BEGIN
 		,@VerifyRequest TINYINT = 2
 		,@ApproveRequest TINYINT = 3
 		,@OnBehalfRequest TINYINT = 5
-		,@IsTopManager BIT
+		,@AutoApproveRequest BIT
 		-- change shift type
 		,@ChangeShift TINYINT = 1
 		,@MoveOffDay TINYINT = 2
@@ -112,15 +114,15 @@ BEGIN
 		RETURN
 	END
 
-	SELECT @IsTopManager = IsTopManager
-	FROM dbo.EmployeeSummary WITH (NOLOCK)
+	SELECT @AutoApproveRequest = AutoApproveRequest
+	FROM dbo.CompanyEmployee WITH (NOLOCK)
 	WHERE EmpId = @EmpId
+        AND CompanyId = @CompanyId
 
-	IF (
-			@ApproverId IS NULL
-			OR @VerifierId IS NULL
-			)
-		AND @IsTopManager = 0
+    SET @AutoApproveRequest = ISNULL(@AutoApproveRequest, 0)
+
+	IF (@ApproverId IS NULL OR @VerifierId IS NULL)
+		AND @AutoApproveRequest = 0
 	BEGIN
 		SET @ErrCode = 103
 		SET @ErrMsg = 'Verifier, Approver is required.'
@@ -157,7 +159,7 @@ BEGIN
 		END
 	END
 
-	IF @IsTopManager = 0
+	IF @AutoApproveRequest = 0
 	BEGIN
 		IF NOT EXISTS (
 				SELECT 1
@@ -225,14 +227,10 @@ BEGIN
 				WHERE wk.RequestType = @RequestType
 					AND wk.CurrentStatus IN (@PendingStatusId, @VerifiedStatusId, @ApprovedStatusId, @ProcessedStatusId)
 					AND (
-						@FromDate BETWEEN cs.FromDate
-							AND cs.ToDate
-						OR @ToDate BETWEEN cs.FromDate
-							AND cs.ToDate
-						OR cs.FromDate BETWEEN @FromDate
-							AND @ToDate
-						OR cs.ToDate BETWEEN @FromDate
-							AND @ToDate
+						@FromDate BETWEEN cs.FromDate AND cs.ToDate
+						OR @ToDate BETWEEN cs.FromDate AND cs.ToDate
+						OR cs.FromDate BETWEEN @FromDate AND @ToDate
+						OR cs.ToDate BETWEEN @FromDate AND @ToDate
 						)
 				)
 			OR (
@@ -245,10 +243,8 @@ BEGIN
 						AND cs.RequestId <> @RequestId
 						INNER JOIN dbo.WorkingTimeRequest AS wk WITH (NOLOCK) ON cs.RequestId = wk.RequestId
 						AND wk.CurrentStatus IN (@PendingStatusId, @VerifiedStatusId, @ApprovedStatusId, @ProcessedStatusId)
-					WHERE csdt.OnDate BETWEEN @FromDate
-							AND @ToDate
-						OR csdt.ToDate BETWEEN @FromDate
-							AND @ToDate
+					WHERE csdt.OnDate BETWEEN @FromDate AND @ToDate
+						OR csdt.ToDate BETWEEN @FromDate AND @ToDate
 					)
 				)
 			)
@@ -267,8 +263,7 @@ BEGIN
 					INNER JOIN dbo.ChangeShiftRequest AS cs WITH (NOLOCK) ON cs.TypeId = @ChangeShift
 					AND cs.EmpId = @EmpId
 					AND cs.RequestId <> @RequestId
-					AND csd.OnDate BETWEEN cs.FromDate
-						AND cs.ToDate
+					AND csd.OnDate BETWEEN cs.FromDate AND cs.ToDate
 					INNER JOIN dbo.WorkingTimeRequest AS wk WITH (NOLOCK) ON cs.RequestId = wk.RequestId
 					AND wk.CurrentStatus IN (@PendingStatusId, @VerifiedStatusId, @ApprovedStatusId, @ProcessedStatusId)
 				)
@@ -319,27 +314,11 @@ BEGIN
 
 	UPDATE dbo.WorkingTimeRequest WITH (ROWLOCK, UPDLOCK)
 	SET Remark = @Remark
-		,CurrentStatus = CASE 
-			WHEN @IsTopManager = 1
-				AND @VerifierId IS NOT NULL THEN @PendingStatusId
-			WHEN @IsTopManager = 1
-				AND @ApproverId IS NOT NULL THEN @VerifiedStatusId
-			WHEN @IsTopManager = 1
-				AND @ApproverId IS NULL THEN @ApprovedStatusId
-			ELSE @PendingStatusId
-			END
+		,CurrentStatus = @PendingStatusId
 		,VerifierId = @VerifierId
-		,VerifiedStatus = CASE 
-			WHEN @IsTopManager = 1
-				AND @VerifierId IS NULL THEN @VerifiedStatusId
-			ELSE @PendingStatusId
-			END
-		,ApproverId = @ApproverId
-		,[ApprovedStatus] = CASE 
-			WHEN @IsTopManager = 1
-				AND @ApproverId IS NULL THEN @VerifiedStatusId
-			ELSE @PendingStatusId
-			END
+		,VerifiedStatus = @PendingStatusId
+		,ApproverId = CASE WHEN @AutoApproveRequest = 1 AND @ApproverId IS NULL THEN -1 ELSE @ApproverId END
+		,[ApprovedStatus] = @PendingStatusId
 		,ModifiedBy = @ActorId
 		,ModifiedDate = @ModifiedDate
 	WHERE RequestId = @RequestId
@@ -353,31 +332,19 @@ BEGIN
 	DELETE dbo.ChangeShiftRequestDetail
 	WHERE RequestId = @RequestId
 
-	INSERT INTO dbo.ChangeShiftRequestDetail (
-		EmpId
-		,OnDate
-		,RequestId
-		,FromShift
-		,ToShift
-		,Remark
-		,ToDate
-		)
-	SELECT @EmpId
-		,OnDate
-		,@RequestId
-		,FromShiftId
-		,ToShiftId
-		,Remark
-		,ToDate
+	INSERT INTO dbo.ChangeShiftRequestDetail (EmpId, OnDate, RequestId, FromShift, ToShift, Remark, ToDate)
+	SELECT @EmpId, OnDate, @RequestId, FromShiftId, ToShiftId, Remark, ToDate
 	FROM #tblChangeShiftDetail
+
+	EXEC dbo.ChangeShiftRequest_WriteLog @RequestId = @RequestId
 
 	IF @ApproverId IS NULL
 		AND @VerifierId IS NULL
-		AND @IsTopManager = 1
+		AND @AutoApproveRequest = 1
 	BEGIN
 		EXEC dbo.ChangeShiftRequest_Approve @RequestId = @RequestId
 			,@RoleId = 3 -- approver
-			,@ActorId = @ActorId
+			,@ActorId = -1
 			,@ErrCode = @ErrCode OUTPUT
 			,@ErrMsg = @ErrMsg OUTPUT
 	END
@@ -413,9 +380,5 @@ BEGIN
 		,@empIds = @EmpId
 		,@isUpdateRequestData = 1
 
-	EXEC dbo.ChangeShiftRequest_WriteLog @RequestId = @RequestId
-
 	DROP TABLE #tblChangeShiftDetail
 END
-
-

@@ -1,16 +1,19 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[KeepInViewRequest_GetById] @RequestId INT,
-	@CompanyId SMALLINT
+ALTER PROCEDURE [dbo].[KeepInViewRequest_GetById]
+(
+    @RequestId INT,
+    @CompanyId SMALLINT
+)
 AS
 /*
-Created: Quinn.Vo@20190606
-Task: Get Keep In View request by RequestId.
-DB: HRM
-Original:
+    Created: Quinn.Vo@20190606
+    Task: Get Keep In View request by RequestId.
+    DB: bodb_HRM
 
-Revisions:
-Param's Explanation:
+    Revisions:
+        20250722@Tim: auto approve request [Redmine: #233324]
+    Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -34,7 +37,7 @@ BEGIN
 		,emp.NickName
 		,emp.FullName
 		,ce.CompanyId
-		,empsum.IsTopManager
+		,ce.AutoApproveRequest
 		,ve.EmpId AS VerifierId
 		,ve.NickName
 		,vece.CompanyId
@@ -49,8 +52,8 @@ BEGIN
 	FROM dbo.KeepInViewRequest AS kiv WITH (NOLOCK)
 		INNER JOIN dbo.WorkingTimeRequest AS wk WITH (NOLOCK) ON kiv.RequestId = wk.RequestId
 		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON kiv.EmpId = emp.EmpId
-		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
 		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
+        --AND ce.CompanyId = @CompanyId
 		LEFT JOIN dbo.Employee AS ve WITH (NOLOCK) ON wk.VerifierId = ve.EmpId
 		LEFT JOIN dbo.CompanyEmployee AS vece WITH (NOLOCK) ON ve.EmpId = vece.EmpId
 		LEFT JOIN dbo.Employee AS ap WITH (NOLOCK) ON wk.ApproverId = ap.EmpId
@@ -58,10 +61,6 @@ BEGIN
 		LEFT JOIN dbo.Employee AS pr WITH (NOLOCK) ON wk.HRId = pr.EmpId
 		LEFT JOIN dbo.EmployeeCalendar AS empca WITH (NOLOCK) ON kiv.EmpId = empca.EmpId
 		AND kiv.OnDate = empca.WorkDate
-		LEFT JOIN dbo.Shift AS shift WITH (NOLOCK) ON empca.ShiftId = shift.ShiftId
+		LEFT JOIN dbo.[Shift] AS shift WITH (NOLOCK) ON empca.ShiftId = shift.ShiftId
 	WHERE kiv.RequestId = @RequestId
 END
-
-
-
-
