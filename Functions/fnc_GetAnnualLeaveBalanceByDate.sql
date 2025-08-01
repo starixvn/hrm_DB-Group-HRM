@@ -13,6 +13,7 @@ RETURNS NUMERIC(18, 2)
 
 	Revisions:
         20250429@Tim: get RefResource by CompanyId
+        20250801@Tim: fix bug pending balance = null
 	Param's Explanation:
 */
 AS
@@ -47,7 +48,6 @@ BEGIN
     WHERE CompanyId = @CompanyId
         AND [Key] = 'TimeZone'
 
-    SET @AnnualLeaveResetTimelineType = ISNULL(@AnnualLeaveResetTimelineType, @AnnualLeaveResetTimelineByYear)
     SET @Today = DATEADD(MINUTE, @clientTimeZone * 60, DATEADD(HOUR, ABS(@serverTimeZone), GETDATE()))
 
 	IF YEAR(@Today) = YEAR(@Date)
@@ -83,7 +83,7 @@ BEGIN
         AND (ToDate IS NULL OR ToDate < @ToDate)
 		AND ISNULL(Deleted, 0) = 0
 
-    SELECT @PendingLeaveDay = SUM(lr.TotalDays)
+    SELECT @PendingLeaveDay = ISNULL(SUM(lr.TotalDays), 0)
     FROM dbo.WorkingTimeRequest AS r WITH (NOLOCK)
         INNER JOIN dbo.LeaveRequest AS lr WITH (NOLOCK) ON r.RequestId = lr.RequestId
     WHERE lr.EmpId = @EmpId
@@ -96,7 +96,7 @@ BEGIN
 			)
         AND r.CurrentStatus IN (1, 2) -- pending/verified
 
-    SELECT @PendingLeaveDay = ISNULL(@PendingLeaveDay, 0) + SUM(CASE WHEN ldt.IsHalfDay = 1 THEN 0.5 ELSE 1 END)
+    SELECT @PendingLeaveDay = ISNULL(@PendingLeaveDay, 0) + ISNULL(SUM(CASE WHEN ldt.IsHalfDay = 1 THEN 0.5 ELSE 1 END), 0)
     FROM dbo.WorkingTimeRequest AS r WITH (NOLOCK)
         INNER JOIN dbo.LeaveRequest AS lr WITH (NOLOCK) ON r.RequestId = lr.RequestId
         INNER JOIN dbo.LeaveRequestDetail AS ldt WITH (NOLOCK) ON lr.RequestId = ldt.RequestId
