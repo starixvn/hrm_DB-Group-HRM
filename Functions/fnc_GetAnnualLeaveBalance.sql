@@ -1,6 +1,6 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="1"></info>*/
 
-CREATE OR ALTER FUNCTION [dbo].[fnc_GetAnnualLeaveBalance]
+ALTER FUNCTION [dbo].[fnc_GetAnnualLeaveBalance]
 (
     @EmpId INT
     ,@Date DATE
@@ -13,6 +13,7 @@ RETURNS NUMERIC(18, 2)
 	DB: bodb_HRM
 
 	Revisions:
+        20250801@Tim: fix bug pending balance = null
 */
 AS
 BEGIN
@@ -53,7 +54,7 @@ BEGIN
 
     SET @ToDate = DATEADD(YEAR, 1, @FromDate)
 
-	SELECT @PendingLeaveDay = SUM(lr.TotalDays)
+	SELECT @PendingLeaveDay = ISNULL(SUM(lr.TotalDays), 0)
     FROM dbo.WorkingTimeRequest AS r WITH (NOLOCK)
         INNER JOIN dbo.LeaveRequest AS lr WITH (NOLOCK) ON r.RequestId = lr.RequestId
     WHERE lr.EmpId = @EmpId
@@ -66,7 +67,7 @@ BEGIN
 			)
         AND r.CurrentStatus IN (1, 2) -- pending/verified
 
-    SELECT @PendingLeaveDay = ISNULL(@PendingLeaveDay, 0) + SUM(CASE WHEN ldt.IsHalfDay = 1 THEN 0.5 ELSE 1 END)
+    SELECT @PendingLeaveDay = ISNULL(@PendingLeaveDay, 0) + ISNULL(SUM(CASE WHEN ldt.IsHalfDay = 1 THEN 0.5 ELSE 1 END), 0)
     FROM dbo.WorkingTimeRequest AS r WITH (NOLOCK)
         INNER JOIN dbo.LeaveRequest AS lr WITH (NOLOCK) ON r.RequestId = lr.RequestId
         INNER JOIN dbo.LeaveRequestDetail AS ldt WITH (NOLOCK) ON lr.RequestId = ldt.RequestId
