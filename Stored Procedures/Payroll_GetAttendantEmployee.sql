@@ -1,6 +1,6 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE OR ALTER PROCEDURE [dbo].[Payroll_GetAttendantEmployee]
+CREATE OR ALTER   PROCEDURE [dbo].[Payroll_GetAttendantEmployee]
 (
 	@CompanyId INT,
 	@Date DATETIME
@@ -90,6 +90,8 @@ BEGIN
 		) AS TotalUnpaidLeaveDays,
 
 		MAX(CASE 
+				WHEN ce.Salary IS NOT NULL
+					THEN ce.Salary
 				WHEN es.IsLocal = 1
 					THEN LocalSalary
 				ELSE ExpatSalary
