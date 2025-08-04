@@ -110,7 +110,7 @@ BEGIN
 
 		MAX(es.CompanyDate) AS CompanyDate,
 		MAX(e.ConfirmedDate) AS ConfirmedDate
-	FROM EmployeeCalendar ec WITH (NOLOCK)
+	FROM tmpEmployeeCalendar ec WITH (NOLOCK)
 		INNER JOIN EmployeeSummary es WITH (NOLOCK) ON ec.EmpId = es.EmpId 
 		INNER JOIN Employee e WITH (NOLOCK) ON ec.EmpId = e.EmpId AND ISNULL(e.isDeleted, 0) = 0
 		LEFT JOIN EmployeeAttendance ea WITH(NOLOCK) ON ea.EmpId = ec.EmpId AND ec.WorkDate = ea.AttendanceDate
