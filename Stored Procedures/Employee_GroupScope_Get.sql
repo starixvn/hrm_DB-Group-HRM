@@ -1,6 +1,6 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE OR ALTER PROCEDURE [dbo].[Employee_GroupScope_Get] 
+ALTER PROCEDURE [dbo].[Employee_GroupScope_Get] 
 	@query NVARCHAR(256) = NULL,
 	@teamIds VARCHAR(MAX) = '',
 	@enable BIT = NULL,
@@ -19,6 +19,7 @@ AS
 	Revisions:
         20250507@Jay.Do: remove dynamic sql
         20250627@Hank.Nguyen: check GroupId in both Employee and CompanyEmployee tables
+        20250801@Lilac.Nguyen: get more info for Profit Center Report [Redmine: #234645]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -60,12 +61,14 @@ BEGIN
 		TeamCode NVARCHAR(50),
 		TeamName NVARCHAR(200),
 		TeamPIC NVARCHAR(100),
+		AccountableArea  NVARCHAR(100),
 		DepartmentId INT,
 		DepartmentCode NVARCHAR(50),
 		DepartmentName NVARCHAR(200),
 		DepartmentPIC NVARCHAR(100),
 		ManagementLevel NVARCHAR(100),
-		JobLevel NVARCHAR(100)
+		JobLevel NVARCHAR(100),
+		[Location] NVARCHAR(100)
 	)
 
 	INSERT INTO @Result
@@ -94,12 +97,14 @@ BEGIN
 		g.Code AS TeamCode,
 		g.[Name] AS TeamName,
 		eg.NickName AS TeamPIC,
+		g.AccountableArea,
 		d.DepartmentId,
 		d.Code AS DepartmentCode,
 		d.[Name] AS DepartmentName,
 		ed.NickName AS DepartmentPIC,
 		COALESCE(mg.[Name], ml.[Name]) AS ManagementLevel,
-		jg.[Name] AS JobLevel
+		jg.[Name] AS JobLevel,
+		c.CountryCode
 	FROM dbo.Employee AS e WITH (NOLOCK)
 		LEFT JOIN dbo.CompanyEmployee ce WITH (NOLOCK) ON ce.EmpId = e.EmpId AND (ce.IsSpecialUser IS NULL OR ce.IsSpecialUser = 0)
 		LEFT JOIN dbo.EmployeeSummary AS s WITH (NOLOCK) ON s.EmpId = e.EmpId
