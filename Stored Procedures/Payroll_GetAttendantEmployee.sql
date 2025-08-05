@@ -1,3 +1,4 @@
+
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 CREATE OR ALTER     PROCEDURE [dbo].[Payroll_GetAttendantEmployee]
@@ -189,5 +190,4 @@ BEGIN
 		LEFT JOIN SalaryStructureDetail std WITH (NOLOCK) ON std.JobLevelId = e.JobLevelId 
 			AND ce.SalaryStructureId = std.SalaryStructureId
 	GROUP BY tewc.EmpId
-	ORDER BY tewc.EmpId ASC
 END
