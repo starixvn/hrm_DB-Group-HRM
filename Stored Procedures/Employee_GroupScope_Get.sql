@@ -20,6 +20,7 @@ AS
         20250507@Jay.Do: remove dynamic sql
         20250627@Hank.Nguyen: check GroupId in both Employee and CompanyEmployee tables
         20250801@Lilac.Nguyen: get more info for Profit Center Report [Redmine: #234645]
+		20250805@Lilac.Nguyen: get location(CountryCodeISO3) [Redmine: #234645]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -104,7 +105,7 @@ BEGIN
 		ed.NickName AS DepartmentPIC,
 		COALESCE(mg.[Name], ml.[Name]) AS ManagementLevel,
 		jg.[Name] AS JobLevel,
-		c.CountryCode
+		ct.CountryCodeISO3 AS [Location]
 	FROM dbo.Employee AS e WITH (NOLOCK)
 		LEFT JOIN dbo.CompanyEmployee ce WITH (NOLOCK) ON ce.EmpId = e.EmpId AND (ce.IsSpecialUser IS NULL OR ce.IsSpecialUser = 0)
 		LEFT JOIN dbo.EmployeeSummary AS s WITH (NOLOCK) ON s.EmpId = e.EmpId
@@ -124,6 +125,8 @@ BEGIN
 		LEFT JOIN ManagementLevel ml WITH (NOLOCK) ON e.ManagementLevelId = ml.ManagementLevelId
 		LEFT JOIN HRM.dbo.EmployeeJobGrade ejg WITH (NOLOCK) ON ejg.EmpId = e.EmpId AND ejg.IsCurrentUsed = 1 AND ISNULL(ejg.IsDeleted, 0) = 0
 		LEFT JOIN JobLevel jg WITH (NOLOCK) ON COALESCE(e.JobLevelId, ejg.JobGradeId) = jg.JobLevelId 
+		LEFT JOIN dbo.Country AS ct WITH (NOLOCK) ON ct.CountryCode = c.CountryCode
+		
 	WHERE 
 		(@enable IS NULL OR (ISNULL(ISNULL(ce.isDeleted, e.isDeleted), 0) = 0 AND COALESCE(ce.Enabled, e.Enabled) = @enable))
 		AND (@isDelete IS NULL OR ISNULL(ISNULL(ce.isDeleted, e.isDeleted), 0) = @isDelete)
