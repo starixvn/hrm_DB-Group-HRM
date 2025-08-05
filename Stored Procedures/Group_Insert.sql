@@ -1,6 +1,6 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE OR ALTER PROCEDURE [dbo].[Group_Insert]
+ALTER PROCEDURE [dbo].[Group_Insert]
 (
     @Code VARCHAR(20)
     ,@Name VARCHAR(150)
@@ -12,7 +12,7 @@ CREATE OR ALTER PROCEDURE [dbo].[Group_Insert]
     ,@PICEmpId INT = NULL
     ,@DepartmentId INT
     ,@AccountableArea VARCHAR(200) = NULL
-	,@IsOutsource BIT = 0
+    ,@IsOutsource BIT = 0
 )
 AS
 /*
@@ -24,23 +24,11 @@ AS
         - 20250422@Jay: Apply create group team logic [Redmine: #221567]
         - 20250526@Jay: Allow having the same code [Redmine: #228323]
         - 20250530@Jay: allow PICEmpId be null [Redmine: #225528]
+        - 20250805@Tim: allow duplicate GroupTeamId [Redmine: #235233]
     Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;
-
-	IF EXISTS (
-			SELECT 1
-			FROM dbo.[Group] WITH (NOLOCK)
-			WHERE GroupTeamId = @GroupTeamId
-				AND IsDeleted = 0
-			)
-	BEGIN
-		SELECT @ErrCode = 101
-			,@ErrMsg = N'Team Id "' + CAST(@GroupTeamId AS NVARCHAR) + '" exists.'
-
-		RETURN
-	END
 
 	INSERT INTO dbo.[Group] (
 		Code
