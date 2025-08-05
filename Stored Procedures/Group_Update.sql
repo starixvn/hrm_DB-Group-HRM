@@ -1,6 +1,6 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE OR ALTER PROCEDURE [dbo].[Group_Update]
+ALTER PROCEDURE [dbo].[Group_Update]
 (
     @TeamId INT
     ,@Code VARCHAR(20)
@@ -25,7 +25,7 @@ CREATE OR ALTER PROCEDURE [dbo].[Group_Update]
     ,@ExpatOffDaysbyWeek TINYINT = NULL
     ,@ExpatWorkingHoursByWeek TINYINT = NULL
     ,@ExpatYearsOfServiceForExtraLeave INT = NULL
-	,@IsOutsource BIT = 0
+    ,@IsOutsource BIT = 0
 )
 AS
 /*
@@ -34,27 +34,13 @@ AS
     DB: bodb_HRM
 
     Revisions:
-	    - 20250515@Jay: add years of service for extra leave [Redmine: #227166]
-	    - 20250526@Jay: Allow having the same code [Redmine: #228323]
+        - 20250515@Jay: add years of service for extra leave [Redmine: #227166]
+        - 20250526@Jay: Allow having the same code [Redmine: #228323]
+        - 20250805@Tim: allow duplicate GroupTeamId [Redmine: #235233]
     Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;
-	SET XACT_ABORT ON;
-
-	IF EXISTS (
-			SELECT 1
-			FROM dbo.[Group] WITH (NOLOCK)
-			WHERE GroupId <> @TeamId 
-				AND GroupTeamId = @GroupTeamId
-				AND IsDeleted = 0
-			)
-	BEGIN
-		SELECT @ErrCode = 101
-			,@ErrMsg = N'Team Id "' + CAST(@GroupTeamId AS NVARCHAR) + '" have been used by other group.'
-
-		RETURN
-	END
 
 	DECLARE @xml XML
 		,@logData NVARCHAR(MAX)
@@ -88,7 +74,7 @@ BEGIN
 			)
 	SET @logOldData = REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"')
 
-	UPDATE dbo.[Group] WITH (ROWLOCK, UPDLOCK)
+	UPDATE dbo.[Group] WITH (ROWLOCK)
 	SET Code = @Code
 		,[Name] = @Name
 		,ModifiedDate = GETDATE()
