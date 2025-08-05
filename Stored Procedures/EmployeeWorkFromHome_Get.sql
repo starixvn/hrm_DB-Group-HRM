@@ -15,6 +15,7 @@ AS
 
     Revisions:
         - 20250409@Tim: remove section [Redmine: #222886]
+
     Param's Explanation:
 */
 BEGIN
