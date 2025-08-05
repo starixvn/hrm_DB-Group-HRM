@@ -15,7 +15,6 @@ AS
 
     Revisions:
         - 20250409@Tim: remove section [Redmine: #222886]
-        - 20250801@Lilac.Nguyen: get location [Redmine: #234645]
 
     Param's Explanation:
 */
@@ -44,7 +43,6 @@ BEGIN
 		,ew.ModifiedBy
 		,modifier.NickName AS Modifier
 		,ew.Remark
-		,empsum.CountryCode AS [Location]
 	FROM dbo.EmployeeWorkFromHome AS ew WITH (NOLOCK)
 		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON ew.EmpId = e.EmpId
 		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON e.EmpId = empsum.EmpId
