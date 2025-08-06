@@ -108,8 +108,8 @@ BEGIN
 				WHEN tewc.WorkDate >= e.ConfirmedDate 
 						AND (
 								IsHoliday = 1 
-								OR ((CheckIn IS NOT NULL AND CheckOut IS NOT NULL)
-								OR LeaveTypeId IS NOT NULL)
+								OR (CheckIn IS NOT NULL AND CheckOut IS NOT NULL)
+								OR LeaveTypeId IS NOT NULL
 							)
 					THEN 1.0
 				ELSE 0.0
@@ -126,7 +126,7 @@ BEGIN
 
 		SUM(
 			CASE 
-				WHEN tewc.WorkDate < e.ConfirmedDate OR e.ConfirmedDate IS NULL
+				WHEN (tewc.WorkDate < e.ConfirmedDate OR e.ConfirmedDate IS NULL)
 						AND (
 								IsHoliday = 1 
 								OR (CheckIn IS NOT NULL AND CheckOut IS NOT NULL)
@@ -138,7 +138,7 @@ BEGIN
 		)
 		- SUM(
 			CASE 
-				WHEN tewc.WorkDate < e.ConfirmedDate OR e.ConfirmedDate IS NULL
+				WHEN (tewc.WorkDate < e.ConfirmedDate OR e.ConfirmedDate IS NULL)
 				THEN ISNULL(tewc.UnpaidLeaveDay, 0)
 				ELSE 0
 			END
