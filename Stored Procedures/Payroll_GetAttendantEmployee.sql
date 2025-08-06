@@ -1,7 +1,7 @@
 
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE OR ALTER     PROCEDURE [dbo].[Payroll_GetAttendantEmployee]
+CREATE OR ALTER       PROCEDURE [dbo].[Payroll_GetAttendantEmployee]
 (
 	@CompanyId INT,
 	@Date DATETIME
@@ -82,7 +82,6 @@ BEGIN
 		AND YEAR(WorkDate) = YEAR(@Date)
 		AND ce.CompanyId = @CompanyId
 		AND IsOffDay = 0
-		AND e.ConfirmedDate IS NOT NULL
 		AND (e.ResignedDate IS NULL OR e.ResignedDate >  @Date)
 		AND IsTopManager = 0
 
@@ -127,7 +126,7 @@ BEGIN
 
 		SUM(
 			CASE 
-				WHEN tewc.WorkDate <= e.ConfirmedDate 
+				WHEN tewc.WorkDate < e.ConfirmedDate OR e.ConfirmedDate IS NULL
 						AND (
 								IsHoliday = 1 
 								OR (CheckIn IS NOT NULL AND CheckOut IS NOT NULL)
@@ -139,7 +138,7 @@ BEGIN
 		)
 		- SUM(
 			CASE 
-				WHEN tewc.WorkDate < e.ConfirmedDate 
+				WHEN tewc.WorkDate < e.ConfirmedDate OR e.ConfirmedDate IS NULL
 				THEN ISNULL(tewc.UnpaidLeaveDay, 0)
 				ELSE 0
 			END
