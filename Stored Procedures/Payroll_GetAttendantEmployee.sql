@@ -57,7 +57,6 @@ BEGIN
 		LeaveTypeId INT
 	)
 
-
 	INSERT INTO @TempEmployeeWorkingCalendar
 	SELECT tec.EmpId,
 		tec.WorkDate,
@@ -179,7 +178,8 @@ BEGIN
 		) AS WorkingDays,
 
 		MAX(es.CompanyDate) AS CompanyDate,
-		MAX(e.ConfirmedDate) AS ConfirmedDate
+		MAX(e.ConfirmedDate) AS ConfirmedDate,
+		MAX(e.JoinedDate) AS JoinedDate
 	FROM @TempEmployeeWorkingCalendar tewc
 		INNER JOIN Employee e WITH (NOLOCK) ON tewc.EmpId = e.EmpId 
 			AND ISNULL(e.isDeleted, 0) = 0

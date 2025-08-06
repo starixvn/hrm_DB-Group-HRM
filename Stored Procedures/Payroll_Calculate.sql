@@ -1,6 +1,6 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE OR ALTER PROCEDURE [dbo].[Payroll_Calculate]
+CREATE OR ALTER   PROCEDURE [dbo].[Payroll_Calculate]
 (
 	@CompanyId INT,
 	@Date DATETIME,
@@ -114,15 +114,15 @@ BEGIN
 			FROM ActivityLog 
 			WHERE ObjectTypeId = @PayrollObjectTypeId 
 				AND ObjectId = @LogObjectId); 
+	DECLARE @PayrollLogActionId INT = 17;
 	INSERT INTO ActivityLog
 		VALUES( 
 			@CurrentDateTime,
 			@ModifiedBy,
-			NULL,
+			@PayrollLogActionId,
 			@PayrollObjectTypeId,
 			@LogObjectId,
 			@OldData,
 			@PayrollListJson,
 			NULL)
-				
 END
