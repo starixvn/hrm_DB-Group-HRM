@@ -1,7 +1,8 @@
 
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE OR ALTER       PROCEDURE [dbo].[Payroll_GetAttendantEmployee]
+CREATE OR 
+ALTER       PROCEDURE [dbo].[Payroll_GetAttendantEmployee]
 (
 	@CompanyId INT,
 	@Date DATETIME
@@ -154,7 +155,7 @@ BEGIN
 		MAX(CASE 
 			WHEN tewc.LeaveTypeId = @MaternityLeaveId THEN 1
 			ELSE 0
-		END) AS IsMaternityLeave,
+		END) AS IsMaternity,
 
 		SUM(UnpaidLeaveDay) AS TotalUnpaidLeaveDays,
 
