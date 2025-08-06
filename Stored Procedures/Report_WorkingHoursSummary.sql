@@ -19,6 +19,7 @@ AS
 
     Revisions:
         20250404@Tim: remove section [Redmine: #222886]
+        20250806@Tim: fix wrong hospital leave type
 */
 BEGIN
 	DECLARE @employeeIds VARCHAR(MAX)
@@ -37,7 +38,7 @@ BEGIN
 		,@OffsetLeaveTypeId SMALLINT = 27
 		,@WeddingLeaveTypeId SMALLINT = 6
 		,@SuspendWorkLeaveTypeId SMALLINT = 3
-		,@HospitalizationLeaveTypeId SMALLINT = 9
+		,@HospitalizationLeaveTypeId SMALLINT = 39
 		,@CompanyEventLeaveTypeId SMALLINT = 38
 		-- request status
 		,@PendingStatusId TINYINT = 1
@@ -304,8 +305,7 @@ BEGIN
 		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId
 		INNER JOIN dbo.Department AS dept WITH (NOLOCK) ON gr.DepartmentId = dept.DepartmentId
 		INNER JOIN dbo.tmpEmployeeCalendar AS empca WITH (NOLOCK) ON emp.EmpId = empca.EmpId
-		AND empca.WorkDate BETWEEN @FromDate
-			AND @ToDate
+		AND empca.WorkDate BETWEEN @FromDate AND @ToDate
 		INNER JOIN dbo.EmployeeAttendance AS empatt WITH (NOLOCK) ON emp.EmpId = empatt.EmpId
 		AND empatt.AttendanceDate = empca.WorkDate
 		LEFT JOIN dbo.OTDailyRequest AS ot WITH (NOLOCK) ON ot.EmpId = emp.EmpId

@@ -12,9 +12,10 @@ AS
     DB: bodb_HRM
 
     Revisions:
-        03062023@Otis: get field ResignedReason
-        20250707@Tim: add salary structure [Redmine: #230542]
-        20250722@Tim: add auto approve request [Remine: #233324]
+        - 03062023@Otis: get field ResignedReason
+        - 20250707@Tim: add salary structure [Redmine: #230542]
+        - 20250722@Tim: add auto approve request [Remine: #233324]
+        - 20250806@Tim: get CtrId [Redmine: #235227]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -26,7 +27,8 @@ BEGIN
 	SELECT @KIVLeaveBalance = dbo.fnc_GetKIVByDayBalance(@EmpId, @Today, NULL)
 		,@AnnualLeaveBalance = dbo.fnc_GetAnnualLeaveBalance(@EmpId, @Today, NULL)
 
-	SELECT e.EmpId
+	SELECT e.CtrId
+        ,e.EmpId
 		,e.UserId
 		,e.Code
 		,e.DomainUsername

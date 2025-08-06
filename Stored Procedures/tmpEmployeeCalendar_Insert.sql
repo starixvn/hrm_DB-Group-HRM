@@ -12,13 +12,14 @@ ALTER PROCEDURE [dbo].[tmpEmployeeCalendar_Insert]
 )
 AS
 /*
-    Created: Tim.Trinh@2019-10-10
+    Created: 2019-10-10@Tim
     Task: get employee calendar
     DB: bodb_HRM
 
     Revisions:
-        20250603@Tim: fix bug update leave request
-        20250627@Mira: fix bug update leave request
+        - 20250603@Tim: fix bug update leave request
+        - 20250627@Mira: fix bug update leave request
+        - 20250806@Tim: fix bug update leave request 1/2 day
     Param's Explanation:
 */
 BEGIN
@@ -654,7 +655,7 @@ BEGIN
             )
             OR (
                 rq.RequestId IS NOT NULL
-                AND empca.LeaveTypeId IS NULL
+                AND ISNULL(empca.LeaveTypeId, 0) != ISNULL(rq.LeaveTypeId, 0)
             )
         )
 
