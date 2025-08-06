@@ -107,7 +107,10 @@ BEGIN
 		VALUES(source.PayrollId, source.WorkingDays, source.PaidDays, source.UnpaidLeave, source.BasicSalary, source.GrossSalary);
 
 	DECLARE @PayrollObjectTypeId INT = 7;
-	DECLARE @LogObjectId VARCHAR(MAX) = @CompanyId + Month(@Date) + Year(@date);
+	DECLARE @LogObjectId VARCHAR(MAX) = 
+		CAST(@CompanyId AS VARCHAR) + 
+		CAST(MONTH(@Date) AS VARCHAR) + 
+		CAST(YEAR(@Date) AS VARCHAR);
 
 	DECLARE @OldData NVARCHAR(MAX) = 
 		(SELECT TOP 1 [Data] 
