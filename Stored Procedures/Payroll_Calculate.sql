@@ -1,6 +1,6 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE OR ALTER   PROCEDURE [dbo].[Payroll_Calculate]
+CREATE PROCEDURE [dbo].[Payroll_Calculate]
 (
 	@CompanyId INT,
 	@Date DATETIME,
@@ -68,9 +68,10 @@ BEGIN
 		EmploymentStatus INT
 	) AS j
 
-	MERGE INTO MonthlyPayroll AS target
+	MERGE INTO dbo.MonthlyPayroll AS target
 	USING (
-		SELECT * FROM @TempPayroll
+		SELECT *
+        FROM @TempPayroll
 	) AS source
 	ON target.EmpId = source.EmpId
 		AND MONTH(target.[Month]) = MONTH(@Date)
@@ -92,7 +93,7 @@ BEGIN
 		source.GrossSalary
 	INTO @MergedPayroll;
 
-	MERGE INTO MonthlySalary AS target
+	MERGE INTO dbo.MonthlySalary AS target
 	USING @MergedPayroll AS source
 	ON target.PayrollId = source.PayrollId
 	WHEN MATCHED THEN
@@ -118,7 +119,7 @@ BEGIN
 			WHERE ObjectTypeId = @PayrollObjectTypeId 
 				AND ObjectId = @LogObjectId); 
 	DECLARE @PayrollLogActionId INT = 17;
-	INSERT INTO ActivityLog
+	INSERT INTO dbo.ActivityLog
 		VALUES( 
 			@CurrentDateTime,
 			@ModifiedBy,

@@ -1,8 +1,6 @@
-
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE OR 
-ALTER       PROCEDURE [dbo].[Payroll_GetAttendantEmployee]
+CREATE PROCEDURE [dbo].[Payroll_GetAttendantEmployee]
 (
 	@CompanyId INT,
 	@Date DATETIME
@@ -40,8 +38,8 @@ BEGIN
 		RequestTime,
 		wtr.RequestType,
 		OnDate
-	FROM CheckInOutRequest cior
-		INNER JOIN WorkingTimeRequest wtr WITH (NOLOCK) ON cior.RequestId = wtr.RequestId
+	FROM dbo.CheckInOutRequest AS cior
+		INNER JOIN dbo.WorkingTimeRequest AS wtr WITH (NOLOCK) ON cior.RequestId = wtr.RequestId
 			AND RequestType IN (@CheckInId, @CheckOutId)
 			AND CurrentStatus = @PendingStatusId
 	WHERE MONTH(OnDate) = MONTH(@Date)
@@ -71,13 +69,13 @@ BEGIN
 			ELSE 0
 		END AS UnpaidLeaveDay,
 		tec.LeaveTypeId
-	FROM tmpEmployeeCalendar tec WITH (NOLOCK)
-		INNER JOIN Employee e WITH (NOLOCK) ON tec.EmpId = e.EmpId 
+	FROM dbo.tmpEmployeeCalendar AS tec WITH (NOLOCK)
+		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON tec.EmpId = e.EmpId 
 			AND ISNULL(e.isDeleted, 0) = 0
-		LEFT JOIN EmployeeAttendance ea WITH(NOLOCK) ON ea.EmpId = tec.EmpId 
+		LEFT JOIN dbo.EmployeeAttendance AS ea WITH(NOLOCK) ON ea.EmpId = tec.EmpId 
 			AND tec.WorkDate = ea.AttendanceDate
-		INNER JOIN EmployeeSummary es WITH (NOLOCK) ON tec.EmpId = es.EmpId
-		INNER JOIN CompanyEmployee ce WITH (NOLOCK) ON e.EmpId = ce.EmpId 
+		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON tec.EmpId = es.EmpId
+		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId 
 	WHERE MONTH(WorkDate) = MONTH(@Date)
 		AND YEAR(WorkDate) = YEAR(@Date)
 		AND ce.CompanyId = @CompanyId
@@ -87,18 +85,17 @@ BEGIN
 
 	UPDATE tewc
 	SET CheckIn = pdco.RequestTime
-	FROM @TempEmployeeWorkingCalendar tewc
-		INNER JOIN @TempPendingCheckInOut pdco ON tewc.EmpId = pdco.EmpId
+	FROM @TempEmployeeWorkingCalendar AS tewc
+		INNER JOIN @TempPendingCheckInOut AS pdco ON tewc.EmpId = pdco.EmpId
 			AND tewc.WorkDate = pdco.OnDate
 	WHERE pdco.RequestType = @CheckInId
 
 	UPDATE tewc
 	SET CheckOut = pdco.RequestTime
-	FROM @TempEmployeeWorkingCalendar tewc
-		INNER JOIN @TempPendingCheckInOut pdco ON tewc.EmpId = pdco.EmpId
+	FROM @TempEmployeeWorkingCalendar AS tewc
+		INNER JOIN @TempPendingCheckInOut AS pdco ON tewc.EmpId = pdco.EmpId
 			AND tewc.WorkDate = pdco.OnDate
 	WHERE pdco.RequestType = @CheckOutId
-
 	
 	SELECT 
 		tewc.EmpId,
@@ -182,12 +179,12 @@ BEGIN
 		MAX(e.ConfirmedDate) AS ConfirmedDate,
 		MAX(e.JoinedDate) AS JoinedDate
 	FROM @TempEmployeeWorkingCalendar tewc
-		INNER JOIN Employee e WITH (NOLOCK) ON tewc.EmpId = e.EmpId 
+		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON tewc.EmpId = e.EmpId 
 			AND ISNULL(e.isDeleted, 0) = 0
-		INNER JOIN EmployeeSummary es WITH (NOLOCK) ON tewc.EmpId = es.EmpId 
-		LEFT JOIN [Group] g WITH (NOLOCK) ON g.GroupId = e.GroupId
-		INNER JOIN CompanyEmployee ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
-		LEFT JOIN SalaryStructureDetail std WITH (NOLOCK) ON std.JobLevelId = e.JobLevelId 
+		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON tewc.EmpId = es.EmpId 
+		LEFT JOIN dbo.[Group] AS g WITH (NOLOCK) ON g.GroupId = e.GroupId
+		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
+		LEFT JOIN dbo.SalaryStructureDetail AS std WITH (NOLOCK) ON std.JobLevelId = e.JobLevelId 
 			AND ce.SalaryStructureId = std.SalaryStructureId
 	GROUP BY tewc.EmpId
 END
