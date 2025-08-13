@@ -15,6 +15,8 @@ AS
         20250403@Tim: remove param CompanyId [Redmine: #222886]
 	    20250421@Mira: add new Deparment - new structure [Redmine: #221568]
         20250819@Tim: get PICEmpId [Redmine: #235678]
+	20250812@Mira: tranfer employee [Redmine: #235678]
+
     Param's Explanation:
 */
 BEGIN
@@ -28,14 +30,13 @@ BEGIN
 		,dep.AccountableArea
 		,e.CtrId AS PICCtrId
         ,e.EmpId AS PICEmpId
-		,e.NickName 'PICEmployeeName'
 		,u.UnitId
         ,u.Code
 		,u.[Name]
         ,u.PICEmpId
 	FROM dbo.Department AS dep WITH (NOLOCK)
 		LEFT JOIN dbo.Unit AS u WITH (NOLOCK) ON dep.UnitId = u.UnitId
-		LEFT JOIN dbo.Employee AS e WITH (NOLOCK) ON dep.PICEmpId = e.EmpId
+		LEFT JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON dep.PICEmpId = ce.EmpId
 	WHERE (@IsActive IS NULL OR dep.IsActive = @IsActive)
 		AND dep.IsDeleted = 0
 		AND (@UnitId IS NULL OR u.UnitId = @UnitId)

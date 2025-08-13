@@ -74,6 +74,7 @@ AS
         - 20250619@Henry: fix ambiguous column error
         - 20250707@Tim: add salary structure [Redmine: #230542]
         - 20250722@Tim: add auto approve request [Remine: #233324]
+		- 20250812@Mira: tranfer employee [Redmine: #235678]
     Param's Explanation:
 */
 BEGIN
@@ -93,14 +94,19 @@ BEGIN
 		,@xml XML
 		,@logData NVARCHAR(MAX)
 		,@logOldData NVARCHAR(MAX)
+		,@UserId INT
 
-	SELECT TOP 1 @EmpId_exist = e.EmpId
+	SELECT @UserId = UserId
+	FROM dbo.CompanyEmployee ce
+	WHERE ce.EmpId = @EmpId
+
+	SELECT TOP 1 @EmpId_exist = ce.EmpId
 		,@FullName_exist = e.FullName
 	FROM dbo.Employee e WITH (NOLOCK)
-		INNER JOIN dbo.CompanyEmployee c WITH(NOLOCK) ON c.EmpId = e.EmpId
-	WHERE e.EmpId <> @EmpId
+		INNER JOIN dbo.CompanyEmployee ce WITH(NOLOCK) ON ce.UserId = e.UserId
+	WHERE ce.EmpId <> @EmpId
 		AND Code = @code
-		AND c.CompanyId = @CompanyId
+		AND ce.CompanyId = @CompanyId
 
 
 	IF ISNULL(@EmpId_exist, 0) <> 0
@@ -111,17 +117,17 @@ BEGIN
 		RETURN
 	END
 
-	SELECT TOP 1 @EmpId_exist = e.EmpId
+	SELECT TOP 1 @EmpId_exist = ce.EmpId
 		,@Nickname_exist = Nickname
 		,@FullName_exist = FullName
 	FROM dbo.Employee AS e WITH (NOLOCK)
-		INNER JOIN dbo.CompanyEmployee c WITH(NOLOCK) ON c.EmpId = e.EmpId
-	WHERE e.EmpId <> @EmpId
+		INNER JOIN dbo.CompanyEmployee ce WITH(NOLOCK) ON ce.UserId = e.UserId
+	WHERE ce.EmpId <> @EmpId
 		AND Nickname = @nickname
-		AND c.CompanyId = @CompanyId
+		AND ce.CompanyId = @CompanyId
 		AND (
-			e.isDeleted = 0
-			OR e.[Enabled] = 1
+			ce.isDeleted = 0
+			OR ce.[Enabled] = 1
 			)
 
 	IF ISNULL(@EmpId_exist, 0) <> 0
@@ -134,7 +140,7 @@ BEGIN
 
 	SELECT @Enabled_old = [Enabled]
 		,@IsDeleted_old = isDeleted
-	FROM dbo.Employee WITH (NOLOCK)
+	FROM dbo.CompanyEmployee WITH (NOLOCK)
 	WHERE EmpId = @EmpId
 	
 	SELECT @IsDefaultSchedule_old = IsDefaultSchedule
@@ -149,45 +155,45 @@ BEGIN
 	Order by RoleID 
 
 	SET @xml = (
-			SELECT emp.Code AS '@Code'
-				,emp.DomainUsername AS '@DomainUsername'
-				,emp.FullName AS '@FullName'
-				,emp.Nickname AS '@Nickname'
-				,emp.DOB AS '@DOB'
-				,emp.Email AS '@Email'
-				,emp.JobTitleId AS '@JobTitleId'
-				,emp.JobLevelId AS '@JobLevelId'
-				,emp.ManagementLevelId AS'@ManagementLevelId'
-				,emp.[Enabled] AS '@Enabled'
-				,emp.isDeleted AS '@IsDeleted'
-				,emp.Phone AS '@Phone'
-				,emp.Gender AS '@Gender'
-				,emp.GroupId AS '@TeamId'
-				,emp.JoinedDate AS '@JoinedDate'
-				,emp.ConfirmedDate AS '@ConfirmedDate'
-				,emp.ResignedDate AS '@ResignedDate'
-				,emp.ResignedReason AS '@ResignedReason'
-				,emp.LetsTalk AS '@LetsTalk'
-				,emp.Marriage AS '@Marriage'
-				,emp.PermanentAddress AS '@PermanentAddress'
-				,emp.CurrentAddress AS '@CurrentAddress'
-				,emp.IdCardNumber AS '@IdCardNumber'
-				,emp.PassportNo AS '@PassportNo'
-				,emp.PassportExp AS '@PassportExp'
-				,emp.ChineseName AS '@ChineseName'
-				,emp.PlaceOfbirth AS '@PlaceOfbirth'
-				,emp.Ethnic AS '@Ethnic'
-				,emp.[Native] AS '@Native'
-				,emp.Religion AS '@Religion'
-				,emp.DateOfIDCard AS '@DateOfIDCard'
-				,emp.PlaceOfIDCard AS '@PlaceOfIDCard'
-				,emp.HomePhone AS '@HomePhone'
-				,emp.Qualification AS '@Qualification'
-				,emp.Major AS '@Major'
-				,emp.EmployeeCard AS '@EmployeeCard'
-				,emp.PickupRemark AS '@PickupRemark'
-				,emp.PromotionDate AS '@PromotionDate'
-				,emp.TeamDate AS '@TeamDate'
+			SELECT ce.Code AS '@Code'
+				,ce.DomainUsername AS '@DomainUsername'
+				,e.FullName AS '@FullName'
+				,ce.Nickname AS '@Nickname'
+				,e.DOB AS '@DOB'
+				,ce.Email AS '@Email'
+				,ce.JobTitleId AS '@JobTitleId'
+				,ce.JobLevelId AS '@JobLevelId'
+				,ce.ManagementLevelId AS'@ManagementLevelId'
+				,ce.[Enabled] AS '@Enabled'
+				,ce.isDeleted AS '@IsDeleted'
+				,e.Phone AS '@Phone'
+				,e.Gender AS '@Gender'
+				,ce.GroupId AS '@TeamId'
+				,e.JoinedDate AS '@JoinedDate'
+				,e.ConfirmedDate AS '@ConfirmedDate'
+				,e.ResignedDate AS '@ResignedDate'
+				,e.ResignedReason AS '@ResignedReason'
+				,e.LetsTalk AS '@LetsTalk'
+				,e.Marriage AS '@Marriage'
+				,e.PermanentAddress AS '@PermanentAddress'
+				,e.CurrentAddress AS '@CurrentAddress'
+				,e.IdCardNumber AS '@IdCardNumber'
+				,e.PassportNo AS '@PassportNo'
+				,e.PassportExp AS '@PassportExp'
+				,e.ChineseName AS '@ChineseName'
+				,e.PlaceOfbirth AS '@PlaceOfbirth'
+				,e.Ethnic AS '@Ethnic'
+				,e.[Native] AS '@Native'
+				,e.Religion AS '@Religion'
+				,e.DateOfIDCard AS '@DateOfIDCard'
+				,e.PlaceOfIDCard AS '@PlaceOfIDCard'
+				,e.HomePhone AS '@HomePhone'
+				,e.Qualification AS '@Qualification'
+				,e.Major AS '@Major'
+				,ce.EmployeeCard AS '@EmployeeCard'
+				,ce.PickupRemark AS '@PickupRemark'
+				,ce.PromotionDate AS '@PromotionDate'
+				,ce.TeamDate AS '@TeamDate'
 				,@Roles_old AS '@RoleIds'
 				,empsum.CanOT AS '@CanOT'
 				,empsum.SpecialOT AS '@SpecialOT'
@@ -195,56 +201,46 @@ BEGIN
 				,empsum.WorkingDays AS '@WorkingDays'
 				,empsum.WorkingHours AS '@WorkingHours'
 				,empsum.WorkingHoursByWeek AS '@WorkingHoursByWeek'
-				,empsum.IsTopManager AS '@IsTopManager'
-				,empsum.CompanyDate AS '@CompanyDate'
+				,ce.IsSpecialUser AS '@IsTopManager'
+				,ce.CompanyDate AS '@CompanyDate'
 				,empsum.CountryCode AS '@CountryCode'
 				,empsum.IsExpatUseHoliday AS '@IsExpatUseHoliday'
 				,empsum.OffDaysbyWeek AS '@OffDaysbyWeek'
-				,empsum.MilitaryFromDate AS '@MilitaryFromDate'
-				,empsum.MilitaryToDate AS '@MilitaryToDate'
+				,e.MilitaryFromDate AS '@MilitaryFromDate'
+				,e.MilitaryToDate AS '@MilitaryToDate'
 				,ce.SubCompanyId AS '@SubCompanyId'
                 ,ce.SalaryStructureId AS '@SalaryStructureId'
                 ,ce.Salary AS '@Salary'
                 ,ce.AutoApproveRequest AS '@AutoApproveRequest'
-			FROM dbo.Employee AS emp WITH (NOLOCK)
-				INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
-				INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
+			FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+				INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON ce.EmpId = empsum.EmpId
+				INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.UserId = ce.UserId
                 AND ce.CompanyId = @CompanyId
-			WHERE emp.EmpId = @EmpId
+			WHERE ce.EmpId = @EmpId
 			FOR XML PATH('Row')
 				,TYPE
 			)
+	
 	SET @logOldData = REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"')
 
 	IF @Enabled_old = 0 AND @Enabled = 1 AND @IsDeleted_old = 1
 	BEGIN
-		UPDATE dbo.Employee WITH (ROWLOCK, UPDLOCK)
+		UPDATE dbo.CompanyEmployee WITH (ROWLOCK, UPDLOCK)
 		SET isDeleted = 0
 		WHERE EmpId = @EmpId
 	END
 
 	UPDATE dbo.Employee WITH (ROWLOCK)
-	SET Code = @Code
-		,DomainUsername = @DomainUsername
-		,FullName = @FullName
-		,Nickname = @Nickname
-		,DOB = @DOB
-		,Email = REPLACE(@Email, ' ', '')
-		,JobTitleId = @JobTitleId
-		,JobLevelId = @JobLevelId
-		,ManagementLevelId = @ManagementLevelId
-		,[Enabled] = @Enabled
+	SET FullName = @FullName		
+		,DOB = @DOB		
 		,Phone = @Phone
 		,Gender = @Gender
-		,GroupId = @TeamId
 		,JoinedDate = @JoinedDate
 		,ConfirmedDate = @ConfirmedDate
 		,ResignedDate = @ResignedDate
 		,ResignedReason = @ResignedReason
 		,LetsTalk = @LetsTalk
 		,Marriage = @Marriage
-		,ModifiedDate = GETDATE()
-		,ModifiedBy = @ModifiedBy
 		,PermanentAddress = @PermanentAddress
 		,CurrentAddress = @CurrentAddress
 		,IdCardNumber = @IdCardNumber
@@ -259,18 +255,33 @@ BEGIN
 		,PlaceOfIDCard = @PlaceOfIDCard
 		,HomePhone = @HomePhone
 		,Qualification = @Qualification
-		,Major = @Major
-		,EmployeeCard = @EmployeeCard
-		,PickupRemark = @PickupRemark
-		,PromotionDate = @PromotionDate
-		,TeamDate = @TeamDate
-	WHERE EmpId = @EmpId
+		,Major = @Major		
+		,MilitaryFromDate = @MilitaryFromDate
+		,MilitaryToDate = @MilitaryToDate
+	WHERE UserId = @UserId
 
 	UPDATE CompanyEmployee  WITH (ROWLOCK)
 	SET SubCompanyId = @SubCompanyId
         ,SalaryStructureId = @SalaryStructureId
         ,Salary = @Salary
         ,AutoApproveRequest = @AutoApproveRequest
+		,Code = @Code
+		,DomainUsername = @DomainUsername
+		,Nickname = @Nickname
+		,EmployeeCard = @EmployeeCard
+		,PickupRemark = @PickupRemark
+		,PromotionDate = @PromotionDate
+		,TeamDate = @TeamDate
+		,Email = REPLACE(@Email, ' ', '')
+		,JobTitleId = @JobTitleId
+		,JobLevelId = @JobLevelId
+		,ManagementLevelId = @ManagementLevelId
+		,[Enabled] = @Enabled
+		,GroupId = @TeamId
+		,IsSpecialUser = @IsTopManager
+		,CompanyDate = @CompanyDate
+		,ModifiedDate = GETDATE()
+		,ModifiedBy = @ModifiedBy
 	WHERE EmpId = @EmpId
         AND CompanyId = @CompanyId
 
@@ -299,45 +310,45 @@ BEGIN
 		,@ErrMsg = @ErrMsg OUTPUT
 
 	SET @xml = (
-			SELECT emp.Code AS '@Code'
-				,emp.DomainUsername AS '@DomainUsername'
-				,emp.FullName AS '@FullName'
-				,emp.Nickname AS '@Nickname'
-				,emp.DOB AS '@DOB'
-				,emp.Email AS '@Email'
-				,emp.JobTitleId AS '@JobTitleId'
-				,emp.JobLevelId AS '@JobLevelId'
-				,emp.ManagementLevelId AS '@ManagementLevelId'
-				,emp.[Enabled] AS '@Enabled'
-				,emp.isDeleted AS '@IsDeleted'
-				,emp.Phone AS '@Phone'
-				,emp.Gender AS '@Gender'
-				,emp.GroupId AS '@TeamId'
-				,emp.JoinedDate AS '@JoinedDate'
-				,emp.ConfirmedDate AS '@ConfirmedDate'
-				,emp.ResignedDate AS '@ResignedDate'
-				,emp.ResignedReason AS '@ResignedReason'
-				,emp.LetsTalk AS '@LetsTalk'
-				,emp.Marriage AS '@Marriage'
-				,emp.PermanentAddress AS '@PermanentAddress'
-				,emp.CurrentAddress AS '@CurrentAddress'
-				,emp.IdCardNumber AS '@IdCardNumber'
-				,emp.PassportNo AS '@PassportNo'
-				,emp.PassportExp AS '@PassportExp'
-				,emp.ChineseName AS '@ChineseName'
-				,emp.PlaceOfbirth AS '@PlaceOfbirth'
-				,emp.Ethnic AS '@Ethnic'
-				,emp.[Native] AS '@Native'
-				,emp.Religion AS '@Religion'
-				,emp.DateOfIDCard AS '@DateOfIDCard'
-				,emp.PlaceOfIDCard AS '@PlaceOfIDCard'
-				,emp.HomePhone AS '@HomePhone'
-				,emp.Qualification AS '@Qualification'
-				,emp.Major AS '@Major'
-				,emp.EmployeeCard AS '@EmployeeCard'
-				,emp.PickupRemark AS '@PickupRemark'
-				,emp.PromotionDate AS '@PromotionDate'
-				,emp.TeamDate AS '@TeamDate'
+			SELECT ce.Code AS '@Code'
+				,ce.DomainUsername AS '@DomainUsername'
+				,e.FullName AS '@FullName'
+				,ce.Nickname AS '@Nickname'
+				,e.DOB AS '@DOB'
+				,ce.Email AS '@Email'
+				,ce.JobTitleId AS '@JobTitleId'
+				,ce.JobLevelId AS '@JobLevelId'
+				,ce.ManagementLevelId AS '@ManagementLevelId'
+				,ce.[Enabled] AS '@Enabled'
+				,ce.isDeleted AS '@IsDeleted'
+				,e.Phone AS '@Phone'
+				,e.Gender AS '@Gender'
+				,ce.GroupId AS '@TeamId'
+				,e.JoinedDate AS '@JoinedDate'
+				,e.ConfirmedDate AS '@ConfirmedDate'
+				,e.ResignedDate AS '@ResignedDate'
+				,e.ResignedReason AS '@ResignedReason'
+				,e.LetsTalk AS '@LetsTalk'
+				,e.Marriage AS '@Marriage'
+				,e.PermanentAddress AS '@PermanentAddress'
+				,e.CurrentAddress AS '@CurrentAddress'
+				,e.IdCardNumber AS '@IdCardNumber'
+				,e.PassportNo AS '@PassportNo'
+				,e.PassportExp AS '@PassportExp'
+				,e.ChineseName AS '@ChineseName'
+				,e.PlaceOfbirth AS '@PlaceOfbirth'
+				,e.Ethnic AS '@Ethnic'
+				,e.[Native] AS '@Native'
+				,e.Religion AS '@Religion'
+				,e.DateOfIDCard AS '@DateOfIDCard'
+				,e.PlaceOfIDCard AS '@PlaceOfIDCard'
+				,e.HomePhone AS '@HomePhone'
+				,e.Qualification AS '@Qualification'
+				,e.Major AS '@Major'
+				,ce.EmployeeCard AS '@EmployeeCard'
+				,ce.PickupRemark AS '@PickupRemark'
+				,ce.PromotionDate AS '@PromotionDate'
+				,ce.TeamDate AS '@TeamDate'
 				,@Roles AS '@RoleIds'
 				,empsum.CanOT AS '@CanOT'
 				,empsum.SpecialOT AS '@SpecialOT'
@@ -345,22 +356,22 @@ BEGIN
 				,empsum.WorkingDays AS '@WorkingDays'
 				,empsum.WorkingHours AS '@WorkingHours'
 				,empsum.WorkingHoursByWeek AS '@WorkingHoursByWeek'
-				,empsum.IsTopManager AS '@IsTopManager'
-				,empsum.CompanyDate AS '@CompanyDate'
+				,ce.IsSpecialUser AS '@IsTopManager'
+				,ce.CompanyDate AS '@CompanyDate'
 				,empsum.CountryCode AS '@CountryCode'
 				,empsum.IsExpatUseHoliday AS '@IsExpatUseHoliday'
 				,empsum.OffDaysbyWeek AS '@OffDaysbyWeek'
-				,empsum.MilitaryFromDate AS '@MilitaryFromDate'
-				,empsum.MilitaryToDate AS '@MilitaryToDate'
+				,e.MilitaryFromDate AS '@MilitaryFromDate'
+				,e.MilitaryToDate AS '@MilitaryToDate'
 				,ce.SubCompanyId AS '@SubCompanyId'
                 ,ce.SalaryStructureId AS '@SalaryStructureId'
                 ,ce.Salary AS '@Salary'
                 ,ce.AutoApproveRequest AS '@AutoApproveRequest'
-			FROM dbo.Employee AS emp WITH (NOLOCK)
-				INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
-				INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
+			FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+				INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON ce.EmpId = empsum.EmpId
+				INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON ce.UserId = e.UserId
                 AND ce.CompanyId = @CompanyId
-			WHERE emp.EmpId = @EmpId
+			WHERE ce.EmpId = @EmpId
 			FOR XML PATH('Row')
 				,TYPE
 			)

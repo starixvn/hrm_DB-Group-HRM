@@ -15,7 +15,7 @@ AS
 
     Revisions:
         - 20250409@Tim: remove section [Redmine: #222886]
-
+		- 20250812@Mira: tranfer employee [Redmine: #235678]
     Param's Explanation:
 */
 BEGIN
@@ -36,7 +36,7 @@ BEGIN
 		,e.EmpId
 		,e.Code
 		,e.NickName
-		,e.FullName
+		,u.FullName
 		,g.[Name] AS TeamName
 		,dep.[Name] AS DepartmentName
 		,ew.ModifiedDate
@@ -44,12 +44,13 @@ BEGIN
 		,modifier.NickName AS Modifier
 		,ew.Remark
 	FROM dbo.EmployeeWorkFromHome AS ew WITH (NOLOCK)
-		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON ew.EmpId = e.EmpId
+		INNER JOIN dbo.CompanyEmployee AS e WITH (NOLOCK) ON ew.EmpId = e.EmpId
+		INNER JOIN dbo.Employee AS u WITH (NOLOCK) ON u.UserId = e.UserId
 		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON e.EmpId = empsum.EmpId
 		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON e.GroupId = g.GroupId
 		INNER JOIN #tmpTeam AS t WITH (NOLOCK) ON g.GroupId = t.GroupId
 		INNER JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId = g.DepartmentId
-		LEFT JOIN dbo.Employee AS modifier WITH (NOLOCK) ON ew.ModifiedBy = modifier.EmpId
+		LEFT JOIN dbo.CompanyEmployee AS modifier WITH (NOLOCK) ON ew.ModifiedBy = modifier.EmpId
 	WHERE (
 			(
 				ew.FromDate BETWEEN @FromDate

@@ -45,27 +45,28 @@ BEGIN
 	FROM fnc_strSplit(@teamIds, ',')
 
 	INSERT INTO #tmpEmployee (EmpId)
-	SELECT e.EmpId
-	FROM dbo.Employee AS e WITH (NOLOCK)
-		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON e.EmpId = es.EmpId
+	SELECT ce.EmpId
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON ce.EmpId = es.EmpId
+		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON ce.UserId = e.UserId
 	WHERE (
 			@isDelete IS NULL
-			OR e.isDeleted = @isDelete
+			OR ce.isDeleted = @isDelete
 			)
 		AND (
 			@enable IS NULL
-			OR e.[Enabled] = @enable
+			OR ce.[Enabled] = @enable
 			)
 		AND (
 			@titleId IS NULL
-			OR e.JobTitleId = @titleId
+			OR ce.JobTitleId = @titleId
 			)
 		AND (
 			ISNULL(@teamIds, '') = ''
 			OR EXISTS (
 				SELECT 1
 				FROM #tmpGroup AS tmpgr WITH (NOLOCK)
-				WHERE e.GroupId = tmpgr.GroupId
+				WHERE ce.GroupId = tmpgr.GroupId
 				)
 			)
 		AND (
@@ -74,14 +75,14 @@ BEGIN
 			)
 		AND (
 			ISNULL(@query, '') = ''
-			OR e.NickName LIKE '%' + @query + '%'
+			OR ce.NickName LIKE '%' + @query + '%'
 			OR e.FullName LIKE '%' + @query + '%'
 			)
 
-	SELECT DISTINCT e.EmpId
-		,e.Code
+	SELECT DISTINCT ce.EmpId
+		,ce.Code
 		,e.FullName
-		,e.NickName
+		,ce.NickName
 		,e.ChineseName
 		,e.DOB
 		,e.Gender
@@ -94,34 +95,34 @@ BEGIN
 		,e.PlaceOfbirth
 		,e.Phone
 		,e.HomePhone
-		,e.Email
+		,ce.Email
 		,e.Qualification
 		,e.Major
 		,g.[Name] AS TeamName
 		,dep.[Name] AS DepartmentName
 		,unit.[Name] AS UnitName
 		,unit.[Code] AS UnitCode
-		,e.EmployeeCard
+		,ce.EmployeeCard
 		,c.[Name] AS CompanyName
 		, sc.[Name] AS SubCompanyName
-		,es.CompanyDate
+		,ce.CompanyDate
 		,e.ConfirmedDate
 		,e.ResignedDate
 		,e.ResignedReason
 		,e.JoinedDate
-		,es.MilitaryFromDate
-		,es.MilitaryToDate
+		,e.MilitaryFromDate
+		,e.MilitaryToDate
 		,jt.[Name] AS JobTitle
 		,jl.[Name] AS JobLevel
 		,ml.[Name] AS ManagementLevel
-		,e.TeamDate
+		,ce.TeamDate
 		,e.Ethnic
 		,e.[Native]
 		,e.Religion
 		,ISNULL(ctry.Nationality, ctry.CountryName) AS Nationality
 		,e.PassportNo
 		,e.PassportExp
-		,e.PickupRemark
+		,ce.PickupRemark
 		,e.Skype
 		,e.LetsTalk
 		,es.CanOT
@@ -131,23 +132,23 @@ BEGIN
 		,es.OffDaysbyWeek
 		,es.AnnualLeaveBalance
 		,es.KeepInViewBalance
-		,es.IsTopManager
+		,ce.IsSpecialUser 'IsTopManager'
 		,es.IsLocal
 	FROM #tmpEmployee AS tpl WITH (NOLOCK)
-		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON tpl.EmpId = e.EmpId
-		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = e.EmpId
+		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = tpl.EmpId
+		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.UserId = ce.UserId
 		INNER JOIN dbo.Company AS c WITH (NOLOCK) ON c.CompanyId = ce.CompanyId
 		LEFT JOIN dbo.SubCompany AS sc WITH (NOLOCK) ON sc.SubCompanyId = ce.SubCompanyId
-		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON e.GroupId = g.GroupId
+		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON ce.GroupId = g.GroupId
 		INNER JOIN dbo.[Department] AS dep WITH (NOLOCK) ON g.DepartmentId = dep.DepartmentId
 		INNER JOIN dbo.Unit AS unit WITH (NOLOCK) ON dep.UnitId = unit.UnitId
 		LEFT JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON tpl.EmpId = es.EmpId
 		LEFT JOIN dbo.[Lookup] AS l WITH (NOLOCK) ON l.Code = 'JT'
-		LEFT JOIN dbo.[LookupData] AS jt WITH (NOLOCK) ON l.Id = jt.LookupId AND e.JobTitleId = jt.Id
+		LEFT JOIN dbo.[LookupData] AS jt WITH (NOLOCK) ON l.Id = jt.LookupId AND ce.JobTitleId = jt.Id
 		LEFT JOIN dbo.[Country] AS ctry WITH (NOLOCK) ON ctry.CountryCode = es.CountryCode
-		LEFT JOIN dbo.[JobLevel] AS jl WITH (NOLOCK) ON jl.JobLevelId = e.JobLevelId AND jl.IsDeleted = 0
-		LEFT JOIN dbo.ManagementLevel ml WITH (NOLOCK) ON e.ManagementLevelId = ml.ManagementLevelId
-	ORDER BY e.EmpId
+		LEFT JOIN dbo.[JobLevel] AS jl WITH (NOLOCK) ON jl.JobLevelId = ce.JobLevelId AND jl.IsDeleted = 0
+		LEFT JOIN dbo.ManagementLevel ml WITH (NOLOCK) ON ce.ManagementLevelId = ml.ManagementLevelId
+	ORDER BY ce.EmpId
 
 	INSERT INTO #tmpSupervisor(
 		EmpId
@@ -161,7 +162,7 @@ BEGIN
 		,empsu.Nickname
 	FROM dbo.[EmployeeSupervisor] AS su WITH (NOLOCK)
 		INNER JOIN #tmpEmployee AS emp WITH (NOLOCK) ON su.EmpId = emp.EmpId
-		INNER JOIN dbo.Employee AS empsu WITH (NOLOCK) ON su.OwnerId = empsu.EmpId
+		INNER JOIN dbo.CompanyEmployee AS empsu WITH (NOLOCK) ON su.OwnerId = empsu.EmpId
 	WHERE empsu.[Enabled] = 1
 		AND empsu.isDeleted = 0
 		AND su.ActionType IN (2, 3, 4, 5, 8)
