@@ -16,7 +16,7 @@ AS
         - 20250707@Tim: add salary structure [Redmine: #230542]
         - 20250722@Tim: add auto approve request [Remine: #233324]
         - 20250806@Tim: get CtrId [Redmine: #235227]
-		20250812@Mira: tranfer employee [Redmine: #235678]
+        - 20250813@Jay: change db structure [Redmine: #235678]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -27,7 +27,7 @@ BEGIN
 
 	SELECT @KIVLeaveBalance = dbo.fnc_GetKIVByDayBalance(@EmpId, @Today, NULL)
 		,@AnnualLeaveBalance = dbo.fnc_GetAnnualLeaveBalance(@EmpId, @Today, NULL)
-
+		
 	SELECT e.CtrId
         ,ce.EmpId
 		,e.UserId
@@ -78,7 +78,7 @@ BEGIN
 		,e.[Password]
 		,e.ChineseName
 		,empsum.IsDefaultSchedule
-		,ce.IsSpecialUser 'IsTopManager'
+		,ce.IsSpecialUser AS IsTopManager
 		,empsum.OffDaysbyWeek
 		,empsum.Unit
 		,e.PlaceOfbirth
@@ -125,13 +125,11 @@ BEGIN
 		,ISNULL(ce.GroupId, - 1) AS [TeamId]
 		,g.Code
 		,g.[Name]
-	FROM dbo.Employee AS e WITH (NOLOCK)		
-		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.UserId = e.UserId
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON ce.UserId = e.UserId
 		LEFT JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON empsum.EmpId = ce.EmpId
 		INNER JOIN dbo.Company AS c WITH (NOLOCK) ON c.CompanyId = ce.CompanyId
-        INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON 
-            (ce.GroupId IS NOT NULL AND ce.GroupId = g.GroupId) OR 
-            (ce.GroupId IS NULL AND ce.GroupId = g.GroupId)
+        INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON ce.GroupId = g.GroupId 
 		LEFT JOIN dbo.EmployeeContract AS e_cs WITH (NOLOCK) ON e_cs.EmpId = ce.EmpId
 		LEFT JOIN dbo.Country AS ct WITH (NOLOCK) ON empsum.CountryCode = ct.CountryCode
 		LEFT JOIN dbo.LookupData AS lk WITH (NOLOCK) ON ce.JobTitleId = lk.Id

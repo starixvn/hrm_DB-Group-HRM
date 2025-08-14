@@ -24,6 +24,7 @@ AS
 
     Revisions:
         20250722@Tim: auto approve request [Redmine: #233324]
+        20250813@Jay: change db structure [Redmine: #235678]
     Param's Explanation:
 	    @DetailXml: '<ROOT><Row OnDate={0} FromShiftId={1} ToShiftId={2} Remark={3} ToDate={4} /></ROOT>'
 */
@@ -144,8 +145,8 @@ BEGIN
 			AND NOT EXISTS (
 				SELECT 1
 				FROM dbo.GroupSupervisor AS gs WITH (NOLOCK)
-					INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON gs.GroupId = emp.GroupId
-					AND emp.EmpId = @EmpId
+					INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON gs.GroupId = ce.GroupId
+						AND ce.EmpId = @EmpId
 				WHERE gs.OwnerId = @ActorId
 					AND gs.RequestType = @RequestType
 					AND gs.ActionType = @OnBehalfRequest
@@ -173,8 +174,8 @@ BEGIN
 			AND NOT EXISTS (
 				SELECT 1
 				FROM dbo.GroupSupervisor AS gs WITH (NOLOCK)
-					INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON gs.GroupId = emp.GroupId
-					AND emp.EmpId = @EmpId
+					INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON gs.GroupId = ce.GroupId
+						AND ce.EmpId = @EmpId
 				WHERE gs.OwnerId = @VerifierId
 					AND gs.RequestType = @RequestType
 					AND gs.ActionType = @VerifyRequest
@@ -199,8 +200,8 @@ BEGIN
 			AND NOT EXISTS (
 				SELECT 1
 				FROM dbo.GroupSupervisor AS gs WITH (NOLOCK)
-					INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON gs.GroupId = emp.GroupId
-					AND emp.EmpId = @EmpId
+					INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON gs.GroupId = ce.GroupId
+						AND ce.EmpId = @EmpId
 				WHERE gs.OwnerId = @ApproverId
 					AND gs.RequestType = @RequestType
 					AND gs.ActionType = @ApproveRequest

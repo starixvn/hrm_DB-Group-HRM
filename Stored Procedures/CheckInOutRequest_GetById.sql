@@ -13,6 +13,7 @@ AS
 
     Revisions:
         20250722@Tim: auto approve request [Redmine: #233324]
+        20250813@Jay: change db structure [Redmine: #235678]
     Param's Explanation:
 */
 BEGIN
@@ -32,33 +33,34 @@ BEGIN
 		,wk.ApprovedDate
 		,wk.HRDate AS ProcessedDate
 		,cio.EmpId
-		,emp.NickName
-		,emp.FullName
+		,ce.NickName
+		,e.FullName
 		,ce.CompanyId
 		,ce.AutoApproveRequest
-		,ve.EmpId AS VerifierId
-		,ve.NickName
+		,vece.EmpId AS VerifierId
+		,vece.NickName
 		,vece.CompanyId
 		,Ve.FullName
-		,ap.EmpId AS ApproverId
-		,ap.NickName
+		,apce.EmpId AS ApproverId
+		,apce.NickName
 		,ap.FullName
 		,apce.CompanyId
-		,pr.EmpId AS HRId
-		,pr.NickName
+		,prce.EmpId AS HRId
+		,prce.NickName
 		,pr.FullName
 	FROM dbo.CheckInOutRequest AS cio WITH (NOLOCK)
 		INNER JOIN dbo.WorkingTimeRequest AS wk WITH (NOLOCK) ON cio.RequestId = wk.RequestId
-		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON cio.EmpId = emp.EmpId
+		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON cio.EmpId = ce.EmpId
 		INNER JOIN dbo.EmployeeCalendar AS empca WITH (NOLOCK) ON cio.OnDate = empca.WorkDate
 		AND cio.EmpId = empca.EmpId
-		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = cio.EmpId
+		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON ce.UserId = e.UserId
         --AND ce.CompanyId = @CompanyId
 		LEFT JOIN dbo.[Shift] AS sh WITH (NOLOCK) ON empca.ShiftId = sh.ShiftId
-		LEFT JOIN dbo.Employee AS ve WITH (NOLOCK) ON wk.VerifierId = ve.EmpId
-		LEFT JOIN dbo.CompanyEmployee AS vece WITH (NOLOCK) ON ve.EmpId = vece.EmpId
-		LEFT JOIN dbo.Employee AS ap WITH (NOLOCK) ON wk.ApproverId = ap.EmpId
-		LEFT JOIN dbo.CompanyEmployee AS apce WITH (NOLOCK) ON ap.EmpId = apce.EmpId
-		LEFT JOIN dbo.Employee AS pr WITH (NOLOCK) ON wk.HRId = pr.EmpId
+		LEFT JOIN dbo.CompanyEmployee AS vece WITH (NOLOCK) ON wk.VerifierId = vece.EmpId
+		LEFT JOIN dbo.Employee AS ve WITH (NOLOCK) ON vece.UserId = ve.UserId
+		LEFT JOIN dbo.CompanyEmployee AS apce WITH (NOLOCK) ON wk.ApproverId = apce.EmpId
+		LEFT JOIN dbo.Employee AS ap WITH (NOLOCK) ON ap.UserId = apce.UserId
+		LEFT JOIN dbo.CompanyEmployee AS prce WITH (NOLOCK) ON wk.HRId = prce.EmpId
+		LEFT JOIN dbo.Employee AS pr WITH (NOLOCK) ON prce.UserId = pr.UserId
 	WHERE cio.RequestId = @RequestId
 END

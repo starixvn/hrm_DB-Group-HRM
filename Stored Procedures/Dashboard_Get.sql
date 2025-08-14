@@ -1,7 +1,7 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[Dashboard_Get] @EmployeeId INT,
-	@Date DATE,
+ALTER PROCEDURE [dbo].[Dashboard_Get] @EmployeeId INT
+	,@Date DATE,
 	@CompanyId SMALLINT
 AS
 /*
@@ -11,6 +11,7 @@ DB: HRM
 Original:
 
 Revisions:
+        20250813@Jay: change db structure [Redmine: #235678]
 Param's Explanation:
 */
 BEGIN
@@ -108,7 +109,7 @@ BEGIN
 				END) AS TotalPending
 	FROM dbo.WorkingTimeRequest AS wtr WITH (NOLOCK)
 		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = wtr.EmpId  
-	WHERE CreatedDate BETWEEN @fromDate
+	WHERE wtr.CreatedDate BETWEEN @fromDate
 			AND @todate
 			AND wtr.EmpId = @EmployeeId
 			AND ce.CompanyId = @CompanyId

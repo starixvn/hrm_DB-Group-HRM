@@ -1,3 +1,4 @@
+
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[Employee_GetVerifierAndApprover] @EmpId INT
@@ -12,6 +13,7 @@ Original:
 
 Revisions:
 	- Jay.Do@20250602: show company with nick name for employee in different company
+    - 20250813@Jay: change db structure [Redmine: #235678]
 Param's Explanation:
 */
 BEGIN
@@ -38,8 +40,8 @@ BEGIN
 		INSERT INTO @Supervisors (OwnerId, ActionType)
 		SELECT DISTINCT su.OwnerId, ActionType
 		FROM dbo.GroupSupervisor AS su WITH (NOLOCK)
-			INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON su.GroupId = e.GroupId
-		WHERE e.EmpId = @EmpId
+			INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON su.GroupId = ce.GroupId
+		WHERE ce.EmpId = @EmpId
 			AND (
 				@RequestType IS NULL
 				OR su.RequestType = @RequestType
@@ -51,8 +53,8 @@ BEGIN
 		INSERT INTO @Supervisors (OwnerId, ActionType)
 		SELECT DISTINCT OwnerId, ActionType
 		FROM dbo.GroupSupervisor AS su WITH (NOLOCK)
-			INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON su.GroupId = e.GroupId
-		WHERE e.EmpId = @EmpId
+			INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON su.GroupId = ce.GroupId
+		WHERE ce.EmpId = @EmpId
 			AND (
 				@RequestType IS NULL
 				OR su.RequestType = @RequestType
@@ -62,21 +64,21 @@ BEGIN
 
 	SELECT DISTINCT OwnerId
 		,ee.FullName
-		,ee.NickName
-		,ee.Email
+		,ce.NickName
+		,ce.Email
 	FROM @Supervisors AS su
-		INNER JOIN dbo.Employee AS ee WITH (NOLOCK) ON su.OwnerId = ee.EmpId
-			INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = ee.EmpId
-			INNER JOIN dbo.Company AS c WITH (NOLOCK) ON c.CompanyId = ce.CompanyId
+		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = su.OwnerId
+		INNER JOIN dbo.Employee AS ee WITH (NOLOCK) ON ce.UserId = ee.UserId
+		INNER JOIN dbo.Company AS c WITH (NOLOCK) ON c.CompanyId = ce.CompanyId
 	WHERE ActionType = @VerifierId
 
 	SELECT DISTINCT OwnerId
 		,ee.FullName
-		,ee.NickName
-		,ee.Email
+		,ce.NickName
+		,ce.Email
 	FROM @Supervisors AS su
-		INNER JOIN dbo.Employee AS ee WITH (NOLOCK) ON su.OwnerId = ee.EmpId
-		 INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = ee.EmpId
-		 INNER JOIN dbo.Company AS c WITH (NOLOCK) ON c.CompanyId = ce.CompanyId
+		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = su.OwnerId
+		INNER JOIN dbo.Employee AS ee WITH (NOLOCK) ON ce.UserId = ee.UserId
+		INNER JOIN dbo.Company AS c WITH (NOLOCK) ON c.CompanyId = ce.CompanyId
 	WHERE ActionType = @ApproverId
 END

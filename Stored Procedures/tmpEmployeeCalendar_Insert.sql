@@ -20,6 +20,7 @@ AS
         - 20250603@Tim: fix bug update leave request
         - 20250627@Mira: fix bug update leave request
         - 20250806@Tim: fix bug update leave request 1/2 day
+        - 20250813@Jay: change db structure [Redmine: #235678]
     Param's Explanation:
 */
 BEGIN
@@ -65,15 +66,18 @@ BEGIN
 	IF ISNULL(@empIds, '') <> ''
 	BEGIN
 		INSERT INTO #tempEmployeeIds (EmpId, JoinedDate, ResignedDate)
-		SELECT emp.EmpId, emp.JoinedDate, emp.ResignedDate
+		SELECT ce.EmpId, e.JoinedDate, e.ResignedDate
 		FROM STRING_SPLIT(@empIds, ',') AS tmp
-			INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON CAST(tmp.value AS INT) = emp.EmpId
+			INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON CAST(tmp.value AS INT) = ce.EmpId
+				AND (@isEnable IS NULL OR [Enabled] = @isEnable)
+			INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.UserId = ce.UserId
 	END
 	ELSE
 	BEGIN
 		INSERT INTO #tempEmployeeIds (EmpId, JoinedDate, ResignedDate)
 		SELECT EmpId, JoinedDate, ResignedDate
-		FROM dbo.Employee WITH (NOLOCK)
+		FROM dbo.CompanyEmployee ce WITH (NOLOCK)
+			INNER JOIN dbo.Employee e WITH (NOLOCK) ON ce.UserId = e.UserId
 		WHERE (@isEnable IS NULL OR [Enabled] = @isEnable)
 			AND (@isDelete IS NULL OR isDeleted = @isDelete)
 	END
@@ -103,7 +107,7 @@ BEGIN
 			,IsOffDay
 			,IsHoliday
 			)
-		SELECT emp.EmpId
+		SELECT ce.EmpId
 			,@tempDate
 			,CASE 
 				WHEN DATEPART(dw, @tempDate) = 1 THEN empshift.SunShift
@@ -142,19 +146,19 @@ BEGIN
 				    AND holiday.Id IS NOT NULL THEN 1
 			    ELSE 0 END
 			    )
-		FROM dbo.Employee AS emp WITH (NOLOCK)
-			INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
-            INNER JOIN #tempEmployeeIds AS tblemp ON emp.EmpId = tblemp.EmpId
-			INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
+		FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+			INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.UserId = ce.UserId
+            INNER JOIN #tempEmployeeIds AS tblemp ON ce.EmpId = tblemp.EmpId
+			INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON ce.EmpId = empsum.EmpId
 			AND empsum.IsDefaultSchedule = 1
-			INNER JOIN dbo.EmployeeDefaultShift AS empshift WITH (NOLOCK) ON emp.EmpId = empshift.EmpId
+			INNER JOIN dbo.EmployeeDefaultShift AS empshift WITH (NOLOCK) ON ce.EmpId = empshift.EmpId
             LEFT JOIN dbo.Holiday AS holiday WITH (NOLOCK) ON holiday.CompanyId = ce.CompanyId
             AND @tempDate BETWEEN holiday.FromDate AND holiday.ToDate
 		WHERE (@CompanyId IS NULL OR ce.CompanyId = @CompanyId)
             AND NOT EXISTS (
 				SELECT 1
 				FROM #tempEmployeeCalendar AS tbl
-				WHERE tbl.EmpId = emp.EmpId
+				WHERE tbl.EmpId = ce.EmpId
 					AND tbl.WorkDate = @tempDate
 				)
 
@@ -165,7 +169,7 @@ BEGIN
 			,IsOffDay
 			,IsHoliday
 			)
-		SELECT emp.EmpId
+		SELECT ce.EmpId
 			,@tempDate
 			,empshift.ShiftId
 			,0
@@ -180,17 +184,17 @@ BEGIN
 				    AND holiday.Id IS NOT NULL THEN 1
 			    ELSE 0 END
 			    )
-		FROM dbo.Employee AS emp WITH (NOLOCK)
-			INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
-			INNER JOIN #tempEmployeeIds AS tblemp ON emp.EmpId = tblemp.EmpId
-			INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
+		FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+			INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON ce.UserId = e.UserId
+			INNER JOIN #tempEmployeeIds AS tblemp ON ce.EmpId = tblemp.EmpId
+			INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON ce.EmpId = empsum.EmpId
 			AND empsum.IsDefaultSchedule = 0
             LEFT JOIN dbo.Holiday AS holiday WITH (NOLOCK) ON holiday.CompanyId = ce.CompanyId
             AND @tempDate BETWEEN holiday.FromDate AND holiday.ToDate
 			OUTER APPLY (
 			SELECT TOP 1 empshift.ShiftId
 			FROM dbo.ScheduleArrangementDefaultShift AS empshift WITH (NOLOCK)
-			WHERE empshift.EmployeeId = emp.EmpId
+			WHERE empshift.EmployeeId = ce.EmpId
 				--AND empshift.ShiftId > 0
 				AND empshift.FromDate <= @tempDate
 			ORDER BY empshift.FromDate DESC
@@ -199,7 +203,7 @@ BEGIN
             AND NOT EXISTS (
 				SELECT 1
 				FROM #tempEmployeeCalendar AS tbl
-				WHERE tbl.EmpId = emp.EmpId
+				WHERE tbl.EmpId = ce.EmpId
 					AND tbl.WorkDate = @tempDate
 				)
 

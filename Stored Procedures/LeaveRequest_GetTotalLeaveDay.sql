@@ -14,6 +14,7 @@ DB: HRM
 Original:
 
 Revisions:
+        20250813@Jay: change db structure [Redmine: #235678]
 Param's Explanation:
 */
 BEGIN
@@ -69,9 +70,9 @@ BEGIN
 		,tmpca.IsLeaveDay
 		,tmpca.LeaveDay
 	INTO #tblEmployeeCalendar
-	FROM dbo.Employee AS emp WITH (NOLOCK)
-		INNER JOIN dbo.tmpEmployeeCalendar AS tmpca WITH (NOLOCK) ON emp.EmpId = tmpca.EmpId
-	WHERE emp.EmpId = @EmpId
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		INNER JOIN dbo.tmpEmployeeCalendar AS tmpca WITH (NOLOCK) ON ce.EmpId = tmpca.EmpId
+	WHERE ce.EmpId = @EmpId
 		AND tmpca.WorkDate BETWEEN @fromDate
 			AND @toDate
 

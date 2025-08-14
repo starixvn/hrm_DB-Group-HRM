@@ -12,6 +12,7 @@ DB: HRM
 Original:
 
 Revisions:
+        20250813@Jay: change db structure [Redmine: #235678]
 Param's Explanation:
 */
 BEGIN
@@ -22,7 +23,7 @@ BEGIN
 		,@toDate = @toDate
 		,@empIds = @empId
 	
-	SELECT emp.EmpId
+	SELECT ce.EmpId
 		,empca.WorkDate
 		,empca.IsOffDay
 		,empca.IsHoliday
@@ -39,8 +40,8 @@ BEGIN
 		,lv2.LeaveTypeId AS LeaveTypeId2
 		,lv2.Code
 		,lv2.[Name]
-	FROM dbo.Employee AS emp WITH (NOLOCK)
-		INNER JOIN dbo.tmpEmployeeCalendar AS empca WITH (NOLOCK) ON emp.EmpId = empca.EmpId
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		INNER JOIN dbo.tmpEmployeeCalendar AS empca WITH (NOLOCK) ON ce.EmpId = empca.EmpId
 		AND empca.WorkDate BETWEEN @fromDate
 			AND @toDate
 		LEFT JOIN dbo.[Shift] AS [shift] WITH (NOLOCK) ON [shift].ShiftId = empca.ShiftId
@@ -49,6 +50,6 @@ BEGIN
         AND lv1.CompanyId = @CompanyId
 		LEFT JOIN dbo.LeaveType AS lv2 WITH (NOLOCK) ON empca.LeaveTypeId2 = lv2.LeaveTypeId
         AND lv2.CompanyId = @CompanyId
-	WHERE emp.EmpId = @EmpId
+	WHERE ce.EmpId = @EmpId
 	ORDER BY empca.WorkDate
 END

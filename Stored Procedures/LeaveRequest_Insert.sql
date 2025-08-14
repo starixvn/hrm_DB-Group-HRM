@@ -28,6 +28,7 @@ AS
     Revisions:
         20250423@Tim: fix bug validate request in the same range
         20250722@Tim: auto approve request [Redmine: #233324]
+        20250813@Jay: change db structure [Redmine: #235678]
     Param's Explanation:
 	    - @ListDetail: '<Root><Row OnDate='' ShiftId='' LeaveType='' IsHalfDay='' WorkType='' FromTime='' ToTime='' /></Root>'
 	    - @WorkType: 1. off, 2. leave, 3. work
@@ -84,9 +85,9 @@ BEGIN
 		)
 
     SELECT @JoinedDate = JoinedDate
-	FROM dbo.Employee AS e WITH (NOLOCK)
-	    INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = e.EmpId
-	WHERE e.EmpId = @EmpId
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+	    INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON ce.UserId = e.UserId
+	WHERE ce.EmpId = @EmpId
 		AND ce.CompanyId = @CompanyId
 
     SELECT @AnnualLeaveResetTimelineType = [Value]
@@ -153,8 +154,8 @@ BEGIN
 		AND NOT EXISTS (
 			SELECT 1
 			FROM dbo.GroupSupervisor AS g WITH (NOLOCK)
-				INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON g.GroupId = e.GroupId
-			WHERE e.EmpId = @EmpId
+				INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON g.GroupId = ce.GroupId
+			WHERE ce.EmpId = @EmpId
 				AND g.OwnerId = @CreatedBy
 				AND g.RequestType = @RequestType
 				AND g.ActionType = @OnbehalfActionType
@@ -190,8 +191,8 @@ BEGIN
 				AND NOT EXISTS (
 					SELECT 1
 					FROM dbo.GroupSupervisor AS g WITH (NOLOCK)
-						INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON g.GroupId = e.GroupId
-					WHERE e.EmpId = @EmpId
+						INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON g.GroupId = ce.GroupId
+					WHERE ce.EmpId = @EmpId
 						AND g.OwnerId = @VerifierId
 						AND g.RequestType = @RequestType
 						AND g.ActionType = @VerifyActionType
@@ -219,8 +220,8 @@ BEGIN
 				AND NOT EXISTS (
 					SELECT 1
 					FROM dbo.GroupSupervisor AS g WITH (NOLOCK)
-						INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON g.GroupId = e.GroupId
-					WHERE e.EmpId = @EmpId
+						INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON g.GroupId = ce.GroupId
+					WHERE ce.EmpId = @EmpId
 						AND g.OwnerId = @ApproverId
 						AND g.RequestType = @RequestType
 						AND g.ActionType = @ApproveActionType

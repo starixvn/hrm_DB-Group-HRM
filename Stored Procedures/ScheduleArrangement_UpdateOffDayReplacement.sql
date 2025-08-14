@@ -18,6 +18,7 @@ AS
 
     Revisions:
         20250429@Tim: fix bug update Off-R
+        20250813@Jay: change db structure [Redmine: #235678]
     Param's Explanation:
 
 */
@@ -149,20 +150,20 @@ BEGIN
 		,IsLocal
 		,OffDaysByWeek
 		)
-	SELECT DISTINCT emp.EmpId
+	SELECT DISTINCT ce.EmpId
 		,empsum.IsLocal
 		,empsum.OffDaysbyWeek
-	FROM dbo.Employee AS emp WITH (NOLOCK)
-		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
-		INNER JOIN dbo.CompanyEmployee c WITH (NOLOCK) ON c.EmpId = emp.EmpId AND c.CompanyId = @CompanyId
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON ce.EmpId = empsum.EmpId
+		--INNER JOIN dbo.CompanyEmployee c WITH (NOLOCK) ON c.EmpId = emp.EmpId AND c.CompanyId = @CompanyId
 		AND empsum.OffDaysbyWeek > 0
-		LEFT JOIN #tempEmployeeId AS tblempid ON emp.EmpId = tblempid.EmployeeId
+		LEFT JOIN #tempEmployeeId AS tblempid ON ce.EmpId = tblempid.EmployeeId
 	WHERE (
 			@EmployeeIds IS NULL
 			OR tblempid.EmployeeId IS NOT NULL
 			)
-		AND emp.[Enabled] = 1
-		AND emp.isDeleted = 0
+		AND ce.[Enabled] = 1
+		AND ce.isDeleted = 0
 		AND (
 			empsum.IsLocal = 1
 			OR (

@@ -13,6 +13,7 @@ Original:
 Revisions:
 Param's Explanation:
 	-Jay.Do@20250603: Count member in different company
+    - 20250813@Jay: change db structure [Redmine: #235678]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -99,9 +100,7 @@ BEGIN
 	SELECT @TotalOvertimePendingByVerifier = COUNT(1)
 	FROM dbo.OTMonthlyRequest AS ot WITH (NOLOCK)
 		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = ot.EmpId
-		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON ot.EmpId = emp.EmpId
-		AND emp.[Enabled] = 1
-		AND emp.isDeleted = 0
+		AND ce.isDeleted = 0
 	WHERE ot.VerifierId = @EmployeeId
 		AND ce.CompanyId = @CompanyId
 		AND ot.CurrentStatus = @PendingStatusId
@@ -114,9 +113,8 @@ BEGIN
 
 	SELECT @TotalOvertimePendingByApprover = COUNT(1)
 	FROM dbo.OTMonthlyRequest AS ot WITH (NOLOCK)
-		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON ot.EmpId = emp.EmpId
-		AND emp.[Enabled] = 1
-		AND emp.isDeleted = 0
+		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ot.EmpId = ce.EmpId
+		AND ce.isDeleted = 0
 	WHERE ot.ApproverId = @EmployeeId
 		AND ot.CurrentStatus IN (@PendingStatusId, @VerifiedStatusId)
 		AND (
@@ -181,9 +179,8 @@ BEGIN
 		,MIN(req.CreatedDate) AS FromDate
 		,MAX(req.CreatedDate) AS ToDate
 	FROM dbo.WorkingTimeRequest AS req WITH (NOLOCK)
-		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON req.EmpId = emp.EmpId
-		AND emp.[Enabled] = 1
-		AND emp.isDeleted = 0
+		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON req.EmpId = ce.EmpId
+		AND ce.isDeleted = 0
 	WHERE (
 			req.VerifierId = @EmployeeId
 			OR req.ApproverId = @EmployeeId
@@ -268,9 +265,8 @@ BEGIN
 				ELSE 0
 				END)
 	FROM dbo.WorkingTimeRequest AS req WITH (NOLOCK)
-		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON req.EmpId = emp.EmpId
-		AND emp.[Enabled] = 1
-		AND emp.isDeleted = 0
+		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON req.EmpId = ce.EmpId
+		AND ce.isDeleted = 0
 	WHERE req.CreatedDate >= @fromdate
 		AND req.CreatedDate < @toDate
 		AND (
