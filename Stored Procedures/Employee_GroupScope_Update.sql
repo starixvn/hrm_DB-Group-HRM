@@ -16,6 +16,7 @@ AS
 
     Revisions:
         - 20250806@Tim: init [Remine: #235227]
+		- 20250814@Lilac: restructure for transfer [Redmine: #235678]
     Param's Explanation:
 */
 BEGIN
@@ -29,12 +30,13 @@ BEGIN
 		,@logData NVARCHAR(MAX)
 		,@logOldData NVARCHAR(MAX)
 
-	SELECT TOP 1 @EmpId_exist = emp.EmpId
-        ,@Nickname_exist = emp.Nickname
+	SELECT TOP 1 @EmpId_exist = ce.EmpId
+        ,@Nickname_exist = ce.Nickname
 		,@FullName_exist = emp.FullName
-        ,@Code_exist = emp.Code
+        ,@Code_exist = ce.Code
 	FROM dbo.Employee AS emp WITH (NOLOCK)
-	WHERE emp.EmpId != @EmpId
+	INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.UserId = emp.UserId
+	WHERE ce.EmpId != @EmpId
         AND @CtrId IS NOT NULL
 		AND emp.CtrId = @CtrId
 
@@ -49,20 +51,27 @@ BEGIN
 	SET @xml = (
 			SELECT emp.CtrId AS '@CtrId'
 			FROM dbo.Employee AS emp WITH (NOLOCK)
-			WHERE emp.EmpId = @EmpId
+				INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.UserId = emp.UserId
+			WHERE ce.EmpId = @EmpId
 			FOR XML PATH('Row')
 				,TYPE
 			)
 	SET @logOldData = REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"')
 
-	UPDATE dbo.Employee WITH (ROWLOCK)
-	SET CtrId = @CtrId
-	WHERE EmpId = @EmpId
+	UPDATE emp WITH (ROWLOCK)
+	SET emp.CtrId = @CtrId
+	FROM dbo.Employee AS emp
+	INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		ON ce.UserId = emp.UserId
+	WHERE ce.EmpId = @EmpId;
+
 
 	SET @xml = (
 			SELECT emp.CtrId AS '@CtrId'
 			FROM dbo.Employee AS emp WITH (NOLOCK)
-			WHERE emp.EmpId = @EmpId
+			INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK)
+				ON ce.UserId = emp.UserId
+			WHERE ce.EmpId = @EmpId
 			FOR XML PATH('Row')
 				,TYPE
 			)
