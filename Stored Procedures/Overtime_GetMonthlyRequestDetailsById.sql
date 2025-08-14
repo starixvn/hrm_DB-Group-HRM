@@ -11,6 +11,7 @@ DB: HRM
 Original:
 
 Revisions:
+        20250813@Jay: change db structure [Redmine: #235678]
 Param's Explanation:
 */
 BEGIN
@@ -59,37 +60,37 @@ BEGIN
 		,ot.PublicHours
 		,ot.SpecialHours
 		,ot.CurrentStatus AS StatusId
-		,emp.EmpId
+		,ce.EmpId
 		,CASE 
-			WHEN ce_emp.CompanyId <> @CompanyId THEN emp.NickName + ' (' + ISNULL(c_emp.Name, '') + ')'
-			ELSE emp.NickName 
+			WHEN ce.CompanyId <> @CompanyId THEN ce.NickName + ' (' + ISNULL(c_emp.Name, '') + ')'
+			ELSE ce.NickName 
 		END AS NickName
 		,emp.FullName
 		,empsum.WorkingHours
 		,empsum.SpecialOT
 		,ot.VerifierId
 		,CASE 
-			WHEN ce_verifier.CompanyId <> @CompanyId THEN verifier.NickName + ' (' + ISNULL(c_verifier.Name, '') + ')'
-			ELSE verifier.NickName 
+			WHEN vece.CompanyId <> @CompanyId THEN vece.NickName + ' (' + ISNULL(c_verifier.Name, '') + ')'
+			ELSE vece.NickName 
 		END AS NickName
 		,verifier.FullName
 		,ot.ApproverId
 		,CASE 
-			WHEN ce_approver.CompanyId <> @CompanyId THEN approver.NickName + ' (' + ISNULL(c_approver.Name, '') + ')'
-			ELSE approver.NickName 
+			WHEN apce.CompanyId <> @CompanyId THEN apce.NickName + ' (' + ISNULL(c_approver.Name, '') + ')'
+			ELSE apce.NickName 
 		END AS NickName
 		,approver.FullName
 	FROM dbo.OTMonthlyRequest AS ot WITH (NOLOCK)
-		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON ot.EmpId = emp.EmpId
-		INNER JOIN dbo.CompanyEmployee AS ce_emp WITH (NOLOCK) ON ce_emp.EmpId = emp.EmpId
-		LEFT JOIN dbo.Company AS c_emp WITH (NOLOCK) ON c_emp.CompanyId = ce_emp.CompanyId
-		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
-		INNER JOIN dbo.Employee AS verifier WITH (NOLOCK) ON ot.VerifierId = verifier.EmpId
-		LEFT JOIN dbo.CompanyEmployee AS ce_verifier WITH (NOLOCK) ON ce_verifier.EmpId = verifier.EmpId
-		LEFT JOIN dbo.Company AS c_verifier WITH (NOLOCK) ON c_verifier.CompanyId = ce_verifier.CompanyId
-		INNER JOIN dbo.Employee AS approver WITH (NOLOCK) ON ot.ApproverId = approver.EmpId
-		LEFT JOIN dbo.CompanyEmployee AS ce_approver WITH (NOLOCK) ON ce_approver.EmpId = approver.EmpId
-		LEFT JOIN dbo.Company AS c_approver WITH (NOLOCK) ON c_approver.CompanyId = ce_approver.CompanyId
+		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = ot.EmpId
+		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON ce.UserId = emp.UserId
+		LEFT JOIN dbo.Company AS c_emp WITH (NOLOCK) ON c_emp.CompanyId = ce.CompanyId
+		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON ce.EmpId = empsum.EmpId
+		LEFT JOIN dbo.CompanyEmployee AS vece WITH (NOLOCK) ON vece.EmpId = ot.VerifierId
+		INNER JOIN dbo.Employee AS verifier WITH (NOLOCK) ON vece.UserId = verifier.UserId
+		LEFT JOIN dbo.Company AS c_verifier WITH (NOLOCK) ON c_verifier.CompanyId = vece.CompanyId
+		LEFT JOIN dbo.CompanyEmployee AS apce WITH (NOLOCK) ON apce.EmpId = ot.ApproverId
+		INNER JOIN dbo.Employee AS approver WITH (NOLOCK) ON apce.UserId = approver.UserId
+		LEFT JOIN dbo.Company AS c_approver WITH (NOLOCK) ON c_approver.CompanyId = apce.CompanyId
 	WHERE ot.RequestId = @RequestId
 
 	SELECT empca.WorkDate
@@ -120,7 +121,3 @@ BEGIN
 			AND @toDate
 	ORDER BY empca.WorkDate
 END
-
-
-
-

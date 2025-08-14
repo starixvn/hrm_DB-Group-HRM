@@ -12,6 +12,7 @@ DB: HRM_SMS
 Original:
 
 Revisions:
+        20250813@Jay: change db structure [Redmine: #235678]
 Param's Explanation:
 */
 BEGIN
@@ -23,7 +24,7 @@ BEGIN
 		,@empIds = @EmpId
 		,@isUpdateRequestData = 1
 
-	SELECT emp.EmpId
+	SELECT ce.EmpId
 		,empca.WorkDate
 		,empca.IsOffDay
 		,empca.IsHoliday
@@ -39,16 +40,14 @@ BEGIN
 		,lv2.LeaveTypeId AS LeaveTypeId2
 		,lv2.Code
 		,lv2.[Name]
-	FROM dbo.Employee AS emp WITH (NOLOCK)
-		INNER JOIN dbo.tmpEmployeeCalendar AS empca WITH (NOLOCK) ON emp.EmpId = empca.EmpId
-		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
-		AND empca.WorkDate BETWEEN @fromDate
-			AND @toDate
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		INNER JOIN dbo.tmpEmployeeCalendar AS empca WITH (NOLOCK) ON ce.EmpId = empca.EmpId
+			AND empca.WorkDate BETWEEN @fromDate
+				AND @toDate
 		LEFT JOIN dbo.Shift AS shift WITH (NOLOCK) ON shift.ShiftId = empca.ShiftId
-		LEFT JOIN dbo.LeaveType AS lv1 WITH (NOLOCK) ON empca.LeaveTypeId = lv1.LeaveTypeId
-		LEFT JOIN dbo.LeaveType AS lv2 WITH (NOLOCK) ON empca.LeaveTypeId2 = lv2.LeaveTypeId
-	WHERE emp.EmpId = @EmpId
+		LEFT JOIN dbo.LeaveType AS lv1 WITH (NOLOCK) ON empca.LeaveTypeId = lv1.LeaveTypeId and lv1.CompanyId = @CompanyId
+		LEFT JOIN dbo.LeaveType AS lv2 WITH (NOLOCK) ON empca.LeaveTypeId2 = lv2.LeaveTypeId and lv2.CompanyId = @CompanyId
+	WHERE ce.EmpId = @EmpId
 		AND ce.CompanyId = @CompanyId
 	ORDER BY empca.WorkDate
 END
-

@@ -17,6 +17,7 @@ AS
 	Revisions: 
 		by Oliver.Dang on 20190531
 		20250408@Hank: remove section [Redmine: #222886]
+        20250813@Jay: change db structure [Redmine: #235678]
 
 	Param's Explanation:
 	LeaveType:
@@ -53,8 +54,8 @@ BEGIN
 	BEGIN
 		IF NOT EXISTS (
 				SELECT 1
-				FROM dbo.Employee AS e WITH (NOLOCK)
-					INNER JOIN dbo.EmployeeRole AS er WITH (NOLOCK) ON e.EmpId = er.EmployeeId
+				FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+					INNER JOIN dbo.EmployeeRole AS er WITH (NOLOCK) ON ce.EmpId = er.EmployeeId
 				WHERE EmpId = @SupervisorId
 					AND er.RoleId IN (2, 3, 4, 5, 6, 7)
 				)
@@ -191,18 +192,19 @@ BEGIN
 						)
 				ELSE 0 END
 				)) AS [LeaveBalance]
-		,emp.EmpId
-		,emp.NickName
+		,ce.EmpId
+		,ce.NickName
 		,emp.FullName
 		,g.GroupId AS TeamId
 		,g.[Name] AS Team
 		,dep.[Name] AS Department
 	FROM dbo.EmployeeCalendar AS empca WITH (NOLOCK)
-		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON empca.EmpId = emp.EmpId
-		AND ISNULL(emp.isDeleted, 0) = 0
-		AND ISNULL(emp.[Enabled], 0) = 1
-		INNER JOIN EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
-		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON g.GroupId = emp.GroupId
+		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON empca.EmpId = ce.EmpId
+		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON ce.UserId = emp.UserId
+		AND ISNULL(ce.isDeleted, 0) = 0
+		AND ISNULL(ce.[Enabled], 0) = 1
+		INNER JOIN EmployeeSummary AS empsum WITH (NOLOCK) ON ce.EmpId = empsum.EmpId
+		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON g.GroupId = ce.GroupId
 		INNER JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId = g.DepartmentId
 		LEFT JOIN @tblLeaveTypes AS lt ON lt.LeaveTypeId = empca.LeaveTypeId
 		OR lt.LeaveTypeId = empca.LeaveTypeId2
@@ -218,15 +220,15 @@ BEGIN
 		AND EXISTS (
 			SELECT 1
 			FROM #tblRptGroupIds AS tbl WITH (NOLOCK)
-			WHERE emp.GroupId = tbl.GroupId
+			WHERE ce.GroupId = tbl.GroupId
 			)
 		AND EXISTS (
 			SELECT 1
 			FROM #tblRptEmployeeIds AS tbl WITH (NOLOCK)
-			WHERE emp.EmpId = tbl.EmpId
+			WHERE ce.EmpId = tbl.EmpId
 			)
-	GROUP BY emp.EmpId
-		,emp.NickName
+	GROUP BY ce.EmpId
+		,ce.NickName
 		,emp.FullName
 		,g.GroupId
 		,g.[Name]
@@ -245,10 +247,3 @@ BEGIN
 
 	DROP TABLE #tblRptEmployeeIds
 END
-
-
-
-
-
-
-

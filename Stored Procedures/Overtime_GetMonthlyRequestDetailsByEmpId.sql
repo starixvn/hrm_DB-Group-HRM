@@ -12,6 +12,7 @@ Task: Get monthly overtime request details.
 DB: HRM
 
 Revisions:
+        20250813@Jay: change db structure [Redmine: #235678]
 Param's Explanation:
 
 */
@@ -30,24 +31,27 @@ BEGIN
 		,ot.PublicHours
 		,ot.SpecialHours
 		,ot.CurrentStatus AS StatusId
-		,emp.EmpId
-		,emp.NickName
-		,emp.FullName
+		,ce.EmpId
+		,ce.NickName
+		,e.FullName
 		,empsum.WorkingHours
 		,empsum.SpecialOT
 		,ot.VerifierId
-		,verifier.NickName
+		,vece.NickName
 		,verifier.FullName
 		,ot.ApproverId
-		,approver.NickName
+		,apce.NickName
 		,approver.FullName
-	FROM dbo.Employee AS emp WITH (NOLOCK)
-		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
-		LEFT JOIN dbo.OTMonthlyRequest AS ot WITH (NOLOCK) ON ot.EmpId = emp.EmpId
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON ce.EmpId = empsum.EmpId
+		LEFT JOIN dbo.Employee AS e WITH (NOLOCK) ON e.UserId = ce.UserId
+		LEFT JOIN dbo.OTMonthlyRequest AS ot WITH (NOLOCK) ON ot.EmpId = ce.EmpId
 		AND ot.[Month] = @Month
-		LEFT JOIN dbo.Employee AS verifier WITH (NOLOCK) ON ot.VerifierId = verifier.EmpId
-		LEFT JOIN dbo.Employee AS approver WITH (NOLOCK) ON ot.ApproverId = approver.EmpId
-	WHERE emp.EmpId = @EmployeeId
+		LEFT JOIN dbo.CompanyEmployee AS vece WITH (NOLOCK) ON ot.VerifierId = vece.EmpId
+		LEFT JOIN dbo.Employee AS verifier WITH (NOLOCK) ON verifier.UserId = vece.UserId
+		LEFT JOIN dbo.CompanyEmployee AS apce WITH (NOLOCK) ON ot.ApproverId = apce.EmpId
+		LEFT JOIN dbo.Employee AS approver WITH (NOLOCK) ON approver.UserId = apce.UserId
+	WHERE ce.EmpId = @EmployeeId
 
 	SELECT empca.WorkDate
 		,COALESCE(sc.ShiftId, scl.ShiftId, s.ShiftId) ShiftId

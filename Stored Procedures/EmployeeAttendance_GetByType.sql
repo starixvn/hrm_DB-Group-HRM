@@ -22,6 +22,7 @@ AS
     Revisions:
 	    - 20250408@Hank: remove section [Redmine: #222886]
         - 20250512@Tim: fix bug duplicate record when creating 2 requests 1/2 day
+        20250813@Jay: change db structure [Redmine: #235678]
 
     Param's Explanation:
 	    @type: 0-all, 1-missing checkin; 2-missing check out, 3: latein; 4-earlyout, 5- not work
@@ -591,8 +592,8 @@ BEGIN
         ,T.DepartmentName
 		,T.UnitCode
 	FROM (
-		SELECT e.Code
-			,e.EmpId
+		SELECT ce.Code
+			,ce.EmpId
 			,FullName
 			,NickName
 			,g.[Name] [Team]
@@ -680,19 +681,20 @@ BEGIN
 			,de.Code AS DepartmentCode
             ,de.[Name] AS DepartmentName
 			,u.Code AS UnitCode
-		FROM dbo.Employee AS e WITH (NOLOCK)
-			INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON e.groupid = g.groupid
+		FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+			INNER JOIN dbo.[Employee] e WITH (NOLOCK) ON ce.UserId = e.UserId
+			INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON ce.groupid = g.groupid
 			INNER JOIN dbo.[Department] AS de WITH (NOLOCK) ON de.DepartmentId = g.DepartmentId
 			INNER JOIN dbo.[Unit] AS u WITH (NOLOCK) ON u.UnitId = de.UnitId
 			INNER JOIN #tmpGroup AS tmpgr ON g.GroupId = tmpgr.GroupId
-			INNER JOIN dbo.tmpEmployeeCalendar AS c WITH (NOLOCK) ON c.EmpId = e.EmpId
-			INNER JOIN #tmpEmployee AS tblemp ON e.EmpId = tblemp.EmpId
-			LEFT JOIN dbo.EmployeeSummary AS e_s WITH (NOLOCK) ON e_s.EmpId = e.EmpId
+			INNER JOIN dbo.tmpEmployeeCalendar AS c WITH (NOLOCK) ON c.EmpId = ce.EmpId
+			INNER JOIN #tmpEmployee AS tblemp ON ce.EmpId = tblemp.EmpId
+			LEFT JOIN dbo.EmployeeSummary AS e_s WITH (NOLOCK) ON e_s.EmpId = ce.EmpId
 			LEFT JOIN dbo.EmployeeCalendar AS c_CrossDay WITH (NOLOCK) ON c_CrossDay.WorkDate = DATEADD(D, - 1, c.WorkDate)
-			AND c_CrossDay.EmpId = e.EmpId
+			AND c_CrossDay.EmpId = ce.EmpId
 			LEFT JOIN dbo.[Shift] AS s_CrossDay WITH (NOLOCK) ON s_CrossDay.ShiftId = c_CrossDay.ShiftId
 			LEFT JOIN dbo.EmployeeCalendar AS c_CurDay WITH (NOLOCK) ON c_CurDay.WorkDate = DATEADD(D, - 1, c.WorkDate)
-			AND c_CurDay.EmpId = e.EmpId
+			AND c_CurDay.EmpId = ce.EmpId
 			LEFT JOIN dbo.[Shift] AS s_CurDay WITH (NOLOCK) ON s_CurDay.ShiftId = c_CurDay.ShiftId
 			AND (
 				(
@@ -710,7 +712,7 @@ BEGIN
 				)
 			LEFT JOIN dbo.[Shift] AS s WITH (NOLOCK) ON s.ShiftId = c.ShiftId
 			LEFT JOIN dbo.EmployeeAttendance AS a WITH (NOLOCK) ON a.AttendanceDate = c.WorkDate
-			AND a.empid = e.empid
+			AND a.empid = ce.empid
 			LEFT JOIN dbo.OTDailyRequest AS ot WITH (NOLOCK) ON a.attendancedate = ot.OvertimeDate
 			AND a.EmpId = ot.EmpId
 		WHERE c.WorkDate BETWEEN @fromtime AND @totime

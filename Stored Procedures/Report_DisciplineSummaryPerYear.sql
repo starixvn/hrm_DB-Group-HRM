@@ -21,6 +21,7 @@ AS
     Revisions:
         20250404@Tim: add param @RoleIds, remove section [Redmine: #222886]
         20250627@Tim: fix bug rule ignored
+        20250813@Jay: change db structure [Redmine: #235678]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -48,7 +49,7 @@ BEGIN
 
     SELECT d.WorkDate
 		,d.EmpId
-        ,emp.GroupId
+        ,ce.GroupId
         ,empsum.IsLocal
 		,d.IsChangeShift
 		,d.IsMissingCheckInOut
@@ -63,13 +64,12 @@ BEGIN
 		,d.IsSevenDaysLeave
     INTO #tmpDiscipline
 	FROM dbo.Discipline AS d WITH (NOLOCK)
-		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON d.EmpId = emp.EmpId
-        INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
-		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
+		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON d.EmpId = ce.EmpId
+		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON ce.EmpId = empsum.EmpId
 	WHERE ce.CompanyId = @CompanyId
         AND d.WorkDate BETWEEN @FromDate AND @ToDate
-		AND emp.isDeleted = 0
-		AND emp.[Enabled] = 1
+		AND ce.isDeleted = 0
+		AND ce.[Enabled] = 1
         AND d.IsDeleted = 0
 
     UPDATE tmpdis
@@ -101,7 +101,7 @@ BEGIN
 		,ApproverSubtractScore
 		,OtherDisciplineScore
 		)
-	SELECT emp.EmpId
+	SELECT ce.EmpId
 		,ISNULL(dis.WorkDate, otherdis.WorkDate)
 		,CASE WHEN dis.EmpId IS NOT NULL THEN (
                 CASE WHEN dis.IsChangeShift = 1 AND ignored.IsIgnoredChangeShift = 0 THEN dbo.fncGetDisciplineScoreById(1) ELSE 0 END
@@ -117,21 +117,21 @@ BEGIN
 				+ CASE WHEN dis.IsSevenDaysLeave = 1 AND ignored.IsIgnoredSevenDaysLeave = 0 THEN dbo.fncGetDisciplineScoreById(11) ELSE 0 END
 			) ELSE 0 END
 		,CASE WHEN otherdis.EmpId IS NOT NULL THEN otherdis.Score ELSE 0 END
-	FROM dbo.Employee AS emp WITH (NOLOCK)
-		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
-        INNER JOIN dbo.EmployeeSummary AS empSum WITH (NOLOCK) ON emp.EmpId = empSum.EmpId AND empSum.IsTopManager = 0
-		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		--INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
+        INNER JOIN dbo.EmployeeSummary AS empSum WITH (NOLOCK) ON ce.EmpId = empSum.EmpId AND ce.IsSpecialUser = 0
+		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON ce.GroupId = gr.GroupId
 		AND gr.IsDeleted = 0
-		LEFT JOIN #tmpDiscipline AS dis WITH (NOLOCK) ON dis.EmpId = emp.EmpId
+		LEFT JOIN #tmpDiscipline AS dis WITH (NOLOCK) ON dis.EmpId = ce.EmpId
 		LEFT JOIN dbo.DisciplineIgnore AS ignored WITH (NOLOCK) ON dis.EmpId = ignored.EmpId
 		AND dis.WorkDate = ignored.WorkDate
-		LEFT JOIN dbo.OtherDiscipline AS otherdis WITH (NOLOCK) ON otherdis.EmpId = emp.EmpId
+		LEFT JOIN dbo.OtherDiscipline AS otherdis WITH (NOLOCK) ON otherdis.EmpId = ce.EmpId
 		AND otherdis.IsDeleted = 0
 		AND otherdis.WorkDate BETWEEN @FromDate AND @ToDate
 		AND dis.WorkDate = otherdis.WorkDate
 	WHERE ce.CompanyId = @CompanyId
-        AND emp.isDeleted = 0
-		AND emp.[Enabled] = 1
+        AND ce.isDeleted = 0
+		AND ce.[Enabled] = 1
 		AND (
 			dis.EmpId IS NOT NULL
 			OR otherdis.EmpId IS NOT NULL
@@ -158,35 +158,35 @@ BEGIN
 	WHERE ApproverSubtractScore = 0
 		AND OtherDisciplineScore = 0
 
-	SELECT emp.EmpId AS EmployeeId
-		,emp.NickName
-		,emp.FullName
-		,emp.Code
-		,emp.JoinedDate
-		,empsum.CompanyDate
+	SELECT ce.EmpId AS EmployeeId
+		,ce.NickName
+		,e.FullName
+		,ce.Code
+		,e.JoinedDate
+		,ce.CompanyDate
 		,empsum.IsLocal
-		,empsum.MilitaryFromDate
-		,empsum.MilitaryToDate
+		,e.MilitaryFromDate
+		,e.MilitaryToDate
         ,gr.Code AS TeamCode
 		,gr.[Name] AS TeamName
         ,dept.Code AS DepartmentCode
 		,dept.[Name] AS DepartmentName
-	FROM dbo.Employee AS emp WITH (NOLOCK)
-		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
-		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
-		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.UserId = ce.UserId
+		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON ce.EmpId = empsum.EmpId
+		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON ce.GroupId = gr.GroupId
 		AND gr.IsDeleted = 0
 		INNER JOIN dbo.Department AS dept WITH (NOLOCK) ON gr.DepartmentId = dept.DepartmentId
 		AND dept.IsDeleted = 0
 	WHERE ce.CompanyId = @CompanyId
-        AND emp.[Enabled] = 1
-		AND emp.IsDeleted = 0
+        AND ce.[Enabled] = 1
+		AND ce.IsDeleted = 0
 		AND EXISTS (
 			SELECT 1
 			FROM #tmpTeam AS tbl WITH (NOLOCK)
-			WHERE emp.GroupId = tbl.GroupId
+			WHERE ce.GroupId = tbl.GroupId
 			)
-		AND (@EmployeeId IS NULL OR emp.EmpId = @EmployeeId)
+		AND (@EmployeeId IS NULL OR ce.EmpId = @EmployeeId)
 		AND (@IsLocal IS NULL OR empsum.IsLocal = @IsLocal)
 		AND (
 			@IsShowAll = 1
@@ -195,7 +195,7 @@ BEGIN
 				AND EXISTS (
 					SELECT 1
 					FROM #tmpEmployeeDiscipline WITH (NOLOCK)
-					WHERE emp.EmpId = EmpId
+					WHERE ce.EmpId = EmpId
 					)
 				)
 			)
@@ -205,7 +205,7 @@ BEGIN
 				SELECT 1
 				FROM dbo.EmployeeSupervisor AS empS WITH (NOLOCK)
 				WHERE empS.OwnerId = @ApproverId
-					AND empS.EmpId = emp.EmpId
+					AND empS.EmpId = ce.EmpId
 					AND empS.ActionType = 8 -- edit discipline
 					AND empS.EmpId <> @ApproverId
 					AND ISNULL(empS.IsDeleted, 0) = 0
@@ -216,13 +216,13 @@ BEGIN
 				WHERE gr.GroupId = grS.GroupId
 					AND @ApproverId = grS.OwnerId
 					AND grS.ActionType = 8 -- edit discipline
-					AND emp.EmpId != @ApproverId
+					AND ce.EmpId != @ApproverId
 					AND ISNULL(grS.IsDeleted, 0) = 0
 					AND NOT EXISTS (
 						SELECT 1
 						FROM dbo.EmployeeSupervisor AS empS WITH (NOLOCK)
 						WHERE empS.OwnerId != @ApproverId
-							AND empS.EmpId = emp.EmpId
+							AND empS.EmpId = ce.EmpId
 							AND empS.ActionType = 8
 							AND ISNULL(emps.IsDeleted, 0) = 0
 						)
@@ -231,7 +231,7 @@ BEGIN
 				SELECT 1
 				FROM dbo.EmployeeSupervisor AS empS WITH (NOLOCK)
 				WHERE empS.OwnerId = @ApproverId
-					AND empS.EmpId = emp.EmpId
+					AND empS.EmpId = ce.EmpId
 					AND empS.ActionType IN (2, 3) -- Approver and Verifier
 					AND ISNULL(empS.IsDeleted, 0) = 0
 				)
@@ -246,7 +246,7 @@ BEGIN
 						SELECT 1
 						FROM dbo.EmployeeSupervisor AS empS WITH (NOLOCK)
 						WHERE empS.OwnerId != @ApproverId
-							AND empS.EmpId = emp.EmpId
+							AND empS.EmpId = ce.EmpId
 							AND empS.ActionType IN (2, 3)
 							AND ISNULL(emps.IsDeleted, 0) = 0
 						)
@@ -257,7 +257,7 @@ BEGIN
 					FROM @tblRole
 					WHERE RoleId = 1 -- Employee
 					)
-				AND emp.EmpId = @ApproverId
+				AND ce.EmpId = @ApproverId
 				)
 			)
 	ORDER BY gr.[Name] ASC

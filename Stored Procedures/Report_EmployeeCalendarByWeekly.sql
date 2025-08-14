@@ -17,6 +17,7 @@ Original:
 Revisions:
 	- 20200714@Merlin.Le: Get section and department code
 	- 20250408@Hank: remove section [Redmine: #222886]
+	20250813@Jay: change db structure [Redmine: #235678]
 Param's Explanation:
 */
 BEGIN
@@ -45,30 +46,30 @@ BEGIN
 	END
 
 	INSERT INTO #tblEmployeeIds (EmployeeId)
-	SELECT emp.EmpId
-	FROM dbo.Employee AS emp WITH (NOLOCK)
-		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = emp.EmpId AND ce.CompanyId = @companyId
-		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
+	SELECT ce.EmpId
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON ce.EmpId = empsum.EmpId
 		AND (
 			@isLocal IS NULL
 			OR empsum.IsLocal = @isLocal
 			)
-		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId
-	WHERE emp.[Enabled] = 1
-		AND emp.isDeleted = 0
+		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON ce.GroupId = gr.GroupId
+	WHERE ce.[Enabled] = 1
+		AND ce.isDeleted = 0
+		AND ce.CompanyId = @companyId
 		AND (
 			@empId IS NULL
-			OR emp.EmpId = @empId
+			OR ce.EmpId = @empId
 			)
 		AND EXISTS (
 			SELECT 1
 			FROM @tblGroupIds AS tbl
-			WHERE emp.GroupId = tbl.GroupId
+			WHERE ce.GroupId = tbl.GroupId
 			)
 		AND EXISTS (
 			SELECT 1
 			FROM @tblJobTitleIds AS tbl
-			WHERE emp.JobTitleId = tbl.JobTitleId
+			WHERE ce.JobTitleId = tbl.JobTitleId
 			)
 
 	SELECT @EmployeeIds = COALESCE(@EmployeeIds + ',', '') + CAST(EmployeeId AS VARCHAR(10))
@@ -81,22 +82,23 @@ BEGIN
 		,@isEnable = 1
 		,@isDelete = 0
 
-	SELECT emp.EmpId AS EmployeeId
-		,emp.Code
-		,emp.NickName
-		,emp.FullName
+	SELECT ce.EmpId AS EmployeeId
+		,ce.Code
+		,ce.NickName
+		,e.FullName
 		,gr.[Name] AS Team
 		,dep.Code AS DepartmentCode
-	FROM dbo.Employee AS emp WITH (NOLOCK)
-		INNER JOIN #tblEmployeeIds AS tblemp WITH (NOLOCK) ON emp.EmpId = tblemp.EmployeeId
-		INNER JOIN dbo.EmployeeSummary AS esum WITH (NOLOCK) ON emp.EmpId = esum.EmpId
-		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		INNER JOIN dbo.Employee e (NOLOCK) ON e.UserId = ce.UserId
+		INNER JOIN #tblEmployeeIds AS tblemp WITH (NOLOCK) ON ce.EmpId = tblemp.EmployeeId
+		INNER JOIN dbo.EmployeeSummary AS esum WITH (NOLOCK) ON ce.EmpId = esum.EmpId
+		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON ce.GroupId = gr.GroupId
 		INNER JOIN dbo.[Department] AS dep WITH (NOLOCK) ON gr.DepartmentId = dep.DepartmentId
 	ORDER BY gr.[Name]
-		,emp.Code
+		,ce.Code
 
-	SELECT emp.EmpId AS EmployeeId
-		,emp.NickName
+	SELECT ce.EmpId AS EmployeeId
+		,ce.NickName
 		,empca.WorkDate
 		,empca.IsOvertime
 		,empca.IsLeaveOffDay
@@ -127,21 +129,19 @@ BEGIN
 		,lv2.LeaveTypeId AS LeaveTypeId2
 		,lv2.Code
 		,lv2.[Name]
-	FROM dbo.Employee AS emp WITH (NOLOCK)
-		INNER JOIN #tblEmployeeIds AS tblemp WITH (NOLOCK) ON emp.EmpId = tblemp.EmployeeId
-		INNER JOIN dbo.tmpEmployeeCalendar AS empca ON emp.EmpId = empca.EmpId
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		INNER JOIN #tblEmployeeIds AS tblemp WITH (NOLOCK) ON ce.EmpId = tblemp.EmployeeId
+		INNER JOIN dbo.tmpEmployeeCalendar AS empca ON ce.EmpId = empca.EmpId
 		AND empca.WorkDate BETWEEN @fromTime
 			AND @toTime
 		LEFT JOIN dbo.Shift AS shift WITH (NOLOCK) ON shift.ShiftId = empca.ShiftId
 		LEFT JOIN dbo.LeaveType AS lv1 WITH (NOLOCK) ON empca.LeaveTypeId = lv1.LeaveTypeId AND lv1.CompanyId = @companyId
 		LEFT JOIN dbo.LeaveType AS lv2 WITH (NOLOCK) ON empca.LeaveTypeId2 = lv2.LeaveTypeId AND lv2.CompanyId = @companyId
-		LEFT JOIN dbo.ScheduleArrangementOffDayReplacement AS offrep WITH (NOLOCK) ON emp.EmpId = offrep.EmployeeId
+		LEFT JOIN dbo.ScheduleArrangementOffDayReplacement AS offrep WITH (NOLOCK) ON ce.EmpId = offrep.EmployeeId
 		AND empca.WorkDate = offrep.WorkDate
-	ORDER BY emp.NickName
+	ORDER BY ce.NickName
 		,empca.WorkDate
 
 	DROP TABLE #tblEmployeeIds
 END
-
-
 
