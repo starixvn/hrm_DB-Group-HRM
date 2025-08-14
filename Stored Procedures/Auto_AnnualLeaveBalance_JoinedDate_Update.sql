@@ -11,6 +11,7 @@ AS
     DB: bodb_HRM
 
     Revisions:
+		20250814@Lilac: restructure for transfer [Redmine: #235678]
     Param's Explanation:
 */
 BEGIN
@@ -76,7 +77,8 @@ BEGIN
 		,GETDATE()
 		,0 AS Deleted
 	FROM @TempListAnnualLeaves AS t
-		INNER JOIN Employee e ON e.EmpId = t.EmpId
+		INNER JOIN CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = t.EmpId
+		INNER JOIN Employee AS e WITH (NOLOCK) ON e.UserId = t.UserId
 	WHERE NOT EXISTS (
         SELECT 1
         FROM dbo.LeaveTrans AS lt WITH (NOLOCK)

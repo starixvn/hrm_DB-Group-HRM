@@ -11,6 +11,7 @@ DB: HRM
 Original:
 
 Revisions:
+	20250813@Lilac: restructure for transfer [Redmine: #235678]
 Param's Explanation:
 
 */
@@ -24,11 +25,11 @@ BEGIN
 		,@AnnualLeaveResetTimelineType TINYINT
 		,@AnnualLeaveResetTimelineByYear TINYINT = 1
 
-		SELECT @CompanyId = ce.CompanyId
+	SELECT @CompanyId = ce.CompanyId
         ,@JoinedDate = e.JoinedDate
     FROM dbo.Employee AS e WITH (NOLOCK)
-        INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
-    WHERE e.EmpId = @EmpId
+        INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.UserId = ce.UserId
+    WHERE ce.EmpId = @EmpId
 
 	 SELECT @AnnualLeaveResetTimelineType = [Value]
     FROM dbo.SystemConfigs WITH (NOLOCK)
@@ -59,7 +60,7 @@ BEGIN
 		,[Description]
 		,ISNULL(t.ModifiedDate, t.CreatedDate) AS ModifiedDate
 	FROM dbo.LeaveTrans t WITH (NOLOCK)
-		INNER JOIN dbo.Employee e WITH (NOLOCK) ON e.EmpID = t.EmpId
+		INNER JOIN dbo.CompanyEmployee e WITH (NOLOCK) ON e.EmpID = t.EmpId
 	WHERE FromDate >= @fromdateRange
 		AND FromDate < @todateRange
 		AND (ISNULL(ExtraDays, 0) = 0 OR (ExtraDays > 0 AND CreditDays > 0))
