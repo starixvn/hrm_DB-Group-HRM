@@ -13,6 +13,7 @@ Original:
 Revisions:
 	20250530@Jay: add company name for who come from different company & add manage role for group space [Redmine: #225528]
 	20250721@Mira: get shift arrangement setting and discipline setting for group space [Redmine: #232922]
+	20250812@Mira: tranfer employee [Redmine: #235678]
 Param's Explanation:
 */
 BEGIN
@@ -94,7 +95,7 @@ BEGIN
 						c.[Name] AS CompanyName,
 						c.CompanyId
 					FROM [dbo].GroupSupervisor AS su WITH (NOLOCK)
-						INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON su.OwnerId = e.EmpId
+						INNER JOIN dbo.CompanyEmployee AS e WITH (NOLOCK) ON su.OwnerId = e.EmpId
 						LEFT JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.Empid = e.Empid AND ISNULL(ce.IsSpecialUser, 0) = 0 AND ISNULL(ce.IsDeleted, 0) = 0 AND ISNULL(ce.Enabled, 1) = 1
 						LEFT JOIN dbo.Company AS c WITH (NOLOCK) ON c.CompanyId = ce.CompanyId
 					WHERE su.GroupId = @TeamId

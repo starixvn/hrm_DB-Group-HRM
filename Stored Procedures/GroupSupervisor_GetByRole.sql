@@ -14,15 +14,16 @@ AS
 
     Revisions:
 	- 20250730@Jay: Add company name for group filter [Redmine: #233324]
+	- 20250812@Mira: tranfer employee [Redmine: #235678]
     Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;
 
-	SELECT e.EmpId
+	SELECT ce.EmpId
 		,CASE 
-			WHEN @CompanyId IS NOT NULL AND @CompanyId = c.CompanyId THEN e.NickName
-			ELSE e.NickName + ' (' + ISNULL(c.Name, '') + ')'
+			WHEN @CompanyId IS NOT NULL AND @CompanyId = c.CompanyId THEN ce.NickName
+			ELSE ce.NickName + ' (' + ISNULL(c.Name, '') + ')'
 		END AS NickName
 		,e.FullName
 		,g.GroupId AS TeamId
@@ -62,15 +63,15 @@ BEGIN
 			ELSE 0
 		END AS CanRemove
 	FROM dbo.GroupSupervisor AS su WITH (NOLOCK)
-		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON su.OwnerId = e.EmpId
+		INNER JOIN dbo.[CompanyEmployee] AS ce WITH (NOLOCK) ON ce.EmpId = su.OwnerId AND ISNULL(ce.IsSpecialUser, 0) = 0 AND ISNULL(ce.IsDeleted, 0) = 0 AND ISNULL(ce.Enabled, 1) = 1
+		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.UserId = ce.UserId
 		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON @TeamId = g.GroupId
-		INNER JOIN dbo.[CompanyEmployee] AS ce WITH (NOLOCK) ON ce.EmpId = e.EmpId AND ISNULL(ce.IsSpecialUser, 0) = 0 AND ISNULL(ce.IsDeleted, 0) = 0 AND ISNULL(ce.Enabled, 1) = 1
 		INNER JOIN dbo.[Company] AS c WITH (NOLOCK) ON c.CompanyId = ce.CompanyId
 	WHERE su.GroupId = @TeamId
 		AND su.ActionType = @Role
 		AND ISNULL(su.IsDeleted, 0) = 0
-	GROUP BY e.EmpId
-		,e.NickName
+	GROUP BY ce.EmpId
+		,ce.NickName
 		,e.FullName
 		,g.GroupId
 		,g.Code

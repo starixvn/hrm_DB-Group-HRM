@@ -14,6 +14,7 @@ Original:
 Revisions:
     - 20250619@Henry: fix ambiguous column error migrate nex
 	- 20250730@Jay: Add company name for personal setting page [Redmine: #233324]
+	- 20250812@Mira: tranfer employee [Redmine: #235678]
 Param's Explanation:
 */
 BEGIN
@@ -44,10 +45,10 @@ BEGIN
 	FROM STRING_SPLIT(@RoleIds, ',')
 
 	INSERT INTO #tmpEmployee
-	SELECT e.EmpId AS Id
+	SELECT ce.EmpId AS Id
 	FROM dbo.Employee AS e WITH (NOLOCK)
-		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
-        INNER JOIN dbo.EmployeeRole AS r WITH (NOLOCK) ON r.EmployeeId = e.EmpId
+		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.UserId = e.UserId
+        INNER JOIN dbo.EmployeeRole AS r WITH (NOLOCK) ON r.EmployeeId = ce.EmpId
 	WHERE 
 		(
 			@CompanyId IS NULL 
@@ -57,35 +58,35 @@ BEGIN
 			SELECT RoleId
 			FROM #tmpRole
 			)
-		AND e.EmpId NOT IN (
+		AND ce.EmpId NOT IN (
 			SELECT EmpId
 			FROM #tmpExcludedEmployee
 			)
 		AND (
-			E.isDeleted IS NULL
-			OR e.isDeleted = 0
+			ce.isDeleted IS NULL
+			OR ce.isDeleted = 0
 			)
-		AND e.[Enabled] = 1
+		AND ce.[Enabled] = 1
 		AND (
 			@query IS NULL
 			OR NickName LIKE @q
 			OR FullName LIKE @q
-			OR e.DomainUsername LIKE @q
-			OR e.Code LIKE @q
+			OR ce.DomainUsername LIKE @q
+			OR ce.Code LIKE @q
 			)
 
-	SELECT e.EmpId AS Id
-		,e.Code
-		,e.DomainUsername
+	SELECT ce.EmpId AS Id
+		,ce.Code
+		,ce.DomainUsername
 		,e.FullName
-		,e.NickName
+		,ce.NickName
 		,e.DOB
-		,e.Email
-		,e.JobTitleId
-		,e.[Enabled]
+		,ce.Email
+		,ce.JobTitleId
+		,ce.[Enabled]
 		,e.Phone
 		,e.Gender
-		,e.ManagerId
+		,ce.ManagerId
 		,e.JoinedDate
 		,e.ConfirmedDate
 		,e.ResignedDate
@@ -93,11 +94,11 @@ BEGIN
 		,e.LetsTalk
 		,e.Marriage
 		,e.LastLogin
-		,e.CreatedDate
-		,e.CreatedBy
-		,e.ModifiedDate
-		,e.ModifiedBy
-		,e.isDeleted
+		,ce.CreatedDate
+		,ce.CreatedBy
+		,ce.ModifiedDate
+		,ce.ModifiedBy
+		,ce.isDeleted
 		,e.PermanentAddress AS [Address]
 		,e.CurrentAddress
 		,e.IdCardNumber AS CardNo
@@ -106,12 +107,12 @@ BEGIN
 		,e.[Password]
 		,c.[Name] AS CompanyName
 		,c.CompanyId
-		,ISNULL(e.GroupID, - 1) AS [TeamID]
+		,ISNULL(ce.GroupID, - 1) AS [TeamID]
 		,ISNULL(g.[Name], '') AS [Team]
 	FROM dbo.Employee AS e WITH (NOLOCK)
-		INNER JOIN #tmpEmployee AS e1 ON e1.EmpId = e.EmpId
-		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON e.GroupId = g.GroupId
-		LEFT JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = e.EmpId
+		LEFT JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.UserId = e.UserId
+		INNER JOIN #tmpEmployee AS e1 ON e1.EmpId = ce.EmpId
+		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON ce.GroupId = g.GroupId
 		LEFT JOIN dbo.Company AS c WITH (NOLOCK) ON c.CompanyId = ce.CompanyId
 
 	SELECT emRo.EmployeeId
