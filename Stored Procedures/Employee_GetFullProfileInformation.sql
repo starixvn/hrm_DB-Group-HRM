@@ -18,6 +18,7 @@ Revisions:
 	- 20230704@Otis.Vu: Get supervisor and roles info
 	- 20250404@Jay.Do: Remove section
 	- 20250714@Mira: get joblevel and mGrade [#Redmine: 232030]
+	- 20250812@Mira: tranfer employee [Redmine: #235678]
 Param's Explanation:
 */
 BEGIN

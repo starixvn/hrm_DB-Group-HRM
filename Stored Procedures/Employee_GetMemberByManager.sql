@@ -16,6 +16,8 @@ AS
 	Revisions:
 		2025-04-24@Henry: Merge action type 2, 3, 4, 5
         20250523@Tim: call func get member
+		20250812@Mira: tranfer employee [Redmine: #235678]
+
 	Param's Explanation:
 */
 BEGIN
@@ -29,14 +31,15 @@ BEGIN
 	SELECT EmpId
 	FROM dbo.fnc_GetEmployeeByActorId(@SupervisorId, 1, 1, @CompanyId)
 
-	SELECT e.EmpId
-		,e.NickName
+	SELECT ce.EmpId
+		,ce.NickName
 		,e.FullName
-	FROM dbo.Employee AS e WITH (NOLOCK)
-		INNER JOIN #tblEmployeeIds AS tblemp WITH (NOLOCK) ON e.EmpId = tblemp.EmpId
-		INNER JOIN dbo.CompanyEmployee c WITH (NOLOCK) ON c.EmpId = e.EmpId
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.UserId = ce.UserId
+		INNER JOIN #tblEmployeeIds AS tblemp WITH (NOLOCK) ON ce.EmpId = tblemp.EmpId
+		INNER JOIN dbo.CompanyEmployee c WITH (NOLOCK) ON c.EmpId = ce.EmpId
 	WHERE (
-			e.NickName LIKE @query
+			ce.NickName LIKE @query
 			OR e.FullName LIKE @query
 			)
 		AND c.CompanyId = @CompanyId

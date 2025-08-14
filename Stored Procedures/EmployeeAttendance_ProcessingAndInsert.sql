@@ -17,6 +17,7 @@ AS
     Revisions:
         20250519@Tim: remove check JoinedDate
         20250604@Tim: add attendance processing to the queue
+		20250812@Mira: tranfer employee [Redmine: #235678]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -72,18 +73,17 @@ BEGIN
         END
 
     INSERT INTO #tmpEmployee (EmpId)
-    SELECT e.EmpId
-    FROM dbo.Employee AS e WITH (NOLOCK)
-        INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
-    WHERE e.[Enabled] = 1
-        AND e.isDeleted = 0
+    SELECT ce.EmpId
+    FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+    WHERE ce.[Enabled] = 1
+        AND ce.isDeleted = 0
         AND (
             @CompanyId IS NULL
             OR ce.CompanyId = @CompanyId
         )
         AND (
             @EmpId IS NULL
-            OR e.EmpId = @EmpId
+            OR ce.EmpId = @EmpId
         )
 
     INSERT INTO dbo.tmpEmployeeAttendace (EmpId, WorkDate, InsertedDate)

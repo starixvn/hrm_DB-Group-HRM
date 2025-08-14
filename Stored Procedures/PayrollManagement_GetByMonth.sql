@@ -1,6 +1,6 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE PROCEDURE [dbo].[PayrollManagement_GetByMonth]
+ALTER PROCEDURE [dbo].[PayrollManagement_GetByMonth]
 (
     @Month DATE = NULL,
     @CompanyId INT,
@@ -14,6 +14,8 @@ AS
 
     Revisions:
         20250731@Mira: get payroll by month
+		20250812@Mira: tranfer employee [Redmine: #235678]
+
     Param's Explanation:
 */
 BEGIN
@@ -21,9 +23,9 @@ BEGIN
 
 	SELECT 
 		p.EmpId,
-		e.Code,
+		ce.Code,
 		e.FullName,
-		e.NickName,
+		ce.NickName,
 		e.JoinedDate,
 		e.ConfirmedDate,
 		s.BasicSalary 'BasicSalaryEncrypt',
@@ -34,8 +36,9 @@ BEGIN
 		p.EmploymentStatus
 	FROM dbo.MonthlyPayroll p WITH(NOLOCK)
 	    INNER JOIN dbo.MonthlySalary s WITH(NOLOCK) ON s.PayrollId = p.PayrollId
-	    INNER JOIN dbo.Employee e WITH (NOLOCK) ON p.EmpId = e.EmpId
-	    INNER JOIN dbo.EmployeeSummary es WITH (NOLOCK) ON es.EmpId = e.EmpId
+	    INNER JOIN dbo.CompanyEmployee ce WITH (NOLOCK) ON p.EmpId = ce.EmpId
+		INNER JOIN dbo.Employee e WITH (NOLOCK) ON e.UserId = ce.UserId
+	    INNER JOIN dbo.EmployeeSummary es WITH (NOLOCK) ON es.EmpId = ce.EmpId
 	    INNER JOIN dbo.CompanyEmployee empCom WITH (NOLOCK) ON p.EmpId = empCom.EmpId AND empCom.CompanyId = @CompanyId
 	WHERE (@Month IS NULL OR p.[Month] = @Month) 
 		AND es.IsLocal = @IsLocal

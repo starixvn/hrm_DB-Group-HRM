@@ -13,6 +13,8 @@ Task: update discipline.
 DB: HRM
 
 Revisions:
+	20250812@Mira: tranfer employee [Redmine: #235678]
+
 Param's Explanation:
     @DisciplineXml:
         <Root>
@@ -91,7 +93,7 @@ BEGIN
 			AND dis.WorkDate = outofctrl.WorkDate
 		WHERE EXISTS (
 				SELECT 1
-				FROM dbo.Employee AS emp WITH (NOLOCK)
+				FROM dbo.CompanyEmployee AS emp WITH (NOLOCK)
 					INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
 					INNER JOIN dbo.DisciplineGroupRule AS drule WITH (NOLOCK) ON emp.GroupId = drule.GroupId
 					AND drule.DisciplineTypeId = @MissingCheckInOutDisciplineTypeId
@@ -108,7 +110,7 @@ BEGIN
 			AND dis.WorkDate = cio.OnDate
 		WHERE EXISTS (
 				SELECT 1
-				FROM dbo.Employee AS emp WITH (NOLOCK)
+				FROM dbo.CompanyEmployee AS emp WITH (NOLOCK)
 					INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
 					INNER JOIN dbo.DisciplineGroupRule AS drule WITH (NOLOCK) ON emp.GroupId = drule.GroupId
 					AND drule.DisciplineTypeId = @MissingCheckInOutDisciplineTypeId
@@ -125,7 +127,7 @@ BEGIN
 			AND dis.WorkDate = cio.OnDate
 		WHERE EXISTS (
 				SELECT 1
-				FROM dbo.Employee AS emp WITH (NOLOCK)
+				FROM dbo.CompanyEmployee AS emp WITH (NOLOCK)
 					INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
 					INNER JOIN dbo.DisciplineGroupRule AS drule WITH (NOLOCK) ON emp.GroupId = drule.GroupId
 					AND drule.DisciplineTypeId = @MissingCheckInOutDisciplineTypeId

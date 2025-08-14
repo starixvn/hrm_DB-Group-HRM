@@ -15,6 +15,8 @@ DB: HRM
 Original:
 
 Revisions:
+	20250812@Mira: tranfer employee [Redmine: #235678]
+
 Param's Explanation:
     @DisciplineXml:
         <Root>
@@ -44,8 +46,7 @@ BEGIN
 
     SELECT @CompanyId = ce.CompanyId
     FROM dbo.WorkingTimeRequest AS wk WITH (NOLOCK)
-	INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON wk.EmpId = e.EmpId
-        INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
+	INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON wk.EmpId = ce.EmpId
 	WHERE wk.RequestId = @RequestId
 
 

@@ -9,6 +9,8 @@ Task: Get check in/out online
 DB: HRM
 
 Revisions:
+	20250812@Mira: tranfer employee [Redmine: #235678]
+
 Param's Explanation:
 */
 BEGIN
@@ -20,13 +22,13 @@ BEGIN
 	SELECT TOP 500 t.Id AS RecordTimeId
 		,t.RecordTime
 		,t.InOutType
-		,e.EmpId
-		,e.Code
-		,e.NickName
+		,ce.EmpId
+		,ce.Code
+		,ce.NickName
 		,e.FullName
 	FROM dbo.TimeRecord AS t WITH (NOLOCK)
-		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON t.EmpID = e.EmpId
-        INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
+		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON t.EmpID = ce.EmpId
+		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.UserId = ce.UserId
 		INNER JOIN dbo.TimeRecordExt AS tex WITH (NOLOCK) ON t.ID = tex.ID
 	WHERE ce.CompanyId = @CompanyId
         AND t.RecordTime BETWEEN @FromTime
