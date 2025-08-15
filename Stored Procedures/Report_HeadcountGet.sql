@@ -10,6 +10,7 @@ DB: bodb_HRM
 Revisions:
 	20250219@Mira: Get data for HRA report - [Redmine: #179302]
 	20250730@Mira: Get local, expat for HRA report - [Redmine: #234522]
+	20250815@Mira: Exclude empty CtrId - [Redmine: #236138]
 */
 
 AS
@@ -62,6 +63,7 @@ AS
 		) AS safeDates
 		WHERE
 			(
+				e.CtrId IS NOT NULL AND
 				safeDates.ResignedDate >= @FromDate
 				OR (safeDates.ResignedDate IS NULL AND ISNULL(ce.Enabled, e.Enabled) = 1)
 			)
