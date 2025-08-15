@@ -128,8 +128,11 @@ BEGIN
 				THEN (
 					SELECT TOP 1 c.CurrencyCode
 					FROM dbo.Currency c
-					WHERE c.Id = TRY_CAST(LEFT(scc.[Value], 
-								 CHARINDEX(',', scc.[Value] + ',') - 1) AS INT)
+					WHERE c.Id =
+					(
+						SELECT TOP 1 value
+						FROM STRING_SPLIT(scc.[Value], ',')
+					)
 				)
 			ELSE ''
 		END AS Currency,
