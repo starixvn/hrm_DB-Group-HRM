@@ -1,6 +1,6 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE PROCEDURE [dbo].[SalaryUploadHistory_Get]
+ALTER PROCEDURE [dbo].[SalaryUploadHistory_Get]
     @CompanyId INT
 AS
 /*
@@ -11,6 +11,7 @@ AS
 
 	Revisions:  
 		Hank.Nguyen@20250505: Get salary upload history.
+		20250812@Mira: tranfer employee [Redmine: #235678]
 	Param's Explanation:
 */
 BEGIN
@@ -25,7 +26,7 @@ BEGIN
         su.[Month],
         emp.[NickName]  
     FROM [dbo].[SalaryUploadHistory] su
-    LEFT JOIN [dbo].[Employee] emp ON su.CreatedBy = emp.EmpId
+    LEFT JOIN [dbo].[CompanyEmployee] emp ON su.CreatedBy = emp.EmpId
     WHERE su.[CompanyId] = @CompanyId
     ORDER BY su.[CreatedDate] DESC;
 

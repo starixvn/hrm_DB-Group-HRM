@@ -23,6 +23,8 @@ DB: HRM
 Original:
 
 Revisions:
+	20250812@Mira: tranfer employee [Redmine: #235678]
+
 */
 BEGIN
     SET NOCOUNT ON;
@@ -40,7 +42,6 @@ BEGIN
 
 	    INSERT INTO dbo.Mail_Record(
 		    AppId
-		    ,FuncId
 		    ,MailTo
 		    ,Title
 		    ,Subject
@@ -52,7 +53,6 @@ BEGIN
 		    ,IsEncrypt)
 	    VALUES (
 		    @AppId
-		    ,@FuncId
 		    ,@MailTo
 		    ,N'' + @Title + ''
 		    ,N'' + @Subject + ''
