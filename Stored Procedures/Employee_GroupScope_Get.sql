@@ -21,6 +21,7 @@ AS
         20250627@Hank.Nguyen: check GroupId in both Employee and CompanyEmployee tables
         20250801@Lilac.Nguyen: get more info for Profit Center Report [Redmine: #234645]
 		20250805@Lilac.Nguyen: get location(CountryCodeISO3) [Redmine: #234645]
+		20250815@Jay.Do: enhancement [Redmine: #236138]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -69,7 +70,12 @@ BEGIN
 		DepartmentPIC NVARCHAR(100),
 		ManagementLevel NVARCHAR(100),
 		JobLevel NVARCHAR(100),
-		[Location] NVARCHAR(100)
+		[Location] NVARCHAR(100),
+		Salary NVARCHAR(100),
+		Currency NVARCHAR(10),
+		CountryName NVARCHAR(100),
+		Gender NVARCHAR(20),
+		DOB NVARCHAR(100)
 	)
 
 	INSERT INTO @Result
@@ -105,7 +111,27 @@ BEGIN
 		ed.NickName AS DepartmentPIC,
 		COALESCE(mg.[Name], ml.[Name]) AS ManagementLevel,
 		jg.[Name] AS JobLevel,
-		ct.CountryCodeISO3 AS [Location]
+		ct.CountryCodeISO3 AS [Location],
+		CASE
+			WHEN ce.Salary IS NOT NULL
+				THEN ce.Salary
+			WHEN s.IsLocal = 1
+				THEN std.LocalSalary
+			ELSE std.ExpatSalary
+		END AS Salary,
+		CASE 
+			WHEN scc.[Value] IS NOT NULL AND LTRIM(RTRIM(scc.[Value])) <> ''
+				THEN (
+					SELECT TOP 1 c.CurrencyCode
+					FROM dbo.Currency c
+					WHERE c.Id = TRY_CAST(LEFT(scc.[Value], 
+								 CHARINDEX(',', scc.[Value] + ',') - 1) AS INT)
+				)
+			ELSE ''
+		END AS Currency,
+		ect.CountryName,
+		e.Gender,
+		e.DOB
 	FROM dbo.Employee AS e WITH (NOLOCK)
 		LEFT JOIN dbo.CompanyEmployee ce WITH (NOLOCK) ON ce.EmpId = e.EmpId AND (ce.IsSpecialUser IS NULL OR ce.IsSpecialUser = 0)
 		LEFT JOIN dbo.EmployeeSummary AS s WITH (NOLOCK) ON s.EmpId = e.EmpId
@@ -126,7 +152,11 @@ BEGIN
 		LEFT JOIN HRM.dbo.EmployeeJobGrade ejg WITH (NOLOCK) ON ejg.EmpId = e.EmpId AND ejg.IsCurrentUsed = 1 AND ISNULL(ejg.IsDeleted, 0) = 0
 		LEFT JOIN JobLevel jg WITH (NOLOCK) ON COALESCE(e.JobLevelId, ejg.JobGradeId) = jg.JobLevelId 
 		LEFT JOIN dbo.Country AS ct WITH (NOLOCK) ON ct.CountryCode = c.CountryCode
-		
+		LEFT JOIN dbo.SalaryStructureDetail AS std WITH (NOLOCK) ON std.JobLevelId = e.JobLevelId 
+			AND ce.SalaryStructureId = std.SalaryStructureId
+		LEFT JOIN SystemConfigs scc ON [Key] = 'Currency' 
+			AND scc.CompanyId = ce.CompanyId  
+		LEFT JOIN Country AS ect (NOLOCK) ON s.CountryCode = ect.CountryCode
 	WHERE 
 		(@enable IS NULL OR (ISNULL(ISNULL(ce.isDeleted, e.isDeleted), 0) = 0 AND COALESCE(ce.Enabled, e.Enabled) = @enable))
 		AND (@isDelete IS NULL OR ISNULL(ISNULL(ce.isDeleted, e.isDeleted), 0) = @isDelete)

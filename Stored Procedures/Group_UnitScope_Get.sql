@@ -14,6 +14,7 @@ Revisions:
     20250403@Tim: remove section [Redmine: #222886]
 	20250515@Jay: add years of service for extra leave [Redmine: #227166]
 	20250701@Tim: Show Nexcel, Lumiplus, NexVision [Redmine: #225531]
+	20250815@Jay.Do: enhancement [Redmine: #236138]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -73,6 +74,7 @@ BEGIN
 		,g.[Rank]
 		,tbl.NoOfMembers
 		,g.PICEmpId
+		,e.CtrId AS TeamPICCtrId
 		,e.NickName as TeamPIC
 		,cpic.[CompanyId] AS TeamPICCompanyId
 		,cpic.[Name] AS TeamPICCompany
@@ -80,6 +82,7 @@ BEGIN
         ,d.Code AS DepartmentCode
         ,d.[Name] AS DepartmentName
 		,d.PICEmpId AS DepartmentPICId
+		,ed.CtrId AS DepartmentPICCtrId
 		,ed.NickName AS DepartmentPIC
 		,u.Code AS UnitCode
 		,g.AccountableArea
