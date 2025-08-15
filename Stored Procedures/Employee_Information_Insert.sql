@@ -22,12 +22,14 @@ Original:
 
 Revisions:
     20250306@Tim: initial - [Redmine: #217976]
+	20250815@Mira: Auto generate CtrId - [Redmine: #236138]
 */
 BEGIN
 	SET NOCOUNT ON;
 
     DECLARE @MemberRole NVARCHAR(10) = 1
         ,@OldEmpId INT
+		,@MaxCtrId INT;
 
     SELECT @OldEmpId = MAX(e.OldEmpId)
     FROM dbo.Employee AS e WITH (NOLOCK)
@@ -35,6 +37,7 @@ BEGIN
     WHERE c.CompanyId = @CompanyId
 
     SET @OldEmpId = ISNULL(@OldEmpId, 0) + 1
+	SET @MaxCtrId = (SELECT MAX(CtrId) FROM Employee);
 
 	INSERT INTO dbo.Employee (
 		EmpId
@@ -52,6 +55,7 @@ BEGIN
 		,CreatedBy
         ,UserId
         ,OldEmpId
+		,CtrId
 		)
 	VALUES (
 		@UserId
@@ -69,6 +73,7 @@ BEGIN
 		,@createBy
         ,@UserId
         ,@OldEmpId
+		,@MaxCtrId + 1
 		)
 
     INSERT INTO dbo.CompanyEmployee (CompanyId, EmpId)
