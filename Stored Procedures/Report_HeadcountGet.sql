@@ -37,12 +37,12 @@ AS
 				ELSE ISNULL(es.IsLocal, 1) 
 			END AS IsLocal
 		FROM dbo.Employee e WITH(NOLOCK)
-		INNER JOIN dbo.CompanyEmployee ce WITH(NOLOCK) ON ce.EmpId = e.EmpId AND (ce.IsSpecialUser IS NULL OR ce.IsSpecialUser = 0)
+		INNER JOIN dbo.CompanyEmployee ce WITH(NOLOCK) ON ce.EmpId = e.EmpId
 		OUTER APPLY (
 			SELECT GroupId = COALESCE(ce.GroupId, e.GroupId)
 		) AS d
 		INNER JOIN dbo.[Group] g WITH(NOLOCK) ON g.GroupId = d.GroupId AND g.IsOutsource = 0
-		LEFT JOIN dbo.EmployeeSummary es WITH(NOLOCK) ON es.EmpId = e.EmpId AND (es.IsTopManager IS NULL OR es.IsTopManager = 0)
+		LEFT JOIN dbo.EmployeeSummary es WITH(NOLOCK) ON es.EmpId = e.EmpId
 		OUTER APPLY (
 			SELECT
 				JoinedDate = CASE 
