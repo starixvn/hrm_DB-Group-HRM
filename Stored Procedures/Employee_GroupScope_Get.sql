@@ -9,7 +9,10 @@ ALTER PROCEDURE [dbo].[Employee_GroupScope_Get]
 	@pageSize INT = NULL,
 	@totalRow INT = NULL OUTPUT,
 	@titleId INT = NULL,
-	@companyIds VARCHAR(MAX) = ''
+	@companyIds VARCHAR(MAX) = '',
+	@isCtrID BIT = NULL,
+	@isOutsource BIT = NULL
+
 AS
 /*
 	Created: 20250429@Jay.Do
@@ -22,6 +25,7 @@ AS
         20250801@Lilac.Nguyen: get more info for Profit Center Report [Redmine: #234645]
 		20250805@Lilac.Nguyen: get location(CountryCodeISO3) [Redmine: #234645]
 		20250815@Jay.Do: enhancement [Redmine: #236138]
+
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -163,8 +167,15 @@ BEGIN
 		AND (@query IS NULL OR e.NickName LIKE '%' + @query + '%')
 		AND (ISNULL( @teamIds, '') = ''  OR COALESCE(ce.GroupId, e.GroupId) IN (SELECT GroupId FROM @GroupsList))
 		AND (ISNULL( @companyIds, '') = '' OR ce.CompanyId IN (SELECT CompanyId FROM @CompaniesList))
-
-	
+		AND (
+				@isCtrID IS NULL
+				OR (@isCtrID = 1 AND e.CtrID IS NOT NULL)
+				OR (@isCtrID = 0 AND e.CtrID IS NULL)
+			)
+		AND (
+			@isOutsource IS NULL
+			OR g.IsOutsource = @isOutsource
+		)
 
 	SELECT @totalRow = COUNT(*) FROM @Result
 
