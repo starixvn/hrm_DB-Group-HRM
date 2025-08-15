@@ -1,18 +1,21 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[Employee_GroupScope_Get] 
-	@query NVARCHAR(256) = NULL,
-	@teamIds VARCHAR(MAX) = '',
-	@enable BIT = NULL,
-	@isDelete BIT = NULL,
-	@pageNumber INT = 1,
-	@pageSize INT = NULL,
-	@totalRow INT = NULL OUTPUT,
-	@titleId INT = NULL,
-	@companyIds VARCHAR(MAX) = '',
-	@isCtrID BIT = NULL,
-	@isOutsource BIT = NULL
-
+ALTER PROCEDURE [dbo].[Employee_GroupScope_Get]
+(
+    @query NVARCHAR(256) = NULL,
+    @teamIds VARCHAR(MAX) = '',
+    @enable BIT = NULL,
+    @isDelete BIT = NULL,
+    @pageNumber INT = 1,
+    @pageSize INT = NULL,
+    @totalRow INT = NULL OUTPUT,
+    @titleId INT = NULL,
+    @companyIds VARCHAR(MAX) = '',
+    @isCtrID BIT = NULL,
+    @isOutsource BIT = NULL,
+    @hasPermissionViewAll BIT = 0,
+    @actorId INT = NULL
+)
 AS
 /*
 	Created: 20250429@Jay.Do
@@ -25,7 +28,6 @@ AS
         20250801@Lilac.Nguyen: get more info for Profit Center Report [Redmine: #234645]
 		20250805@Lilac.Nguyen: get location(CountryCodeISO3) [Redmine: #234645]
 		20250815@Jay.Do: enhancement [Redmine: #236138]
-
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -124,7 +126,7 @@ BEGIN
 			ELSE std.ExpatSalary
 		END AS Salary,
 		CASE 
-			WHEN scc.[Value] IS NOT NULL AND LTRIM(RTRIM(scc.[Value])) <> ''
+			WHEN ISNULL(scc.[Value], '') <> ''
 				THEN (
 					SELECT TOP 1 c.CurrencyCode
 					FROM dbo.Currency c
@@ -145,25 +147,25 @@ BEGIN
 		LEFT JOIN dbo.[Group] AS g WITH (NOLOCK) ON COALESCE(e.GroupID, ce.GroupId) = g.GroupID
 		LEFT JOIN dbo.[Department] AS d WITH (NOLOCK) ON d.DepartmentId = g.DepartmentId
 		LEFT JOIN dbo.[Unit] AS u WITH (NOLOCK) ON d.UnitId = u.UnitId
-		LEFT JOIN dbo.[Lookup] l WITH (NOLOCK) ON l.Code = 'JT'
-		LEFT JOIN dbo.LookupData jt WITH (NOLOCK) ON l.Id = jt.LookupId AND e.JobTitleId = jt.Id
-		LEFT JOIN HRM.dbo.JobTitle ejt WITH (NOLOCK) ON ejt.JobTitleId = e.JobTitleId AND ejt.IsDeleted = 0
-		LEFT JOIN dbo.Company c WITH (NOLOCK) ON c.CompanyId = ce.CompanyId
-		LEFT JOIN dbo.SubCompany sub WITH (NOLOCK) ON sub.SubCompanyId = ce.SubCompanyId
-		LEFT JOIN Employee eu WITH (NOLOCK) ON eu.EmpId = u.PICEmpId
-		LEFT JOIN Employee ed WITH (NOLOCK) ON ed.EmpId = d.PICEmpId
-		LEFT JOIN Employee eg WITH (NOLOCK) ON eg.EmpId = g.PICEmpId
-		LEFT JOIN HRM.dbo.EmployeeManagementGrade em WITH (NOLOCK) ON em.EmpId = e.EmpId AND em.IsCurrentUsed = 1 AND ISNULL(em.IsDeleted, 0) = 0
-		LEFT JOIN HRM.dbo.ManagementGrade mg WITH (NOLOCK) ON mg.ManagementGradeId = em.ManagementGradeId AND ISNULL(mg.IsDeleted, 0) = 0
-		LEFT JOIN ManagementLevel ml WITH (NOLOCK) ON e.ManagementLevelId = ml.ManagementLevelId
-		LEFT JOIN HRM.dbo.EmployeeJobGrade ejg WITH (NOLOCK) ON ejg.EmpId = e.EmpId AND ejg.IsCurrentUsed = 1 AND ISNULL(ejg.IsDeleted, 0) = 0
-		LEFT JOIN JobLevel jg WITH (NOLOCK) ON COALESCE(e.JobLevelId, ejg.JobGradeId) = jg.JobLevelId 
+		LEFT JOIN dbo.[Lookup] AS l WITH (NOLOCK) ON l.Code = 'JT'
+		LEFT JOIN dbo.LookupData AS jt WITH (NOLOCK) ON l.Id = jt.LookupId AND e.JobTitleId = jt.Id
+		LEFT JOIN HRM.dbo.JobTitle AS ejt WITH (NOLOCK) ON ejt.JobTitleId = e.JobTitleId AND ejt.IsDeleted = 0
+		LEFT JOIN dbo.Company AS c WITH (NOLOCK) ON c.CompanyId = ce.CompanyId
+		LEFT JOIN dbo.SubCompany AS sub WITH (NOLOCK) ON sub.SubCompanyId = ce.SubCompanyId
+		LEFT JOIN dbo.Employee AS eu WITH (NOLOCK) ON eu.EmpId = u.PICEmpId
+		LEFT JOIN dbo.Employee AS ed WITH (NOLOCK) ON ed.EmpId = d.PICEmpId
+		LEFT JOIN dbo.Employee AS eg WITH (NOLOCK) ON eg.EmpId = g.PICEmpId
+		LEFT JOIN HRM.dbo.EmployeeManagementGrade AS em WITH (NOLOCK) ON em.EmpId = e.EmpId AND em.IsCurrentUsed = 1 AND ISNULL(em.IsDeleted, 0) = 0
+		LEFT JOIN HRM.dbo.ManagementGrade AS mg WITH (NOLOCK) ON mg.ManagementGradeId = em.ManagementGradeId AND ISNULL(mg.IsDeleted, 0) = 0
+		LEFT JOIN dbo.ManagementLevel AS ml WITH (NOLOCK) ON e.ManagementLevelId = ml.ManagementLevelId
+		LEFT JOIN HRM.dbo.EmployeeJobGrade AS ejg WITH (NOLOCK) ON ejg.EmpId = e.EmpId AND ejg.IsCurrentUsed = 1 AND ISNULL(ejg.IsDeleted, 0) = 0
+		LEFT JOIN dbo.JobLevel AS jg WITH (NOLOCK) ON COALESCE(e.JobLevelId, ejg.JobGradeId) = jg.JobLevelId 
 		LEFT JOIN dbo.Country AS ct WITH (NOLOCK) ON ct.CountryCode = c.CountryCode
 		LEFT JOIN dbo.SalaryStructureDetail AS std WITH (NOLOCK) ON std.JobLevelId = e.JobLevelId 
 			AND ce.SalaryStructureId = std.SalaryStructureId
-		LEFT JOIN SystemConfigs scc ON [Key] = 'Currency' 
-			AND scc.CompanyId = ce.CompanyId  
-		LEFT JOIN Country AS ect (NOLOCK) ON s.CountryCode = ect.CountryCode
+		LEFT JOIN dbo.SystemConfigs AS scc ON [Key] = 'Currency'
+			AND scc.CompanyId = ce.CompanyId
+		LEFT JOIN dbo.Country AS ect (NOLOCK) ON s.CountryCode = ect.CountryCode
 	WHERE 
 		(@enable IS NULL OR (ISNULL(ISNULL(ce.isDeleted, e.isDeleted), 0) = 0 AND COALESCE(ce.Enabled, e.Enabled) = @enable))
 		AND (@isDelete IS NULL OR ISNULL(ISNULL(ce.isDeleted, e.isDeleted), 0) = @isDelete)
@@ -171,14 +173,20 @@ BEGIN
 		AND (ISNULL( @teamIds, '') = ''  OR COALESCE(ce.GroupId, e.GroupId) IN (SELECT GroupId FROM @GroupsList))
 		AND (ISNULL( @companyIds, '') = '' OR ce.CompanyId IN (SELECT CompanyId FROM @CompaniesList))
 		AND (
-				@isCtrID IS NULL
-				OR (@isCtrID = 1 AND e.CtrID IS NOT NULL)
-				OR (@isCtrID = 0 AND e.CtrID IS NULL)
-			)
+			@isCtrID IS NULL
+			OR (@isCtrID = 1 AND e.CtrID IS NOT NULL)
+			OR (@isCtrID = 0 AND e.CtrID IS NULL)
+		)
 		AND (
 			@isOutsource IS NULL
 			OR g.IsOutsource = @isOutsource
 		)
+        AND (
+            @hasPermissionViewAll = 1
+            OR u.PICEmpId = @actorId
+            OR d.PICEmpId = @actorId
+            OR g.PICEmpId = @actorId
+        )
 
 	SELECT @totalRow = COUNT(*) FROM @Result
 
