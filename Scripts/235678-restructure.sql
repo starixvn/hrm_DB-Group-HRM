@@ -74,6 +74,13 @@ set ce.Code = e.Code,
 from dbo.CompanyEmployee as ce
     inner join dbo.Employee as e on e.EmpId = ce.EmpId
 where ce.CompanyId in (@nexcelId, @lumiId, @nexvisionId)
+
+update e
+set e.ConfirmedDate = ce.ConfirmedDate,
+    e.ResignedDate = ce.ResignedDate
+from dbo.Employee as e
+    inner join dbo.CompanyEmployee as ce on e.EmpId = ce.EmpId
+where ce.CompanyId in (@nexcelId, @lumiId, @nexvisionId)
 go
 
 declare @tmpEmployee table (RowNum int, CompanyId smallint, EmpId int, Nickname nvarchar(50), Enabled bit, IsDeleted bit)
