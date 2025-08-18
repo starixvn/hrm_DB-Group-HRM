@@ -11,6 +11,7 @@ DB: HRM
 Revisions:
     20250403@Tim: remove param CompanyId [Redmine: #222886]
 	20250421@Mira: add new Deparment - new structure [Redmine: #221568]
+	20251808@Jay: ehnancement [Redmine: #236138]
 Param's Explanation:
 */
 BEGIN
@@ -22,6 +23,7 @@ BEGIN
 		,dep.[Name]
 		,dep.IsActive
 		,dep.AccountableArea
+		,e.CtrId AS PICCtrId
 		,e.NickName 'PICEmployeeName'
 		,u.UnitId
         ,u.Code
