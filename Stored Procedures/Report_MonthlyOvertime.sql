@@ -20,6 +20,7 @@ AS
     Revisions:
         20250403@Tim: remove section [Redmine: #222886]
         20250417@Tim: get Unit Code [Redmine: #224530]
+        20250813@Jay: change db structure [Redmine: #235678]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -76,45 +77,46 @@ BEGIN
 	ORDER BY WorkDate
 
 	INSERT INTO @tblEmployeeId (EmpId)
-	SELECT emp.EmpId
-	FROM dbo.Employee AS emp WITH (NOLOCK)
-		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
-        AND empsum.IsTopManager = 0
-		INNER JOIN @tblGroupIds AS tblgr ON emp.GroupId = tblgr.GroupId
+	SELECT ce.EmpId
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON ce.EmpId = empsum.EmpId
+			AND ce.IsSpecialUser = 0
+		INNER JOIN @tblGroupIds AS tblgr ON ce.GroupId = tblgr.GroupId
+		INNER JOIN Employee e (NOLOCK) ON e.UserId = ce.UserId
 		INNER JOIN (
 		SELECT EmpId
 		FROM dbo.fnc_GetEmployeeByActorId(@ActorId, 0, 1, @CompanyId)
-		) AS [member] ON emp.EmpId = [member].EmpId
+		) AS [member] ON ce.EmpId = [member].EmpId
 	WHERE (
 			@EmployeeStatusId IS NULL
 			OR (
 				@EmployeeStatusId = @Enable
-				AND emp.[Enabled] = 1
-				AND emp.isDeleted = 0
+				AND ce.[Enabled] = 1
+				AND ce.isDeleted = 0
 				)
 			OR (
 				@EmployeeStatusId = @Disabled
-				AND emp.[Enabled] = 0
-				AND emp.isDeleted = 0
+				AND ce.[Enabled] = 0
+				AND ce.isDeleted = 0
 				)
 			OR (
 				@EmployeeStatusId = @Deleted
-				AND emp.isDeleted = 1
+				AND ce.isDeleted = 1
 				)
 			)
 		AND (
-			emp.NickName LIKE '%' + ISNULL(@Employee, '') + '%'
-			OR emp.FullName LIKE '%' + ISNULL(@Employee, '') + '%'
+			ce.NickName LIKE '%' + ISNULL(@Employee, '') + '%'
+			OR e.FullName LIKE '%' + ISNULL(@Employee, '') + '%'
 			)
 		AND (
 			@IsLocal IS NULL
 			OR empsum.IsLocal = @IsLocal
 			)
 
-	SELECT emp.EmpId
-		,emp.Code
-		,emp.NickName
-		,emp.FullName
+	SELECT ce.EmpId
+		,ce.Code
+		,ce.NickName
+		,e.FullName
         ,gr.Code AS TeamCode
 		,gr.[Name] AS TeamName
 		,dep.Code AS DepartmentCode
@@ -136,15 +138,16 @@ BEGIN
 		,ot.[Status] AS StatusId
 	FROM @tblDate AS tmp
 		INNER JOIN dbo.OTDailyRequest AS ot WITH (NOLOCK) ON tmp.WorkDate = ot.OvertimeDate
-		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON ot.EmpId = emp.EmpId
-		INNER JOIN @tblEmployeeId AS empid ON emp.EmpId = empid.EmpId
-		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId
+		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ot.EmpId = ce.EmpId
+		INNER JOIN Employee e (NOLOCK) ON e.UserId = ce.UserId
+		INNER JOIN @tblEmployeeId AS empid ON ce.EmpId = empid.EmpId
+		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON ce.GroupId = gr.GroupId
 		INNER JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId =  gr.DepartmentId
         INNER JOIN dbo.Unit AS u WITH (NOLOCK) ON dep.UnitId = u.UnitId
-		LEFT JOIN dbo.EmployeeCalendar AS empca WITH (NOLOCK) ON emp.EmpId = empca.EmpId
+		LEFT JOIN dbo.EmployeeCalendar AS empca WITH (NOLOCK) ON ce.EmpId = empca.EmpId
 		AND ot.OvertimeDate = empca.WorkDate
 		LEFT JOIN dbo.[Shift] AS s WITH (NOLOCK) ON s.ShiftId = ot.[Schedule]
     WHERE ot.[Status] IN (@VerifyStatusId, @ApproveStatusId, @ProcessStatusId)
 	ORDER BY tmp.WorkDate
-		,emp.NickName
+		,ce.NickName
 END

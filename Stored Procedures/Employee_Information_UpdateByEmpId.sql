@@ -37,6 +37,7 @@ AS
 
     Revisions:
         20250722@Tim: remove skype
+        20250813@Jay: change db structure [Redmine: #235678]
     Param's Explanation:
 */
 BEGIN
@@ -69,23 +70,29 @@ BEGIN
 			,Qualification AS '@Qualification'
 			,Major AS '@Major'
 			,CountryCode AS '@CountryCode'
-		FROM dbo.Employee AS emp WITH (NOLOCK)
-			INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
-		WHERE emp.EmpId = @EmpId
+		FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+			INNER JOIN Employee e (NOLOCK) ON e.UserId = ce.UserId
+			INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON ce.EmpId = empsum.EmpId
+		WHERE ce.EmpId = @EmpId
 		FOR XML PATH('Row')
 			,TYPE
 		)
 	SET @logOldData = REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"')
 
+	UPDATE dbo.CompanyEmployee WITH (ROWLOCK)
+	SET Email = @Email
+		,ModifiedDate = GETDATE()
+		,ModifiedBy = @ModifiedBy
+	WHERE EmpId = @EmpId
+
+	DECLARE @UserId INT = (SELECT UserId FROM CompanyEmployee WHERE EmpId = @EmpId) 
+
 	UPDATE dbo.Employee WITH (ROWLOCK)
 	SET DOB = @DOB
-		,Email = @Email
 		,Phone = @Phone
 		,Gender = @Gender
 		,LetsTalk = @LetsTalk
 		,Marriage = @Marriage
-		,ModifiedDate = GETDATE()
-		,ModifiedBy = @ModifiedBy
 		,PermanentAddress = @PermanentAddress
 		,CurrentAddress = @CurrentAddress
 		,IdCardNumber = @IdCardNumber
@@ -101,7 +108,7 @@ BEGIN
 		,HomePhone = @HomePhone
 		,Qualification = @Qualification
 		,Major = @Major
-	WHERE EmpId = @EmpId
+	WHERE UserId = @UserId
 
 	UPDATE dbo.EmployeeSummary WITH (ROWLOCK)
 	SET CountryCode = @CountryCode
@@ -130,9 +137,10 @@ BEGIN
 			,Qualification AS '@Qualification'
 			,Major AS '@Major'
 			,CountryCode AS '@CountryCode'
-		FROM dbo.Employee AS emp WITH (NOLOCK)
-			INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
-		WHERE emp.EmpId = @EmpId
+		FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+			INNER JOIN Employee e (NOLOCK) ON ce.UserId = e.UserId
+			INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON ce.EmpId = empsum.EmpId
+		WHERE ce.EmpId = @EmpId
 		FOR XML PATH('Row')
 			,TYPE
 		)

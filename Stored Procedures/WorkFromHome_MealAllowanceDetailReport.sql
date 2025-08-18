@@ -17,6 +17,7 @@ AS
 
     Revisions:
         20250404@Tim: remove section [Redmine: #222886]
+        20250813@Jay: change db structure [Redmine: #235678]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -44,21 +45,20 @@ BEGIN
 	END
 
 	INSERT INTO #tmpEmployee (EmpId)
-	SELECT e.EmpId
-	FROM dbo.Employee AS e WITH (NOLOCK)
-		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
-		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON e.EmpId = es.EmpId
+	SELECT ce.EmpId
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON ce.EmpId = es.EmpId
 	WHERE ce.CompanyId = @CompanyId
         AND (
 			@EmployeeId IS NULL
-			OR e.EmpId = @EmployeeId
+			OR ce.EmpId = @EmployeeId
 			)
 		AND (
 			ISNULL(@TeamIds, '') = ''
 			OR EXISTS (
 				SELECT 1
 				FROM #tmpTeam AS tbl WITH (NOLOCK)
-				WHERE e.GroupId = tbl.GroupId
+				WHERE ce.GroupId = tbl.GroupId
 				)
 			)
 		AND (
@@ -154,26 +154,27 @@ BEGIN
 		,a.OutFixed
 		,a.TotalWorkHours
 		,a.TotalDays
-		,e.EmpId
-		,e.Code
+		,ce.EmpId
+		,ce.Code
 		,e.FullName
-		,e.NickName
+		,ce.NickName
 		,g.GroupId AS TeamId
         ,g.Code AS TeamCode
 		,g.[Name] AS TeamName
 		,dep.Code AS DepartmentCode
 		,dep.[Name] AS DepartmentName
 	FROM #tmpEmpAttandance AS a WITH (NOLOCK)
-		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON a.EmpId = e.EmpId
-		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON e.EmpId = es.EmpId
-		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON g.GroupId = e.GroupId
+		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON a.EmpId = ce.EmpId
+		INNER JOIN Employee e (NOLOCK) ON e.UserId = ce.UserId
+		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON ce.EmpId = es.EmpId
+		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON g.GroupId = ce.GroupId
 		INNER JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId = g.DepartmentId
 		LEFT JOIN dbo.[Shift] AS s WITH (NOLOCK) ON s.ShiftId = a.ShiftId
         AND s.CompanyId = @CompanyId
 	ORDER BY dep.Code
 		,dep.[Name]
 		,g.[Name]
-		,e.Code
+		,ce.Code
 		,a.WorkDate
 
 	DROP TABLE #tmpEmployee

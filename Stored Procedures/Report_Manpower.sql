@@ -13,6 +13,7 @@ AS
 
     Revisions:
         20250404@Tim: remove section [Redmine: #222886]
+        20250813@Jay: change db structure [Redmine: #235678]
     Param's Explanation:
 */
 BEGIN
@@ -68,8 +69,8 @@ BEGIN
 				END) AS NewHire
 		,SUM(CASE 
 				WHEN DATEDIFF(MM, e.JoinedDate, @Dec) >= 0
-					AND e.isDeleted = 0
-					AND e.[Enabled] = 1 THEN 1
+					AND ce.isDeleted = 0
+					AND ce.[Enabled] = 1 THEN 1
 				ELSE 0
 				END) AS ActiveUser
 		,SUM(CASE 
@@ -88,8 +89,8 @@ BEGIN
 				END) AS NewHireJan
 		,SUM(CASE 
 				WHEN DATEDIFF(MM, e.JoinedDate, @Jan) >= 0
-					AND e.isDeleted = 0
-					AND e.[Enabled] = 1 THEN 1
+					AND ce.isDeleted = 0
+					AND ce.[Enabled] = 1 THEN 1
 				ELSE 0
 				END) AS ActiveUserJan
 		,SUM(CASE 
@@ -108,8 +109,8 @@ BEGIN
 				END) AS NewHireFeb
 		,SUM(CASE 
 				WHEN DATEDIFF(MM, e.JoinedDate, @Feb) >= 0
-					AND e.isDeleted = 0
-					AND e.[Enabled] = 1 THEN 1
+					AND ce.isDeleted = 0
+					AND ce.[Enabled] = 1 THEN 1
 				ELSE 0
 				END) AS ActiveUserFeb
 		,SUM(CASE 
@@ -128,8 +129,8 @@ BEGIN
 				END) AS NewHireMar
 		,SUM(CASE 
 				WHEN DATEDIFF(MM, e.JoinedDate, @Mar) >= 0
-					AND e.isDeleted = 0
-					AND e.[Enabled] = 1 THEN 1
+					AND ce.isDeleted = 0
+					AND ce.[Enabled] = 1 THEN 1
 				ELSE 0
 				END) AS ActiveUserMar
 		,SUM(CASE 
@@ -148,8 +149,8 @@ BEGIN
 				END) AS NewHireApr
 		,SUM(CASE 
 				WHEN DATEDIFF(MM, e.JoinedDate, @Apr) >= 0
-					AND e.isDeleted = 0
-					AND e.[Enabled] = 1 THEN 1
+					AND ce.isDeleted = 0
+					AND ce.[Enabled] = 1 THEN 1
 				ELSE 0
 				END) AS ActiveUserApr
 		,SUM(CASE 
@@ -168,8 +169,8 @@ BEGIN
 				END) AS NewHireMay
 		,SUM(CASE 
 				WHEN DATEDIFF(MM, e.JoinedDate, @May) >= 0
-					AND e.isDeleted = 0
-					AND e.[Enabled] = 1 THEN 1
+					AND ce.isDeleted = 0
+					AND ce.[Enabled] = 1 THEN 1
 				ELSE 0
 				END) AS ActiveUserMay
 		,SUM(CASE 
@@ -188,8 +189,8 @@ BEGIN
 				END) AS NewHireJun
 		,SUM(CASE 
 				WHEN DATEDIFF(MM, e.JoinedDate, @Jun) >= 0
-					AND e.isDeleted = 0
-					AND e.[Enabled] = 1 THEN 1
+					AND ce.isDeleted = 0
+					AND ce.[Enabled] = 1 THEN 1
 				ELSE 0
 				END) AS ActiveUserJun
 		,SUM(CASE 
@@ -208,8 +209,8 @@ BEGIN
 				END) AS NewHireJul
 		,SUM(CASE 
 				WHEN DATEDIFF(MM, e.JoinedDate, @Jul) >= 0
-					AND e.isDeleted = 0
-					AND e.[Enabled] = 1 THEN 1
+					AND ce.isDeleted = 0
+					AND ce.[Enabled] = 1 THEN 1
 				ELSE 0
 				END) AS ActiveUserJul
 		,SUM(CASE 
@@ -228,8 +229,8 @@ BEGIN
 				END) AS NewHireAug
 		,SUM(CASE 
 				WHEN DATEDIFF(MM, e.JoinedDate, @Aug) >= 0
-					AND e.isDeleted = 0
-					AND e.[Enabled] = 1 THEN 1
+					AND ce.isDeleted = 0
+					AND ce.[Enabled] = 1 THEN 1
 				ELSE 0
 				END) AS ActiveUserAug
 		,SUM(CASE 
@@ -248,8 +249,8 @@ BEGIN
 				END) AS NewHireSep
 		,SUM(CASE 
 				WHEN DATEDIFF(MM, e.JoinedDate, @Sep) >= 0
-					AND e.isDeleted = 0
-					AND e.[Enabled] = 1 THEN 1
+					AND ce.isDeleted = 0
+					AND ce.[Enabled] = 1 THEN 1
 				ELSE 0
 				END) AS ActiveUserSep
 		,SUM(CASE 
@@ -268,8 +269,8 @@ BEGIN
 				END) AS NewHireOct
 		,SUM(CASE 
 				WHEN DATEDIFF(MM, e.JoinedDate, @Oct) >= 0
-					AND e.isDeleted = 0
-					AND e.[Enabled] = 1 THEN 1
+					AND ce.isDeleted = 0
+					AND ce.[Enabled] = 1 THEN 1
 				ELSE 0
 				END) AS ActiveUserOct
 		,SUM(CASE 
@@ -288,8 +289,8 @@ BEGIN
 				END) AS NewHireNov
 		,SUM(CASE 
 				WHEN DATEDIFF(MM, e.JoinedDate, @Nov) >= 0
-					AND e.isDeleted = 0
-					AND e.[Enabled] = 1 THEN 1
+					AND ce.isDeleted = 0
+					AND ce.[Enabled] = 1 THEN 1
 				ELSE 0
 				END) AS ActiveUserNov
 		,SUM(CASE 
@@ -308,13 +309,13 @@ BEGIN
 				END) AS NewHireDec
 		,SUM(CASE 
 				WHEN DATEDIFF(MM, e.JoinedDate, @Dec) >= 0
-					AND e.isDeleted = 0
-					AND e.[Enabled] = 1 THEN 1
+					AND ce.isDeleted = 0
+					AND ce.[Enabled] = 1 THEN 1
 				ELSE 0
 				END) AS ActiveUserDec
-	FROM dbo.Employee AS e WITH (NOLOCK)
-		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
-        INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON e.GroupId = g.GroupId
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		INNER JOIN Employee e (NOLOCK) ON e.UserId = ce.UserId
+        INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON ce.GroupId = g.GroupId
 		INNER JOIN dbo.Department AS dept WITH (NOLOCK) ON g.DepartmentId = dept.DepartmentId
 	WHERE ce.CompanyId = @CompanyId
         AND g.IsDeleted = 0

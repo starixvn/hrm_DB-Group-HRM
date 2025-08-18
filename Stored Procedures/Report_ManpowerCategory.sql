@@ -13,6 +13,7 @@ AS
 
     Revisions:
         20250404@Tim: remove section [Redmine: #222886]
+        20250813@Jay: change db structure [Redmine: #235678]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -99,12 +100,12 @@ BEGIN
 						) THEN 1
 				ELSE 0
 				END) AS Worker
-	FROM dbo.Employee AS e WITH (NOLOCK)
-		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
-        INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON e.EmpId = es.EmpId
-		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON e.GroupId = g.GroupId
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		INNER JOIN Employee e (NOLOCK) ON e.UserId = ce.UserId
+        INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON ce.EmpId = es.EmpId
+		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON ce.GroupId = g.GroupId
 		INNER JOIN dbo.Department AS dept WITH (NOLOCK) ON g.DepartmentId = dept.DepartmentId
-		LEFT JOIN dbo.LookupData AS job WITH (NOLOCK) ON e.JobTitleId = job.Id
+		LEFT JOIN dbo.LookupData AS job WITH (NOLOCK) ON ce.JobTitleId = job.Id
         AND job.CompanyId = @CompanyId
 	WHERE ce.CompanyId = @CompanyId
         AND g.IsDeleted = 0

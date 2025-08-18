@@ -20,6 +20,7 @@ AS
     Revisions:
         20250404@Tim: remove section [Redmine: #222886]
         20250806@Tim: fix wrong hospital leave type
+        20250813@Jay: change db structure [Redmine: #235678]
 */
 BEGIN
 	DECLARE @employeeIds VARCHAR(MAX)
@@ -57,34 +58,35 @@ BEGIN
 	END
 
 	INSERT INTO #tblEmployeeIds (EmployeeId)
-	SELECT DISTINCT emp.EmpId
-	FROM dbo.Employee AS emp WITH (NOLOCK)
-		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
-		AND empsum.IsTopManager = 0
+	SELECT DISTINCT ce.EmpId
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON ce.EmpId = empsum.EmpId
+		INNER JOIN Employee e (NOLOCK) ON e.UserId = ce.UserId
+		AND ce.IsSpecialUser = 0
 		INNER JOIN (
 		SELECT EmpId
 		FROM dbo.fnc_GetEmployeeByActorId(@ActorId, 0, 1, @CompanyId)
-		) AS [member] ON emp.EmpId = [member].EmpId
+		) AS [member] ON ce.EmpId = [member].EmpId
 	WHERE (
 			@EmployeeStatusId IS NULL
 			OR (
 				@EmployeeStatusId = @Enable
-				AND emp.[Enabled] = 1
-				AND emp.isDeleted = 0
+				AND ce.[Enabled] = 1
+				AND ce.isDeleted = 0
 				)
 			OR (
 				@EmployeeStatusId = @Disabled
-				AND emp.[Enabled] = 0
-				AND emp.isDeleted = 0
+				AND ce.[Enabled] = 0
+				AND ce.isDeleted = 0
 				)
 			OR (
 				@EmployeeStatusId = @Deleted
-				AND emp.isDeleted = 1
+				AND ce.isDeleted = 1
 				)
 			)
 		AND (
-			emp.NickName LIKE '%' + ISNULL(@Employee, '') + '%'
-			OR emp.FullName LIKE '%' + ISNULL(@Employee, '') + '%'
+			ce.NickName LIKE '%' + ISNULL(@Employee, '') + '%'
+			OR e.FullName LIKE '%' + ISNULL(@Employee, '') + '%'
 			)
 		AND (
 			@isLocal IS NULL
@@ -93,7 +95,7 @@ BEGIN
 		AND EXISTS (
 			SELECT 1
 			FROM #tblGroupIds AS tbl WITH (NOLOCK)
-			WHERE tbl.GroupId = emp.GroupId
+			WHERE tbl.GroupId = ce.GroupId
 			)
 
 	SELECT @employeeIds = COALESCE(@employeeIds + ',', '') + CAST(EmployeeId AS VARCHAR(20))
@@ -104,10 +106,10 @@ BEGIN
 		,@toDate = @toDate
 		,@empIds = @employeeIds
 
-	SELECT emp.EmpId
-		,emp.Code
-		,emp.FullName
-		,emp.NickName
+	SELECT ce.EmpId
+		,ce.Code
+		,e.FullName
+		,ce.NickName
         ,gr.Code AS TeamCode
 		,gr.[Name] AS TeamName
 		,dept.Code AS DepartmentCode
@@ -299,29 +301,30 @@ BEGIN
 		,SUM(ISNULL(ot.OffHours, 0)) AS OffOvertimeHours
 		,SUM(ISNULL(ot.PublicHours, 0)) AS PublicOvertimeHours
 		,SUM(ISNULL(ot.SpecialHours, 0)) AS SpecialOvertimeHours
-	FROM dbo.Employee AS emp WITH (NOLOCK)
-		INNER JOIN #tblEmployeeIds AS empid WITH (NOLOCK) ON emp.EmpId = empid.EmployeeId
-		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
-		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		INNER JOIN Employee e (NOLOCK) ON ce.UserId = e.UserId
+		INNER JOIN #tblEmployeeIds AS empid WITH (NOLOCK) ON ce.EmpId = empid.EmployeeId
+		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON ce.EmpId = empsum.EmpId
+		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON ce.GroupId = gr.GroupId
 		INNER JOIN dbo.Department AS dept WITH (NOLOCK) ON gr.DepartmentId = dept.DepartmentId
-		INNER JOIN dbo.tmpEmployeeCalendar AS empca WITH (NOLOCK) ON emp.EmpId = empca.EmpId
+		INNER JOIN dbo.tmpEmployeeCalendar AS empca WITH (NOLOCK) ON ce.EmpId = empca.EmpId
 		AND empca.WorkDate BETWEEN @FromDate AND @ToDate
-		INNER JOIN dbo.EmployeeAttendance AS empatt WITH (NOLOCK) ON emp.EmpId = empatt.EmpId
+		INNER JOIN dbo.EmployeeAttendance AS empatt WITH (NOLOCK) ON ce.EmpId = empatt.EmpId
 		AND empatt.AttendanceDate = empca.WorkDate
-		LEFT JOIN dbo.OTDailyRequest AS ot WITH (NOLOCK) ON ot.EmpId = emp.EmpId
+		LEFT JOIN dbo.OTDailyRequest AS ot WITH (NOLOCK) ON ot.EmpId = ce.EmpId
 		AND empca.WorkDate = ot.OvertimeDate
 		AND ot.[Status] IN (@PendingStatusId, @VerifiedStatusId, @ApprovedStatusId, @ProcessedStatusId)
-	GROUP BY emp.EmpId
-		,emp.Code
-		,emp.NickName
-		,emp.FullName
+	GROUP BY ce.EmpId
+		,ce.Code
+		,ce.NickName
+		,e.FullName
 		,empsum.WorkingDays
 		,empsum.WorkingHours
         ,gr.Code
 		,gr.[Name]
         ,dept.Code
 		,dept.[Name]
-	ORDER BY emp.NickName
+	ORDER BY ce.NickName
 
 	DROP TABLE #tblGroupIds
 	

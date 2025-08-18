@@ -19,6 +19,7 @@ AS
 
     Revisions:
         20250417@Tim: get Unit Code [Redmine: #224530]
+        20250813@Jay: change db structure [Redmine: #235678]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -86,33 +87,34 @@ BEGIN
 	END
 
 	INSERT INTO #tblEmployeeIds (EmpId)
-	SELECT emp.EmpId
-	FROM dbo.Employee AS emp WITH (NOLOCK)
-		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
+	SELECT ce.EmpId
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		INNER JOIN Employee e (NOLOCK) ON e.UserId = ce.UserId
+		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON ce.EmpId = empsum.EmpId
 		INNER JOIN (
 		SELECT EmpId
 		FROM dbo.fnc_GetEmployeeByActorId(@ActorId, 0, 1, @CompanyId)
-		) AS [member] ON emp.EmpId = [member].EmpId
+		) AS [member] ON ce.EmpId = [member].EmpId
 	WHERE (
 			@EmployeeStatusId IS NULL
 			OR (
 				@EmployeeStatusId = @Enable
-				AND emp.[Enabled] = 1
-				AND emp.isDeleted = 0
+				AND ce.[Enabled] = 1
+				AND ce.isDeleted = 0
 				)
 			OR (
 				@EmployeeStatusId = @Disabled
-				AND emp.[Enabled] = 0
-				AND emp.isDeleted = 0
+				AND ce.[Enabled] = 0
+				AND ce.isDeleted = 0
 				)
 			OR (
 				@EmployeeStatusId = @Deleted
-				AND emp.isDeleted = 1
+				AND ce.isDeleted = 1
 				)
 			)
 		AND (
-			emp.NickName LIKE '%' + ISNULL(@Employee, '') + '%'
-			OR emp.FullName LIKE '%' + ISNULL(@Employee, '') + '%'
+			ce.NickName LIKE '%' + ISNULL(@Employee, '') + '%'
+			OR e.FullName LIKE '%' + ISNULL(@Employee, '') + '%'
 			)
 		AND (
 			@IsLocal IS NULL
@@ -121,7 +123,7 @@ BEGIN
 		AND EXISTS (
 			SELECT 1
 			FROM #tblGroupIds AS tbl
-			WHERE tbl.GroupId = emp.GroupId
+			WHERE tbl.GroupId = ce.GroupId
 			)
 
 	SELECT @FromDate = CONVERT(VARCHAR(10), @FromDate, 111)
@@ -131,7 +133,7 @@ BEGIN
 	SELECT req.RequestId
 	FROM dbo.WorkingTimeRequest AS req WITH (NOLOCK)
 		INNER JOIN #tblEmployeeIds AS empid ON req.EmpId = empid.EmpId
-		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON emp.EmpId = empid.EmpId
+		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = empid.EmpId
 		LEFT JOIN dbo.LateInEarlyOutRequest AS inout WITH (NOLOCK) ON req.RequestId = inout.RequestId
 		LEFT JOIN dbo.LeaveRequest AS leavereq WITH (NOLOCK) ON req.RequestId = leavereq.RequestId
 		LEFT JOIN dbo.KeepInViewRequest AS kiv WITH (NOLOCK) ON req.RequestId = kiv.RequestId
@@ -479,8 +481,8 @@ BEGIN
 			) AS ToShift
 		,lv.LeaveTypeId
 		,lv.[Name] AS LeaveType
-		,e.EmpId AS EmployeeId
-		,e.NickName
+		,ce.EmpId AS EmployeeId
+		,ce.NickName
 		,e.FullName
         ,g.Code AS TeamCode
 		,g.[Name] AS TeamName
@@ -488,8 +490,9 @@ BEGIN
 		,dep.[Name] AS DepartmentName
         ,u.Code AS UnitCode
 	FROM dbo.WorkingTimeRequest AS r WITH (NOLOCK)
-		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.EmpId = r.EmpId
-		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON e.GroupId = g.GroupId
+		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = r.EmpId
+		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.UserId = ce.UserId
+		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON ce.GroupId = g.GroupId
 		INNER JOIN dbo.Department AS dep WITH (NOLOCK ) ON dep.DepartmentId = g.DepartmentId
         INNER JOIN dbo.Unit AS u WITH (NOLOCK) ON dep.UnitId = u.UnitId
 		INNER JOIN #tblRequestIds AS rq ON r.RequestId = rq.RequestId
@@ -521,3 +524,4 @@ BEGIN
 
 	DROP TABLE #tblRequestIds
 END
+

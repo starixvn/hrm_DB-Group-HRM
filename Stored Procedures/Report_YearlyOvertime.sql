@@ -18,6 +18,7 @@ AS
 
     Revisions:
         20250404@Tim: remove section [Redmine: #222886]
+        20250813@Jay: change db structure [Redmine: #235678]
     Param's Explanation:
         @MonthXml: <ROOT><Row Month='{0}' FromDate='{1}' ToDate='{2}' /></ROOT>
 */
@@ -75,34 +76,35 @@ BEGIN
 	EXEC sp_xml_removedocument @DocHandler
 
 	INSERT INTO #tblEmployeeIds (EmpId)
-	SELECT emp.EmpId
-	FROM dbo.Employee AS emp WITH (NOLOCK)
-		INNER JOIN #tblGroupIds AS tblgr WITH (NOLOCK) ON emp.GroupId = tblgr.GroupId
-		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId AND empsum.IsTopManager = 0
+	SELECT ce.EmpId
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		INNER JOIN Employee e (NOLOCK) ON ce.UserId = e.UserId
+		INNER JOIN #tblGroupIds AS tblgr WITH (NOLOCK) ON ce.GroupId = tblgr.GroupId
+		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON ce.EmpId = empsum.EmpId AND ce.IsSpecialUser = 0
 		INNER JOIN (
 		SELECT EmpId
 		FROM dbo.fnc_GetEmployeeByActorId(@ActorId, 0, 1, @CompanyId)
-		) AS [member] ON emp.EmpId = [member].EmpId
+		) AS [member] ON ce.EmpId = [member].EmpId
 	WHERE (
 			@EmployeeStatusId IS NULL
 			OR (
 				@EmployeeStatusId = @Enable
-				AND emp.[Enabled] = 1
-				AND emp.isDeleted = 0
+				AND ce.[Enabled] = 1
+				AND ce.isDeleted = 0
 				)
 			OR (
 				@EmployeeStatusId = @Disabled
-				AND emp.[Enabled] = 0
-				AND emp.isDeleted = 0
+				AND ce.[Enabled] = 0
+				AND ce.isDeleted = 0
 				)
 			OR (
 				@EmployeeStatusId = @Deleted
-				AND emp.isDeleted = 1
+				AND ce.isDeleted = 1
 				)
 			)
 		AND (
-			emp.NickName LIKE '%' + ISNULL(@Employee, '') + '%'
-			OR emp.FullName LIKE '%' + ISNULL(@Employee, '') + '%'
+			ce.NickName LIKE '%' + ISNULL(@Employee, '') + '%'
+			OR e.FullName LIKE '%' + ISNULL(@Employee, '') + '%'
 			)
 		AND (
 			@IsLocal IS NULL
@@ -124,8 +126,8 @@ BEGIN
 		,SUM(req.PublicHours)
 		,SUM(ISNULL(req.SpecialHours, 0))
 	FROM dbo.OTDailyRequest AS req WITH (NOLOCK)
-		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON req.EmpId = emp.EmpId
-		INNER JOIN #tblEmployeeIds AS empid ON emp.EmpId = empid.EmpId
+		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON req.EmpId = ce.EmpId
+		INNER JOIN #tblEmployeeIds AS empid ON ce.EmpId = empid.EmpId
 		INNER JOIN #tblMonth AS tbl ON req.OvertimeDate BETWEEN tbl.FromDate
 			AND tbl.ToDate
 	WHERE req.[Status] IN (@ApprovedStatusId, @ProcessedStatusId)
@@ -154,10 +156,10 @@ BEGIN
 		,ISNULL([11], 0) AS Nov
 		,ISNULL([12], 0) AS [Dec]
 	FROM (
-		SELECT emp.EmpId
-			,emp.Code
-			,emp.NickName
-			,emp.FullName
+		SELECT ce.EmpId
+			,ce.Code
+			,ce.NickName
+			,e.FullName
 			,gr.GroupId AS TeamId
 			,gr.Code AS TeamCode
 			,gr.[Name] AS TeamName
@@ -165,12 +167,13 @@ BEGIN
             ,dept.[Name] AS DepartmentName
 			,cl.[Month] AS [Month]
 			,(otsum.NormalHours + otsum.OffHours + otsum.PublicHours + otsum.SpecialHours) AS TotalHours
-		FROM dbo.Employee AS emp WITH (NOLOCK)
-			INNER JOIN #tblEmployeeIds AS empid ON emp.EmpId = empid.EmpId
-			INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId
+		FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+			INNER JOIN Employee e (NOLOCK) ON e.UserId = ce.UserId
+			INNER JOIN #tblEmployeeIds AS empid ON ce.EmpId = empid.EmpId
+			INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON ce.GroupId = gr.GroupId
 			INNER JOIN dbo.Department AS dept WITH (NOLOCK) ON gr.DepartmentId = dept.DepartmentId
 			CROSS JOIN #tblMonth AS cl
-			INNER JOIN #tblOvertimeSummary AS otsum ON emp.EmpId = otsum.EmpId
+			INNER JOIN #tblOvertimeSummary AS otsum ON ce.EmpId = otsum.EmpId
 			AND cl.[Month] = otsum.[Month]
 		) AS tmp
 	PIVOT(MAX(TotalHours) FOR [Month] IN ([1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [11], [12])) AS tmp2

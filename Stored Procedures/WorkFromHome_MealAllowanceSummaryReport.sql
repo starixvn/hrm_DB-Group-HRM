@@ -17,6 +17,7 @@ AS
 
     Revisions:
         20250404@Tim: remove section [Redmine: #222886]
+        20250813@Jay: change db structure [Redmine: #235678]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -44,22 +45,21 @@ BEGIN
 	END
 
 	INSERT INTO #tmpEmployee (EmpId)
-	SELECT e.EmpId
-	FROM dbo.Employee AS e WITH (NOLOCK)
-		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
-        INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON e.EmpId = es.EmpId
-        AND es.IsTopManager = 0
+	SELECT ce.EmpId
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+        INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON ce.EmpId = es.EmpId
+        AND ce.IsSpecialUser = 0
 	WHERE ce.CompanyId = @CompanyId
         AND (
 			@EmployeeId IS NULL
-			OR e.EmpId = @EmployeeId
+			OR ce.EmpId = @EmployeeId
 			)
 		AND (
 			ISNULL(@TeamIds, '') = ''
 			OR EXISTS (
 				SELECT 1
 				FROM #tmpTeam AS tbl WITH (NOLOCK)
-				WHERE e.GroupId = tbl.GroupId
+				WHERE ce.GroupId = tbl.GroupId
 				)
 			)
 		AND (
@@ -135,9 +135,9 @@ BEGIN
 
 	SELECT att.TotalDays
 		,att.EmpId
-		,e.Code
+		,ce.Code
 		,e.FullName
-		,e.NickName
+		,ce.NickName
 		,g.GroupId AS TeamId
         ,g.Code AS TeamCode
 		,g.[Name] AS TeamName
@@ -149,13 +149,14 @@ BEGIN
 		FROM #tmpEmpAttandance WITH (NOLOCK)
 		GROUP BY EmpId
 		) AS att
-		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON att.EmpId = e.EmpId
-		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON e.EmpId = es.EmpId
-		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON g.GroupId = e.GroupId
+		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON att.EmpId = ce.EmpId
+		INNER JOIN Employee e (NOLOCK) ON e.UserId = ce.UserId
+		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON ce.EmpId = es.EmpId
+		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON g.GroupId = ce.GroupId
 		INNER JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId = g.DepartmentId
 	ORDER BY dep.[Name]
 		,g.[Name]
-		,e.Code
+		,ce.Code
 
 	DROP TABLE #tmpEmployee
 
