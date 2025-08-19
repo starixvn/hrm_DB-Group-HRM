@@ -64,8 +64,7 @@ AS
 		WHERE
 			(
 				e.CtrId IS NOT NULL AND
-				safeDates.ResignedDate >= @FromDate
-				OR (safeDates.ResignedDate IS NULL AND ISNULL(ce.Enabled, e.Enabled) = 1)
+				(safeDates.ResignedDate >= @FromDate OR (safeDates.ResignedDate IS NULL AND ISNULL(ce.Enabled, e.Enabled) = 1))
 			)
 	)
 
