@@ -1,17 +1,20 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[Employee_Insert_CheckExist] @Nickname NVARCHAR(20)
-	,@Code VARCHAR(20)
-	,@CompanyId SMALLINT
+ALTER PROCEDURE [dbo].[Employee_Insert_CheckExist]
+(
+    @CompanyId SMALLINT
+    ,@Nickname NVARCHAR(20)
+    ,@Code VARCHAR(20)
+)
 AS
 /*
-Created: 20250306@Tim
-Task: check code, nickname available
-DB: HRM
-Original:
+    Created: 20250306@Tim
+    Task: check code, nickname available
+    DB: bodb_HRM
 
-Revisions:
-    20250306@Tim: initial - [Redmine: #217976]
+    Revisions:
+        20250306@Tim: initial [Redmine: #217976]
+        20250819@Tim: restructure [Redmine: #235678]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -20,12 +23,12 @@ BEGIN
 		,@Nickname_exist NVARCHAR(20)
 		,@FullName_exist NVARCHAR(50)
 
-	SELECT TOP 1 @EmpId_exist = e.EmpId
-		,@FullName_exist = FullName
-		,@Nickname_exist = Nickname
-	FROM dbo.Employee AS e WITH (NOLOCK)
-		INNER JOIN CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = e.EmpId 
-	WHERE Code = @Code
+	SELECT TOP 1 @EmpId_exist = ce.EmpId
+		,@FullName_exist = e.FullName
+		,@Nickname_exist = ce.Nickname
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+        INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON ce.UserId = e.UserId
+	WHERE ce.Code = @Code
 		AND ce.CompanyId = @CompanyId
 
 	IF ISNULL(@EmpId_exist, 0) <> 0
@@ -36,22 +39,22 @@ BEGIN
 		RETURN
 	END
 
-	SELECT TOP 1 @EmpId_exist = e.EmpId
-		,@FullName_exist = FullName
-		,@Nickname_exist = Nickname
-	FROM dbo.Employee AS e WITH (NOLOCK)
-		INNER JOIN CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = E.EmpId 
-	WHERE NickName = @Nickname
+	SELECT TOP 1 @EmpId_exist = ce.EmpId
+		,@FullName_exist = e.FullName
+		,@Nickname_exist = ce.Nickname
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+        INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON ce.UserId = e.UserId
+	WHERE ce.Nickname = @Nickname
 		AND ce.CompanyId = @CompanyId
 		AND (
-			e.isDeleted = 0
-			OR e.[Enabled] = 1
+			ce.IsDeleted = 0
+			OR ce.[Enabled] = 1
 			)
 
 	IF ISNULL(@EmpId_exist, 0) <> 0
 	BEGIN
 		SELECT 2 AS [Code]
-			,N'Nickname  ' + @Nickname_exist + '  has been assigned to ' + @FullName_exist AS [Message]
+			,N'Nickname ' + @Nickname_exist + ' has been assigned to ' + @FullName_exist AS [Message]
 
 		RETURN
 	END

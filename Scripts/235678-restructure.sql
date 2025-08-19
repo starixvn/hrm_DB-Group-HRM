@@ -1,7 +1,7 @@
 USE [bodb_HRM]
 GO
 
-alter table dbo.Employee add MilitaryFromDate date, MilitaryToDate date, Username varchar(50)
+alter table dbo.Employee add MilitaryFromDate date, MilitaryToDate date
 go
 
 alter table dbo.CompanyEmployee add UserId int, Code varchar(20), Nickname nvarchar(20), JobTitleId int, ManagerId int, EmployeeCard varchar(10)
@@ -16,8 +16,7 @@ set ce.UserId = ce.EmpId
 from dbo.CompanyEmployee as ce
 
 update e
-set e.Username = e.Code,
-    e.MilitaryFromDate = es.MilitaryFromDate
+set e.MilitaryFromDate = es.MilitaryFromDate
     ,e.MilitaryToDate = es.MilitaryToDate
 from dbo.Employee as e
     inner join dbo.EmployeeSummary as es on es.EmpId = e.EmpId
@@ -77,7 +76,8 @@ where ce.CompanyId in (@nexcelId, @lumiId, @nexvisionId)
 
 update e
 set e.ConfirmedDate = ce.ConfirmedDate,
-    e.ResignedDate = ce.ResignedDate
+    e.ResignedDate = ce.ResignedDate,
+    e.[Password] = ce.[Password]
 from dbo.Employee as e
     inner join dbo.CompanyEmployee as ce on e.EmpId = ce.EmpId
 where ce.CompanyId in (@nexcelId, @lumiId, @nexvisionId)
@@ -112,3 +112,20 @@ update ce
 set ce.EmpId = @newEmpId + e.RowIndex
 from dbo.CompanyEmployee as ce
     inner join @tmpResult as e on ce.CompanyId = e.CompanyId and ce.EmpId = e.EmpId
+
+ALTER TABLE dbo.CompanyEmployee DROP CONSTRAINT PK_CompanyEmployee;
+GO
+
+ALTER TABLE dbo.CompanyEmployee ADD CONSTRAINT PK_CompanyEmployee PRIMARY KEY (EmpId);
+GO
+
+CREATE NONCLUSTERED INDEX IX_CompanyEmployee_CompanyId_EmpId ON dbo.CompanyEmployee (CompanyId, EmpId);
+GO
+
+ALTER TABLE dbo.Employee DROP CONSTRAINT PK_Employee;
+GO
+
+ALTER TABLE dbo.Employee ALTER COLUMN UserId INT NOT NULL
+GO
+
+ALTER TABLE dbo.Employee ADD CONSTRAINT PK_Employee PRIMARY KEY (UserId)

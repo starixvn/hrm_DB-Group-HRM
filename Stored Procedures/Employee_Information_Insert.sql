@@ -1,111 +1,93 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[Employee_Information_Insert] @CompanyId SMALLINT
+ALTER PROCEDURE [dbo].[Employee_Information_Insert]
+(
+    @CompanyId SMALLINT
     ,@UserId INT
     ,@FullName NVARCHAR(50)
-	,@Nickname NVARCHAR(20)
-	,@Code VARCHAR(20)
-	,@TeamId INT
-	,@DomainUsername VARCHAR(50) = ''
-	,@Password NVARCHAR(100)
-	,@createBy INT
-	,@ErrCode INT = 0 OUTPUT
-	,@ErrMsg NVARCHAR(200) = '' OUTPUT
-	,@CreatedDate DATETIME
-	,@JoinDate DATETIME
+    ,@Nickname NVARCHAR(20)
+    ,@Code VARCHAR(20)
+    ,@TeamId INT
+    ,@Password NVARCHAR(100)
+    ,@CreatedDate DATETIME
+    ,@JoinDate DATETIME
+    ,@createBy INT
+    ,@ErrCode INT = 0 OUTPUT
+    ,@ErrMsg NVARCHAR(200) = '' OUTPUT
+)
 AS
 /*
-Created: 20250306@Tim
-Task: create employee
-DB: HRM
-Original:
+    Created: 20250306@Tim
+    Task: create employee
+    DB: bodb_HRM
 
-Revisions:
-    20250306@Tim: initial - [Redmine: #217976]
+    Revisions:
+        20250306@Tim: initial - [Redmine: #217976]
 	20250815@Mira: Auto generate CtrId - [Redmine: #236138]
+        20250819@Tim: restructure [Redmine: #235678]
 */
 BEGIN
 	SET NOCOUNT ON;
 
     DECLARE @MemberRole NVARCHAR(10) = 1
         ,@OldEmpId INT
-		,@MaxCtrId INT;
+	,@MaxCtrId INT;
+        ,@NewEmpId INT
 
-    SELECT @OldEmpId = MAX(e.OldEmpId)
-    FROM dbo.Employee AS e WITH (NOLOCK)
-        INNER JOIN dbo.CompanyEmployee AS c WITH (NOLOCK) ON e.EmpId = c.EmpId
-    WHERE c.CompanyId = @CompanyId
+    SELECT @OldEmpId = MAX(ce.OldEmpId)
+    FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+    WHERE ce.CompanyId = @CompanyId
 
     SET @OldEmpId = ISNULL(@OldEmpId, 0) + 1
 	SET @MaxCtrId = (SELECT MAX(CtrId) FROM Employee);
 
-	INSERT INTO dbo.Employee (
-		EmpId
+    SELECT @NewEmpId = MAX(EmpId)
+    FROM dbo.CompanyEmployee WITH (NOLOCK)
+
+    SET @NewEmpId = ISNULL(@NewEmpId, 0) + 1
+
+    INSERT INTO dbo.Employee (UserId, FullName, JoinedDate, [Password])
+    VALUES (@UserId, @FullName, @JoinDate, @Password)
+
+	INSERT INTO dbo.CompanyEmployee (
+        EmpId
+        ,CompanyId
+		,UserId
         ,Code
-		,FullName
-		,NickName
-        ,DomainUsername
-		,DOB
+		,Nickname
 		,isDeleted
 		,[Enabled]
 		,GroupId
-        ,JoinedDate
-		,[Password]
 		,CreatedDate
 		,CreatedBy
-        ,UserId
         ,OldEmpId
 		,CtrId
 		)
 	VALUES (
-		@UserId
-        ,@code
-		,@fullName
+		@NewEmpId
+        ,@CompanyId
+        ,@UserId
+        ,@Code
 		,@Nickname
-        ,@DomainUsername
-		,NULL
 		,0
 		,1
 		,@TeamId
-        ,@JoinDate
-		,@password
 		,@CreatedDate
 		,@createBy
-        ,@UserId
         ,@OldEmpId
 		,@MaxCtrId + 1
 		)
 
-    INSERT INTO dbo.CompanyEmployee (CompanyId, EmpId)
-    VALUES (@CompanyId, @UserId)
-
-	INSERT INTO dbo.EmployeeSummary (
-		EmpId
-		,IsDefaultSchedule
-		)
-	VALUES (
-		@UserId
-		,0
-		)
+	INSERT INTO dbo.EmployeeSummary (EmpId, IsDefaultSchedule)
+	VALUES (@NewEmpId, 0)
 
 	INSERT INTO dbo.EmployeeContract (EmpId)
-	VALUES (@UserId)
-
-	EXEC dbo.EmployeeRole_Insert @EmployeeId = @UserId
-		,@RoleIds = @MemberRole
-		,@ModifiedBy = @createBy
+	VALUES (@NewEmpId)
 
 	INSERT INTO dbo.EmployeeDefaultShift (EmpId)
-	VALUES (@UserId)
+	VALUES (@NewEmpId)
 
-	INSERT INTO dbo.EmployeeGroup (
-		GroupId
-		,EmpId
-		,isMainGroup
-		)
-	VALUES (
-		@TeamId
-		,@UserId
-		,1
-		)
+	EXEC dbo.EmployeeRole_Insert @EmployeeId = @NewEmpId
+		,@RoleIds = @MemberRole
+		,@ModifiedBy = @createBy
 END
