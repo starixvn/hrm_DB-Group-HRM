@@ -2,7 +2,6 @@
 
 ALTER PROCEDURE [dbo].[MailRecorder_InsRecord]
 	@AppId INT,
-	@FuncId	INT,
 	@MailTo	NVARCHAR(250),	
 	@Title NVARCHAR(250) = '',
 	@Subject NVARCHAR(250),
