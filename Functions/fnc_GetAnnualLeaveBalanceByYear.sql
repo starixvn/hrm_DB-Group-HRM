@@ -1,4 +1,4 @@
-/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="1"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" selecters="wsv_hrm" isFunction="1"></info>*/
 
 ALTER FUNCTION [dbo].[fnc_GetAnnualLeaveBalanceByYear] (
 	@EmpID INT
@@ -13,6 +13,8 @@ RETURNS NUMERIC(18, 2)
 
 	Revisions:
         20250801@Tim: fix bug pending balance = null
+		20250812@Mira: change db structure [Redmine: #235678]
+
 */
 AS
 BEGIN
@@ -29,8 +31,8 @@ BEGIN
     SELECT @CompanyId = ce.CompanyId
         ,@JoinedDate = e.JoinedDate
     FROM dbo.Employee AS e WITH (NOLOCK)
-        INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
-    WHERE e.EmpId = @EmpId
+        INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.UserId = ce.UserId
+    WHERE ce.EmpId = @EmpId
 
     SELECT @AnnualLeaveResetTimelineType = [Value]
     FROM dbo.SystemConfigs WITH (NOLOCK)

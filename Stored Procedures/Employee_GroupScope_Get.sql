@@ -143,7 +143,7 @@ BEGIN
 		e.Gender,
 		e.DOB
 	FROM dbo.Employee AS e WITH (NOLOCK)
-		INNER JOIN dbo.CompanyEmployee ce WITH (NOLOCK) ON ce.UserId = e.UserId AND (ce.IsSpecialUser IS NULL OR ce.IsSpecialUser = 0)
+		INNER JOIN dbo.CompanyEmployee ce WITH (NOLOCK) ON ce.UserId = e.UserId
 		LEFT JOIN dbo.EmployeeSummary AS s WITH (NOLOCK) ON s.EmpId = ce.EmpId
 		LEFT JOIN dbo.[Group] AS g WITH (NOLOCK) ON ce.GroupID = g.GroupID
 		LEFT JOIN dbo.[Department] AS d WITH (NOLOCK) ON d.DepartmentId = g.DepartmentId

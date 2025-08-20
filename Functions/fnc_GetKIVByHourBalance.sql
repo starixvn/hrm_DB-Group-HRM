@@ -1,4 +1,4 @@
-/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="1"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" selecters="wsv_hrm" isFunction="1"></info>*/
 
 ALTER FUNCTION [dbo].[fnc_GetKIVByHourBalance] (
 	@EmpId INT
@@ -12,6 +12,7 @@ RETURNS NUMERIC(18, 2)
 	DB: bodb_HRM
 
 	Revisions:
+			20250812@Mira: change db structure [Redmine: #235678]
 */
 AS
 BEGIN
