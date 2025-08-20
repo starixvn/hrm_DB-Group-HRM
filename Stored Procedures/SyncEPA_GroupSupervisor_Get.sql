@@ -1,17 +1,16 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
-
-
-CREATE PROCEDURE [dbo].[SyncEPA_GroupSupervisor_Get] @FromDate DATETIME = NULL
+ALTER PROCEDURE [dbo].[SyncEPA_GroupSupervisor_Get] @FromDate DATETIME = NULL
 		,@CompanyId INT
 AS
 /*
-Created: 20150921@Quinn.Vo
-Task: Get all group supervisor from change date
-DB: NexEPA
-Original: 
+	Created: 20150921@Quinn.Vo
+	Task: Get all group supervisor from change date
+	DB: NexEPA
+	Original: 
 
-Revisions:  
-Param's Explanation:
+	Revisions:  
+		- 20250818@Henry.Dinh: migrate data transfer feature id: #233310 
+	Param's Explanation:
 
 */
 BEGIN
@@ -43,19 +42,7 @@ BEGIN
 		AND r.GroupId = m.GroupId
 		AND r.ModifiedDate = m.ModifiedDate
 		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON g.GroupId = r.GroupId AND g.CompanyId = @CompanyId
-		LEFT JOIN dbo.Employee AS e WITH (NOLOCK) ON e.EmpId = r.OwnerId
+		LEFT JOIN dbo.CompanyEmployee AS e WITH (NOLOCK) ON e.EmpId = r.OwnerId
 		WHERE m.OwnerId > 0
 		ORDER BY OwnerId, GroupId
 END
-
-
-
-
-
-
-
-
-
-
-
-
