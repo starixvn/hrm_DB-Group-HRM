@@ -37,8 +37,8 @@ BEGIN
         ,@JoinedDate = JoinedDate
     FROM dbo.CompanyEmployee ce WITH (NOLOCK)
         INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.UserId = ce.UserId
-    WHERE EmpId = @EmpId
-		AND [Enabled] = 1
+    WHERE ce.EmpId = @EmpId
+		AND ce.[Enabled] = 1
 
     SELECT @AnnualLeaveResetTimelineType = [Value]
     FROM dbo.SystemConfigs WITH (NOLOCK)
