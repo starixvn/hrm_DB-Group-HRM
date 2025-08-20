@@ -595,7 +595,7 @@ BEGIN
 		SELECT ce.Code
 			,ce.EmpId
 			,FullName
-			,NickName
+			,ce.NickName
 			,g.[Name] [Team]
 			,g.Code [TeamCode]
 			,g.[Rank]
