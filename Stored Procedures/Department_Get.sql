@@ -32,6 +32,7 @@ BEGIN
 		,u.UnitId
         ,u.Code
 		,u.[Name]
+        ,u.PICEmpId
 	FROM dbo.Department AS dep WITH (NOLOCK)
 		LEFT JOIN dbo.Unit AS u WITH (NOLOCK) ON dep.UnitId = u.UnitId
 		LEFT JOIN dbo.Employee AS e WITH (NOLOCK) ON dep.PICEmpId = e.EmpId

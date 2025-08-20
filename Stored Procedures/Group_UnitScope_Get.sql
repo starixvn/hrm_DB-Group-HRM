@@ -1,20 +1,23 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER   PROCEDURE [dbo].[Group_UnitScope_Get]
-	@TeamIds varchar(MAX) = '',
-	@TeamId INT = NULL
+ALTER PROCEDURE [dbo].[Group_UnitScope_Get]
+(
+    @TeamIds varchar(MAX) = '',
+    @TeamId INT = NULL
+)
 AS
 /*
-Created: Tom.Vo@2013-10-21
-Task: get group
-DB: HRM
+    Created: Tom.Vo@2013-10-21
+    Task: get group
+    DB: bodb_HRM
 
-Revisions:
-	20250310@Mira: filter by CompanyId [Redmine: #217976]
-    20250403@Tim: remove section [Redmine: #222886]
-	20250515@Jay: add years of service for extra leave [Redmine: #227166]
-	20250701@Tim: Show Nexcel, Lumiplus, NexVision [Redmine: #225531]
-	20250815@Jay.Do: enhancement [Redmine: #236138]
+    Revisions:
+        20250310@Mira: filter by CompanyId [Redmine: #217976]
+        20250403@Tim: remove section [Redmine: #222886]
+        20250515@Jay: add years of service for extra leave [Redmine: #227166]
+        20250701@Hank: show Nexcel, Lumiplus, NexVision [Redmine: #225531]
+        20250815@Jay.Do: enhancement [Redmine: #236138]
+        20250819@Tim: get PICEmpId [Redmine: #235678]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -24,16 +27,9 @@ BEGIN
 	SELECT value
 	FROM STRING_SPLIT(@teamIds, ',')
 
-	CREATE TABLE #tmpGroup (
-		GroupId INT PRIMARY KEY
-		,NoOfMembers INT
-		)
+	CREATE TABLE #tmpGroup (GroupId INT PRIMARY KEY, NoOfMembers INT)
 
-	CREATE TABLE #tmpGroupEmployees (
-		GroupId INT,
-		EmpId INT,
-		PRIMARY KEY (GroupId, EmpId)
-	)
+	CREATE TABLE #tmpGroupEmployees (GroupId INT, EmpId INT)
 
 	INSERT INTO #tmpGroupEmployees (GroupId, EmpId)
 	SELECT DISTINCT emp.GroupId, emp.EmpId
@@ -83,8 +79,10 @@ BEGIN
         ,d.[Name] AS DepartmentName
 		,d.PICEmpId AS DepartmentPICId
 		,ed.CtrId AS DepartmentPICCtrId
+        ,ed.EmpId AS DepartmentPICEmpId
 		,ed.NickName AS DepartmentPIC
 		,u.Code AS UnitCode
+        ,u.PICEmpId AS UnitPICEmpId
 		,g.AccountableArea
 		,g.CompanyId
 		,c.[Name] AS CompanyName
@@ -103,11 +101,11 @@ BEGIN
 		,ExpatYearsOfServiceForExtraLeave
 		,g.IsOutsource
 	FROM dbo.[Group] AS g WITH (NOLOCK)
-		INNER JOIN dbo.Department AS d WITH (NOLOCK) ON g.DepartmentId = d.DepartmentId
 		LEFT JOIN dbo.Employee AS e WITH (NOLOCK) ON e.EmpId = g.PICEmpId
 		LEFT JOIN dbo.CompanyEmployee AS gpic WITH (NOLOCK) ON gpic.EmpId = e.EmpId AND ISNULL(gpic.isDeleted, 0) = 0 AND ISNULL(gpic.[Enabled], 1) = 1 AND ISNULL(gpic.IsSpecialUser, 0) = 0
-		INNER JOIN dbo.Unit AS u WITH (NOLOCK) ON u.UnitId = d.UnitId
+		INNER JOIN dbo.Department AS d WITH (NOLOCK) ON g.DepartmentId = d.DepartmentId
 		LEFT JOIN dbo.Employee AS ed WITH (NOLOCK) ON ed.EmpId = d.PICEmpId
+		INNER JOIN dbo.Unit AS u WITH (NOLOCK) ON u.UnitId = d.UnitId
 		LEFT JOIN dbo.CompanyEmployee AS cepic WITH (NOLOCK) ON cepic.EmpId = g.PICEmpId AND ISNULL(cepic.isDeleted, 0) = 0 AND ISNULL(cepic.[Enabled], 1) = 1 AND ISNULL(cepic.IsSpecialUser, 0) = 0
 		LEFT JOIN dbo.Company AS cpic WITH (NOLOCK) ON cepic.CompanyId = cpic.CompanyId
 		LEFT JOIN #tmpGroup AS tbl ON g.GroupId = tbl.GroupId
