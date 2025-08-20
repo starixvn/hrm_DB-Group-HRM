@@ -13,6 +13,7 @@ DB: HRM
 Revisions:
 	- Jay.do@20250603: handle cross company [Redmine: #227151]
 	- Mira@20250716: remove company with nick name for employee in different company [#Redmine: 232030]
+	- 20250813@Jay: change db structure [Redmine: #235678]
 Param's Explanation:
 */
 BEGIN

@@ -14,7 +14,7 @@ RETURNS NUMERIC(18, 2)
 
 	Revisions:
         20250801@Tim: fix bug pending balance = null
-		20250812@Mira: tranfer employee [Redmine: #235678]
+		20250812@Mira: change db structure [Redmine: #235678]
 */
 AS
 BEGIN
