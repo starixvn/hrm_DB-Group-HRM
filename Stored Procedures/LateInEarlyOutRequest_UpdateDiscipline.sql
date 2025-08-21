@@ -13,6 +13,7 @@ Task: update discipline.
 DB: HRM
 
 Revisions:
+		- 20250821@Jay: restructure for transfer [Redmine: #235678]
 Param's Explanation:
     @DisciplineXml:
         <Root>
@@ -109,9 +110,9 @@ BEGIN
 			AND dis.WorkDate = outofctrl.WorkDate
 		WHERE EXISTS (
 				SELECT 1
-				FROM dbo.Employee AS emp WITH (NOLOCK)
-					INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
-					INNER JOIN dbo.DisciplineGroupRule AS drule WITH (NOLOCK) ON emp.GroupId = drule.GroupId
+				FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+					INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON ce.EmpId = empsum.EmpId
+					INNER JOIN dbo.DisciplineGroupRule AS drule WITH (NOLOCK) ON ce.GroupId = drule.GroupId
 					AND (
 						(
 							drule.DisciplineTypeId = 3
@@ -124,7 +125,7 @@ BEGIN
 						)
 					AND empsum.IsLocal = drule.IsLocal
 					AND drule.Value = 1
-				WHERE dis.EmpId = emp.EmpId
+				WHERE dis.EmpId = ce.EmpId
 				)
 
 		UPDATE dis
@@ -143,9 +144,9 @@ BEGIN
 			INNER JOIN dbo.WorkingTimeRequest AS r WITH (NOLOCK) ON lieo.RequestId = r.RequestId
 		WHERE EXISTS (
 				SELECT 1
-				FROM dbo.Employee AS emp WITH (NOLOCK)
-					INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
-					INNER JOIN dbo.DisciplineGroupRule AS drule WITH (NOLOCK) ON emp.GroupId = drule.GroupId
+				FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+					INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON ce.EmpId = empsum.EmpId
+					INNER JOIN dbo.DisciplineGroupRule AS drule WITH (NOLOCK) ON ce.GroupId = drule.GroupId
 					AND (
 						(
 							drule.DisciplineTypeId = 3
@@ -158,7 +159,7 @@ BEGIN
 						)
 					AND empsum.IsLocal = drule.IsLocal
 					AND drule.Value = 1
-				WHERE dis.EmpId = emp.EmpId
+				WHERE dis.EmpId = ce.EmpId
 				)
 
 		UPDATE dis
@@ -177,9 +178,9 @@ BEGIN
 			INNER JOIN dbo.WorkingTimeRequest AS r WITH (NOLOCK) ON lieo.RequestId = r.RequestId
 		WHERE EXISTS (
 				SELECT 1
-				FROM dbo.Employee AS emp WITH (NOLOCK)
-					INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
-					INNER JOIN dbo.DisciplineGroupRule AS drule WITH (NOLOCK) ON emp.GroupId = drule.GroupId
+				FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+					INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON ce.EmpId = empsum.EmpId
+					INNER JOIN dbo.DisciplineGroupRule AS drule WITH (NOLOCK) ON ce.GroupId = drule.GroupId
 					AND (
 						(
 							drule.DisciplineTypeId = 3
@@ -192,7 +193,7 @@ BEGIN
 						)
 					AND empsum.IsLocal = drule.IsLocal
 					AND drule.Value = 1
-				WHERE dis.EmpId = emp.EmpId
+				WHERE dis.EmpId = ce.EmpId
 				)
 
 		RETURN

@@ -17,6 +17,7 @@ DB: HRM_SMS
 Original:
 
 Revisions:
+	20250821@Jay: restructure for transfer [Redmine: #235678]
 Param's Explanation:
 */
 BEGIN
@@ -26,8 +27,8 @@ BEGIN
 	CREATE TABLE #tblEmployeeIds (EmployeeId INT)
 
 	INSERT INTO #tblEmployeeIds (EmployeeId)
-	SELECT value
-	FROM STRING_SPLIT(@EmployeeIds, ',')
+	SELECT val
+	FROM dbo.[fnc_strSplit](@EmployeeIds, ',')
 
 	INSERT INTO dbo.HospitalizationLeaveTrans (
 		EmpId
@@ -38,16 +39,16 @@ BEGIN
 		,CreatedDate
 		,CreatedBy
 		)
-	SELECT emp.EmpId
+	SELECT ce.EmpId
 		,@Description
 		,@FromDate
 		,@DeductDays
 		,@CreditDays
 		,GETDATE()
 		,@ActorId
-	FROM dbo.Employee AS emp WITH (NOLOCK)
-		INNER JOIN #tblEmployeeIds AS empid ON emp.EmpId = empid.EmployeeId
-	WHERE ISNULL(emp.isDeleted, 0) = 0
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		INNER JOIN #tblEmployeeIds AS empid ON ce.EmpId = empid.EmployeeId
+	WHERE ISNULL(ce.isDeleted, 0) = 0
 
 	UPDATE dbo.EmployeeSummary WITH (ROWLOCK, UPDLOCK)
 	SET HospitalizationLeaveBalance = ISNULL(HospitalizationLeaveBalance, 0) + ISNULL(@CreditDays, 0) - ISNULL(@DeductDays, 0)
@@ -59,8 +60,5 @@ BEGIN
 	
 	DROP TABLE #tblEmployeeIds
 END
-
-
-
 
 

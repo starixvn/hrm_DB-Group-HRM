@@ -20,6 +20,7 @@ AS
 
     Revisions:
         20250505@Tim: fix bug update holiday
+		20250821@Jay: restructure for transfer [Redmine: #235678]
     Param's Explanation:
 */
 BEGIN
@@ -88,13 +89,12 @@ BEGIN
 					,WorkDate
 					,InsertedDate
 					)
-				SELECT e.EmpId
+				SELECT ce.EmpId
 					,@WorkDate
 					,@ModifiedDate
-				FROM dbo.Employee AS e WITH (NOLOCK)
-                    INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
+				FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
 				WHERE ce.CompanyId = @CompanyId
-                    AND e.[Enabled] = 1
+                    AND ce.[Enabled] = 1
 			END
 
 			INSERT INTO dbo.EmployeeCalendar (
@@ -103,18 +103,17 @@ BEGIN
 				,IsHoliday
 				,ModifiedDate
 				)
-			SELECT e.EmpId
+			SELECT ce.EmpId
 				,@WorkDate
 				,1
 				,@ModifiedDate
-			FROM dbo.Employee AS e WITH (NOLOCK)
-                INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
+			FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
 			WHERE ce.CompanyId = @CompanyId
-                AND e.[Enabled] = 1
+                AND ce.[Enabled] = 1
 				AND EXISTS (
 					SELECT 1
 					FROM dbo.EmployeeSummary AS es WITH (NOLOCK)
-					WHERE es.EmpId = e.EmpId
+					WHERE es.EmpId = ce.EmpId
 						AND (
 							es.IsLocal = 1
 							OR (es.IsLocal = 0 AND es.IsExpatUseHoliday = 1)
@@ -123,7 +122,7 @@ BEGIN
 				AND NOT EXISTS (
 					SELECT 1
 					FROM dbo.EmployeeCalendar AS ec WITH (NOLOCK)
-					WHERE ec.EmpId = e.EmpId
+					WHERE ec.EmpId = ce.EmpId
 						AND ec.WorkDate = @WorkDate
 					)
 

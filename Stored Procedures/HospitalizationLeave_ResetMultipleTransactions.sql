@@ -15,6 +15,7 @@ DB: HRM_SMS
 Original:
 
 Revisions:
+	20250821@Jay: restructure for transfer [Redmine: #235678]
 Param's Explanation:
 */
 BEGIN
@@ -34,13 +35,14 @@ BEGIN
 	SET @todate = DATEADD(YEAR, 1, @fromdate)
 	SET @lastDateOfYear = DATEADD(DAY, - 1, @todate)
 
-	SELECT emp.EmpId
+	SELECT ce.EmpId
 		,ISNULL(credit.CreditDays, 0) AS CreditDays
 		,SUM(ISNULL(deduct.DeductDays, 0)) AS DeductDays
 	INTO #tblCurrenBalace
-	FROM dbo.Employee AS emp WITH (NOLOCK)
-		INNER JOIN #tblEmployeeId AS tblemp WITH (NOLOCK) ON emp.EmpId = tblemp.EmpId
-		LEFT JOIN dbo.HospitalizationLeaveTrans AS deduct WITH (NOLOCK) ON emp.EmpId = deduct.EmpId
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		INNER JOIN dbo.Employee e (NOLOCK) ON e.UserId = ce.UserId
+		INNER JOIN #tblEmployeeId AS tblemp WITH (NOLOCK) ON ce.EmpId = tblemp.EmpId
+		LEFT JOIN dbo.HospitalizationLeaveTrans AS deduct WITH (NOLOCK) ON ce.EmpId = deduct.EmpId
 		AND YEAR(deduct.FromDate) = @Year
 		AND deduct.IsDeleted = 0
 		LEFT JOIN (
@@ -52,19 +54,20 @@ BEGIN
 			AND IsDeleted = 0
 			AND CreditDays > 0
 		GROUP BY EmpId
-		) credit ON emp.EmpId = credit.EmpId
-	WHERE ISNULL(emp.isDeleted, 0) = 0
-		OR YEAR(emp.ResignedDate) >= year(@todate)
-	GROUP BY emp.EmpId
+		) credit ON ce.EmpId = credit.EmpId
+	WHERE ISNULL(ce.isDeleted, 0) = 0
+		OR YEAR(e.ResignedDate) >= year(@todate)
+	GROUP BY ce.EmpId
 		,ISNULL(credit.CreditDays, 0)
 
-	SELECT emp.EmpId
+	SELECT ce.EmpId
 		,ISNULL(cb.CreditDays, 0) - ISNULL(cb.DeductDays, 0) AS Balance
 	INTO #tblRemainingBalance
-	FROM dbo.Employee AS emp WITH (NOLOCK)
-		INNER JOIN dbo.CompanyEmployee ce WITH (NOLOCK) ON ce.EmpId = emp.EmpId AND ce.CompanyId = @CompanyId
-		LEFT JOIN #tblCurrenBalace AS cb WITH (NOLOCK) ON emp.EmpId = cb.EmpId
-	WHERE ISNULL(emp.[Enabled], 0) = 1
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		INNER JOIN dbo.Employee e WITH (NOLOCK) ON e.UserId = ce.UserId
+		LEFT JOIN #tblCurrenBalace AS cb WITH (NOLOCK) ON ce.EmpId = cb.EmpId
+	WHERE ISNULL(ce.[Enabled], 0) = 1
+		AND ce.CompanyId = @CompanyId
 
 	INSERT INTO dbo.HospitalizationLeaveTrans (
 		EmpId
@@ -97,5 +100,4 @@ BEGIN
 
 	DROP TABLE #tblRemainingBalance
 END
-
 
