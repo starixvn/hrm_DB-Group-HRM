@@ -12,8 +12,8 @@ AS
     DB: bodb_HRM
 
     Revisions:
-    - 2024-03-21: Added support for secondment employee groups
-	- 2025-08-21@Henry.Dinh: migrate data transfer feature id: #233310 
+		- 20240321@Hank: Added support for secondment employee groups
+		- 20250821@Henry.Dinh: migrate data transfer feature id: #233310 
     Param's Explanation:
 */
 BEGIN
