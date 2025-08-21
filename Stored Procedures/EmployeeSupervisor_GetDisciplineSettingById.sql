@@ -11,6 +11,8 @@ Original:
 
 Revisions:
 	- 20250730@Jay: Add company name for group filter [Redmine: #233324]
+	- 20250812@Mira: change DB structure [Redmine: #235678]
+
 Param's Explanation:
 */
 BEGIN
@@ -19,10 +21,10 @@ BEGIN
 	SELECT DISTINCT su.OwnerId
 		,emp.FullName
 		,CASE 
-			WHEN @CompanyId IS NOT NULL AND @CompanyId = c.CompanyId THEN emp.NickName
-				ELSE emp.NickName + ' (' + ISNULL(c.Name, '') + ')'
+			WHEN @CompanyId IS NOT NULL AND @CompanyId = c.CompanyId THEN ce.NickName
+				ELSE ce.NickName + ' (' + ISNULL(c.Name, '') + ')'
 			END AS NickName
-		,emp.Email
+		,ce.Email
 		,c.[Name] AS CompanyName
 		,c.CompanyId
 		,ISNULL(su.OrderNo, 0) AS OrderNo
@@ -31,9 +33,9 @@ BEGIN
 			WHEN @CompanyId IS NULL THEN 1 -- group
 			ELSE 0
 		END AS CanRemove
-	FROM [dbo].[EmployeeSupervisor] AS su WITH (NOLOCK)
-		INNER JOIN [dbo].Employee AS emp WITH (NOLOCK) ON su.OwnerId = emp.EmpId
+	FROM [dbo].[EmployeeSupervisor] AS su WITH (NOLOCK)		
 		LEFT JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = su.OwnerId
+		INNER JOIN [dbo].Employee AS emp WITH (NOLOCK) ON emp.UserId = ce.UserId
 		LEFT JOIN dbo.Company AS c WITH (NOLOCK) ON c.CompanyId = ce.CompanyId
 	WHERE su.EmpId = @EmpId
 		AND su.ActionType = 8 -- edit discipline

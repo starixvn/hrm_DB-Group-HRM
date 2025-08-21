@@ -9,6 +9,8 @@ DB: HRM
 Original:
 
 Revisions:
+	20250812@Mira: change DB structure [Redmine: #235678]
+
 Param's Explanation:
 
 */
@@ -27,7 +29,7 @@ BEGIN
 		,ISNULL(CreditDays, 0) - ISNULL(DeductDays, 0) AS TotalDays
 		,t.IsDeleted
 	FROM dbo.SickLeaveTrans AS t WITH (NOLOCK)
-	INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON t.EmpId = emp.EmpId
+	INNER JOIN dbo.CompanyEmployee AS emp WITH (NOLOCK) ON t.EmpId = emp.EmpId
 	WHERE TransId = @TransId
 		AND RequestId IS NULL
 		AND t.IsDeleted = 0

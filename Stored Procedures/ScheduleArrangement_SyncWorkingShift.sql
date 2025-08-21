@@ -19,6 +19,7 @@ AS
 
     Revisions:
         20250438@Tim: fix bug sync holiday
+		20250812@Mira: change DB structure [Redmine: #235678]
     Param's Explanation:
     - @WorkingShiftXml: "<Root>
 		    <Row EmployeeID={1} ShiftCode={2} ShiftDate={3} IsOffDay={4} IsPublicHoliday={5} ModifiedDate={6} />
@@ -106,7 +107,7 @@ BEGIN
 		,INSERTED.IsHoliday
 	INTO #tmpEmployeeCalendar(EmpId, WorkDate, ShiftId, IsOffDay, IsHoliday)
 	FROM dbo.EmployeeCalendar AS ec WITH (ROWLOCK, UPDLOCK)
-		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON ec.EmpId = e.EmpId
+		INNER JOIN dbo.CompanyEmployee AS e WITH (NOLOCK) ON ec.EmpId = e.EmpId
         INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON e.EmpId = es.EmpId
 		INNER JOIN #tmpEmployeeIds AS tmpemp WITH (NOLOCK) ON e.EmpId = tmpemp.EmpId
 		INNER JOIN #tmpWorkingShift AS tmpws WITH (NOLOCK) ON e.Code = tmpws.EmployeeID
@@ -171,7 +172,7 @@ BEGIN
 		,@SyncDate
 		,@SyncDate
 	FROM #tmpWorkingShift AS tmpws WITH (NOLOCK)
-		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.Code = tmpws.EmployeeID
+		INNER JOIN dbo.CompanyEmployee AS e WITH (NOLOCK) ON e.Code = tmpws.EmployeeID
         INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON e.EmpId = es.EmpId
 		INNER JOIN #tmpEmployeeIds AS tmpemp WITH (NOLOCK) ON e.EmpId = tmpemp.EmpId
 		LEFT JOIN dbo.[Shift] AS s WITH (NOLOCK) ON s.CompanyId = @CompanyId

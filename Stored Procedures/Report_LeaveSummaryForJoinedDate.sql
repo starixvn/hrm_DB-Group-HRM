@@ -1,6 +1,6 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE PROCEDURE [dbo].[Report_LeaveSummaryForJoinedDate] 
+ALTER PROCEDURE [dbo].[Report_LeaveSummaryForJoinedDate] 
 (
     @CompanyId INT
     ,@empId INT = NULL
@@ -19,6 +19,8 @@ AS
 	Revisions:
 	    20250515@Hank: Separate AL and Extra leave
 	    20250516@Hank: Modified to get active range (ToDate > @fromDate)
+		20250812@Mira: change DB structure [Redmine: #235678]
+
 	Param's Explanation:
 */
 BEGIN
@@ -57,7 +59,7 @@ BEGIN
 	-- Get leave ranges for each employee
 	INSERT INTO #tmpLeaveRange (EmpId, RangeStartDate, RangeEndDate)
 	SELECT 
-		e.EmpId,
+		ce.EmpId,
 		CASE 
 			WHEN DATEFROMPARTS(YEAR(@fromDate), MONTH(e.JoinedDate), DAY(e.JoinedDate)) < @fromDate
 			THEN DATEFROMPARTS(YEAR(@fromDate), MONTH(e.JoinedDate), DAY(e.JoinedDate))
@@ -70,20 +72,22 @@ BEGIN
 				ELSE DATEFROMPARTS(YEAR(@fromDate) - 1, MONTH(e.JoinedDate), DAY(e.JoinedDate))
 			END
 		) AS RangeEndDate
-	FROM dbo.Employee e WITH (NOLOCK)
-	WHERE e.EmpId IN (SELECT EmpId FROM #tmpEmployee)
+	FROM dbo.CompanyEmployee ce WITH (NOLOCK)
+	INNER JOIN dbo.Employee e WITH (NOLOCK) ON e.UserId = ce.UserId
+	WHERE ce.EmpId IN (SELECT EmpId FROM #tmpEmployee)
 
 
 	-- calculate the balance for the current range
-	SELECT e.EmpId
+	SELECT ce.EmpId
 		,ISNULL(CreditDays, 0) AS CreditDays
 		,ISNULL(ExtraDays, 0) AS ExtraDays
 		,SUM(ISNULL(DeductDays, 0)) AS DeductDays
 		,MIN(cred.FromDate) AS FromDate
 	INTO #tmpCurrenBalace
-	FROM dbo.Employee AS e WITH (NOLOCK)
-        INNER JOIN #tmpEmployee AS tmpe WITH (NOLOCK) ON tmpe.EmpId = e.EmpId
-        INNER JOIN #tmpTeam AS t WITH (NOLOCK) ON e.GroupId = t.GroupId
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+        INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.UserId = ce.UserId
+        INNER JOIN #tmpEmployee AS tmpe WITH (NOLOCK) ON tmpe.EmpId = ce.EmpId
+        INNER JOIN #tmpTeam AS t WITH (NOLOCK) ON ce.GroupId = t.GroupId
 		LEFT JOIN (
 		SELECT ltrans.EmpId
 			,ltrans.DeductDays
@@ -93,7 +97,7 @@ BEGIN
 		WHERE ltrans.FromDate >= (SELECT RangeStartDate FROM #tmpLeaveRange WHERE EmpId = ltrans.EmpId)
 			AND ltrans.ToDate <= (SELECT RangeEndDate FROM #tmpLeaveRange WHERE EmpId = ltrans.EmpId)
 			AND ISNULL(ltrans.Deleted, 0) = 0
-		) AS ded ON e.EmpId = ded.EmpId
+		) AS ded ON ce.EmpId = ded.EmpId
 		LEFT JOIN (
 		SELECT ltrans.EmpId
 			,SUM(ltrans.CreditDays) AS CreditDays
@@ -117,17 +121,17 @@ BEGIN
 			AND ISNULL(ltrans.Deleted, 0) <> 1
 			AND ltrans.ExtraDays > 0
 		GROUP BY ltrans.EmpId
-		) extra ON e.EmpId = extra.EmpId
-		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON e.EmpId = es.EmpId
+		) extra ON ce.EmpId = extra.EmpId
+		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON ce.EmpId = es.EmpId
 	WHERE (
 			@isLocal IS NULL
 			OR es.IsLocal = @isLocal
 			)
 		AND (
-			ISNULL(e.isDeleted, 0) = 0
+			ISNULL(ce.isDeleted, 0) = 0
 			OR YEAR(e.ResignedDate) >= YEAR(@fromDate)
 			)
-	GROUP BY e.EmpId
+	GROUP BY ce.EmpId
 		,ISNULL(CreditDays, 0)
 		,ISNULL(ExtraDays, 0)
 
@@ -140,7 +144,7 @@ BEGIN
 		,e.JoinedDate as FromDate
 		,'' AS Remark
 		,cb.EmpId
-		,e.Code
+		,ce.Code
 		,FullName
 		,Email
 		,NickName
@@ -149,18 +153,19 @@ BEGIN
 		,g.[Name] AS Team
 		,dep.[Name] AS Department
 	FROM #tmpCurrenBalace AS cb
-		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.EmpId = cb.Empid
-		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON g.GroupId = e.GroupId
+		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = cb.Empid
+		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.UserId = ce.UserId
+		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON g.GroupId = ce.GroupId
 		INNER JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId = g.DepartmentId
-		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON e.EmpId = es.EmpId
+		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON ce.EmpId = es.EmpId
 
-	WHERE ISNULL(e.[Enabled], 0) = 1
+	WHERE ISNULL(ce.[Enabled], 0) = 1
 		AND (
 			@isLocal IS NULL
 			OR es.IsLocal = @isLocal
 			)
 	ORDER BY g.[Name]
-		,e.[Code]
+		,ce.[Code]
 	
 
     DROP TABLE #tmpEmployee

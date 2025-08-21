@@ -12,6 +12,8 @@ DB: HRM
 Original:
 
 Revisions:
+	20250812@Mira: change DB structure [Redmine: #235678]
+
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -29,7 +31,7 @@ BEGIN
 
 	SELECT emp.EmpId
 		,emp.NickName
-		,emp.FullName
+		,e.FullName
 		,tmp.WorkDate
 		,COALESCE(sc.Code, scl.Code, s.Code) AS ShiftCode
 		,empatt.InFixed AS [TimeIn]
@@ -44,7 +46,8 @@ BEGIN
 		,empca.IsOffDay
 		,ot.[Status] AS StatusId
 	FROM @tblDate AS tmp
-		CROSS JOIN dbo.Employee AS emp WITH (NOLOCK)
+		CROSS JOIN dbo.CompanyEmployee AS emp WITH (NOLOCK)
+		INNER JOIN [dbo].Employee AS e WITH (NOLOCK) ON e.UserId = emp.UserId
 		LEFT JOIN [dbo].OTDailyRequest AS ot WITH (NOLOCK) ON tmp.WorkDate = ot.OvertimeDate
 		AND ot.EmpId = emp.EmpId
 		LEFT JOIN dbo.[Shift] AS s WITH (NOLOCK) ON s.ShiftId = ot.[Schedule]
