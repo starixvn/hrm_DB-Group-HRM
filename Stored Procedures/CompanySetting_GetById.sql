@@ -1,17 +1,14 @@
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE PROCEDURE [dbo].[CompanySetting_GetById]
-    @CompanyId INT
+ALTER PROCEDURE [dbo].[CompanySetting_GetById] @CompanyId SMALLINT
 AS
-
 /*
-Created: 20250717@Lilac.Nguyen
-Task: Get Company by CompanyId
-DB: bodb_HRM
-Original:
+    Created: 20250717@Lilac.Nguyen
+    Task: Get Company by CompanyId
+    DB: bodb_HRM
 
-Revisions:
-
+    Revisions:
+		20250730@Lilac.Nguyen: count employee by company id
 */
 BEGIN
     SET NOCOUNT ON;
@@ -43,9 +40,14 @@ BEGIN
         ) AS PivotedData
     ) AS cfg ON c.CompanyId = cfg.CompanyId
     WHERE ISNULL(c.IsDeleted, 0) = 0
-      AND c.CompanyId = @CompanyId;
-    ';
+      AND c.CompanyId = @CompanyId';
 
     EXEC sp_executesql @sql, N'@CompanyId INT', @CompanyId;
-END;
 
+	SELECT CompanyId, SubCompanyId, COUNT(*) AS EmployeeCount 
+	FROM dbo.CompanyEmployee WITH (NOLOCK)
+	WHERE CompanyId = @CompanyId 
+	    AND ISNULL(IsDeleted, 0) <> 1
+	    AND SubCompanyId IS NOT NULL
+	GROUP BY CompanyId, SubCompanyId
+END;

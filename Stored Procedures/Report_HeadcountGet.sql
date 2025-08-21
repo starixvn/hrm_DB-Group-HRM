@@ -10,6 +10,7 @@ DB: bodb_HRM
 Revisions:
 	20250219@Mira: Get data for HRA report - [Redmine: #179302]
 	20250730@Mira: Get local, expat for HRA report - [Redmine: #234522]
+	20250815@Mira: Exclude empty CtrId - [Redmine: #236138]
 */
 
 AS
@@ -36,12 +37,12 @@ AS
 				ELSE ISNULL(es.IsLocal, 1) 
 			END AS IsLocal
 		FROM dbo.Employee e WITH(NOLOCK)
-		INNER JOIN dbo.CompanyEmployee ce WITH(NOLOCK) ON ce.EmpId = e.EmpId AND (ce.IsSpecialUser IS NULL OR ce.IsSpecialUser = 0)
+		INNER JOIN dbo.CompanyEmployee ce WITH(NOLOCK) ON ce.EmpId = e.EmpId
 		OUTER APPLY (
 			SELECT GroupId = COALESCE(ce.GroupId, e.GroupId)
 		) AS d
 		INNER JOIN dbo.[Group] g WITH(NOLOCK) ON g.GroupId = d.GroupId AND g.IsOutsource = 0
-		LEFT JOIN dbo.EmployeeSummary es WITH(NOLOCK) ON es.EmpId = e.EmpId AND (es.IsTopManager IS NULL OR es.IsTopManager = 0)
+		LEFT JOIN dbo.EmployeeSummary es WITH(NOLOCK) ON es.EmpId = e.EmpId
 		OUTER APPLY (
 			SELECT
 				JoinedDate = CASE 
@@ -62,8 +63,8 @@ AS
 		) AS safeDates
 		WHERE
 			(
-				safeDates.ResignedDate >= @FromDate
-				OR (safeDates.ResignedDate IS NULL AND ISNULL(ce.Enabled, e.Enabled) = 1)
+				e.CtrId IS NOT NULL AND
+				(safeDates.ResignedDate >= @FromDate OR (safeDates.ResignedDate IS NULL AND ISNULL(ce.Enabled, e.Enabled) = 1))
 			)
 	)
 
