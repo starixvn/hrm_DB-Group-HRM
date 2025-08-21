@@ -29,7 +29,7 @@ BEGIN
 		,dep.IsActive
 		,dep.AccountableArea
 		,e.CtrId AS PICCtrId
-        ,e.EmpId AS PICEmpId
+        ,ce.EmpId AS PICEmpId
 		,u.UnitId
         ,u.Code
 		,u.[Name]
@@ -37,6 +37,7 @@ BEGIN
 	FROM dbo.Department AS dep WITH (NOLOCK)
 		LEFT JOIN dbo.Unit AS u WITH (NOLOCK) ON dep.UnitId = u.UnitId
 		LEFT JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON dep.PICEmpId = ce.EmpId
+		LEFT JOIN dbo.Employee AS e WITH (NOLOCK) ON e.UserId = ce.UserId
 	WHERE (@IsActive IS NULL OR dep.IsActive = @IsActive)
 		AND dep.IsDeleted = 0
 		AND (@UnitId IS NULL OR u.UnitId = @UnitId)

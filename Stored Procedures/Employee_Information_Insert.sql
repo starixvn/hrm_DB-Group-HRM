@@ -23,7 +23,7 @@ AS
 
     Revisions:
         20250306@Tim: initial - [Redmine: #217976]
-	20250815@Mira: Auto generate CtrId - [Redmine: #236138]
+		20250815@Mira: Auto generate CtrId - [Redmine: #236138]
         20250819@Tim: restructure [Redmine: #235678]
 */
 BEGIN
@@ -31,7 +31,7 @@ BEGIN
 
     DECLARE @MemberRole NVARCHAR(10) = 1
         ,@OldEmpId INT
-	,@MaxCtrId INT;
+		,@MaxCtrId INT
         ,@NewEmpId INT
 
     SELECT @OldEmpId = MAX(ce.OldEmpId)
@@ -46,8 +46,8 @@ BEGIN
 
     SET @NewEmpId = ISNULL(@NewEmpId, 0) + 1
 
-    INSERT INTO dbo.Employee (UserId, FullName, JoinedDate, [Password])
-    VALUES (@UserId, @FullName, @JoinDate, @Password)
+    INSERT INTO dbo.Employee (UserId, FullName, JoinedDate, [Password], CtrId)
+    VALUES (@UserId, @FullName, @JoinDate, @Password, @MaxCtrId + 1)
 
 	INSERT INTO dbo.CompanyEmployee (
         EmpId
@@ -61,7 +61,6 @@ BEGIN
 		,CreatedDate
 		,CreatedBy
         ,OldEmpId
-		,CtrId
 		)
 	VALUES (
 		@NewEmpId
@@ -75,8 +74,9 @@ BEGIN
 		,@CreatedDate
 		,@createBy
         ,@OldEmpId
-		,@MaxCtrId + 1
 		)
+
+
 
 	INSERT INTO dbo.EmployeeSummary (EmpId, IsDefaultSchedule)
 	VALUES (@NewEmpId, 0)
