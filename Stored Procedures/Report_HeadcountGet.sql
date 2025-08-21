@@ -11,6 +11,7 @@ Revisions:
 	20250219@Mira: Get data for HRA report - [Redmine: #179302]
 	20250730@Mira: Get local, expat for HRA report - [Redmine: #234522]
 	20250815@Mira: Exclude empty CtrId - [Redmine: #236138]
+	20250821@Mira: Exclude special user NexHRM - [Redmine: #236138]
 */
 
 AS
@@ -37,7 +38,7 @@ AS
 				ELSE ISNULL(es.IsLocal, 1) 
 			END AS IsLocal
 		FROM dbo.Employee e WITH(NOLOCK)
-		INNER JOIN dbo.CompanyEmployee ce WITH(NOLOCK) ON ce.EmpId = e.EmpId
+		INNER JOIN dbo.CompanyEmployee ce WITH(NOLOCK) ON ce.EmpId = e.EmpId AND (ce.CompanyId NOT IN (1,2,34) OR ce.IsSpecialUser = 0)
 		OUTER APPLY (
 			SELECT GroupId = COALESCE(ce.GroupId, e.GroupId)
 		) AS d
