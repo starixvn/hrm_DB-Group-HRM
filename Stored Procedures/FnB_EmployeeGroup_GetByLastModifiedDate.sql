@@ -13,6 +13,7 @@ AS
 
     Revisions:
     - 2024-03-21: Added support for secondment employee groups
+	- 2025-08-21@Henry.Dinh: migrate data transfer feature id: #233310 
     Param's Explanation:
 */
 BEGIN
@@ -56,7 +57,7 @@ BEGIN
 		,2 as DataSource
 	FROM dbo.[Group] AS g WITH (NOLOCK)
 	    LEFT JOIN dbo.Department AS d WITH (NOLOCK) ON d.DepartmentId = g.DepartmentId
-	    INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.GroupId = g.GroupId
+	    INNER JOIN dbo.CompanyEmployee AS e WITH (NOLOCK) ON e.GroupId = g.GroupId
 	    INNER JOIN dbo.CompanySecondmentEmployee AS cse WITH (NOLOCK) ON cse.EmpId = e.EmpId
 	WHERE cse.CompanyId = @CompanyId
 END
