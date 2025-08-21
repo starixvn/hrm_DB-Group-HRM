@@ -49,7 +49,7 @@ BEGIN
 	
 	SET @xml = (
 		SELECT DOB AS '@DOB'
-			,Email AS '@Email'
+			,ce.Email AS '@Email'
 			,Phone AS '@Phone'
 			,Gender AS '@Gender'
 			,LetsTalk AS '@LetsTalk'
@@ -116,7 +116,7 @@ BEGIN
 	
 	SET @xml = (
 		SELECT DOB AS '@DOB'
-			,Email AS '@Email'
+			,ce.Email AS '@Email'
 			,Phone AS '@Phone'
 			,Gender AS '@Gender'
 			,LetsTalk AS '@LetsTalk'

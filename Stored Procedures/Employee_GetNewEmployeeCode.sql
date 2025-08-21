@@ -33,7 +33,7 @@ BEGIN
 		SELECT TOP 1 @LastestPrefix = LEFT(Code, PATINDEX('%[0-9]%', Code) - 1)
 		FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
 		WHERE ce.[Enabled] = 1 
-			AND ISNULL(ce.Code, '') != ''
+			AND ISNULL(Code, '') != ''
 			AND ce.CompanyId = @CompanyId
 		ORDER BY ce.EmpId DESC
 

@@ -75,11 +75,11 @@ BEGIN
 	ELSE
 	BEGIN
 		INSERT INTO #tempEmployeeIds (EmpId, JoinedDate, ResignedDate)
-		SELECT EmpId, JoinedDate, ResignedDate
+		SELECT ce.EmpId, e.JoinedDate, e.ResignedDate
 		FROM dbo.CompanyEmployee ce WITH (NOLOCK)
 			INNER JOIN dbo.Employee e WITH (NOLOCK) ON ce.UserId = e.UserId
-		WHERE (@isEnable IS NULL OR [Enabled] = @isEnable)
-			AND (@isDelete IS NULL OR isDeleted = @isDelete)
+		WHERE (@isEnable IS NULL OR ce.[Enabled] = @isEnable)
+			AND (@isDelete IS NULL OR ce.isDeleted = @isDelete)
 	END
 
 	INSERT INTO #tempEmployeeCalendar (

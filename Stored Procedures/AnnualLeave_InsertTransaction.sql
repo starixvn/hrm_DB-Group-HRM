@@ -92,7 +92,7 @@ BEGIN
 			FROM dbo.Employee AS e WITH (NOLOCK)
 			    INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.UserId = ce.UserId
 			WHERE ce.EmpId = @EmpId
-				AND ISNULL(ConfirmedDate, GETDATE() - 365) > @FromDate
+				AND ISNULL(e.ConfirmedDate, GETDATE() - 365) > @FromDate
 				AND @CreditDays > 0
 			)
 	BEGIN
