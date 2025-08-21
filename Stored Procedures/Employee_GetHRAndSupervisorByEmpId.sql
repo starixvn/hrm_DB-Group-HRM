@@ -9,6 +9,7 @@ AS
 
     Revisions:
         20250528@Tim: fix bug get HR
+		20250812@Mira: change DB structure [Redmine: #235678]
     Param's Explanation:
 */
 BEGIN
@@ -33,7 +34,7 @@ BEGIN
 	INSERT INTO #tmpSupervisor (OwnerId)
 	SELECT DISTINCT gs.OwnerId
 	FROM dbo.GroupSupervisor AS gs WITH (NOLOCK)
-		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON gs.GroupId = emp.GroupId
+		INNER JOIN dbo.CompanyEmployee AS emp WITH (NOLOCK) ON gs.GroupId = emp.GroupId
 	WHERE emp.EmpId = @EmpId
 		AND gs.OwnerId != @EmpId
 		AND gs.ActionType IN (2, 3) -- verifier, approver
@@ -48,24 +49,24 @@ BEGIN
 			)
 
 	INSERT INTO #tmpSupervisor (OwnerId)
-	SELECT emp.EmpId
+	SELECT ce.EmpId
 	FROM dbo.EmployeeRole AS er WITH (NOLOCK)
-		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON er.EmployeeId = emp.EmpId
-        INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
+        INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON er.EmployeeId = ce.EmpId
 	WHERE ce.CompanyId = @CompanyId
         AND er.RoleId = 6 -- HR
 		AND NOT EXISTS (
 			SELECT 1
 			FROM #tmpSupervisor AS tmp
-			WHERE emp.EmpId = tmp.OwnerId
+			WHERE ce.EmpId = tmp.OwnerId
 			)
 
 	SELECT OwnerId
-		,emp.FullName
+		,e.FullName
 		,emp.NickName
 		,emp.Email
 	FROM #tmpSupervisor AS tmp
-		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON tmp.OwnerId = emp.EmpId
+		INNER JOIN dbo.CompanyEmployee AS emp WITH (NOLOCK) ON tmp.OwnerId = emp.EmpId
+		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.UserId = emp.UserId
 	WHERE emp.[Enabled] = 1
 		AND emp.isDeleted = 0
 

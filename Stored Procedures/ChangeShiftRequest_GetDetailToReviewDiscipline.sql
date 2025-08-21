@@ -8,6 +8,7 @@ Task: Get change shift detail to review discipline
 DB: HRM
 
 Revisions:
+	20250812@Mira: change DB structure [Redmine: #235678]
 Param's Explanation:
 */
 BEGIN
@@ -26,7 +27,7 @@ BEGIN
 		,csdt.ToDate
 	FROM dbo.ChangeShiftRequest AS cs WITH (NOLOCK)
 		INNER JOIN dbo.ChangeShiftRequestDetail AS csdt WITH (NOLOCK) ON cs.RequestId = csdt.RequestId
-		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON emp.EmpId = cs.EmpId
+		INNER JOIN dbo.CompanyEmployee AS emp WITH (NOLOCK) ON emp.EmpId = cs.EmpId
 		INNER JOIN dbo.EmployeeSummary AS emps WITH (NOLOCK) ON emp.EmpId = emps.EmpId
 		INNER JOIN dbo.DisciplineGroupRule AS drule WITH (NOLOCK) ON emp.GroupId = drule.GroupId
 		AND drule.DisciplineTypeId = 1
