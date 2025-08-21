@@ -105,7 +105,7 @@ BEGIN
 	FROM dbo.Employee e WITH (NOLOCK)
 		INNER JOIN dbo.CompanyEmployee ce WITH(NOLOCK) ON ce.UserId = e.UserId
 	WHERE ce.EmpId <> @EmpId
-		AND Code = @code
+		AND ce.Code = @code
 		AND ce.CompanyId = @CompanyId
 
 
@@ -118,12 +118,12 @@ BEGIN
 	END
 
 	SELECT TOP 1 @EmpId_exist = ce.EmpId
-		,@Nickname_exist = Nickname
-		,@FullName_exist = FullName
+		,@Nickname_exist = ce.Nickname
+		,@FullName_exist = e.FullName
 	FROM dbo.Employee AS e WITH (NOLOCK)
 		INNER JOIN dbo.CompanyEmployee ce WITH(NOLOCK) ON ce.UserId = e.UserId
 	WHERE ce.EmpId <> @EmpId
-		AND Nickname = @nickname
+		AND ce.Nickname = @nickname
 		AND ce.CompanyId = @CompanyId
 		AND (
 			ce.isDeleted = 0

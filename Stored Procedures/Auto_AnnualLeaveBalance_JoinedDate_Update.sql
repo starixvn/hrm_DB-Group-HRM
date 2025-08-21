@@ -12,6 +12,7 @@ AS
 
     Revisions:
 		20250814@Lilac: restructure for transfer [Redmine: #235678]
+		20250812@Mira: change DB structure [Redmine: #235678]
     Param's Explanation:
 */
 BEGIN
@@ -78,7 +79,7 @@ BEGIN
 		,0 AS Deleted
 	FROM @TempListAnnualLeaves AS t
 		INNER JOIN CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = t.EmpId
-		INNER JOIN Employee AS e WITH (NOLOCK) ON e.UserId = t.UserId
+		INNER JOIN Employee AS e WITH (NOLOCK) ON e.UserId = ce.UserId
 	WHERE NOT EXISTS (
         SELECT 1
         FROM dbo.LeaveTrans AS lt WITH (NOLOCK)
