@@ -63,7 +63,7 @@ BEGIN
 		,g.[Rank]
 		,tbl.NoOfMembers
 		,g.PICEmpId
-		,e.CtrId AS TeamPICCtrId
+		,et.CtrId AS TeamPICCtrId
 		,e.NickName as TeamPIC
 		,cpic.[CompanyId] AS TeamPICCompanyId
 		,cpic.[Name] AS TeamPICCompany
@@ -71,7 +71,7 @@ BEGIN
         ,d.Code AS DepartmentCode
         ,d.[Name] AS DepartmentName
 		,d.PICEmpId AS DepartmentPICId
-		,ed.CtrId AS DepartmentPICCtrId
+		,emped.CtrId AS DepartmentPICCtrId
         ,ed.EmpId AS DepartmentPICEmpId
 		,ed.NickName AS DepartmentPIC
 		,u.Code AS UnitCode
@@ -95,9 +95,11 @@ BEGIN
 		,g.IsOutsource
 	FROM dbo.[Group] AS g WITH (NOLOCK)
 		LEFT JOIN dbo.CompanyEmployee AS e WITH (NOLOCK) ON e.EmpId = g.PICEmpId
+		LEFT JOIN dbo.Employee AS et WITH (NOLOCK) ON et.UserId = e.UserId
 		LEFT JOIN dbo.CompanyEmployee AS gpic WITH (NOLOCK) ON gpic.EmpId = e.EmpId AND ISNULL(gpic.isDeleted, 0) = 0 AND ISNULL(gpic.[Enabled], 1) = 1 AND ISNULL(gpic.IsSpecialUser, 0) = 0
 		INNER JOIN dbo.Department AS d WITH (NOLOCK) ON g.DepartmentId = d.DepartmentId
 		LEFT JOIN dbo.CompanyEmployee AS ed WITH (NOLOCK) ON ed.EmpId = d.PICEmpId
+		LEFT JOIN dbo.Employee AS emped WITH (NOLOCK) ON emped.UserId = ed.UserId
 		INNER JOIN dbo.Unit AS u WITH (NOLOCK) ON u.UnitId = d.UnitId
 		LEFT JOIN dbo.CompanyEmployee AS cepic WITH (NOLOCK) ON cepic.EmpId = g.PICEmpId AND ISNULL(cepic.isDeleted, 0) = 0 AND ISNULL(cepic.[Enabled], 1) = 1 AND ISNULL(cepic.IsSpecialUser, 0) = 0
 		LEFT JOIN dbo.Company AS cpic WITH (NOLOCK) ON cepic.CompanyId = cpic.CompanyId
