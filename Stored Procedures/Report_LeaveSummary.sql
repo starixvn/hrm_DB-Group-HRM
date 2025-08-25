@@ -88,7 +88,7 @@ BEGIN
 			)
 		AND (
 			ISNULL(e.isDeleted, 0) = 0
-			OR YEAR(ResignedDate) >= year(@todate)
+			OR YEAR(e.ResignedDate) >= year(@todate)
 			)
 	GROUP BY e.EmpId
 
@@ -337,8 +337,8 @@ BEGIN
 		,cb.EmpId
 		,e.Code
 		,FullName
-		,Email
-		,NickName
+		,e.Email
+		,e.NickName
 		,g.[Rank]
 		,g.GroupId AS TeamId
 		,g.[Name] AS Team
@@ -381,8 +381,8 @@ BEGIN
 		,op.EmpId
 		,e.[Code]
 		,FullName
-		,Email
-		,NickName
+		,e.Email
+		,e.NickName
 		,g.[Rank]
 		,g.GroupId AS TeamId
 		,g.[Name] AS Team
