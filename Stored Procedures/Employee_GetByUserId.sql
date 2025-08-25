@@ -30,6 +30,6 @@ BEGIN
         INNER JOIN dbo.Employee AS e ON e.UserId = ce.UserId
 		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON ce.EmpId = es.EmpId
 	WHERE ce.UserId = @UserId
-			AND ce.CompanyId = @CompanyId
 			AND ce.[Enabled] = 1
+			AND (@CompanyId IS NULL OR ce.CompanyId = @CompanyId)
 END
