@@ -12,6 +12,7 @@ ALTER PROCEDURE [dbo].[Employee_Information_Insert]
     ,@CreatedDate DATETIME
     ,@JoinDate DATETIME
     ,@createBy INT
+    ,@EmpId INT OUTPUT
     ,@ErrCode INT = 0 OUTPUT
     ,@ErrMsg NVARCHAR(200) = '' OUTPUT
 )
@@ -39,15 +40,20 @@ BEGIN
     WHERE ce.CompanyId = @CompanyId
 
     SET @OldEmpId = ISNULL(@OldEmpId, 0) + 1
-	SET @MaxCtrId = (SELECT MAX(CtrId) FROM Employee);
+
+	SELECT @MaxCtrId = MAX(CtrId)
+    FROM dbo.Employee WITH (NOLOCK)
+
+    SET @MaxCtrId = ISNULL(@MaxCtrId, 0) + 1
 
     SELECT @NewEmpId = MAX(EmpId)
     FROM dbo.CompanyEmployee WITH (NOLOCK)
 
     SET @NewEmpId = ISNULL(@NewEmpId, 0) + 1
+    SET @EmpId = @NewEmpId
 
     INSERT INTO dbo.Employee (UserId, FullName, JoinedDate, [Password], CtrId)
-    VALUES (@UserId, @FullName, @JoinDate, @Password, @MaxCtrId + 1)
+    VALUES (@UserId, @FullName, @JoinDate, @Password, @MaxCtrId)
 
 	INSERT INTO dbo.CompanyEmployee (
         EmpId
@@ -75,8 +81,6 @@ BEGIN
 		,@createBy
         ,@OldEmpId
 		)
-
-
 
 	INSERT INTO dbo.EmployeeSummary (EmpId, IsDefaultSchedule)
 	VALUES (@NewEmpId, 0)

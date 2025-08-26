@@ -122,6 +122,12 @@ GO
 CREATE NONCLUSTERED INDEX IX_CompanyEmployee_CompanyId_EmpId ON dbo.CompanyEmployee (CompanyId, EmpId);
 GO
 
+DROP INDEX IX_Employee_EmpId_GroupId_Enabled_IsDeleted ON dbo.Employee;
+GO
+
+DROP INDEX IX_Employee_GroupId ON dbo.Employee;
+GO
+
 ALTER TABLE dbo.Employee DROP CONSTRAINT PK_Employee;
 GO
 
@@ -129,3 +135,16 @@ ALTER TABLE dbo.Employee ALTER COLUMN UserId INT NOT NULL
 GO
 
 ALTER TABLE dbo.Employee ADD CONSTRAINT PK_Employee PRIMARY KEY (UserId)
+GO
+
+ALTER TABLE dbo.Employee ALTER COLUMN EmpId INT NULL
+GO
+
+ALTER TABLE dbo.Employee ALTER COLUMN Code VARCHAR(20) NULL
+GO
+
+ALTER TABLE dbo.Employee ALTER COLUMN [Enabled] BIT NULL
+GO
+
+ALTER TABLE dbo.Employee ALTER COLUMN CreatedDate DATETIME NULL
+GO
