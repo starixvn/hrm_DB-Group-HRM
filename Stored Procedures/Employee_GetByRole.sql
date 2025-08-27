@@ -69,7 +69,7 @@ BEGIN
 		AND ce.[Enabled] = 1
 		AND (
 			@query IS NULL
-			OR NickName LIKE @q
+			OR ce.NickName LIKE @q
 			OR FullName LIKE @q
 			OR ce.DomainUsername LIKE @q
 			OR ce.Code LIKE @q
