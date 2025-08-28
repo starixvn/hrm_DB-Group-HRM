@@ -11,6 +11,7 @@ DB: SMSHRM
 Original:
 
 Revisions:
+        20250813@Jay: change db structure [Redmine: #235678]
 Param's Explanation:
 */
 BEGIN
@@ -19,12 +20,12 @@ BEGIN
 	IF (ISNULL(@Query, '') <> '')
 		SET @Query = '%' + @Query + '%'
 
-	SELECT DISTINCT emp.EmpId AS EmployeeId
-		,emp.NickName
-		,emp.FullName
-	FROM dbo.Employee AS emp WITH (NOLOCK)
-		LEFT JOIN dbo.EmployeeSupervisor AS es WITH (NOLOCK) ON emp.EmpId = es.EmpId
-		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
+	SELECT DISTINCT ce.EmpId AS EmployeeId
+		,ce.NickName
+		,e.FullName
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		LEFT JOIN dbo.EmployeeSupervisor AS es WITH (NOLOCK) ON ce.EmpId = es.EmpId
+		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.UserId = ce.UserId
 	WHERE (
 			EXISTS (
 				SELECT 1
@@ -39,31 +40,28 @@ BEGIN
 				)
 			)
 		AND (
-			emp.NickName LIKE '%' + @query + '%'
-			OR emp.FullName LIKE '%' + @query + '%'
+			ce.NickName LIKE '%' + @query + '%'
+			OR e.FullName LIKE '%' + @query + '%'
 			)
-		AND emp.isDeleted = 0
-		AND emp.[Enabled] = 1
+		AND ce.isDeleted = 0
+		AND ce.[Enabled] = 1
 		AND ce.CompanyId = @CompanyId
 	
 	UNION
-	SELECT DISTINCT emp.EmpId AS EmployeeId
-		,emp.NickName
-		,emp.FullName
-	FROM dbo.Employee AS emp WITH (NOLOCK)
-		INNER JOIN dbo.GroupSupervisor AS gs WITH (NOLOCK) ON emp.GroupId = gs.GroupId
-		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
+	SELECT DISTINCT ce.EmpId AS EmployeeId
+		,ce.NickName
+		,e.FullName
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		INNER JOIN dbo.GroupSupervisor AS gs WITH (NOLOCK) ON ce.GroupId = gs.GroupId
+		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.UserId = ce.UserId
 	WHERE gs.OwnerId = @SupervisorId
-		AND emp.EmpId <> @SupervisorId
+		AND ce.EmpId <> @SupervisorId
 		AND gs.ActionType = 8
 		AND (
-			emp.NickName LIKE '%' + @query + '%'
-			OR emp.FullName LIKE '%' + @query + '%'
+			ce.NickName LIKE '%' + @query + '%'
+			OR e.FullName LIKE '%' + @query + '%'
 			)
-		AND emp.isDeleted = 0
-		AND emp.[Enabled] = 1
+		AND ce.isDeleted = 0
+		AND ce.[Enabled] = 1
 		AND ce.CompanyId = @CompanyId
 END
-
-
-

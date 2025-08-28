@@ -12,6 +12,7 @@ Task: get employee
 DB: HRM
 
 Revisions:
+        20250813@Jay: change db structure [Redmine: #235678]
 Param's Explanation:
 */
 BEGIN
@@ -29,26 +30,27 @@ BEGIN
 		FROM STRING_SPLIT(@TeamIds, ',')
 	END
 
-	SELECT e.EmpId AS EmployeeId
+	SELECT ce.EmpId AS EmployeeId
 		,e.FullName
-		,e.NickName
-	FROM dbo.Employee AS e WITH (NOLOCK)
-	WHERE e.[Enabled] = 1
-		AND e.isDeleted = 0
+		,ce.NickName
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		INNER JOIN Employee e (NOLOCK) ON ce.UserId = e.UserId
+	WHERE ce.[Enabled] = 1
+		AND ce.isDeleted = 0
 		AND (
-			e.NickName LIKE @q
+			ce.NickName LIKE @q
 			OR e.FullName LIKE @q
 			)
 		AND NOT EXISTS (
 			SELECT 1
 			FROM dbo.EmployeeSummary AS esum WITH (NOLOCK)
-			WHERE esum.EmpId = e.EmpId
-				AND esum.IsTopManager = 1
+			WHERE esum.EmpId = ce.EmpId
+				AND ce.IsSpecialUser = 1
 			)
 		AND EXISTS (
 			SELECT 1
 			FROM #tblGroupIds AS tblgr
-			WHERE e.GroupId = tblgr.GroupId
+			WHERE ce.GroupId = tblgr.GroupId
 			)
 		AND (
 			@IsIFrame = 1
@@ -59,7 +61,7 @@ BEGIN
 				WHERE es.EmpId = @ActorId
 					AND ISNULL(es.IsDeleted, 0) = 0
 					AND es.ActionType = @ShiftManagerRoleId
-					AND es.OwnerId = e.EmpId
+					AND es.OwnerId = ce.EmpId
 				)
 			OR EXISTS (
 				SELECT 1
@@ -67,10 +69,10 @@ BEGIN
 				WHERE gs.OwnerId = @ActorId
 					AND ISNULL(gs.IsDeleted, 0) = 0
 					AND gs.ActionType = @ShiftManagerRoleId
-					AND e.GroupId = gs.GroupId
+					AND ce.GroupId = gs.GroupId
 				)
 			)
-	ORDER BY e.NickName
+	ORDER BY ce.NickName
 
 	DROP TABLE #tblGroupIds
 END

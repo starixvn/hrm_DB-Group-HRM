@@ -14,6 +14,8 @@ Task: approve change shift request
 DB: HRM
 
 Revisions:
+	20250812@Mira: tranfer employee [Redmine: #235678]
+
 Param's Explanation:
     @DisciplineXml:
         <Root>
@@ -50,7 +52,7 @@ BEGIN
 	WHERE RequestId = @RequestId
 
     SELECT @CompanyId = ce.CompanyId
-    FROM dbo.Employee AS emp WITH (NOLOCK)
+    FROM dbo.CompanyEmployee AS emp WITH (NOLOCK)
         INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
     WHERE emp.EmpId = @EmpId
 

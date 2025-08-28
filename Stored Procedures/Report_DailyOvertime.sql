@@ -20,6 +20,7 @@ AS
 
     Revisions:
         20250404@Tim: remove section [Redmine: #222886]
+        20250813@Jay: change db structure [Redmine: #235678]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -42,10 +43,10 @@ BEGIN
 	SELECT DISTINCT EmpId
 	FROM dbo.fnc_GetEmployeeByActorId(@ActorId, 0, 1, @CompanyId)
 
-	SELECT emp.EmpId
-		,emp.NickName
-		,emp.FullName
-		,emp.Code
+	SELECT ce.EmpId
+		,ce.NickName
+		,e.FullName
+		,ce.Code
 		,gr.GroupId
         ,gr.Code AS TeamCode
 		,gr.[Name] AS TeamName
@@ -66,13 +67,14 @@ BEGIN
 		,dept.Code AS DepartmentCode
 	    ,dept.[Name] AS DepartmentName
 	FROM dbo.OTDailyRequest AS ot WITH (NOLOCK)
-		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON emp.EmpId = ot.EmpId
-		INNER JOIN #tmpMembers AS member WITH (NOLOCK) ON emp.EmpId = member.EmpId
-		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON empsum.EmpId = emp.EmpId
-        AND empsum.IsTopManager = 0
-		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId
+		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = ot.EmpId
+		INNER JOIN Employee e (NOLOCK) ON e.UserId = ce.UserId
+		INNER JOIN #tmpMembers AS member WITH (NOLOCK) ON ce.EmpId = member.EmpId
+		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON empsum.EmpId = ce.EmpId
+			AND ce.IsSpecialUser = 0
+		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON ce.GroupId = gr.GroupId
 		INNER JOIN dbo.Department AS dept WITH (NOLOCK) ON gr.DepartmentId = dept.DepartmentId
-		LEFT JOIN dbo.EmployeeCalendar AS empca WITH (NOLOCK) ON emp.EmpId = empca.EmpId
+		LEFT JOIN dbo.EmployeeCalendar AS empca WITH (NOLOCK) ON ce.EmpId = empca.EmpId
 		AND ot.OvertimeDate = empca.WorkDate
 		LEFT JOIN dbo.[Shift] AS s WITH (NOLOCK) ON s.ShiftId = ot.[Schedule]
         AND s.CompanyId = @CompanyId
@@ -82,22 +84,22 @@ BEGIN
 			@EmployeeStatusId IS NULL
 			OR (
 				@EmployeeStatusId = @Enable
-				AND emp.[Enabled] = 1
-				AND emp.isDeleted = 0
+				AND ce.[Enabled] = 1
+				AND ce.isDeleted = 0
 				)
 			OR (
 				@EmployeeStatusId = @Disabled
-				AND emp.[Enabled] = 0
-				AND emp.isDeleted = 0
+				AND ce.[Enabled] = 0
+				AND ce.isDeleted = 0
 				)
 			OR (
 				@EmployeeStatusId = @Deleted
-				AND emp.isDeleted = 1
+				AND ce.isDeleted = 1
 				)
 			)
 		AND (
-			emp.NickName LIKE '%' + ISNULL(@Employee, '') + '%'
-			OR emp.FullName LIKE '%' + ISNULL(@Employee, '') + '%'
+			ce.NickName LIKE '%' + ISNULL(@Employee, '') + '%'
+			OR e.FullName LIKE '%' + ISNULL(@Employee, '') + '%'
 			)
 		AND (
 			@isLocal IS NULL
@@ -108,11 +110,11 @@ BEGIN
 			OR EXISTS (
 				SELECT 1
 				FROM #tmpGroupIds AS tbl WITH (NOLOCK)
-				WHERE emp.GroupId = tbl.GroupId
+				WHERE ce.GroupId = tbl.GroupId
 				)
 			)
 	ORDER BY ot.OvertimeDate
-		,emp.NickName
+		,ce.NickName
 
 	DROP TABLE #tmpGroupIds
 	DROP TABLE #tmpMembers

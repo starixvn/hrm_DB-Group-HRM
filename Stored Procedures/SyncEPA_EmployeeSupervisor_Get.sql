@@ -1,19 +1,18 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-
-CREATE OR ALTER PROCEDURE [dbo].[SyncEPA_EmployeeSupervisor_Get] @FromDate DATETIME = NULL
+ALTER PROCEDURE [dbo].[SyncEPA_EmployeeSupervisor_Get] @FromDate DATETIME = NULL
 	,@CompanyId INT 
 AS
 /*
-Created: 20150921@Quinn.Vo
-Task: Get all employee supervisor from change date
-DB: NexEPA
-Original: 
+	Created: 20150921@Quinn.Vo
+	Task: Get all employee supervisor from change date
+	DB: NexEPA
+	Original: 
 
-Revisions:  
-20160428@Razor.Nguyen: new way to syn data
-Param's Explanation:
-
+	Revisions:  
+		- 20160428@Razor.Nguyen: new way to syn data
+		- 20250818@Henry.Dinh: migrate data transfer feature id: #233310 
+	Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -31,13 +30,13 @@ BEGIN
 		SELECT [OwnerId]
 			,es.[EmpId]
 			,ISNULL(es.[IsDeleted], 0) AS IsDeleted
-			,MAX(ModifiedDate) AS ModifiedDate
+			,MAX(es.ModifiedDate) AS ModifiedDate
 		FROM dbo.[EmployeeSupervisor] AS es WITH (NOLOCK)
 		INNER JOIN dbo.CompanyEmployee AS ec WITH (NOLOCK) ON ec.EmpId = es.EmpId AND ec.CompanyId = @CompanyId
 		WHERE ActionType IN (2, 3)
 			AND (
 				@FromDate IS NULL
-				OR ModifiedDate > @FromDate
+				OR es.ModifiedDate > @FromDate
 				)
 		GROUP BY [OwnerId]
 			,es.[EmpId]
@@ -47,15 +46,7 @@ BEGIN
 		AND r.EmpId = m.EmpId
 		AND r.ModifiedDate = m.ModifiedDate
 		AND r.IsDeleted = m.IsDeleted
-		LEFT JOIN dbo.Employee AS own WITH (NOLOCK) ON own.EmpId = r.OwnerId
-		LEFT JOIN dbo.Employee AS emp WITH (NOLOCK) ON emp.EmpId = r.EmpId
+		LEFT JOIN dbo.CompanyEmployee AS own WITH (NOLOCK) ON own.EmpId = r.OwnerId
+		LEFT JOIN dbo.CompanyEmployee AS emp WITH (NOLOCK) ON emp.EmpId = r.EmpId
 		ORDER BY EmpId, OwnerId
 END
-
-
-
-
-
-
-
-

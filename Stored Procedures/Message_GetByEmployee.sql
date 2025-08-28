@@ -11,6 +11,8 @@ Task: Get message by employee.
 DB: HRM
 
 Revisions:
+	20250812@Mira: tranfer employee [Redmine: #235678]
+
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -25,7 +27,7 @@ BEGIN
 		,ISNULL(mse.IsDisabled, 1)
 	FROM dbo.[Message] AS ms WITH (NOLOCK)
 		INNER JOIN dbo.MessageGroup AS mg WITH (NOLOCK) ON ms.MessageId = mg.MessageId
-		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON mg.GroupId = e.GroupId
+		INNER JOIN dbo.CompanyEmployee AS e WITH (NOLOCK) ON mg.GroupId = e.GroupId
 		LEFT JOIN dbo.MessageEmployee AS mse WITH (NOLOCK) ON e.EmpId = mse.EmployeeId
 		AND ms.MessageId = mse.MessageId
 	WHERE e.EmpId = @EmployeeId

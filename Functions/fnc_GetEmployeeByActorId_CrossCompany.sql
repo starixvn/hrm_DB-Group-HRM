@@ -1,6 +1,6 @@
-/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="1"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" selecters="wsv_hrm" isFunction="1"></info>*/
 
-CREATE OR ALTER FUNCTION [dbo].[fnc_GetEmployeeByActorId_CrossCompany] (
+ALTER   FUNCTION [dbo].[fnc_GetEmployeeByActorId_CrossCompany] (
 	@EmpId INT = NULL
 	,@ExcludeUserDelete INT = 1
 	,@IsShowUserInTeam BIT = 1
@@ -14,52 +14,54 @@ RETURNS TABLE
 
 	Revisions:
         20250606@Hank: add @IsShowCrossCompany
+        20250813@Jay: change db structure [Redmine: #235678]
 	Param's Explanation:
 */
 AS
 RETURN
 WITH cteByRole AS (
-	SELECT e.EmpId
-	FROM dbo.Employee AS e WITH (NOLOCK)
-	    INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = e.EmpId AND ce.CompanyId = @CompanyId
-	WHERE @EmpId IS NULL
+	SELECT ce.EmpId
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+	WHERE (@EmpId IS NULL
 	   OR EXISTS (
 			SELECT 1
-			FROM dbo.Employee AS emp WITH (NOLOCK)
-                INNER JOIN dbo.EmployeeRole AS er WITH (NOLOCK) ON emp.EmpId = er.EmployeeId
+			FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+                INNER JOIN dbo.EmployeeRole AS er WITH (NOLOCK) ON ce.EmpId = er.EmployeeId
 			WHERE er.EmployeeId = @EmpId
                 AND er.RoleId IN (6, 7, 12) -- HR, SA, HR Assistant
-	   )
+	   ))
+	   AND ce.CompanyId = @CompanyId
 ),
 cteBySupervisor AS (
-	SELECT e.EmpId
+	SELECT ce.EmpId
 	FROM dbo.EmployeeSupervisor AS es WITH (NOLOCK)
-	    INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.EmpId = es.EmpId
+	    INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = es.EmpId
 	WHERE es.OwnerId = @EmpId
 	  AND es.IsDeleted = 0
 	  AND es.ActionType IN (2, 3, 4, 5) -- verifier, approver, shift manager, on behalf request
 ),
 cteByGroupSupervisor AS (
-	SELECT e.EmpId
+	SELECT ce.EmpId
 	FROM dbo.GroupSupervisor AS gs WITH (NOLOCK)
-	    INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON gs.GroupId = e.GroupId
+	    INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON gs.GroupId = ce.GroupId
 	WHERE gs.OwnerId = @EmpId
 	  AND gs.IsDeleted = 0
 	  AND gs.ActionType IN (2, 3, 4, 5) -- verifier, approver, shift manager, on behalf request
-	  AND e.EmpId NOT IN (
+	  AND ce.EmpId NOT IN (
 			SELECT es.EmpId
 			FROM dbo.EmployeeSupervisor AS es WITH (NOLOCK)
-			WHERE es.EmpId = e.EmpId
+			WHERE es.EmpId = ce.EmpId
 			  AND es.ActionType = gs.ActionType
 			  AND es.IsDeleted = 0
 		)
 ),
 cteBySameGroup AS (
-	SELECT ee.EmpId
-	FROM dbo.Employee AS e WITH (NOLOCK)
-	    INNER JOIN dbo.Employee AS ee WITH (NOLOCK) ON ee.GroupId = e.GroupId
-	    INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = ee.EmpId AND ce.CompanyId = @CompanyId
-	WHERE e.EmpId = @EmpId AND @IsShowUserInTeam = 1
+	SELECT cee.EmpId
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+	    INNER JOIN dbo.CompanyEmployee AS cee WITH (NOLOCK) ON cee.GroupId = ce.GroupId
+	WHERE ce.EmpId = @EmpId 
+		AND @IsShowUserInTeam = 1
+		AND ce.CompanyId = @CompanyId
 ),
 cteBySelf AS (
 	SELECT ce.EmpId
@@ -78,10 +80,10 @@ cteAll AS (
 	SELECT EmpId FROM cteBySelf
 )
 
-SELECT DISTINCT e.EmpId
+SELECT DISTINCT ce.EmpId
 FROM cteAll AS ca
-    INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.EmpId = ca.EmpId
+    INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = ca.EmpId
 WHERE (
-    (@ExcludeUserDelete = 1 AND e.isDeleted = 0 AND e.[Enabled] = 1)
+    (@ExcludeUserDelete = 1 AND ce.isDeleted = 0 AND ce.[Enabled] = 1)
 	OR @ExcludeUserDelete = 0
     )

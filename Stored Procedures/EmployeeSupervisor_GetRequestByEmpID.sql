@@ -12,6 +12,7 @@ Original:
 
 Revisions:    
 	20250730@Jay: Add company name for personal setting page [Redmine: #233324]
+	20250814@Lilac: restructure for transfer [Redmine: #235678]
 Param's Explanation:
 */
 BEGIN
@@ -21,11 +22,11 @@ BEGIN
 		SELECT su.OwnerId
 			,ee.FullName
 			,CASE 
-			WHEN @CompanyId IS NOT NULL AND @CompanyId = c.CompanyId THEN ee.NickName
-				ELSE ee.NickName + ' (' + ISNULL(c.Name, '') + ')'
+			WHEN @CompanyId IS NOT NULL AND @CompanyId = c.CompanyId THEN ce.NickName
+				ELSE ce.NickName + ' (' + ISNULL(c.Name, '') + ')'
 			END AS NickName
 			,su.ActionType
-			,ee.Email
+			,ce.Email
 			,'' AS OrderCode
 			,--OrderNo,
 			c.CompanyId
@@ -62,9 +63,9 @@ BEGIN
 				ELSE 0
 			END AS CanRemove
 		FROM [dbo].[EmployeeSupervisor] su WITH (NOLOCK)
-			INNER JOIN [dbo].Employee ee WITH (NOLOCK) ON su.OwnerId = ee.EmpId
-			LEFT JOIN dbo.[Group] AS g WITH (NOLOCK) ON ee.GroupId = g.GroupId
-			LEFT JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = su.OwnerId
+			INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = su.OwnerId
+			INNER JOIN [dbo].Employee ee WITH (NOLOCK) ON ce.UserId = ee.UserId
+			LEFT JOIN dbo.[Group] AS g WITH (NOLOCK) ON ce.GroupId = g.GroupId
 			LEFT JOIN dbo.Company AS c WITH (NOLOCK) ON c.CompanyId = ce.CompanyId
 		WHERE su.EmpId = @EmpId
 			AND ISNULL(su.IsDeleted, 0) = 0
@@ -72,20 +73,20 @@ BEGIN
 			,isnull(g.GroupID, - 1)
 			,isnull(g.NAME, '')
 			,ee.FullName
-			,ee.NickName
+			,ce.NickName
 			,su.ActionType
-			,ee.Email --, OrderNo 
+			,ce.Email --, OrderNo 
 			,c.[Name]
 			,c.CompanyId
 	ELSE IF @Role = 4
 		SELECT su.OwnerId
 			,ee.FullName
 			,CASE 
-			WHEN @CompanyId IS NOT NULL AND @CompanyId = c.CompanyId THEN ee.NickName
-				ELSE ee.NickName + ' (' + ISNULL(c.Name, '') + ')'
+			WHEN @CompanyId IS NOT NULL AND @CompanyId = c.CompanyId THEN ce.NickName
+				ELSE ce.NickName + ' (' + ISNULL(c.Name, '') + ')'
 			END AS NickName
 			,su.ActionType
-			,ee.Email
+			,ce.Email
 			,su.OrderCode
 			,--OrderNo,
 			c.[Name] AS CompanyName
@@ -104,9 +105,9 @@ BEGIN
 				ELSE 0
 			END AS CanRemove
 		FROM [dbo].[EmployeeSupervisor] su WITH (NOLOCK)
-			INNER JOIN [dbo].Employee ee WITH (NOLOCK) ON su.OwnerId = ee.EmpId
-			LEFT JOIN dbo.[Group] AS g WITH (NOLOCK) ON ee.GroupId = g.GroupId
-			LEFT JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = su.OwnerId
+			INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = su.OwnerId
+			INNER JOIN [dbo].Employee ee WITH (NOLOCK) ON ce.UserId = ee.UserId
+			LEFT JOIN dbo.[Group] AS g WITH (NOLOCK) ON ce.GroupId = g.GroupId
 			LEFT JOIN dbo.Company AS c WITH (NOLOCK) ON c.CompanyId = ce.CompanyId
 		WHERE su.EmpId = @EmpId
 			AND su.ActionType = @Role
@@ -146,11 +147,11 @@ BEGIN
 			SELECT su.OwnerId
 				,ee.FullName
 				,CASE 
-					WHEN @CompanyId IS NOT NULL AND @CompanyId = c.CompanyId THEN ee.NickName
-						ELSE ee.NickName + ' (' + ISNULL(c.Name, '') + ')'
+					WHEN @CompanyId IS NOT NULL AND @CompanyId = c.CompanyId THEN ce.NickName
+						ELSE ce.NickName + ' (' + ISNULL(c.Name, '') + ')'
 					END AS NickName
 				,su.ActionType
-				,ee.Email
+				,ce.Email
 				--,OrderNo
 				,c.[Name] AS CompanyName
 				,c.CompanyId
@@ -181,9 +182,9 @@ BEGIN
 				,isnull(g.GroupID, - 1) AS [TeamId]
 				,isnull(g.NAME, '') AS [Team]
 			FROM [dbo].[EmployeeSupervisor] su WITH (NOLOCK)
-				INNER JOIN [dbo].Employee ee WITH (NOLOCK) ON su.OwnerId = ee.EmpId
-				LEFT JOIN dbo.[Group] AS g WITH (NOLOCK) ON ee.GroupId = g.GroupId
-				LEFT JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = su.OwnerId
+				INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = su.OwnerId
+				INNER JOIN [dbo].Employee ee WITH (NOLOCK) ON ce.UserId = ee.UserId
+				LEFT JOIN dbo.[Group] AS g WITH (NOLOCK) ON ce.GroupId = g.GroupId
 				LEFT JOIN dbo.Company AS c WITH (NOLOCK) ON c.CompanyId = ce.CompanyId
 			WHERE su.EmpId = @EmpId
 				AND su.ActionType = @Role
@@ -192,9 +193,9 @@ BEGIN
 				,isnull(g.GroupID, - 1)
 				,isnull(g.NAME, '')
 				,ee.FullName
-				,ee.NickName
+				,ce.NickName
 				,su.ActionType
-				,ee.Email
+				,ce.Email
 				,c.[Name]
 				,c.CompanyId
 			) AS Su

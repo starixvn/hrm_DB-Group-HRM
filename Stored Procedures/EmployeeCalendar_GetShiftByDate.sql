@@ -11,6 +11,7 @@ DB: HRM_SMS
 Original:
 
 Revisions:
+        20250813@Jay: change db structure [Redmine: #235678]
 Param's Explanation:
 */
 BEGIN
@@ -34,6 +35,7 @@ BEGIN
 	FROM dbo.[Shift] WITH (NOLOCK)
 	WHERE ShiftId = @ShiftId
 END
+
 
 
 

@@ -18,6 +18,7 @@ AS
         20250403@Tim: remove section [Redmine: #222886]
         20250515@Jay: add years of service for extra leave [Redmine: #227166]
         20250530@Jay: show company name for employees from different company [Redmine: #225528]
+        20250812@Mira: tranfer employee [Redmine: #235678]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -49,11 +50,8 @@ BEGIN
 				ELSE 0
 				END) TotalExpat
 	FROM dbo.[Group] AS g WITH (NOLOCK)
-		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON emp.GroupId = g.GroupId
-		AND emp.isDeleted = 0
-		AND emp.[Enabled] = 1
+		INNER JOIN dbo.CompanyEmployee AS emp WITH (NOLOCK) ON emp.GroupId = g.GroupId AND emp.isDeleted = 0 AND emp.[Enabled] = 1
 		INNER JOIN dbo.EmployeeSummary AS esum WITH (NOLOCK) ON esum.EmpId = emp.EmpId
-		INNER JOIN dbo.CompanyEmployee c WITH (NOLOCK) on c.EmpId = emp.EmpId AND c.CompanyId = @CompanyId
 	WHERE (
 			 @TeamId IS NULL
 			OR g.GroupId =  @TeamId
@@ -89,7 +87,7 @@ BEGIN
 		,g.PICEmpId
 		,cpic.[Name] AS PICCompanyName
 		,cpic.[CompanyId] AS PICCompanyId
-		,ld.NickName as PICNickName
+		,cepic.NickName as PICNickName
 		,u.Code AS UnitCode
 		,dept.DepartmentId
         ,dept.Code
@@ -97,7 +95,6 @@ BEGIN
 	FROM dbo.[Group] AS g WITH (NOLOCK)
 		INNER JOIN dbo.Department AS dept WITH (NOLOCK) ON g.DepartmentId = dept.DepartmentId
 		INNER JOIN dbo.Unit AS u WITH (NOLOCK) ON u.UnitId = dept.UnitId
-		LEFT JOIN dbo.Employee AS ld WITH (NOLOCK) ON ld.EmpId = g.PICEmpId
 		LEFT JOIN dbo.CompanyEmployee cepic WITH (NOLOCK) ON cepic.EmpId = g.PICEmpId
 		LEFT JOIN dbo.Company cpic WITH (NOLOCK) ON cpic.CompanyId = cepic.CompanyId
 		LEFT JOIN #tmpGroup AS tbl ON g.GroupId = tbl.GroupId
@@ -119,8 +116,8 @@ BEGIN
 
 	SELECT mng.GroupId AS TeamId
 		,mng.RoleId
-		,emp.EmpId
-		,emp.NickName
+		,ce.EmpId
+		,ce.NickName
 		,emp.FullName
 	FROM dbo.GroupManager AS mng WITH (NOLOCK)
 		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON mng.GroupId = g.GroupId
@@ -132,12 +129,12 @@ BEGIN
 			@isDeleted IS NULL
 			OR g.isDeleted = @isDeleted
 			)
-		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON mng.EmpId = emp.EmpId
-		INNER JOIN dbo.CompanyEmployee c WITH (NOLOCK) on c.EmpId = emp.EmpId
+		INNER JOIN dbo.CompanyEmployee ce WITH (NOLOCK) on ce.EmpId = mng.EmpId
+		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON emp.UserId = ce.UserId
     WHERE g.CompanyId = @CompanyId
-        AND c.CompanyId = @CompanyId
-		AND emp.isDeleted = 0
-		AND emp.[Enabled] = 1
+        AND ce.CompanyId = @CompanyId
+		AND ce.isDeleted = 0
+		AND ce.[Enabled] = 1
 
     DROP TABLE #tmpGroup
 END

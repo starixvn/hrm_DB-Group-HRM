@@ -1,6 +1,6 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE PROCEDURE [dbo].[EmployeePayroll_Get]
+ALTER PROCEDURE [dbo].[EmployeePayroll_Get]
     @Month DATE = NULL,
     @CompanyId INT,
 	@PeriodType INT = NULL
@@ -13,6 +13,7 @@ AS
 
 	Revisions:  
 		Hank.Nguyen@20250505: Import employee payroll.
+		20250812@Mira: tranfer employee [Redmine: #235678]
 	Param's Explanation:
 */
 BEGIN
@@ -21,7 +22,7 @@ BEGIN
     SELECT 
         ep.[EmpId],
         emp.[Code],
-        emp.[FullName],
+        e.[FullName],
         emp.[NickName],
         dept.[Name] AS DepartmentName,
         team.[Name] AS TeamName,
@@ -31,13 +32,14 @@ BEGIN
         ep.[ModifiedDate] AS LastModifiedDate,
         ep.[PeriodType]
     FROM [dbo].[EmployeePayroll] ep WITH (NOLOCK)
-    INNER JOIN [dbo].[Employee] emp WITH (NOLOCK) ON ep.EmpId = emp.EmpId
+    INNER JOIN [dbo].[CompanyEmployee] emp WITH (NOLOCK) ON ep.EmpId = emp.EmpId
+    INNER JOIN [dbo].[Employee] e WITH (NOLOCK) ON e.UserId = emp.UserId
     INNER JOIN [dbo].[CompanyEmployee] empCom WITH (NOLOCK) ON emp.EmpId = empCom.EmpId AND empCom.CompanyId = @CompanyId
     LEFT JOIN [dbo].[Group] team WITH (NOLOCK) ON emp.GroupId = team.GroupId
     LEFT JOIN [dbo].[Department] dept WITH (NOLOCK) ON team.DepartmentId = dept.DepartmentId
     WHERE (@Month IS NULL OR ep.[Month] = @Month) AND
 		(@PeriodType IS NULL OR ep.PeriodType = @PeriodType)
-    ORDER BY ep.[Month], ep.[PeriodType], dept.[Name], team.[Name], emp.[FullName];
+    ORDER BY ep.[Month], ep.[PeriodType], dept.[Name], team.[Name], e.[FullName];
 
 END
 

@@ -11,6 +11,8 @@ Task:
 DB: HRM
 
 Revisions:
+	20250812@Mira: change DB structure [Redmine: #235678]
+
 
 */
 BEGIN
@@ -23,11 +25,10 @@ BEGIN
 	DECLARE @TimeRecord TABLE (Id INT, EmpId INT, RecordTime DATETIME, InOutType TINYINT)
 
     SELECT @clientTimeZone = config.[Value]
-    FROM dbo.Employee AS emp WITH (NOLOCK)
-        INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
+    FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
         LEFT JOIN dbo.SystemConfigs AS config WITH (NOLOCK) ON ce.CompanyId = config.CompanyId
         AND config.[Key] = 'TimeZone'
-    WHERE emp.EmpId = @EmpId
+    WHERE ce.EmpId = @EmpId
 
     SET @clientTimeZone = ISNULL(@clientTimeZone, @serverTimeZone)
 

@@ -12,6 +12,7 @@ RETURNS NUMERIC(18, 2)
 	DB: bodb_HRM
 
 	Revisions:
+			20250812@Mira: change db structure [Redmine: #235678]
 */
 AS
 BEGIN

@@ -24,6 +24,7 @@ AS
     Revisions:
         20250403@Tim: remove section [Redmine: #222886]
         20250722@Tim: auto approve request [Redmine: #233324]
+		20250812@Mira: tranfer employee [Redmine: #235678]
     Param's Explanation:
 */
 BEGIN
@@ -82,7 +83,7 @@ BEGIN
 		BEGIN
 			INSERT INTO #tblEmployeeId (EmpID)
 			SELECT e.EmpId
-			FROM dbo.Employee AS e WITH (NOLOCK)
+			FROM dbo.CompanyEmployee AS e WITH (NOLOCK)
 		END
 		ELSE IF @role LIKE '%2%'
 		BEGIN
@@ -115,8 +116,7 @@ BEGIN
 	SELECT r.RequestId
 	FROM dbo.WorkingTimeRequest AS r WITH (NOLOCK)
 		INNER JOIN #tblEmployeeId AS eid WITH (NOLOCK) ON r.EmpId = eid.EmpId
-		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.empID = eid.empID
-		AND e.isDeleted = 0
+		INNER JOIN dbo.CompanyEmployee AS e WITH (NOLOCK) ON e.empID = eid.empID AND e.isDeleted = 0
 		LEFT JOIN dbo.EmployeeSummary AS e_s WITH (NOLOCK) ON e_s.EmpId = eid.EmpId
 	WHERE (
 			@requestType = 0
@@ -205,7 +205,6 @@ BEGIN
 	FROM dbo.WorkingTimeRequest AS wt WITH (NOLOCK)
 		INNER JOIN #tblRequestId AS rq WITH (NOLOCK) ON wt.RequestId = rq.RequestId
 		INNER JOIN dbo.LateInEarlyOutRequest AS inout WITH (NOLOCK) ON wt.RequestId = inout.RequestId
-		INNER JOIN dbo.Employee AS ee WITH (NOLOCK) ON ee.EmpId = wt.EmpId
 	WHERE wt.currentstatus = 6		
 		AND (
 			DATEDIFF(MM, inout.OnDate, @fromdate) = 0
@@ -230,7 +229,7 @@ BEGIN
 	FROM dbo.WorkingTimeRequest AS wt WITH (NOLOCK)
 		INNER JOIN #tblRequestId AS rq WITH (NOLOCK) ON wt.RequestId = rq.RequestId
 		INNER JOIN dbo.LeaveRequest AS lr WITH (NOLOCK) ON wt.RequestId = lr.RequestId
-		INNER JOIN dbo.Employee AS ee WITH (NOLOCK) ON ee.EmpId = wt.EmpId
+		--INNER JOIN dbo.CompanyEmployee AS ee WITH (NOLOCK) ON ee.EmpId = wt.EmpId
 	WHERE wt.currentstatus = 6
 		AND (
 			DATEDIFF(MM, lr.FromDate, @fromdate) = 0
@@ -302,7 +301,6 @@ BEGIN
 	FROM dbo.WorkingTimeRequest AS wt WITH (NOLOCK)
 		INNER JOIN #tblRequestId AS rq WITH (NOLOCK) ON wt.RequestId = rq.RequestId
 		INNER JOIN dbo.CheckInOutRequest AS lr WITH (NOLOCK) ON wt.RequestId = lr.RequestId
-		INNER JOIN dbo.Employee AS ee WITH (NOLOCK) ON ee.EmpId = wt.EmpId
 	WHERE wt.currentstatus = 6
 		AND (
 			DATEDIFF(MM, lr.OnDate, @fromdate) = 0
@@ -600,10 +598,10 @@ BEGIN
 		,rd.InOutMins AS TotalMinutes
 		,rd.ActualInOutMins
 		,r.CreatedDate
-		,e.EmpId AS RequesterId
+		,ce.EmpId AS RequesterId
 		,CASE
-            WHEN tmpEmp.CompanyId <> @CompanyId THEN e.NickName + ' (' + ISNULL(company.Name, '') + ')'
-            ELSE e.NickName
+            WHEN tmpEmp.CompanyId <> @CompanyId THEN ce.NickName + ' (' + ISNULL(company.Name, '') + ')'
+            ELSE ce.NickName
         END AS RequesterNickName
 		,e.FullName AS RequesterFullName
 		,g.GroupId AS TeamId
@@ -619,18 +617,18 @@ BEGIN
             WHEN verifierCE.CompanyId <> @CompanyId THEN verifier.NickName + ' (' + ISNULL(verifierCompany.Name, '') + ')'
             ELSE verifier.NickName
         END AS VerifierNickName
-        ,verifier.FullName AS VerifierFullName
+        ,verifiere.FullName AS VerifierFullName
 		,r.VerifiedDate
 		,r.VerifiedStatus
 		,r.ApproverId
         ,CASE
             WHEN approverCE.CompanyId <> @CompanyId THEN approver.NickName + ' (' + ISNULL(approverCompany.Name, '') + ')'
             ELSE approver.NickName END AS ApproverNickName
-		,approver.FullName AS ApproverFullName
+		,approvere.FullName AS ApproverFullName
 		,r.ApprovedDate
 		,r.ApprovedStatus
 		,hr.NickName AS ProcessedByNickName
-		,hr.FullName AS ProcessedByFullName
+		,hre.FullName AS ProcessedByFullName
 		,r.HRDate AS ProcessedDate
 		,r.HRStatus AS ProcessedStatus
 		,r.ModifiedDate
@@ -642,22 +640,26 @@ BEGIN
 		INNER JOIN #tblRequestInDaily AS rd WITH (NOLOCK) ON r.RequestId = rd.RequestID
 		INNER JOIN #tblRequestId AS rq WITH (NOLOCK) ON r.RequestId = rq.RequestId
 		INNER JOIN #tblEmployeeId AS tmpEmp WITH (NOLOCK) ON tmpEmp.EmpId = r.EmpId
-		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.empID = tmpEmp.empID
+		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.empID = tmpEmp.empID
+		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON ce.UserId = e.UserId
 		INNER JOIN dbo.Company AS company WITH (NOLOCK) ON company.CompanyId = tmpEmp.CompanyId
-		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON e.GroupID = g.GroupID
+		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON ce.GroupID = g.GroupID
 		INNER JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId = g.DepartmentId
 		INNER JOIN dbo.Unit AS u WITH (NOLOCK) ON u.UnitId = dep.UnitId
 		LEFT JOIN dbo.LateInEarlyOutRequest AS inout WITH (NOLOCK) ON r.RequestId = inout.RequestId
 		LEFT JOIN dbo.LeaveRequest AS lr WITH (NOLOCK) ON r.RequestId = lr.RequestId
 		LEFT JOIN dbo.CheckInOutRequest AS inoutmiss WITH (NOLOCK) ON r.RequestId = inoutmiss.RequestId
 		LEFT JOIN dbo.ChangeShiftRequest AS csr WITH (NOLOCK) ON r.RequestId = csr.RequestId
-		LEFT JOIN dbo.Employee AS verifier WITH (NOLOCK) ON verifier.empid = r.VerifierId
+		LEFT JOIN dbo.CompanyEmployee AS verifier WITH (NOLOCK) ON verifier.empid = r.VerifierId
+		LEFT JOIN dbo.Employee AS verifiere WITH (NOLOCK) ON verifiere.UserId = verifier.UserId
 		LEFT JOIN dbo.CompanyEmployee AS verifierCE WITH (NOLOCK) ON verifierCE.EmpId = verifier.EmpId
 		LEFT JOIN dbo.Company AS verifierCompany WITH (NOLOCK) ON verifierCompany.CompanyId = verifierCE.CompanyId
-		LEFT JOIN dbo.Employee AS approver WITH (NOLOCK) ON approver.EmpId = r.ApproverId
+		LEFT JOIN dbo.CompanyEmployee AS approver WITH (NOLOCK) ON approver.EmpId = r.ApproverId
+		LEFT JOIN dbo.Employee AS approvere WITH (NOLOCK) ON approvere.UserId = approver.UserId
 		LEFT JOIN dbo.CompanyEmployee AS approverCE WITH (NOLOCK) ON approverCE.EmpId = approver.EmpId
 		LEFT JOIN dbo.Company AS approverCompany WITH (NOLOCK) ON approverCompany.CompanyId = approverCE.CompanyId
-		LEFT JOIN dbo.Employee AS hr WITH (NOLOCK) ON hr.EmpId = r.HRId
+		LEFT JOIN dbo.CompanyEmployee AS hr WITH (NOLOCK) ON hr.EmpId = r.HRId
+		LEFT JOIN dbo.Employee AS hre WITH (NOLOCK) ON hre.UserId = hr.UserId
 		LEFT JOIN #tblTotalDaysRequestInMonth AS rm ON r.EmpId = rm.EmpId
 		AND r.RequestType = rm.RequestType
 		LEFT JOIN #tblGeneralLeaveDetail AS gdt ON r.RequestId = gdt.RequestId

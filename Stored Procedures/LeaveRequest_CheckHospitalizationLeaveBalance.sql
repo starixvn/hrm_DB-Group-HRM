@@ -1,5 +1,6 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
+
 ALTER PROCEDURE [dbo].[LeaveRequest_CheckHospitalizationLeaveBalance]
 (
     @EmpId INT
@@ -16,6 +17,7 @@ AS
 
     Revisions:
         20250429@Tim: get RefResource by CompanyId
+        20250813@Jay: change db structure [Redmine: #235678]
     Param's Explanation:
 */
 BEGIN
@@ -27,9 +29,8 @@ BEGIN
         ,@EnableHospitalizationLeaveBalance BIT = 0
 
     SELECT @CompanyId = ce.CompanyId
-    FROM dbo.Employee AS e WITH (NOLOCK)
-        INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
-    WHERE e.EmpId = @EmpId
+    FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+    WHERE ce.EmpId = @EmpId
 
 	SELECT @EnableHospitalizationLeaveBalance = CAST(Value AS BIT)
 	FROM dbo.RefResource WITH (NOLOCK)

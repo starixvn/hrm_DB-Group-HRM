@@ -2,7 +2,6 @@
 
 ALTER PROCEDURE [dbo].[MailRecorder_InsRecord]
 	@AppId INT,
-	@FuncId	INT,
 	@MailTo	NVARCHAR(250),	
 	@Title NVARCHAR(250) = '',
 	@Subject NVARCHAR(250),
@@ -23,6 +22,8 @@ DB: HRM
 Original:
 
 Revisions:
+	20250812@Mira: tranfer employee [Redmine: #235678]
+
 */
 BEGIN
     SET NOCOUNT ON;
@@ -40,7 +41,6 @@ BEGIN
 
 	    INSERT INTO dbo.Mail_Record(
 		    AppId
-		    ,FuncId
 		    ,MailTo
 		    ,Title
 		    ,Subject
@@ -52,7 +52,6 @@ BEGIN
 		    ,IsEncrypt)
 	    VALUES (
 		    @AppId
-		    ,@FuncId
 		    ,@MailTo
 		    ,N'' + @Title + ''
 		    ,N'' + @Subject + ''

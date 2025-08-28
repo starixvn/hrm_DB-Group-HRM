@@ -14,8 +14,8 @@ AS
     Revisions:
 	    2023-03-20@Teddy.Le: get Letstalk
         20250509@Tim: remove HR
-        20250715@Henry: check company Letstalk config per person
-        20250730@Henry: add companyId to MailSettings
+        20250115@Henry: check company Letstalk config per person
+        20250813@Jay: change db structure [Redmine: #235678]
     Param's Explanation:
 */
 BEGIN
@@ -35,65 +35,65 @@ BEGIN
 
 	SELECT 0 AS RoleId
 		,'Member' AS [Role]
-		,e.EmpId
+		,ce.EmpId
 		,e.FullName
-		,e.NickName
-		,e.Email
+		,ce.NickName
+		,ce.Email
 		,CASE 
 			WHEN sc.Value = 'true' THEN e.LetsTalk 
 			ELSE NULL 
 		END AS LetsTalk
-		,e.Code AS EmpCode
+		,ce.Code AS EmpCode
 		,CASE 
 			WHEN epic.EmpId IS NOT NULL 
 			THEN epic.NickName + ' (' + epic.Code + ')'
 			ELSE '' 
 		END AS PICDisplayName
-	FROM dbo.Employee e WITH (NOLOCK)
-	LEFT JOIN dbo.[Group] g WITH (NOLOCK) ON e.GroupId = g.GroupId
-	LEFT JOIN dbo.Employee epic WITH (NOLOCK) ON g.PICEmpId = epic.EmpId
-	LEFT JOIN dbo.CompanyEmployee ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
+	FROM dbo.CompanyEmployee ce WITH (NOLOCK)
+	LEFT JOIN dbo.[Group] g WITH (NOLOCK) ON ce.GroupId = g.GroupId
+	LEFT JOIN dbo.CompanyEmployee epic WITH (NOLOCK) ON g.PICEmpId = epic.EmpId
+	INNER JOIN dbo.Employee e (NOLOCK) ON e.UserId = ce.UserId
 	LEFT JOIN dbo.SystemConfigs sc WITH (NOLOCK) ON ce.CompanyId = sc.CompanyId AND sc.[Key] = 'EnableLetstalk'
-	WHERE e.EmpId = @EmpId
-		AND e.[Enabled] = 1
-		AND e.isDeleted = 0
+	WHERE ce.EmpId = @EmpId
+		AND ce.[Enabled] = 1
+		AND ce.isDeleted = 0
 
 	SELECT 2 AS RoleId
 		,'Verifier' AS [Role]
-		,e.EmpId
+		,ce.EmpId
 		,e.FullName
-		,e.NickName
-		,e.Email
+		,ce.NickName
+		,ce.Email
 		,CASE 
 			WHEN sc.Value = 'true' THEN e.LetsTalk 
 			ELSE NULL 
 		END AS LetsTalk
-	FROM dbo.Employee e WITH (NOLOCK)
-	LEFT JOIN dbo.CompanyEmployee ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
+	FROM dbo.CompanyEmployee ce WITH (NOLOCK)
+	LEFT JOIN dbo.Employee e WITH (NOLOCK) ON e.UserId = ce.UserId
 	LEFT JOIN dbo.SystemConfigs sc WITH (NOLOCK) ON ce.CompanyId = sc.CompanyId AND sc.[Key] = 'EnableLetstalk'
-	WHERE e.EmpId = @VerifierId
-		AND e.[Enabled] = 1
-		AND e.isDeleted = 0
+	WHERE ce.EmpId = @VerifierId
+		AND ce.[Enabled] = 1
+		AND ce.isDeleted = 0
 
 	SELECT 3 AS RoleId
 		,'Approver' AS [Role]
-		,e.EmpId
+		,ce.EmpId
 		,e.FullName
-		,e.NickName
-		,e.Email
+		,ce.NickName
+		,ce.Email
 		,CASE 
 			WHEN sc.Value = 'true' THEN e.LetsTalk 
 			ELSE NULL 
 		END AS LetsTalk
-	FROM dbo.Employee e WITH (NOLOCK)
-	LEFT JOIN dbo.CompanyEmployee ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
+	FROM dbo.CompanyEmployee ce WITH (NOLOCK)
+	LEFT JOIN dbo.Employee e WITH (NOLOCK) ON e.UserId = ce.UserId
 	LEFT JOIN dbo.SystemConfigs sc WITH (NOLOCK) ON ce.CompanyId = sc.CompanyId AND sc.[Key] = 'EnableLetstalk'
-	WHERE e.EmpId = @ApproverId
-		AND e.[Enabled] = 1
-		AND e.isDeleted = 0
+	WHERE ce.EmpId = @ApproverId
+		AND ce.[Enabled] = 1
+		AND ce.isDeleted = 0
 
 	SELECT @TeamId = GroupId
-	FROM dbo.Employee WITH (NOLOCK)
+	FROM dbo.CompanyEmployee WITH (NOLOCK)
 	WHERE EmpId = @EmpId
 
 	IF EXISTS (
@@ -110,11 +110,9 @@ BEGIN
 			,ms.AllowSendApprover
 			,ms.AllowSendHR
 			,ms.AllowSendMailGroup
-			,cs.Domain AS CallbackUrl
 			,ce.CompanyId
 		FROM dbo.MailSettings ms WITH (NOLOCK)
 		LEFT JOIN dbo.CompanyEmployee ce WITH (NOLOCK) ON ce.EmpId = @EmpId AND ISNULL(ce.IsDeleted, 0) = 0 AND ISNULL(ce.Enabled, 1) = 1
-		LEFT JOIN dbo.CompanySite cs WITH (NOLOCK) ON ce.CompanyId = cs.CompanyId
 		WHERE ms.GroupId = @TeamId
 			AND ms.[Action] = @Action
 	END
@@ -127,11 +125,9 @@ BEGIN
 			,ms.AllowSendApprover
 			,ms.AllowSendHR
 			,ms.AllowSendMailGroup
-			,cs.Domain AS CallbackUrl
 			,ce.CompanyId
 		FROM dbo.MailSettings ms WITH (NOLOCK)
 		LEFT JOIN dbo.CompanyEmployee ce WITH (NOLOCK) ON ce.EmpId = @EmpId AND ISNULL(ce.IsDeleted, 0) = 0 AND ISNULL(ce.Enabled, 1) = 1
-		LEFT JOIN dbo.CompanySite cs WITH (NOLOCK) ON ce.CompanyId = cs.CompanyId
 		WHERE ms.GroupId = 0
 			AND ms.[Action] = @Action
 	END

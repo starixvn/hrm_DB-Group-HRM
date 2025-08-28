@@ -13,21 +13,23 @@ AS
 
     Revisions:
         20250306@Tim: initial - [Redmine: #217976]
+        20250813@Jay: change db structure [Redmine: #235678]
 */
 BEGIN
 	SET NOCOUNT ON;
 
-	SELECT emp.EmpId
-		,emp.Code
-		,emp.FullName
-		,emp.NickName
-		,emp.[Password]
-		,emp.[Enabled]
-		,es.IsTopManager
+	SELECT ce.EmpId
+		,ce.Code
+		,e.FullName
+		,ce.NickName
+		,e.[Password]
+		,ce.[Enabled]
+		,ce.IsSpecialUser AS IsTopManager
         ,ce.AutoApproveRequest
-	FROM dbo.Employee AS emp WITH (NOLOCK)
-		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON emp.EmpId = es.EmpId
-        LEFT JOIN dbo.CompanyEmployee AS ce ON emp.EmpId = ce.EmpId
-        AND ce.CompanyId = @CompanyId
-	WHERE emp.EmpId = @UserId
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+        INNER JOIN dbo.Employee AS e ON e.UserId = ce.UserId
+		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON ce.EmpId = es.EmpId
+	WHERE ce.UserId = @UserId
+			AND ce.[Enabled] = 1
+			AND (@CompanyId IS NULL OR ce.CompanyId = @CompanyId)
 END

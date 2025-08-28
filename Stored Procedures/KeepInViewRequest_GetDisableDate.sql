@@ -14,6 +14,7 @@ DB: HRM_SMS
 Original:
 
 Revisions:
+        20250813@Jay: change db structure [Redmine: #235678]
 Param's Explanation:
 */
 BEGIN
@@ -38,12 +39,11 @@ BEGIN
 		,tmpca.LeaveDay
 		,tmpca.ChangeShiftTypeId
 	INTO #tblEmployeeCalendar
-	FROM dbo.Employee AS emp WITH (NOLOCK)
-		INNER JOIN dbo.tmpEmployeeCalendar AS tmpca WITH (NOLOCK) ON emp.EmpId = tmpca.EmpId
-		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		INNER JOIN dbo.tmpEmployeeCalendar AS tmpca WITH (NOLOCK) ON ce.EmpId = tmpca.EmpId
 		AND tmpca.WorkDate BETWEEN @fromDate
 			AND @toDate
-	WHERE emp.EmpId = @EmpId
+	WHERE ce.EmpId = @EmpId
 		AND ce.CompanyId = @CompanyId
 
 	SELECT WorkDate
@@ -69,4 +69,3 @@ BEGIN
 
 	DROP TABLE #tblEmployeeCalendar
 END
-

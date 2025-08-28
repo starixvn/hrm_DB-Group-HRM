@@ -19,6 +19,7 @@ AS
         20250512@Tim: sync time record Hong Ma [Redmine: 226225]
         20250606@Tim: enhance performance
         20250609@Tim: fix bug incorrect employee mapping
+		20250812@Mira: change DB structure [Redmine: #235678]
     Param's Explanation:
         - @TimeRecordXml: "<Root>
 		        <Row EmpNo={0} InOutType={1} RecordTime={2} />
@@ -55,7 +56,7 @@ BEGIN
         ,RecordTime
         ,DATEADD(MINUTE, CASE WHEN config.[Value] IS NULL THEN 0 ELSE CAST(config.[Value] AS REAL) END * 60, DATEADD(HOUR, ABS(@serverTimeZone), d.RecordTime))
 	FROM OPENXML(@DocHandler, '/Root/Row', 1) WITH (EmpNo VARCHAR(20), InOutType TINYINT, RecordTime DATETIME) AS d
-        INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON d.EmpNo = emp.Code
+        INNER JOIN dbo.CompanyEmployee AS emp WITH (NOLOCK) ON d.EmpNo = emp.Code
             OR (@CompanyId = @SMSCompanyId AND ISNULL(TRY_PARSE(emp.Code AS INT), 0) = ISNULL(TRY_PARSE(d.EmpNo AS INT), -1))
             OR (@CompanyId = @HongMaCompanyId AND RIGHT(emp.Code, 4) = RIGHT(d.EmpNo, 4))
         INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
@@ -132,10 +133,11 @@ BEGIN
 			)	
 
 	INSERT INTO #tmpEmployeeAttendance (EmpId, WorkDate)
-	SELECT e.EmpId, @todate
-	FROM dbo.Employee AS e WITH (NOLOCK)
-		INNER JOIN #tmpEmployee AS ec ON e.EmpId = ec.EmpId
-	WHERE e.[Enabled] = 1
+	SELECT ce.EmpId, @todate
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		INNER JOIN #tmpEmployee AS ec ON ce.EmpId = ec.EmpId
+		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.UserId = ce.UserId
+	WHERE ce.[Enabled] = 1
 		AND DATEDIFF(DD, e.JoinedDate, @todate) > 0
 		AND (
 			e.ResignedDate IS NULL
@@ -145,7 +147,7 @@ BEGIN
 			SELECT 1
 			FROM dbo.EmployeeAttendance AS att WITH (NOLOCK)
 			WHERE att.AttendanceDate = CAST(@todate AS DATETIME)
-				AND att.EmpId = e.EmpId
+				AND att.EmpId = ce.EmpId
 			)
 
 	INSERT INTO #tmpEmployeeAttendance (EmpId, WorkDate)
@@ -153,7 +155,7 @@ BEGIN
 	FROM dbo.EmployeeAttendance AS att WITH (NOLOCK)
 		INNER JOIN dbo.EmployeeCalendar AS empca WITH (NOLOCK) ON att.EmpId = empca.EmpId
 		AND att.AttendanceDate = empca.WorkDate
-		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON att.EmpId = e.EmpId
+		INNER JOIN dbo.CompanyEmployee AS e WITH (NOLOCK) ON att.EmpId = e.EmpId
 		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON e.EmpId = es.EmpId
 		LEFT JOIN dbo.DisciplineGroupRule AS rul WITH (NOLOCK) ON e.GroupId = rul.GroupId
 		AND es.IsLocal = rul.IsLocal
@@ -181,7 +183,7 @@ BEGIN
 	INSERT INTO #tmpEmployeeAttendance (EmpId, WorkDate)
 	SELECT att.EmpId, att.AttendanceDate
 	FROM dbo.EmployeeAttendance AS att WITH (NOLOCK)
-		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON att.EmpId = e.EmpId
+		INNER JOIN dbo.CompanyEmployee AS e WITH (NOLOCK) ON att.EmpId = e.EmpId
 		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON e.EmpId = es.EmpId
 		LEFT JOIN dbo.DisciplineGroupRule AS rul WITH (NOLOCK) ON e.GroupId = rul.GroupId
 		AND es.IsLocal = rul.IsLocal

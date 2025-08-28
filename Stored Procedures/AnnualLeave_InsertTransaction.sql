@@ -22,6 +22,7 @@ AS
 
     Revisions:
         20250429@Tim: get RefResource by CompanyId
+		20250813@Lilac: restructure for transfer [Redmine: #235678]
     Param's Explanation:
 */
 BEGIN
@@ -35,13 +36,13 @@ BEGIN
 		,@JoinedDate DATE
 
     SELECT @CompanyId = ce.CompanyId
-    FROM dbo.Employee AS e WITH (NOLOCK)
-        INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
-    WHERE e.EmpId = @EmpId
+    FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+    WHERE ce.EmpId = @EmpId
 
 	SELECT @JoinedDate = e.JoinedDate
 	FROM dbo.Employee AS e WITH (NOLOCK)
-	WHERE e.EmpId = @EmpId
+        INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.UserId = ce.UserId
+	WHERE ce.EmpId = @EmpId
 
 	SELECT @maximumBalanceForLocal = Value
 	FROM dbo.RefResource WITH (NOLOCK)
@@ -88,9 +89,10 @@ BEGIN
 
 	IF EXISTS (
 			SELECT 1
-			FROM dbo.Employee WITH (NOLOCK)
-			WHERE EmpId = @EmpId
-				AND ISNULL(ConfirmedDate, GETDATE() - 365) > @FromDate
+			FROM dbo.Employee AS e WITH (NOLOCK)
+			    INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.UserId = ce.UserId
+			WHERE ce.EmpId = @EmpId
+				AND ISNULL(e.ConfirmedDate, GETDATE() - 365) > @FromDate
 				AND @CreditDays > 0
 			)
 	BEGIN

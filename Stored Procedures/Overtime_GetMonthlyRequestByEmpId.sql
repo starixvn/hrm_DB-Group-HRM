@@ -13,6 +13,7 @@ DB: HRM
 Revisions:
 	- Jay.do@20250603: handle cross company [Redmine: #227151]
 	- Mira@20250716: remove company with nick name for employee in different company [#Redmine: 232030]
+	- 20250813@Jay: change db structure [Redmine: #235678]
 Param's Explanation:
 */
 BEGIN
@@ -40,25 +41,25 @@ BEGIN
 		,request.PublicHours
 		,request.SpecialHours
 		,request.CurrentStatus AS StatusId
-		,verifier.EmpId AS VerifierId
-		,verifier.NickName
+		,vece.EmpId AS VerifierId
+		,vece.NickName
 		,verifier.FullName
-		,approver.EmpId AS ApproverId
-		,approver.NickName
+		,apce.EmpId AS ApproverId
+		,apce.NickName
 		,approver.FullName
 	FROM #tblMonth AS cl
 		LEFT JOIN dbo.OTMonthlyRequest AS request WITH (NOLOCK) ON request.[Month] = cl.[Month]
 		AND request.[Month] BETWEEN @fromdate
 			AND @todate
 		AND request.EmpId = @EmployeeId
-		LEFT JOIN dbo.Employee AS emp WITH (NOLOCK) ON emp.EmpId = request.EmpId
-		LEFT JOIN dbo.Employee AS verifier WITH (NOLOCK) ON verifier.empid = request.VerifierId
-		LEFT JOIN dbo.Employee AS approver WITH (NOLOCK) ON approver.empid = request.ApproverId
-		LEFT JOIN dbo.CompanyEmployee AS vece WITH (NOLOCK) ON vece.EmpId = verifier.EmpId
-		LEFT JOIN dbo.Company vec WITH (NOLOCK) ON vec.CompanyId = vece.CompanyId
-		LEFT JOIN dbo.CompanyEmployee AS apce WITH (NOLOCK) ON apce.EmpId = approver.EmpId
-		LEFT JOIN dbo.Company apc WITH (NOLOCK) ON apc.CompanyId = apce.CompanyId
 		LEFT JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = request.EmpId
+		LEFT JOIN dbo.Employee AS emp WITH (NOLOCK) ON emp.UserId = ce.UserId
+		LEFT JOIN dbo.CompanyEmployee AS vece WITH (NOLOCK) ON vece.EmpId = request.VerifierId
+		LEFT JOIN dbo.Employee AS verifier WITH (NOLOCK) ON verifier.UserId = vece.UserId
+		LEFT JOIN dbo.CompanyEmployee AS apce WITH (NOLOCK) ON apce.EmpId = request.ApproverId
+		LEFT JOIN dbo.Employee AS approver WITH (NOLOCK) ON approver.UserId = apce.UserId
+		LEFT JOIN dbo.Company vec WITH (NOLOCK) ON vec.CompanyId = vece.CompanyId
+		LEFT JOIN dbo.Company apc WITH (NOLOCK) ON apc.CompanyId = apce.CompanyId
 	    AND ce.CompanyId = @CompanyId
 	WHERE EXISTS (
 			SELECT 1

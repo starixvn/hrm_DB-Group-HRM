@@ -19,6 +19,7 @@ AS
     Revisions:
         2025-04-24@Henry: Merge action type 2, 3, 4, 5
         20250731@Mira: setting cross company [Redmine: #233324]
+        20250813@Jay: change db structure [Redmine: #235678]
     Param's Explanation:
 */
 BEGIN
@@ -59,35 +60,35 @@ BEGIN
 		AND ISNULL(IsDeleted, 0) = 0
 		AND EXISTS (
 			SELECT 1
-			FROM dbo.Employee AS emp WITH (NOLOCK)
-				INNER JOIN @tblGroupIds AS gr ON emp.GroupId = gr.GroupId
-			WHERE emp.[Enabled] = 1
-				AND emp.isDeleted = 0
-				AND es.EmpId = emp.EmpId
+			FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+				INNER JOIN @tblGroupIds AS gr ON ce.GroupId = gr.GroupId
+			WHERE ce.[Enabled] = 1
+				AND ce.isDeleted = 0
+				AND es.EmpId = ce.EmpId
 			)
 
 	INSERT INTO #tblEmployeeIds (EmpId)
-	SELECT emp.EmpId
+	SELECT ce.EmpId
 	FROM dbo.GroupSupervisor AS gs WITH (NOLOCK)
-		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON gs.GroupId = emp.GroupId
+		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON gs.GroupId = ce.GroupId
 	WHERE gs.OwnerId = @ActorId
 		AND gs.ActionType = @ShiftManagerRoleId
 		AND ISNULL(gs.IsDeleted, 0) = 0
-		AND emp.[Enabled] = 1
-		AND emp.isDeleted = 0
+		AND ce.[Enabled] = 1
+		AND ce.isDeleted = 0
 		AND (
 			@EmpId IS NULL
-			OR emp.EmpId = @EmpId
+			OR ce.EmpId = @EmpId
 			)
 		AND EXISTS (
 			SELECT 1
 			FROM @tblGroupIds AS gr
-			WHERE emp.GroupId = gr.GroupId
+			WHERE ce.GroupId = gr.GroupId
 			)
 		AND NOT EXISTS (
 			SELECT 1
 			FROM #tblEmployeeIds AS tbl WITH (NOLOCK)
-			WHERE tbl.EmpId = emp.EmpId
+			WHERE tbl.EmpId = ce.EmpId
 			)
 
 	IF @IsIFrame = 1
@@ -95,22 +96,22 @@ BEGIN
 	BEGIN
 		INSERT INTO #tblEmployeeIds (EmpId)
 		SELECT EmpId
-		FROM dbo.Employee AS emp WITH (NOLOCK)
+		FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
 		WHERE [Enabled] = 1
 			AND isDeleted = 0
 			AND (
 				@EmpId IS NULL
-				OR emp.EmpId = @EmpId
+				OR ce.EmpId = @EmpId
 				)
 			AND EXISTS (
 				SELECT 1
 				FROM @tblGroupIds AS gr
-				WHERE emp.GroupId = gr.GroupId
+				WHERE ce.GroupId = gr.GroupId
 				)
 			AND NOT EXISTS (
 				SELECT 1
 				FROM #tblEmployeeIds AS tbl WITH (NOLOCK)
-				WHERE emp.EmpId = tbl.EmpId
+				WHERE ce.EmpId = tbl.EmpId
 				)
 	END
 
@@ -119,8 +120,9 @@ BEGIN
 	WHERE EXISTS (
 			SELECT 1
 			FROM dbo.EmployeeSummary AS esum WITH (NOLOCK)
+				INNER JOIN CompanyEmployee ce (NOLOCK) ON ce.EmpId = esum.EmpId
 			WHERE emp.EmpId = esum.EmpId
-				AND esum.IsTopManager = 1
+				AND ce.IsSpecialUser = 1
 			)
 
 	SELECT @EmployeeIds = COALESCE(@EmployeeIds + ',', '') + CAST(EmpId AS VARCHAR(10))
@@ -133,7 +135,7 @@ BEGIN
 		,@isEnable = 1
 		,@isDelete = 0
 
-	SELECT emp.EmpId
+	SELECT ce.EmpId
 		,tmpca.WorkDate
 		,tmpca.ShiftId
 		,tmpca.IsOvertime
@@ -159,14 +161,14 @@ BEGIN
 		,tmpca.MoveOffFromDate
 		,tmpca.MoveOffToDate
 	INTO #tblEmployeeCalendar
-	FROM dbo.Employee AS emp WITH (NOLOCK)
-		INNER JOIN dbo.tmpEmployeeCalendar AS tmpca WITH (NOLOCK) ON emp.EmpId = tmpca.EmpId
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		INNER JOIN dbo.tmpEmployeeCalendar AS tmpca WITH (NOLOCK) ON ce.EmpId = tmpca.EmpId
 		AND tmpca.WorkDate BETWEEN @fromTime
 			AND @toTime
-		INNER JOIN #tblEmployeeIds AS tblemp WITH (NOLOCK) ON emp.EmpId = tblemp.EmpId
-		LEFT JOIN dbo.EmployeeCalendar AS empca WITH (NOLOCK) ON emp.EmpId = empca.EmpId
+		INNER JOIN #tblEmployeeIds AS tblemp WITH (NOLOCK) ON ce.EmpId = tblemp.EmpId
+		LEFT JOIN dbo.EmployeeCalendar AS empca WITH (NOLOCK) ON ce.EmpId = empca.EmpId
 		AND tmpca.WorkDate = empca.WorkDate
-		LEFT JOIN dbo.ScheduleArrangementOffDayReplacement AS offrep WITH (NOLOCK) ON emp.EmpId = offrep.EmployeeId
+		LEFT JOIN dbo.ScheduleArrangementOffDayReplacement AS offrep WITH (NOLOCK) ON ce.EmpId = offrep.EmployeeId
 		AND tmpca.WorkDate = offrep.WorkDate
 	WHERE @IsIFrame = 0
 		OR (
@@ -216,12 +218,12 @@ BEGIN
 			WHERE defaultshift.EmployeeId = tbl.EmployeeId
 			)
 
-	SELECT emp.EmpId AS EmployeeId
-		,emp.Code
-		,emp.NickName
-		,emp.FullName
+	SELECT ce.EmpId AS EmployeeId
+		,ce.Code
+		,ce.NickName
+		,e.FullName
 		,ISNULL(esum.OffDaysbyWeek, 0) AS OffDaysbyWeek
-		,emp.PickupRemark
+		,ce.PickupRemark
 		,arrange.Remark
 		,arrange.DisplayOrder
 		,esum.IsDefaultSchedule AS IsUsedWeeklyDefaultShift
@@ -237,20 +239,21 @@ BEGIN
 		,[shift].BeginCheckOutTime AS CheckOut
 		,[shift].IsInAfterDay
 		,[shift].IsOutAfterDay
-	FROM dbo.Employee AS emp WITH (NOLOCK)
-		INNER JOIN #tblEmployeeIds AS tblemp WITH (NOLOCK) ON emp.EmpId = tblemp.EmpId
-		LEFT JOIN dbo.EmployeeSummary AS esum WITH (NOLOCK) ON emp.EmpId = esum.EmpId
-		LEFT JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId
-		LEFT JOIN dbo.ScheduleArrangement AS arrange WITH (NOLOCK) ON emp.EmpId = arrange.EmployeeId
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		INNER JOIN Employee e (NOLOCK) ON ce.UserId = e.UserId
+		INNER JOIN #tblEmployeeIds AS tblemp WITH (NOLOCK) ON ce.EmpId = tblemp.EmpId
+		LEFT JOIN dbo.EmployeeSummary AS esum WITH (NOLOCK) ON ce.EmpId = esum.EmpId
+		LEFT JOIN dbo.[Group] AS gr WITH (NOLOCK) ON ce.GroupId = gr.GroupId
+		LEFT JOIN dbo.ScheduleArrangement AS arrange WITH (NOLOCK) ON ce.EmpId = arrange.EmployeeId
 		LEFT JOIN dbo.ScheduleArrangementGroupOrder AS gorder WITH (NOLOCK) ON gr.GroupId = gorder.GroupId
-		LEFT JOIN @tblDefaultShift AS defaultshift ON emp.EmpId = defaultshift.EmployeeId
+		LEFT JOIN @tblDefaultShift AS defaultshift ON ce.EmpId = defaultshift.EmployeeId
 		LEFT JOIN dbo.[Shift] AS [shift] WITH (NOLOCK) ON defaultshift.ShiftId = [shift].ShiftId
 		AND ISNULL([shift].IsDisabled, 0) = 0
 		OUTER APPLY (
 		SELECT TOP 1 ec.ModifiedBy
 			,ec.ModifiedDate
 		FROM #tblEmployeeCalendar AS ec
-		WHERE ec.EmpId = emp.EmpId
+		WHERE ec.EmpId = ce.EmpId
 			AND ec.ModifiedBy IS NOT NULL
 			AND ec.ModifiedDate IS NOT NULL
 			AND ec.ModifiedDate = (
@@ -259,11 +262,11 @@ BEGIN
 				WHERE ec.EmpId = ec1.EmpId
 				)
 		) AS ec
-		LEFT JOIN dbo.Employee AS modifier WITH (NOLOCK) ON ec.ModifiedBy = modifier.EmpId
+		LEFT JOIN dbo.CompanyEmployee AS modifier WITH (NOLOCK) ON ec.ModifiedBy = modifier.EmpId
 	WHERE EXISTS (
 			SELECT 1
 			FROM @tblGroupIds AS tblgr
-			WHERE emp.GroupId = tblgr.GroupId
+			WHERE ce.GroupId = tblgr.GroupId
 			)
 			AND (
 			@isLocal IS NULL
@@ -272,9 +275,9 @@ BEGIN
 	ORDER BY ISNULL(gorder.DisplayOrder, 0)
 		,gr.Code
 		,ISNULL(arrange.DisplayOrder, 0)
-		,emp.NickName
+		,ce.NickName
 
-	SELECT emp.EmpId AS EmployeeId
+	SELECT ce.EmpId AS EmployeeId
 		,empca.WorkDate
 		,empca.IsOvertime
 		,empca.IsLeaveOffDay
@@ -309,9 +312,9 @@ BEGIN
 		,lv2.LeaveTypeId AS LeaveTypeId2
 		,lv2.Code
 		,lv2.[Name]
-	FROM dbo.Employee AS emp WITH (NOLOCK)
-		INNER JOIN #tblEmployeeIds AS tblemp WITH (NOLOCK) ON emp.EmpId = tblemp.EmpId
-		INNER JOIN #tblEmployeeCalendar AS empca ON emp.EmpId = empca.EmpId
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		INNER JOIN #tblEmployeeIds AS tblemp WITH (NOLOCK) ON ce.EmpId = tblemp.EmpId
+		INNER JOIN #tblEmployeeCalendar AS empca ON ce.EmpId = empca.EmpId
 		AND empca.WorkDate BETWEEN @fromTime
 			AND @toTime
 		LEFT JOIN dbo.[Shift] AS [shift] WITH (NOLOCK) ON [shift].ShiftId = empca.ShiftId
@@ -322,9 +325,9 @@ BEGIN
 	WHERE EXISTS (
 			SELECT 1
 			FROM @tblGroupIds AS tblgr
-			WHERE emp.GroupId = tblgr.GroupId
+			WHERE ce.GroupId = tblgr.GroupId
 			)
-	ORDER BY emp.NickName
+	ORDER BY ce.NickName
 		,empca.WorkDate
 
 	SELECT emp.EmpId AS EmployeeId

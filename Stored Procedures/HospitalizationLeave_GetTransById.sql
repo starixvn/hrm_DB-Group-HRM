@@ -9,6 +9,7 @@ DB: HRM
 Original:
 
 Revisions:
+	20250821@Jay: restructure for transfer [Redmine: #235678]
 Param's Explanation:
 
 */
@@ -16,8 +17,8 @@ BEGIN
 	SET NOCOUNT ON;
 
 	SELECT TransId
-		,emp.EmpId
-		,emp.NickName
+		,ce.EmpId
+		,ce.NickName
 		,RequestId
 		,[Description]
 		,FromDate AS AffectedFrom
@@ -27,10 +28,8 @@ BEGIN
 		,ISNULL(CreditDays, 0) - ISNULL(DeductDays, 0) AS TotalDays
 		,t.IsDeleted
 	FROM dbo.HospitalizationLeaveTrans AS t WITH (NOLOCK)
-	INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON t.EmpId = emp.EmpId
+	INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON t.EmpId = ce.EmpId
 	WHERE TransId = @TransId
 		AND RequestId IS NULL
 		AND t.IsDeleted = 0
 END
-
-

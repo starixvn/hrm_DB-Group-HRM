@@ -19,6 +19,8 @@ AS
 	Revisions:
 	    20250408@Hank: remove section [Redmine: #222886]
         20250507@Tim: get KIV added manually
+		20250813@Lilac: restructure for transfer [Redmine: #235678]
+
 	Param's Explanation:
 */
 BEGIN
@@ -68,7 +70,7 @@ BEGIN
 	SELECT e.EmpId AS Empid
 		,SUM(ISNULL(tempdata.CreditDays, 0) - ISNULL(tempdata.DeductDays, 0)) AS OpenBalance
 	INTO #tmpOpenBalance
-	FROM dbo.Employee AS e WITH (NOLOCK)
+	FROM dbo.CompanyEmployee AS e WITH (NOLOCK)
 		INNER JOIN #tmpEmployee AS tmpe ON tmpe.EmpId = e.EmpId
         INNER JOIN #tmpTeam AS t ON e.GroupId = t.GroupId
 		LEFT JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON e.EmpId = es.EmpId
@@ -78,13 +80,15 @@ BEGIN
 		    WHERE ISNULL(Deleted, 0) = 0
 			    AND FromDate <= @fromdate
 		) tempdata ON e.EmpId = tempdata.Empid
-	WHERE (
+        LEFT JOIN Employee AS emp ON e.UserId = emp.UserId
+
+	WHERE e.CompanyId = @CompanyId AND (
 			@isLocal IS NULL
 			OR es.IsLocal = @isLocal
 			)
 		AND (
 			ISNULL(e.isDeleted, 0) = 0
-			OR YEAR(ResignedDate) >= year(@todate)
+			OR YEAR(e.ResignedDate) >= year(@todate)
 			)
 	GROUP BY e.EmpId
 
@@ -273,7 +277,7 @@ BEGIN
 				ELSE 0
 				END) DEC
 	INTO #tmpCurrenBalace
-	FROM dbo.Employee AS e WITH (NOLOCK)
+	FROM dbo.CompanyEmployee AS e WITH (NOLOCK)
         INNER JOIN #tmpEmployee AS tmpe WITH (NOLOCK) ON tmpe.EmpId = e.EmpId
         INNER JOIN #tmpTeam AS t WITH (NOLOCK) ON e.GroupId = t.GroupId
 		LEFT JOIN (
@@ -298,13 +302,15 @@ BEGIN
 		GROUP BY ltrans.EmpId
 		) cred ON e.EmpId = cred.Empid
 		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON e.EmpId = es.EmpId
-	WHERE (
+        LEFT JOIN Employee AS emp ON e.UserId = emp.UserId
+
+	WHERE e.CompanyId = @CompanyId AND (
 			@isLocal IS NULL
 			OR es.IsLocal = @isLocal
 			)
 		AND (
 			ISNULL(e.isDeleted, 0) = 0
-			OR YEAR(e.ResignedDate) >= year(@todate)
+			OR YEAR(emp.ResignedDate) >= year(@todate)
 			)
 	GROUP BY e.EmpId
 		,ISNULL(CreditDays, 0)
@@ -331,20 +337,22 @@ BEGIN
 		,cb.EmpId
 		,e.Code
 		,FullName
-		,Email
-		,NickName
+		,e.Email
+		,e.NickName
 		,g.[Rank]
 		,g.GroupId AS TeamId
 		,g.[Name] AS Team
 		,dep.[Name] AS Department
 	FROM #tmpCurrenBalace AS cb
-		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.EmpId = cb.Empid
+		INNER JOIN dbo.CompanyEmployee AS e WITH (NOLOCK) ON e.EmpId = cb.Empid
 		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON g.GroupId = e.GroupId
 		INNER JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId = g.DepartmentId
 		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON e.EmpId = es.EmpId
 		LEFT JOIN #tmpOpenBalance AS op ON OP.empid = cb.empid
 		LEFT JOIN #tmpCreditKIV AS crk ON cb.EmpId = crk.EmpId
 		LEFT JOIN #tmpCurrentKIV AS dek ON cb.EmpId = dek.EmpId
+        LEFT JOIN Employee AS emp ON e.UserId = emp.UserId
+
 	WHERE ISNULL(e.[Enabled], 0) = 1
 		AND (
 			@isLocal IS NULL
@@ -373,19 +381,21 @@ BEGIN
 		,op.EmpId
 		,e.[Code]
 		,FullName
-		,Email
-		,NickName
+		,e.Email
+		,e.NickName
 		,g.[Rank]
 		,g.GroupId AS TeamId
 		,g.[Name] AS Team
 		,dep.[Name] AS Department
 	FROM #tmpOpenBalance AS op
-		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.Empid = op.Empid
+		INNER JOIN dbo.CompanyEmployee AS e WITH (NOLOCK) ON e.Empid = op.Empid
 		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON e.EmpId = es.EmpId
 		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON g.GroupId = e.GroupId
 		INNER JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId = g.DepartmentId
 		LEFT JOIN #tmpCreditKIV AS kiv ON op.EmpId = kiv.EmpId
 		LEFT JOIN #tmpCurrentKIV AS dek ON op.EmpId = dek.EmpId
+        LEFT JOIN Employee AS emp ON e.UserId = emp.UserId
+
 	WHERE e.Empid NOT IN (
 			SELECT EmpID
 			FROM #tmpCurrenBalace AS cb

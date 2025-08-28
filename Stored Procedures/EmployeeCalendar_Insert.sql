@@ -16,6 +16,7 @@ AS
 
     Revisions:
         20250611@Tim: remove JoinedDate validation
+        20250813@Jay: change db structure [Redmine: #235678]
     Param's Explanation:
 */
 BEGIN
@@ -36,7 +37,7 @@ BEGIN
 			,WorkDate
 			,ShiftId
 			)
-		SELECT emp.EmpId
+		SELECT ce.EmpId
 			,@FromDate
 			,CASE 
 				WHEN DATEPART(dw, @FromDate) = 1 THEN SunShift
@@ -47,34 +48,34 @@ BEGIN
 				WHEN DATEPART(dw, @FromDate) = 6 THEN FriShift
 				WHEN DATEPART(dw, @FromDate) = 7 THEN SatShift
 				END
-		FROM dbo.Employee AS emp WITH (NOLOCK)
-			INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
+		FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+			INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON ce.EmpId = empsum.EmpId
 			AND empsum.IsDefaultSchedule = 1
-			INNER JOIN dbo.EmployeeDefaultShift AS shift WITH (NOLOCK) ON emp.EmpId = shift.EmpId
+			INNER JOIN dbo.EmployeeDefaultShift AS shift WITH (NOLOCK) ON ce.EmpId = shift.EmpId
 		WHERE @EmpId IS NULL
-			OR emp.EmpId = @EmpId
+			OR ce.EmpId = @EmpId
 
 		INSERT INTO #tmpDate (
 			EmpId
 			,WorkDate
 			,ShiftId
 			)
-		SELECT emp.EmpId
+		SELECT ce.EmpId
 			,@FromDate
 			,ShiftId
-		FROM dbo.Employee AS emp WITH (NOLOCK)
-			INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
+		FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+			INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON ce.EmpId = empsum.EmpId
 			AND empsum.IsDefaultSchedule = 0
 			OUTER APPLY (
 			SELECT TOP 1 shift.ShiftId
 			FROM dbo.ScheduleArrangementDefaultShift AS shift WITH (NOLOCK)
-			WHERE shift.EmployeeId = emp.EmpId
+			WHERE shift.EmployeeId = ce.EmpId
 				--AND shift.ShiftId > 0
 				AND shift.FromDate <= @FromDate
 			ORDER BY shift.FromDate DESC
 			) AS shift
 		WHERE @EmpId IS NULL
-			OR emp.EmpId = @EmpId
+			OR ce.EmpId = @EmpId
 
 		SET @FromDate = DATEADD(DAY, 1, @FromDate)
 	END
@@ -89,7 +90,7 @@ BEGIN
 		,IsPublic
 		,ModifiedDate
 		)
-	SELECT emp.EmpId
+	SELECT ce.EmpId
 		,tblc.WorkDate
 		,(CASE 
 			WHEN (
@@ -119,29 +120,29 @@ BEGIN
 		,0 AS IsFixedOffDay
 		,1 AS IsPublic
 		,@MofifiedDate
-	FROM dbo.Employee AS emp WITH (NOLOCK)
-		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
-        INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.UserId = ce.UserId
+        INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON ce.EmpId = empsum.EmpId
 		AND empsum.IsDefaultSchedule = 1
-		INNER JOIN #tmpDate AS tblc ON emp.EmpId = tblc.EmpId
+		INNER JOIN #tmpDate AS tblc ON ce.EmpId = tblc.EmpId
 		LEFT JOIN dbo.Holiday AS holiday WITH (NOLOCK) ON ce.CompanyId = holiday.CompanyId
         AND tblc.WorkDate BETWEEN holiday.FromDate
 			AND holiday.ToDate
-	WHERE emp.[Enabled] = 1
-		AND ISNULL(emp.IsDeleted, 0) = 0
+	WHERE ce.[Enabled] = 1
+		AND ISNULL(ce.IsDeleted, 0) = 0
 		AND (
 			@EmpId IS NULL
-			OR emp.EmpId = @EmpId
+			OR ce.EmpId = @EmpId
 			)
 		AND (
-			emp.ResignedDate IS NULL
-			OR emp.ResignedDate > tblc.WorkDate
+			e.ResignedDate IS NULL
+			OR e.ResignedDate > tblc.WorkDate
 			)
 		--AND emp.JoinedDate <= tblc.WorkDate
 		AND NOT EXISTS (
 			SELECT 1
 			FROM dbo.EmployeeCalendar AS empca WITH (NOLOCK)
-			WHERE empca.EmpId = emp.EmpId
+			WHERE empca.EmpId = ce.EmpId
 				AND empca.WorkDate = tblc.WorkDate
 			)
 
@@ -155,7 +156,7 @@ BEGIN
 		,IsPublic
 		,ModifiedDate
 		)
-	SELECT DISTINCT emp.EmpId
+	SELECT DISTINCT ce.EmpId
 		,tblc.WorkDate
 		,(CASE 
 			WHEN (
@@ -177,29 +178,29 @@ BEGIN
 		,0 AS IsFixedOffDay
 		,1 AS IsPublic
 		,@MofifiedDate
-	FROM dbo.Employee AS emp WITH (NOLOCK)
-		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
-		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON empsum.EmpId = emp.EmpId
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON ce.UserId = ce.UserId
+		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON empsum.EmpId = ce.EmpId
 		AND empsum.IsDefaultSchedule = 0
-		INNER JOIN #tmpDate AS tblc ON emp.EmpId = tblc.EmpId
+		INNER JOIN #tmpDate AS tblc ON ce.EmpId = tblc.EmpId
 		LEFT JOIN dbo.Holiday AS holiday WITH (NOLOCK) ON ce.CompanyId = holiday.CompanyId
         AND tblc.WorkDate BETWEEN holiday.FromDate
 			AND holiday.ToDate
-	WHERE emp.[Enabled] = 1
-		AND ISNULL(emp.IsDeleted, 0) = 0
+	WHERE ce.[Enabled] = 1
+		AND ISNULL(ce.IsDeleted, 0) = 0
 		AND (
 			@EmpId IS NULL
-			OR emp.EmpId = @EmpId
+			OR ce.EmpId = @EmpId
 			)
 		AND (
-			emp.ResignedDate IS NULL
-			OR emp.ResignedDate > tblc.WorkDate
+			e.ResignedDate IS NULL
+			OR e.ResignedDate > tblc.WorkDate
 			)
 		--AND emp.JoinedDate <= tblc.WorkDate
 		AND NOT EXISTS (
 			SELECT 1
 			FROM dbo.EmployeeCalendar AS empca WITH (NOLOCK)
-			WHERE emp.EmpId = empca.EmpId
+			WHERE ce.EmpId = empca.EmpId
 				AND tblc.WorkDate = empca.WorkDate
 			)
 
@@ -209,9 +210,10 @@ BEGIN
 	FROM dbo.EmployeeCalendar AS empca WITH (ROWLOCK, UPDLOCK)
 		INNER JOIN #tmpDate AS tblc WITH (NOLOCK) ON empca.EmpId = tblc.EmpId
 		AND empca.WorkDate = tblc.WorkDate
-		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON empca.EmpId = emp.EmpId
-		AND emp.[Enabled] = 1
-		AND emp.isDeleted = 0
+		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON empca.EmpId = ce.EmpId
+			AND ce.[Enabled] = 1
+			AND ce.isDeleted = 0
+		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.UserId = ce.UserId
 	WHERE empca.ShiftId IS NULL
 		AND tblc.ShiftId IS NOT NULL
 		AND empca.IsOffDay = 0
@@ -221,8 +223,8 @@ BEGIN
 		AND empca.ChangeShiftId IS NULL
 		--AND emp.JoinedDate <= tblc.WorkDate
 		AND (
-			emp.ResignedDate IS NULL
-			OR emp.ResignedDate > tblc.WorkDate
+			e.ResignedDate IS NULL
+			OR e.ResignedDate > tblc.WorkDate
 			)
 
 	--UPDATE empca
@@ -239,16 +241,16 @@ BEGIN
 	SET empca.IsHoliday = 1
 		,empca.ModifiedDate = @MofifiedDate
 	FROM dbo.EmployeeCalendar AS empca WITH (ROWLOCK, UPDLOCK)
-		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON empca.EmpId = emp.EmpId
-		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
-		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
-		INNER JOIN #tmpDate AS tblc ON emp.EmpId = tblc.EmpId
-		AND empca.WorkDate = tblc.WorkDate
-	WHERE emp.[Enabled] = 1
-		AND ISNULL(emp.IsDeleted, 0) = 0
+		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON empca.EmpId = ce.EmpId
+		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON ce.UserId = emp.UserId
+		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON ce.EmpId = empsum.EmpId
+		INNER JOIN #tmpDate AS tblc ON ce.EmpId = tblc.EmpId
+			AND empca.WorkDate = tblc.WorkDate
+	WHERE ce.[Enabled] = 1
+		AND ISNULL(ce.IsDeleted, 0) = 0
 		AND (
 			@EmpId IS NULL
-			OR emp.EmpId = @EmpId
+			OR ce.EmpId = @EmpId
 			)
 		AND (
 			emp.ResignedDate IS NULL

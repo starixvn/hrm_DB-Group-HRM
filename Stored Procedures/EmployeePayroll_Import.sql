@@ -1,6 +1,6 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE PROCEDURE [dbo].[EmployeePayroll_Import]
+ALTER PROCEDURE [dbo].[EmployeePayroll_Import]
     @employeeListJson VARCHAR(MAX),
     @Month DATE,
     @PeriodType TINYINT,
@@ -19,6 +19,7 @@ AS
 
     Revisions:  
         Hank.Nguyen@20250505: Import employee payroll.
+		20250812@Mira: change DB structure [Redmine: #235678]
     Param's Explanation:
 */
 BEGIN
@@ -88,9 +89,8 @@ BEGIN
         ep.ModifiedBy = @ActorId,
         ep.ModifiedDate = GETDATE()
     FROM [dbo].[EmployeePayroll] ep
-    INNER JOIN [dbo].[Employee] emp ON ep.EmpId = emp.EmpId
-    INNER JOIN [dbo].[CompanyEmployee] empCom ON emp.EmpId = empCom.EmpId AND empCom.CompanyId = @CompanyId
-    INNER JOIN @EmployeeCosts tmp ON emp.Code = tmp.EmpCode
+    INNER JOIN [dbo].[CompanyEmployee] empCom ON ep.EmpId = empCom.EmpId AND empCom.CompanyId = @CompanyId
+    INNER JOIN @EmployeeCosts tmp ON empCom.Code = tmp.EmpCode
     WHERE ep.Month = @Month
     AND ep.PeriodType = @PeriodType;
 
@@ -108,7 +108,7 @@ BEGIN
         [ModifiedDate]
     )
     SELECT 
-        emp.EmpId,
+        empCom.EmpId,
         @PeriodType,
         @Month,
         ISNULL(tmp.PersonalCost, 0),
@@ -118,17 +118,15 @@ BEGIN
         @ActorId,
         GETDATE()
     FROM @EmployeeCosts tmp
-    INNER JOIN [dbo].[Employee] emp ON tmp.EmpCode = emp.Code
-    INNER JOIN [dbo].[CompanyEmployee] empCom ON emp.EmpId = empCom.EmpId AND empCom.CompanyId = @CompanyId
-    LEFT JOIN [dbo].[EmployeePayroll] ep ON emp.EmpId = ep.EmpId AND ep.Month = @Month AND ep.PeriodType = @PeriodType
+    INNER JOIN [dbo].[CompanyEmployee] empCom ON tmp.EmpCode = empCom.Code AND empCom.CompanyId = @CompanyId
+    LEFT JOIN [dbo].[EmployeePayroll] ep ON empCom.EmpId = ep.EmpId AND ep.Month = @Month AND ep.PeriodType = @PeriodType
     WHERE ep.EmpId IS NULL;
 
     -- Delete records not in import
     DELETE ep
     FROM [dbo].[EmployeePayroll] ep
-    INNER JOIN [dbo].[Employee] emp ON ep.EmpId = emp.EmpId
-    INNER JOIN [dbo].[CompanyEmployee] empCom ON emp.EmpId = empCom.EmpId AND empCom.CompanyId = @CompanyId
-    LEFT JOIN @EmployeeCosts tmp ON emp.Code = tmp.EmpCode
+    INNER JOIN [dbo].[CompanyEmployee] empCom ON ep.EmpId = empCom.EmpId AND empCom.CompanyId = @CompanyId
+    LEFT JOIN @EmployeeCosts tmp ON empCom.Code = tmp.EmpCode
     WHERE ep.[Month] = @Month
         AND ep.PeriodType = @PeriodType
         AND tmp.EmpCode IS NULL;

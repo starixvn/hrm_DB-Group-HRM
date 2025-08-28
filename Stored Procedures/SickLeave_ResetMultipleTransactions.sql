@@ -15,6 +15,8 @@ DB: HRM_SMS
 Original:
 
 Revisions:
+	20250812@Mira: change DB structure [Redmine: #235678]
+
 Param's Explanation:
 */
 BEGIN
@@ -38,7 +40,8 @@ BEGIN
 		,ISNULL(credit.CreditDays, 0) AS CreditDays
 		,SUM(ISNULL(deduct.DeductDays, 0)) AS DeductDays
 	INTO #tblCurrenBalace
-	FROM dbo.Employee AS emp WITH (NOLOCK)
+	FROM dbo.CompanyEmployee AS emp WITH (NOLOCK)
+		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.UserId = emp.UserId
 		INNER JOIN #tblEmployeeId AS tblemp WITH (NOLOCK) ON emp.EmpId = tblemp.EmpId
 		LEFT JOIN dbo.SickLeaveTrans AS deduct WITH (NOLOCK) ON emp.EmpId = deduct.EmpId
 		AND YEAR(deduct.FromDate) = @Year
@@ -54,14 +57,14 @@ BEGIN
 		GROUP BY EmpId
 		) credit ON emp.EmpId = credit.EmpId
 	WHERE ISNULL(emp.isDeleted, 0) = 0
-		OR YEAR(emp.ResignedDate) >= year(@todate)
+		OR YEAR(e.ResignedDate) >= year(@todate)
 	GROUP BY emp.EmpId
 		,ISNULL(credit.CreditDays, 0)
 
 	SELECT emp.EmpId
 		,ISNULL(cb.CreditDays, 0) - ISNULL(cb.DeductDays, 0) AS Balance
 	INTO #tblRemainingBalance
-	FROM dbo.Employee AS emp WITH (NOLOCK)
+	FROM dbo.CompanyEmployee AS emp WITH (NOLOCK)
 		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = emp.EmpId AND ce.CompanyId = @CompanyId
 		LEFT JOIN #tblCurrenBalace AS cb WITH (NOLOCK) ON emp.EmpId = cb.EmpId
 	WHERE ISNULL(emp.[Enabled], 0) = 1

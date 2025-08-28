@@ -11,6 +11,7 @@ Revisions:
 	20250219@Mira: Get data for HRA report - [Redmine: #179302]
 	20250730@Mira: Get local, expat for HRA report - [Redmine: #234522]
 	20250815@Mira: Exclude empty CtrId - [Redmine: #236138]
+	20250814@Lilac: restructure for transfer [Redmine: #235678]
 	20250821@Mira: Exclude special user NexHRM - [Redmine: #236138]
 */
 
@@ -22,9 +23,9 @@ AS
 		-- select all employee haven't resigned.
 		;WITH ActiveOrResignedEmployees AS (
 		SELECT 	
-			e.EmpId,
+			ce.EmpId,
 			e.UserId,
-			e.Nickname,
+			ce.Nickname,
 			ce.CompanyId,
 			ce.SubCompanyId,
 			ce.CompanyDate,
@@ -34,13 +35,13 @@ AS
 			safeDates.ConfirmedDate,
 			safeDates.ResignedDate,
 			CASE
-				WHEN e.EmpId IN (6081, 6596) THEN 0 -- Sean, Yves nexcel
+				WHEN ce.EmpId IN (6081, 6596) THEN 0 -- Sean, Yves nexcel
 				ELSE ISNULL(es.IsLocal, 1) 
 			END AS IsLocal
 		FROM dbo.Employee e WITH(NOLOCK)
 		INNER JOIN dbo.CompanyEmployee ce WITH(NOLOCK) ON ce.EmpId = e.EmpId AND (ce.CompanyId NOT IN (1,2,34) OR ce.IsSpecialUser = 0)
 		OUTER APPLY (
-			SELECT GroupId = COALESCE(ce.GroupId, e.GroupId)
+			SELECT GroupId = ce.GroupId
 		) AS d
 		INNER JOIN dbo.[Group] g WITH(NOLOCK) ON g.GroupId = d.GroupId AND g.IsOutsource = 0
 		LEFT JOIN dbo.EmployeeSummary es WITH(NOLOCK) ON es.EmpId = e.EmpId
@@ -52,12 +53,12 @@ AS
 					ELSE '1990-01-01'
 				END,
 				ConfirmedDate = CASE 
-					WHEN ce.ConfirmedDate >= '1900-01-01' AND ce.ConfirmedDate <= '2079-06-06' THEN ce.ConfirmedDate
+					WHEN e.ConfirmedDate >= '1900-01-01' AND e.ConfirmedDate <= '2079-06-06' THEN e.ConfirmedDate
 					WHEN e.ConfirmedDate >= '1900-01-01' AND e.ConfirmedDate <= '2079-06-06' THEN e.ConfirmedDate
 					ELSE '1990-01-01'
 				END,
 				ResignedDate = CASE 
-					WHEN ce.ResignedDate >= '1900-01-01' AND ce.ResignedDate <= '2079-06-06' THEN ce.ResignedDate
+					WHEN e.ResignedDate >= '1900-01-01' AND e.ResignedDate <= '2079-06-06' THEN e.ResignedDate
 					WHEN e.ResignedDate >= '1900-01-01' AND e.ResignedDate <= '2079-06-06' THEN e.ResignedDate
 					ELSE NULL
 				END

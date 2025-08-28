@@ -14,6 +14,7 @@ DB: HRM_SMS
 Original:
 Revisions:
 	- 20250619@Henry: fix ambiguous column error migrate nex
+	- 20250814@Lilac: restructure for transfer [Redmine: #235678]
 Param's Explanation:
 
 */
@@ -40,26 +41,25 @@ BEGIN
 		INSERT INTO @tblEmployeeId (EmpId)
 		SELECT es.OwnerId
 		FROM dbo.EmployeeSupervisor AS es WITH (NOLOCK)
-			INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON es.OwnerId = emp.EmpId
-			INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = emp.EmpId AND ce.CompanyId = @companyId
+			INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = es.OwnerId AND ce.CompanyId = @companyId
 		WHERE es.ActionType = 4
 			AND es.EmpId = @SupervisorId
-			AND emp.[Enabled] = 1
+			AND ce.[Enabled] = 1
 			AND ISNULL(es.IsDeleted, 0) = 0
 		
 		UNION
-		SELECT emp.EmpId
+
+		SELECT ce.EmpId
 		FROM dbo.GroupSupervisor AS gs WITH (NOLOCK)
-			INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON gs.GroupId = emp.GroupId
-			INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = emp.EmpId AND ce.CompanyId = @companyId
+			INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON gs.GroupId = ce.GroupId AND ce.CompanyId = @companyId
 		WHERE gs.OwnerId = @SupervisorId
 			AND gs.ActionType = 4
-			AND emp.[Enabled] = 1
+			AND ce.[Enabled] = 1
 			AND ISNULL(gs.IsDeleted, 0) = 0
 			AND NOT EXISTS (
 				SELECT 1
 				FROM dbo.EmployeeSupervisor AS es WITH (NOLOCK)
-				WHERE emp.EmpId = es.OwnerId
+				WHERE ce.EmpId = es.OwnerId
 					AND es.ActionType = 4
 					AND ISNULL(es.IsDeleted, 0) = 0
 				)
@@ -67,10 +67,9 @@ BEGIN
 	ELSE
 	BEGIN
 		INSERT INTO @tblEmployeeId (EmpId)
-		SELECT emp.EmpId
-		FROM dbo.Employee AS emp WITH (NOLOCK)
-		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = emp.EmpId AND ce.CompanyId = @companyId
-		WHERE emp.[Enabled] = 1
+		SELECT ce.EmpId
+		FROM dbo.CompanyEmployee AS ce WITH (NOLOCK) 
+		WHERE ce.[Enabled] = 1	AND ce.CompanyId = @companyId
 	END
 
 	SELECT shift.ShiftId
@@ -84,7 +83,7 @@ BEGIN
 			AND @toDate
 		AND empca.IsLeaveDay = 0
 		INNER JOIN @tblEmployeeId AS tblemp ON empca.EmpId = tblemp.EmpId
-		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON tblemp.EmpId = emp.EmpId
+		INNER JOIN dbo.CompanyEmployee AS emp WITH (NOLOCK) ON tblemp.EmpId = emp.EmpId
 		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON tblemp.EmpId = empsum.EmpId
 	WHERE (
 			@isLocal IS NULL

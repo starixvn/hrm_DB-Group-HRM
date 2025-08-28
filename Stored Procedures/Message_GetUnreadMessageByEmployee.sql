@@ -8,7 +8,7 @@ Task: Get unread message by employee.
 DB: HRM
 
 Revisions:  
-Param's Explanation:
+        20250812@Mira: tranfer employee [Redmine: #235678]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -22,10 +22,10 @@ BEGIN
 		ISNULL(mse.IsRead, 0) AS IsRead
 	FROM dbo.[Message] AS ms WITH (NOLOCK)
 	    INNER JOIN dbo.MessageGroup AS mg WITH (NOLOCK) ON ms.MessageId = mg.MessageId
-	    INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON mg.GroupId = e.GroupId
-	    LEFT JOIN dbo.MessageEmployee AS mse WITH (NOLOCK) ON e.EmpId = mse.EmployeeId AND ms.MessageId = mse.MessageId
+	    INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON mg.GroupId = ce.GroupId
+	    LEFT JOIN dbo.MessageEmployee AS mse WITH (NOLOCK) ON ce.EmpId = mse.EmployeeId AND ms.MessageId = mse.MessageId
         AND mse.IsDisabled = 0
-	WHERE e.EmpId = @EmployeeId 
+	WHERE ce.EmpId = @EmployeeId 
 		AND mse.EmployeeId IS NULL
         AND ms.IsDisabled = 0
 

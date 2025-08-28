@@ -11,6 +11,8 @@ Original:
 
 Revisions:
     - 20250619@Henry: fix ambiguous column error migrate nex
+	- 20250812@Mira: change DB structure [Redmine: #235678]
+
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -22,20 +24,18 @@ BEGIN
 	SELECT @MaxCodeNumber = MAX(CAST(
 		RIGHT(Code, COALESCE(NULLIF(PATINDEX('%[^0-9]%', REVERSE(Code)), 0) - 1, LEN(Code)))
 		AS BIGINT))
-	FROM dbo.Employee AS e WITH(NOLOCK)
-		INNER JOIN CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = e.EmpId 
-	WHERE e.[Enabled] = 1 
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+	WHERE ce.[Enabled] = 1 
 		AND ISNULL(Code, '') != ''
 		AND ce.CompanyId = @CompanyId
 
 	IF @MaxCodeNumber IS NOT NULL
 		SELECT TOP 1 @LastestPrefix = LEFT(Code, PATINDEX('%[0-9]%', Code) - 1)
-		FROM dbo.Employee AS e WITH(NOLOCK)
-		INNER JOIN CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = e.EmpId 
-		WHERE e.[Enabled] = 1 
+		FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		WHERE ce.[Enabled] = 1 
 			AND ISNULL(Code, '') != ''
 			AND ce.CompanyId = @CompanyId
-		ORDER BY e.EmpId DESC
+		ORDER BY ce.EmpId DESC
 
 
 		SELECT @LastestPrefix + CAST((@MaxCodeNumber + 1) AS VARCHAR(20)) AS Code

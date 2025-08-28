@@ -12,6 +12,7 @@ Original:
 
 Revisions:    
 	20250730@Jay: Add company name for personal setting page [Redmine: #233324]
+	20250812@Mira: tranfer employee [Redmine: #235678]
 Param's Explanation:
 */
 BEGIN
@@ -19,9 +20,9 @@ BEGIN
 
 	IF @RequestType IS NULL
 		SELECT DISTINCT OwnerId AS Id
-			,ee.FullName
-			,ee.NickName
-			,ee.Email
+			,e.FullName
+			,ce.NickName
+			,ce.Email
 			,0 OrderNo
 			,isnull(g.GroupID, - 1) AS [TeamId]
 			,isnull(g.[Name], '') AS [Team]
@@ -29,10 +30,11 @@ BEGIN
 			,c.[Name] AS CompanyName
 			,c.CompanyId
 		FROM [dbo].[EmployeeSupervisor] su WITH (NOLOCK)
-			INNER JOIN [dbo].Employee ee WITH (NOLOCK) ON su.OwnerId = ee.EmpId
-			LEFT JOIN dbo.[Group] AS g WITH (NOLOCK) ON ee.GroupId = g.GroupId
 			LEFT JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = su.OwnerId
+			LEFT JOIN dbo.[Group] AS g WITH (NOLOCK) ON ce.GroupId = g.GroupId
 			LEFT JOIN dbo.Company AS c WITH (NOLOCK) ON c.CompanyId = ce.CompanyId
+			LEFT JOIN dbo.Employee AS e WITH (NOLOCK) ON ce.UserId = e.UserId
+
 		WHERE su.EmpId = @EmpId
 			AND (
 				@Role IS NULL
@@ -43,8 +45,8 @@ BEGIN
 	ELSE
 		SELECT DISTINCT OwnerId
 			,ee.FullName
-			,ee.NickName
-			,ee.Email
+			,ce.NickName
+			,ce.Email
 			,su.OrderNo
 			,isnull(g.GroupID, - 1) AS [TeamID]
 			,isnull(g.[Name], '') AS [Team]
@@ -52,10 +54,10 @@ BEGIN
 			,c.[Name] AS CompanyName
 			,c.CompanyId
 		FROM [dbo].[EmployeeSupervisor] su WITH (NOLOCK)
-			INNER JOIN [dbo].Employee ee WITH (NOLOCK) ON su.OwnerId = ee.EmpId
-			LEFT JOIN dbo.[Group] AS g WITH (NOLOCK) ON ee.GroupId = g.GroupId
 			LEFT JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = su.OwnerId
+			LEFT JOIN dbo.[Group] AS g WITH (NOLOCK) ON ce.GroupId = g.GroupId
 			LEFT JOIN dbo.Company AS c WITH (NOLOCK) ON c.CompanyId = ce.CompanyId
+			INNER JOIN [dbo].Employee ee WITH (NOLOCK) ON su.OwnerId = ee.UserId
 		WHERE su.EmpId = @EmpId
 			AND (su.RequestType = @RequestType)
 			AND (

@@ -21,7 +21,8 @@ Task: Update Employee Extensions Number
 DB: HRM_SMS
 Original: 
 
-Revisions:    
+Revisions:
+	20250814@Lilac: restructure for transfer [Redmine: #235678]
 Param's Explanation:
 */
 SET NOCOUNT ON
@@ -38,7 +39,7 @@ SET @IsInternal = ISNULL(@IsInternal,1)
 
 IF @IsInternal = 1
 BEGIN
-	IF NOT EXISTS(SELECT TOP 1 1 FROM dbo.Employee WITH(NOLOCK) WHERE EmpID = @EmpID)
+	IF NOT EXISTS(SELECT TOP 1 1 FROM dbo.CompanyEmployee WITH(NOLOCK) WHERE EmpID = @EmpID)
 	BEGIN
 		SELECT @ErrCode = 101, @ErrMsg = N'Parameter EmpID not exists on systems.'
 		RETURN

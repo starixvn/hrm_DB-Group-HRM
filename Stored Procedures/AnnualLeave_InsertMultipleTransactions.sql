@@ -20,6 +20,7 @@ AS
 
     Revisions:
         20250429@Tim: add param @CompanyId
+		20250814@Lilac: restructure for transfer [Redmine: #235678]
     Param's Explanation:
 */
 BEGIN
@@ -82,7 +83,8 @@ BEGIN
 	IF EXISTS (
 			SELECT 1
 			FROM dbo.Employee AS emp WITH (NOLOCK)
-				INNER JOIN #tblEmployeeIds AS empid ON emp.EmpId = empid.EmployeeId
+				INNER JOIN CompanyEmployee AS ce ON ce.UserId = emp.UserId
+				INNER JOIN #tblEmployeeIds AS empid ON ce.EmpId = empid.EmployeeId
 			WHERE ISNULL(emp.ConfirmedDate, GETDATE() - 365) > @FromDate
 				AND @CreditDays > 0
 			)
@@ -118,14 +120,15 @@ BEGIN
 		JoinedDate
 	FROM (
 		SELECT 
-			emp.EmpId,
+			ce.EmpId,
 			emp.JoinedDate,
 			lt.FromDate,
 			lt.ToDate,
-			ROW_NUMBER() OVER (PARTITION BY emp.EmpId ORDER BY lt.FromDate ASC) AS rn
+			ROW_NUMBER() OVER (PARTITION BY ce.EmpId ORDER BY lt.FromDate ASC) AS rn
 		FROM dbo.Employee AS emp WITH (NOLOCK)
-		INNER JOIN #tblEmployeeIds AS empid ON emp.EmpId = empid.EmployeeId
-		LEFT JOIN dbo.LeaveTrans AS lt WITH (NOLOCK) ON emp.EmpId = lt.EmpId
+		INNER JOIN CompanyEmployee AS ce ON ce.UserId = emp.UserId
+		INNER JOIN #tblEmployeeIds AS empid ON ce.EmpId = empid.EmployeeId
+		LEFT JOIN dbo.LeaveTrans AS lt WITH (NOLOCK) ON ce.EmpId = lt.EmpId
 			AND lt.FromDate <= @FromDate
 			AND lt.ToDate > @FromDate
 			AND lt.CreditDays > 0
@@ -176,7 +179,7 @@ BEGIN
 		,@CreditDays
 		,GETDATE()
 		,@ActorId
-	FROM dbo.Employee AS emp WITH (NOLOCK)
+	FROM dbo.CompanyEmployee AS emp WITH (NOLOCK)
 		INNER JOIN #tblEmployeeIds AS empid ON emp.EmpId = empid.EmployeeId
 		INNER JOIN #tmpLeaveRange AS lr ON emp.EmpId = lr.EmpId
 	WHERE ISNULL(emp.isDeleted, 0) = 0

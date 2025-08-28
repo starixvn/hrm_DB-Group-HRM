@@ -11,6 +11,7 @@ DB: HRM_SMS
 Original:
 
 Revisions:
+	20250814@Lilac: restructure for transfer [Redmine: #235678]
 Param's Explanation:
 */
 BEGIN
@@ -21,11 +22,11 @@ BEGIN
 			,COALESCE(g.[GroupID], exg.[ExtID]) TeamID
 			,ISNULL(g.Code, '') Team
 			,COALESCE(g.NAME, exg.[FullName]) TeamName
-			,COALESCE(ee.EmpID, exm_1.EmpID, NULL) EmpID
+			,COALESCE(ce.EmpID, exm_1.EmpID, NULL) EmpID
 			,COALESCE(ee.FullName, exm_1.FullName, exm_2.FullName) FullName
-			,COALESCE(ee.NickName, exm_1.NickName, exm_2.NickName) NickName
+			,COALESCE(ce.NickName, exm_1.NickName, exm_2.NickName) NickName
 			,COALESCE(exm_1.ExtensionNo, exm_2.ExtensionNo) [ExtensionNo]
-			,COALESCE(ee.EmpID, exm_1.ExtID, exm_2.ExtID) EmpExtID
+			,COALESCE(ce.EmpID, exm_1.ExtID, exm_2.ExtID) EmpExtID
 			,exg.IsInternal
 			,exg.[OrderNo] [OrderNoGroup]
 			,ROW_NUMBER() OVER (
@@ -39,12 +40,13 @@ BEGIN
 			AND exg.IsInternal = 1
 			AND exm_1.IsGroup = 0
 			AND exg.IsGroup = 1
-			LEFT JOIN [dbo].Employee ee WITH (NOLOCK) ON exm_1.EmpID = ee.EmpID
+			LEFT JOIN [dbo].CompanyEmployee ce WITH (NOLOCK) ON exm_1.EmpID = ce.EmpID
+			LEFT JOIN [dbo].Employee ee WITH (NOLOCK) ON ce.UserId = ee.UserId
 			LEFT JOIN [dbo].[ExtensionNumbers] exm_2 WITH (NOLOCK) ON exg.ExtID = exm_2.GroupID
 			AND exg.IsInternal = 0
 			AND exm_2.IsGroup = 0
 			AND exg.IsGroup = 1
-		WHERE exg.CompanyId = @CompanyId AND ( COALESCE(ee.EmpID, exm_1.EmpID, exm_2.EmpID, - 1) > 0
+		WHERE exg.CompanyId = @CompanyId AND ( COALESCE(ce.EmpID, exm_1.EmpID, exm_2.EmpID, - 1) > 0
 			OR (
 				exg.IsInternal = 0
 				AND exg.IsGroup = 1
@@ -84,9 +86,9 @@ BEGIN
 			,COALESCE(g.[GroupID], exg.[ExtID]) TeamID
 			,ISNULL(g.Code, '') Team
 			,COALESCE(g.NAME, exg.[FullName]) TeamName
-			,COALESCE(ee.EmpID, exm_1.EmpID) EmpID
+			,COALESCE(ce.EmpID, exm_1.EmpID) EmpID
 			,COALESCE(ee.FullName, exm_1.FullName) FullName
-			,COALESCE(ee.NickName, exm_1.NickName) NickName
+			,COALESCE(ce.NickName, exm_1.NickName) NickName
 			,exm_1.ExtensionNo [ExtensionNo]
 			,exm_1.ExtID EmpExtID
 			,exg.IsInternal
@@ -102,8 +104,9 @@ BEGIN
 			AND exg.IsInternal = 1
 			AND exm_1.IsGroup = 0
 			AND exg.IsGroup = 1
-			LEFT JOIN [dbo].Employee ee WITH (NOLOCK) ON exm_1.EmpID = ee.EmpID
-		WHERE exg.CompanyId = @CompanyId AND COALESCE(ee.EmpID, exm_1.EmpID, - 1) > 0
+			LEFT JOIN [dbo].CompanyEmployee ce WITH (NOLOCK) ON exm_1.EmpID = ce.EmpID
+			LEFT JOIN [dbo].Employee ee WITH (NOLOCK) ON ce.UserId = ee.UserId
+		WHERE exg.CompanyId = @CompanyId AND COALESCE(ce.EmpID, exm_1.EmpID, - 1) > 0
 		ORDER BY [OrderNoGroup]
 			,[OrderNoMember]
 	ELSE IF @EmpExtID IS NOT NULL
@@ -140,9 +143,9 @@ BEGIN
 			,COALESCE(g.[GroupID], exg.[ExtID]) TeamID
 			,ISNULL(g.Code, '') Team
 			,COALESCE(g.NAME, exg.[FullName]) TeamName
-			,COALESCE(ee.EmpID, exm_1.EmpID) EmpID
+			,COALESCE(ce.EmpID, exm_1.EmpID) EmpID
 			,COALESCE(ee.FullName, exm_1.FullName) FullName
-			,COALESCE(ee.NickName, exm_1.NickName) NickName
+			,COALESCE(ce.NickName, exm_1.NickName) NickName
 			,exm_1.ExtensionNo [ExtensionNo]
 			,exm_1.ExtID EmpExtID
 			,exg.IsInternal
@@ -158,8 +161,9 @@ BEGIN
 			AND exg.IsInternal = 1
 			AND exm_1.IsGroup = 0
 			AND exg.IsGroup = 1
-			LEFT JOIN [dbo].Employee ee WITH (NOLOCK) ON exm_1.EmpID = ee.EmpID
-		WHERE COALESCE(ee.EmpID, exm_1.EmpID, - 1) > 0
+			LEFT JOIN [dbo].CompanyEmployee ce WITH (NOLOCK) ON exm_1.EmpID = ce.EmpID
+			LEFT JOIN [dbo].Employee ee WITH (NOLOCK) ON ce.UserId = ee.UserId
+		WHERE COALESCE(ce.EmpID, exm_1.EmpID, - 1) > 0
 			AND exm_1.[ExtID] = @EmpExtID
 		ORDER BY [OrderNoGroup]
 			,[OrderNoMember]

@@ -10,6 +10,8 @@ AS
 	Revisions:
 		20250403@Tim: remove param CompanyId [Redmine: #222886]
 		20250421@Tim: sort by GroupUnitId [Redmine: #221569]
+		20250812@Mira: tranfer employee [Redmine: #235678]
+
 	Param's Explanation:
 
 */
@@ -20,14 +22,14 @@ BEGIN
 		,u.[Name]
 		,u.GroupUnitId
 		,u.PICEmpId
-		,e.NickName AS PICNickName
+		,ce.NickName AS PICNickName
 		,u.Category
 		,u.[Type]
 		,u.AccountableArea
 		,u.IsActive
 		,u.ModifiedDate
 	FROM dbo.Unit AS u WITH (NOLOCK)
-	LEFT JOIN dbo.Employee As e WITH (NOLOCK) ON e.EmpId = u.PICEmpId
+	LEFT JOIN dbo.CompanyEmployee As ce WITH (NOLOCK) ON ce.EmpId = u.PICEmpId
 	WHERE (
 			@IsActive IS NULL
 			OR u.IsActive = @IsActive

@@ -1,22 +1,27 @@
-ALTER PROCEDURE [dbo].[ScheduleArrangement_UpdateWeekly] @CompanyId SMALLINT
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+
+ALTER PROCEDURE [dbo].[ScheduleArrangement_UpdateWeekly]
+(
+    @CompanyId SMALLINT
     ,@ActorId INT
-	,@FromDate DATE
-	,@ToDate DATE
-	,@WeeklyScheduleXml VARCHAR(MAX) = ''
-	,@DefaultShiftXml VARCHAR(MAX) = ''
-	,@ErrCode INT = 0 OUTPUT
-	,@ErrMsg NVARCHAR(200) = '' OUTPUT
+    ,@FromDate DATE
+    ,@ToDate DATE
+    ,@WeeklyScheduleXml VARCHAR(MAX) = ''
+    ,@DefaultShiftXml VARCHAR(MAX) = ''
+    ,@ErrCode INT = 0 OUTPUT
+    ,@ErrMsg NVARCHAR(200) = '' OUTPUT
+)
 AS
 /*
-Created: Tim.Trinh@2019-04-16
-Task: Update weekly schedule
-DB: HRM
+    Created: Tim.Trinh@2019-04-16
+    Task: Update weekly schedule
+    DB: bodb_HRM
 
-Revisions:
-Param's Explanation:
-    @WeeklyScheduleXml=N'<ROOT><Row EmployeeId="1" WorkDate="2013-01-01" ShiftId="1" IsHoliday="1" IsOffDay="1" IsFixedOffDay="1" IsPublic="1" /></ROOT>
-    @DefaultShiftXml=N'<ROOT><Row EmployeeId="1" FromDate="2013-01-01" ShiftId="1" /></ROOT>
-
+    Revisions:
+        20250813@Jay: change db structure [Redmine: #235678]
+    Param's Explanation:
+        @WeeklyScheduleXml=N'<ROOT><Row EmployeeId="1" WorkDate="2013-01-01" ShiftId="1" IsHoliday="1" IsOffDay="1" IsFixedOffDay="1" IsPublic="1" /></ROOT>
+        @DefaultShiftXml=N'<ROOT><Row EmployeeId="1" FromDate="2013-01-01" ShiftId="1" /></ROOT>
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -134,29 +139,12 @@ BEGIN
 		FROM #tblWeeklySchedule
 		) AS tbl
 
-	EXEC dbo.tmpEmployeeCalendar_Insert @CompanyId = @CompanyId
-        ,@fromDate = @FromDate
-		,@toDate = @ToDate
-		,@empIds = @EmployeeIds
-		,@isUpdateRequestData = 1
-
 	DELETE tblweekly
 	FROM #tblWeeklySchedule AS tblweekly WITH (ROWLOCK, UPDLOCK)
-		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON tblweekly.EmployeeId = emp.EmpId
-	WHERE emp.JoinedDate > tblweekly.WorkDate
-		OR emp.ResignedDate <= tblweekly.WorkDate
-
-	--DELETE tblweekly
-	--FROM #tblWeeklySchedule AS tblweekly WITH (ROWLOCK, UPDLOCK)
-	--	INNER JOIN dbo.EmployeeAttendance AS empatt WITH (NOLOCK) ON tblweekly.WorkDate = empatt.AttendanceDate
-	--	AND tblweekly.EmployeeId = empatt.EmpId
-	--	INNER JOIN dbo.EmployeeCalendar AS empca WITH (NOLOCK) ON empca.WorkDate = tblweekly.WorkDate
-	--	AND empca.EmpId = tblweekly.EmployeeId
-	--	AND ISNULL(empca.ShiftId, - 1) = ISNULL(tblweekly.ShiftId, - 1)
-	--	AND empca.IsOffDay = tblweekly.IsOffDay
-	--	AND empca.IsHoliday = tblweekly.IsHoliday
-	--	AND empca.IsPublic = tblweekly.IsPublic
-	--WHERE tblweekly.WorkDate <= @Today
+		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON tblweekly.EmployeeId = ce.EmpId
+		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.UserId = ce.UserId
+	WHERE e.JoinedDate > tblweekly.WorkDate
+		OR e.ResignedDate <= tblweekly.WorkDate
 
 	DELETE tblweekly
 	FROM #tblWeeklySchedule AS tblweekly WITH (ROWLOCK, UPDLOCK)

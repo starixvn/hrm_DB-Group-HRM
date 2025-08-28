@@ -1,46 +1,47 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE OR ALTER    PROCEDURE [dbo].[FnB_Employee_GetSecondmentCompany] 
+ALTER PROCEDURE [dbo].[FnB_Employee_GetSecondmentCompany] 
 	@CompanyId SMALLINT
 AS
 /*
-Created: Hank.Nguyen@2025-05-27
-Task: Get all secondment employees from change date
-DB: NexEPA
-Original: 
+	Created: Hank.Nguyen@2025-05-27
+	Task: Get all secondment employees from change date
+	DB: NexEPA
+	Original: 
 
-Revisions:
-Param's Explanation:
-
+	Revisions:
+		- 20250813@Henry.Dinh: migrate data transfer feature id: #233310 
+	Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;
 
-	SELECT e.UserId
+	SELECT ce.UserId
 		,e.[Password]
-		,e.Code
-		,e.NickName
+		,ce.Code
+		,ce.NickName
 		,e.FullName
-		,e.EmployeeCard
-		,e.DomainUsername AS DomainName
+		,ce.EmployeeCard
+		,ce.DomainUsername AS DomainName
 		,e.Phone
-		,e.Email
-		,e.[Enabled]
-		,ISNULL(e.isDeleted, 0) AS IsDeleted
+		,ce.Email
+		,ce.[Enabled]
+		,ISNULL(ce.isDeleted, 0) AS IsDeleted
 		,e.JoinedDate
 		,e.ConfirmedDate
 		,es.IsLocal
-		,e.GroupId AS TeamId
+		,ce.GroupId AS TeamId
 		,CASE 
-			WHEN e.ModifiedDate IS NULL THEN e.CreatedDate
-			ELSE e.ModifiedDate
+			WHEN ce.ModifiedDate IS NULL THEN ce.CreatedDate
+			ELSE ce.ModifiedDate
 			END AS ModifiedDate
 		,es.Unit AS CostCenter
-		,e.JobLevelId
-		,e.EmpId
+		,ce.JobLevelId
+		,ce.EmpId
 	FROM dbo.Employee AS e WITH (NOLOCK)
-		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON e.EmpId = es.EmpId
-		INNER JOIN dbo.CompanySecondmentEmployee AS cs WITH (NOLOCK) ON cs.EmpId = e.EmpId
+		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.UserId = e.UserId
+		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON ce.EmpId = es.EmpId
+		INNER JOIN dbo.CompanySecondmentEmployee AS cs WITH (NOLOCK) ON cs.EmpId = ce.EmpId
 	WHERE cs.CompanyId = @CompanyId 
-	ORDER BY e.ModifiedDate
+	ORDER BY ce.ModifiedDate
 END

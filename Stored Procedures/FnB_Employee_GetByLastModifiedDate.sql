@@ -1,53 +1,52 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER   PROCEDURE [dbo].[FnB_Employee_GetByLastModifiedDate] 
+ALTER PROCEDURE [dbo].[FnB_Employee_GetByLastModifiedDate] 
 	@CompanyId SMALLINT,
 	@LastModifiedDate DATETIME
 AS
 /*
-Created: 20140320@Quinn.Vo
-Task: Get all employee from change date
-DB: NexEPA
-Original: 
-
-Revisions:
-Param's Explanation:
-
+	Created: 20140320@Quinn.Vo
+	Task: Get all employee from change date
+	DB: NexEPA
+	Original: 
+	Revisions:
+		- 20250813@Henry.Dinh: migrate data transfer feature id: #233310 
+	Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;
 
-	SELECT e.UserId
+	SELECT ce.UserId
 		,e.[Password]
-		,e.Code
-		,e.NickName
+		,ce.Code
+		,ce.NickName
 		,e.FullName
-		,e.EmployeeCard
-		,e.DomainUsername AS DomainName
+		,ce.EmployeeCard
+		,ce.DomainUsername AS DomainName
 		,e.Phone
-		,e.Email
+		,ce.Email
 		,CASE WHEN ld.OldId IS NOT NULL THEN ld.OldId ELSE ld.Id END  as JobTitleId
-		,e.[Enabled]
-		,ISNULL(e.isDeleted, 0) AS IsDeleted
+		,ce.[Enabled]
+		,ISNULL(ce.isDeleted, 0) AS IsDeleted
 		,e.JoinedDate
 		,e.ConfirmedDate
 		,es.IsLocal
 		,g.GroupId AS TeamId
 		,CASE 
-			WHEN e.ModifiedDate IS NULL THEN e.CreatedDate
-			ELSE e.ModifiedDate
+			WHEN ce.ModifiedDate IS NULL THEN ce.CreatedDate
+			ELSE ce.ModifiedDate
 			END AS ModifiedDate
 		,es.Unit AS CostCenter
-		,e.JobLevelId
-		,e.EmpId
+		,ce.JobLevelId
+		,ce.EmpId
 	FROM dbo.Employee AS e WITH (NOLOCK)
-		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON e.EmpId = es.EmpId
-		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = e.EmpId
-		LEFT JOIN dbo.LookupData AS ld WITH (NOLOCK) ON ld.Id = e.JobTitleId AND ld.CompanyId = @CompanyId
-		LEFT JOIN dbo.[Group] AS g WITH (NOLOCK) ON g.GroupId = e.GroupId AND g.CompanyId = @CompanyId
+		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.UserId = e.UserId
+		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON ce.EmpId = es.EmpId
+		LEFT JOIN dbo.LookupData AS ld WITH (NOLOCK) ON ld.Id = ce.JobTitleId AND ld.CompanyId = @CompanyId
+		LEFT JOIN dbo.[Group] AS g WITH (NOLOCK) ON g.GroupId = ce.GroupId AND g.CompanyId = @CompanyId
 	WHERE ce.CompanyId = @CompanyId AND
 		(@LastModifiedDate IS NULL
-		OR e.ModifiedDate > @LastModifiedDate
-		OR e.CreatedDate > @LastModifiedDate)
-	ORDER BY e.ModifiedDate
+		OR ce.ModifiedDate > @LastModifiedDate
+		OR ce.CreatedDate > @LastModifiedDate)
+	ORDER BY ce.ModifiedDate
 END

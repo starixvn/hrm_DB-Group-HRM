@@ -8,7 +8,8 @@ Task: Get list Extensions Number
 DB: HRM_SMS
 Original: 
 
-Revisions:    
+Revisions:
+	20250814@Lilac: restructure for transfer [Redmine: #235678]
 Param's Explanation:
 */
 SET NOCOUNT ON
@@ -17,9 +18,9 @@ SELECT * FROM
 		  ,COALESCE(g.[GroupID],exg.[ExtID]) TeamID		
 		  ,ISNULL(g.Code,'') Team
 		  ,COALESCE(g.Name,exg.[FullName]) TeamName
-		  ,COALESCE(ee.EmpID,exm_1.EmpID,NULL) EmpID
+		  ,COALESCE(ce.EmpID,exm_1.EmpID,NULL) EmpID
 		  ,COALESCE(ee.FullName,exm_1.FullName,exm_2.FullName) FullName
-		  ,COALESCE(ee.NickName,exm_1.NickName,exm_2.NickName) NickName
+		  ,COALESCE(ce.NickName,exm_1.NickName,exm_2.NickName) NickName
 		  ,COALESCE(exm_1.ExtensionNo,exm_2.ExtensionNo) [ExtensionNo]
 		  ,COALESCE(exm_1.ExtID,exm_2.ExtID) EmployeeExtensionId
 		  ,exg.IsInternal
@@ -31,11 +32,13 @@ SELECT * FROM
 			ON exg.GroupID = g.GroupID AND exg.IsInternal = 1 AND exg.IsGroup =1
 		LEFT JOIN [dbo].[ExtensionNumbers] exm_1 WITH(NOLOCK)
 			ON exg.GroupID = exm_1.GroupID AND exg.IsInternal = 1 AND exm_1.IsGroup =0 AND exg.IsGroup =1
+		LEFT JOIN [dbo].CompanyEmployee ce WITH(NOLOCK)
+			ON exm_1.EmpID = ce.EmpID
 		LEFT JOIN [dbo].Employee ee WITH(NOLOCK)
-			ON exm_1.EmpID = ee.EmpID 
+			ON ee.UserId = ce.UserId 
 		LEFT JOIN [dbo].[ExtensionNumbers] exm_2 WITH(NOLOCK)
 			ON exg.ExtID = exm_2.GroupID AND exg.IsInternal = 0 AND exm_2.IsGroup =0 AND exg.IsGroup =1
-	 WHERE (COALESCE(ee.EmpID, exm_1.EmpID, exm_2.EmpID, -1) > 0 
+	 WHERE (COALESCE(ce.EmpID, exm_1.EmpID, exm_2.EmpID, -1) > 0 
             OR (exg.IsInternal = 0 AND exg.IsGroup = 1))
             AND exg.CompanyId = @companyId
 	) TBL

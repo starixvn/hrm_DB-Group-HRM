@@ -18,6 +18,7 @@ DB: HRM
 
 Revisions:
     20250403@Tim: remove section [Redmine: #222886]
+	20250813@Jay: change db structure [Redmine: #235678]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -59,12 +60,11 @@ BEGIN
 		IF @IsProcessor = 1
 		BEGIN
 			INSERT INTO #tblEmployeeIds (EmployeeId)
-			SELECT emp.EmpId
-			FROM dbo.Employee AS emp WITH (NOLOCK)
-			INNER JOIN dbo.CompanyEmployee AS c WITH (NOLOCK) ON emp.EmpId = c.EmpId
-			WHERE emp.[Enabled] = 1
-				AND emp.isDeleted = 0
-				AND c.CompanyId = @CompanyId
+			SELECT ce.EmpId
+			FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+			WHERE ce.[Enabled] = 1
+				AND ce.isDeleted = 0
+				AND ce.CompanyId = @CompanyId
 		END
 		ELSE
 		BEGIN
@@ -110,8 +110,8 @@ BEGIN
 					@IsProcessor = 0
 					AND req.CurrentStatus IN (@PendingStatusId, @VerifiedStatusId, @NotVerifiedStatusId, @ApprovedStatusId, @RejectedStatusId)
 					AND (
-						verifier.EmpId = @ActorId
-						OR approver.EmpId = @ActorId
+						vece.EmpId = @ActorId
+						OR apce.EmpId = @ActorId
 						)
 					)
 				OR @IsProcessor = 1 THEN 1
@@ -122,39 +122,40 @@ BEGIN
 		,dep.Code AS DepartmentCode
         ,dep.[Name] AS DepartmentName
 		,u.Code AS UnitCode
-		,verifier.EmpId AS VerifierId
+		,vece.EmpId AS VerifierId
 		,CASE 
-			WHEN verifierCE.CompanyId <> @CompanyId THEN verifier.NickName + ' (' + verifierCompany.[Name] + ')'
-			ELSE verifier.NickName 
+			WHEN vece.CompanyId <> @CompanyId THEN vece.NickName + ' (' + verifierCompany.[Name] + ')'
+			ELSE vece.NickName 
 		END AS VerifierNickname
 		,verifier.FullName AS VerifierFullName
-		,approver.EmpId AS ApproverId
+		,apce.EmpId AS ApproverId
 		,CASE 
-			WHEN approverCE.CompanyId <> @CompanyId THEN approver.NickName + ' (' + approverCompany.[Name] + ')'
-			ELSE approver.NickName 
+			WHEN apce.CompanyId <> @CompanyId THEN apce.NickName + ' (' + approverCompany.[Name] + ')'
+			ELSE apce.NickName 
 		END AS ApproverNickname
 		,approver.FullName AS ApproverFullName
 		,req.CurrentStatus AS StatusId
-		,emp.EmpId
+		,ce.EmpId
 		,CASE 
-			WHEN e.CompanyId <> @CompanyId THEN emp.NickName + ' (' + c.[Name] + ')'
-			ELSE emp.NickName 
+			WHEN e.CompanyId <> @CompanyId THEN ce.NickName + ' (' + c.[Name] + ')'
+			ELSE ce.NickName 
 		END AS NickName
 		,emp.FullName
 	FROM dbo.OTMonthlyRequest AS req WITH (NOLOCK)
 		INNER JOIN #tblEmployeeIds e WITH (NOLOCK) ON req.EmpId = e.EmployeeId
-		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON req.EmpId = emp.EmpId
+		INNER JOIN dbo.CompanyEmployee ce (NOLOCK) ON req.EmpId = ce.EmpId
+		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON ce.UserId = emp.UserId
 		INNER JOIN dbo.Company AS c WITH (NOLOCK) ON c.CompanyId = e.CompanyId
-		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
-		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON gr.GroupId = emp.GroupId
+		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON ce.EmpId = empsum.EmpId
+		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON gr.GroupId = ce.GroupId
 		INNER JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId = gr.DepartmentId
 		INNER JOIN dbo.Unit AS u WITH (NOLOCK) ON u.UnitId = dep.UnitId
-		LEFT JOIN dbo.Employee AS verifier WITH (NOLOCK) ON verifier.EmpId = req.VerifierId
-		LEFT JOIN dbo.CompanyEmployee AS verifierCE WITH (NOLOCK) ON verifierCE.EmpId = verifier.EmpId
-		LEFT JOIN dbo.Company AS verifierCompany WITH (NOLOCK) ON verifierCompany.CompanyId = verifierCE.CompanyId
-		LEFT JOIN dbo.Employee AS approver WITH (NOLOCK) ON approver.EmpId = req.ApproverId
-		LEFT JOIN dbo.CompanyEmployee AS approverCE WITH (NOLOCK) ON approverCE.EmpId = approver.EmpId
-		LEFT JOIN dbo.Company AS approverCompany WITH (NOLOCK) ON approverCompany.CompanyId = approverCE.CompanyId
+		LEFT JOIN dbo.CompanyEmployee AS vece WITH (NOLOCK) ON vece.EmpId = req.VerifierId
+		LEFT JOIN dbo.Employee AS verifier WITH (NOLOCK) ON verifier.UserId = vece.UserId
+		LEFT JOIN dbo.Company AS verifierCompany WITH (NOLOCK) ON verifierCompany.CompanyId = vece.CompanyId
+		LEFT JOIN dbo.CompanyEmployee AS apce WITH (NOLOCK) ON apce.EmpId = req.ApproverId
+		LEFT JOIN dbo.Employee AS approver WITH (NOLOCK) ON approver.UserId = apce.UserId
+		LEFT JOIN dbo.Company AS approverCompany WITH (NOLOCK) ON approverCompany.CompanyId = apce.CompanyId
 		LEFT JOIN (
 		SELECT DISTINCT ot.RequestId
 		FROM dbo.OTDailyRequest AS ot WITH (NOLOCK)
@@ -163,8 +164,8 @@ BEGIN
 			AND empatt.EmpId = ot.EmpId
 		WHERE ot.TotalHours - ISNULL(empatt.LateIn, 0) / 60 >= s.TotalHours + 1
 		) AS att ON att.RequestId = req.RequestId
-	WHERE emp.[Enabled] = 1
-		AND emp.isDeleted = 0
+	WHERE ce.[Enabled] = 1
+		AND ce.isDeleted = 0
         AND (
 			@Month IS NULL
 			OR req.[Month] = @Month
@@ -177,12 +178,12 @@ BEGIN
 			EXISTS (
 				SELECT 1
 				FROM #tblGroupIds AS tblgr WITH (NOLOCK)
-				WHERE tblgr.GroupId = emp.GroupId
+				WHERE tblgr.GroupId = ce.GroupId
 				)
 			OR (@IsShowCrossCompany = 1 AND EXISTS (
 				SELECT 1
 				FROM #tblEmployeeIds AS tblemp WITH (NOLOCK)
-				WHERE tblemp.EmployeeId = emp.EmpId AND tblemp.CompanyId <> @CompanyId
+				WHERE tblemp.EmployeeId = ce.EmpId AND tblemp.CompanyId <> @CompanyId
 				AND (req.VerifierId = @ActorId OR req.ApproverId = @ActorId)
 			))
 		)
@@ -199,7 +200,7 @@ BEGIN
 	ORDER BY IsHost DESC
 		,StatusId
 		,req.[Month] DESC
-		,emp.NickName
+		,ce.NickName
 
 	DROP TABLE #tblEmployeeIds
 
@@ -207,3 +208,4 @@ BEGIN
 
 	DROP TABLE #tblOvertimeType
 END
+

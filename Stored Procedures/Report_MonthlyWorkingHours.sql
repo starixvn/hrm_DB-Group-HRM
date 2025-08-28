@@ -19,6 +19,7 @@ AS
 
     Revisions:
         20250417@Tim: get Unit Code [Redmine: #224530]
+        20250813@Jay: change db structure [Redmine: #235678]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -43,34 +44,35 @@ BEGIN
 	END
 
 	INSERT INTO #tblEmployeeIds (EmployeeId)
-	SELECT emp.EmpId
-	FROM dbo.Employee AS emp WITH (NOLOCK)
-        INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
-		AND empsum.IsTopManager = 0
+	SELECT ce.EmpId
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		INNER JOIN Employee e (NOLOCK) ON ce.UserId = e.UserId
+        INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON ce.EmpId = empsum.EmpId
+			AND ce.IsSpecialUser = 0
 		INNER JOIN (
 		SELECT EmpId
 		FROM dbo.fnc_GetEmployeeByActorId(@ActorId, 0, 1, @CompanyId)
-		) AS [member] ON emp.EmpId = [member].EmpId
+		) AS [member] ON ce.EmpId = [member].EmpId
 	WHERE (
 			@EmployeeStatusId IS NULL
 			OR (
 				@EmployeeStatusId = @Enable
-				AND emp.[Enabled] = 1
-				AND emp.isDeleted = 0
+				AND ce.[Enabled] = 1
+				AND ce.isDeleted = 0
 				)
 			OR (
 				@EmployeeStatusId = @Disabled
-				AND emp.[Enabled] = 0
-				AND emp.isDeleted = 0
+				AND ce.[Enabled] = 0
+				AND ce.isDeleted = 0
 				)
 			OR (
 				@EmployeeStatusId = @Deleted
-				AND emp.isDeleted = 1
+				AND ce.isDeleted = 1
 				)
 			)
 		AND (
-			emp.NickName LIKE '%' + ISNULL(@Employee, '') + '%'
-			OR emp.FullName LIKE '%' + ISNULL(@Employee, '') + '%'
+			ce.NickName LIKE '%' + ISNULL(@Employee, '') + '%'
+			OR e.FullName LIKE '%' + ISNULL(@Employee, '') + '%'
 			)
 		AND (
 			@IsLocal IS NULL
@@ -79,7 +81,7 @@ BEGIN
 		AND EXISTS (
 			SELECT 1
 			FROM #tblGroupIds AS tbl WITH (NOLOCK)
-			WHERE tbl.GroupId = emp.GroupId
+			WHERE tbl.GroupId = ce.GroupId
 			)
 
 	SELECT @EmployeeIds = COALESCE(@EmployeeIds + ',', '') + CAST(EmployeeId AS VARCHAR(20))
@@ -90,7 +92,7 @@ BEGIN
 		,@toDate = @toDate
 		,@empIds = @EmployeeIds
 
-	SELECT emp.EmpId AS EmployeeId
+	SELECT ce.EmpId AS EmployeeId
 		,empca.WorkDate
 		,(CASE 
 			WHEN empatt.TotalWorkHours > 0 THEN empatt.TotalWorkHours
@@ -100,7 +102,7 @@ BEGIN
 					SELECT cio.EmpId, cio.OnDate, cio.RequestTime
 					FROM dbo.CheckInOutRequest AS cio WITH (NOLOCK)
 						INNER JOIN dbo.WorkingTimeRequest AS w WITH (NOLOCK) ON cio.RequestId = w.RequestId
-					WHERE cio.EmpId = emp.EmpId
+					WHERE cio.EmpId = ce.EmpId
                         AND cio.OnDate = empca.WorkDate
                         AND w.CurrentStatus NOT IN (3, 5, 7)
 				) AS t
@@ -163,11 +165,11 @@ BEGIN
 		,lv2.Code AS LeaveCode
 		,lv2.[Name] AS LeaveName
 	INTO #tblEmployeeCalendar
-	FROM dbo.Employee AS emp WITH (NOLOCK)
-		INNER JOIN #tblEmployeeIds AS empid WITH (NOLOCK) ON emp.EmpId = empid.EmployeeId
-		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
-		INNER JOIN dbo.tmpEmployeeCalendar AS empca WITH (NOLOCK) ON emp.EmpId = empca.EmpId
-		LEFT JOIN dbo.EmployeeAttendance AS empatt WITH (NOLOCK) ON emp.EmpId = empatt.EmpId
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		INNER JOIN #tblEmployeeIds AS empid WITH (NOLOCK) ON ce.EmpId = empid.EmployeeId
+		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON ce.EmpId = empsum.EmpId
+		INNER JOIN dbo.tmpEmployeeCalendar AS empca WITH (NOLOCK) ON ce.EmpId = empca.EmpId
+		LEFT JOIN dbo.EmployeeAttendance AS empatt WITH (NOLOCK) ON ce.EmpId = empatt.EmpId
 		AND CAST(empatt.AttendanceDate AS DATE) = empca.WorkDate
 		LEFT JOIN dbo.LeaveType AS lv WITH (NOLOCK) ON empca.LeaveTypeId = lv.LeaveTypeId
         AND lv.CompanyId = @CompanyId
@@ -177,10 +179,10 @@ BEGIN
 	WHERE empca.WorkDate BETWEEN @fromDate
 			AND @toDate
 
-	SELECT emp.EmpId AS EmployeeId
-		,emp.Code
-		,emp.NickName
-		,emp.FullName
+	SELECT ce.EmpId AS EmployeeId
+		,ce.Code
+		,ce.NickName
+		,e.FullName
 		,empsum.WorkingDays
         ,u.Code AS UnitCode
 		,dep.Code AS DepartmentCode
@@ -188,14 +190,15 @@ BEGIN
 		,gr.GroupId AS Id
 		,gr.Code
 		,gr.[Name]
-	FROM dbo.Employee AS emp WITH (NOLOCK)
-		INNER JOIN #tblEmployeeIds AS empid WITH (NOLOCK) ON emp.EmpId = empid.EmployeeId
-		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		INNER JOIN Employee e (NOLOCK) ON ce.UserId = e.UserId
+		INNER JOIN #tblEmployeeIds AS empid WITH (NOLOCK) ON ce.EmpId = empid.EmployeeId
+		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON ce.GroupId = gr.GroupId
 		INNER JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId = gr.DepartmentId
         INNER JOIN dbo.Unit AS u WITH (NOLOCK) ON dep.UnitId = u.UnitId
-		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON emp.EmpId = empsum.EmpId
+		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON ce.EmpId = empsum.EmpId
 	ORDER BY gr.[Name]
-		,emp.Code
+		,ce.Code
 
 	SELECT EmployeeId
 		,WorkDate

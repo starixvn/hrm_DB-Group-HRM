@@ -16,6 +16,7 @@ AS
 
     Revisions:
         20250429@Tim: get RefResource by CompanyId
+        20250813@Jay: change db structure [Redmine: #235678]
     Param's Explanation:
 */
 BEGIN
@@ -26,10 +27,9 @@ BEGIN
 	DECLARE @CompanyId SMALLINT
         ,@EnableSickLeaveBalance BIT = 0
 
-    SELECT @CompanyId = ce.CompanyId
-    FROM dbo.Employee AS e WITH (NOLOCK)
-        INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
-    WHERE e.EmpId = @EmpId
+    SELECT @CompanyId = CompanyId
+    FROM dbo.CompanyEmployee WITH (NOLOCK)
+    WHERE EmpId = @EmpId
 
 	SELECT @EnableSickLeaveBalance = CAST(Value AS BIT)
 	FROM dbo.RefResource WITH (NOLOCK)

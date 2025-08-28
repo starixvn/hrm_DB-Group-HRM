@@ -10,6 +10,7 @@ Task: get group
 DB: HRM
 
 Revisions:
+	20250812@Mira: change DB structure [Redmine: #235678]
 Param's Explanation:
 */
 BEGIN
@@ -28,7 +29,7 @@ BEGIN
 			OR EXISTS (
 				SELECT 1
 				FROM dbo.EmployeeSupervisor AS es WITH (NOLOCK)
-					INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON es.OwnerId = e.EmpId
+					INNER JOIN dbo.CompanyEmployee AS e WITH (NOLOCK) ON es.OwnerId = e.EmpId
 					AND e.[Enabled] = 1
 					AND e.isDeleted = 0
 				WHERE es.EmpId = @ActorId

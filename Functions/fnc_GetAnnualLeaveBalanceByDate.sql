@@ -14,6 +14,7 @@ RETURNS NUMERIC(18, 2)
 	Revisions:
         20250429@Tim: get RefResource by CompanyId
         20250801@Tim: fix bug pending balance = null
+        20250813@Jay: change db structure [Redmine: #235678]
 	Param's Explanation:
 */
 AS
@@ -32,11 +33,12 @@ BEGIN
         ,@clientTimeZone FLOAT
         ,@AnnualLeaveTypeId SMALLINT = 2
 
-    SELECT @CompanyId = ce.CompanyId
-        ,@JoinedDate = e.JoinedDate
-    FROM dbo.Employee AS e WITH (NOLOCK)
-        INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON e.EmpId = ce.EmpId
-    WHERE e.EmpId = @EmpId
+    SELECT @CompanyId = CompanyId
+        ,@JoinedDate = JoinedDate
+    FROM dbo.CompanyEmployee ce WITH (NOLOCK)
+        INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.UserId = ce.UserId
+    WHERE ce.EmpId = @EmpId
+		AND ce.[Enabled] = 1
 
     SELECT @AnnualLeaveResetTimelineType = [Value]
     FROM dbo.SystemConfigs WITH (NOLOCK)

@@ -1,17 +1,16 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
-
-CREATE PROCEDURE [dbo].[SyncEPA_DisciplineSummary] @LastModifiedDate DATETIME
+ALTER PROCEDURE [dbo].[SyncEPA_DisciplineSummary] @LastModifiedDate DATETIME
 	,@CompanyId INT
 AS
 /*
-Created: 20171031@Tim.Trinh
-Task: sync discipline to EPA
-DB: HRM
-Original:
+	Created: 20171031@Tim.Trinh
+	Task: sync discipline to EPA
+	DB: HRM
+	Original:
 
-Revisions:
-Param's Explanation:
-
+	Revisions:
+		- 20250818@Henry.Dinh: migrate data transfer feature id: #233310 
+	Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -75,7 +74,7 @@ BEGIN
 		,ModifiedDate
 		,IsDeleted
 		)
-	SELECT CASE WHEN emp.OldEmpId IS NOT NULL THEN emp.OldEmpId ELSE d.EmpId END AS EmpId
+	SELECT CASE WHEN ce.OldEmpId IS NOT NULL THEN ce.OldEmpId ELSE d.EmpId END AS EmpId
 		,WorkDate
 		,0 AS ChangeShift
 		,0 AS MissingCheckInOut
@@ -93,12 +92,11 @@ BEGIN
 		,MAX(d.ModifiedDate) AS ModifiedDate
 		,1
 	FROM dbo.Discipline AS d WITH (NOLOCK)
-	INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON d.EmpId = emp.EmpId
-	INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId AND ce.CompanyId = @CompanyId
+	INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON d.EmpId = ce.EmpId AND ce.CompanyId = @CompanyId
 	WHERE d.ModifiedDate > @LastModifiedDate
 		AND d.IsDeleted = 1
 	GROUP BY d.EmpId
-		,emp.OldEmpId
+		,ce.OldEmpId
 		,WorkDate
 	
 	INSERT INTO #tblDisciplineSummary (
@@ -120,7 +118,7 @@ BEGIN
 		,ModifiedDate
 		,IsDeleted
 		)
-	SELECT CASE WHEN emp.OldEmpId IS NOT NULL THEN emp.OldEmpId ELSE d.EmpId END AS EmpId
+	SELECT CASE WHEN ce.OldEmpId IS NOT NULL THEN ce.OldEmpId ELSE d.EmpId END AS EmpId
 		,d.WorkDate
 		,SUM(CASE 
 				WHEN d.IsChangeShift = 1
@@ -228,71 +226,70 @@ BEGIN
 	FROM dbo.Discipline AS d WITH (NOLOCK)
 		INNER JOIN dbo.DisciplineIgnore AS ignore WITH (NOLOCK) ON d.EmpId = ignore.EmpId
 		AND d.WorkDate = ignore.WorkDate
-		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON d.EmpId = emp.EmpId
-		AND emp.[Enabled] = 1
-		AND ISNULL(emp.isDeleted, 0) = 0
-		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId AND ce.CompanyId = @CompanyId
-		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON emp.EmpId = es.EmpId
-		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId AND gr.CompanyId = @CompanyId
+		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON d.EmpId = ce.EmpId AND ce.CompanyId = @CompanyId
+		AND ce.[Enabled] = 1
+		AND ISNULL(ce.isDeleted, 0) = 0
+		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON ce.EmpId = es.EmpId
+		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON ce.GroupId = gr.GroupId AND gr.CompanyId = @CompanyId
 	-- change shift
 		LEFT JOIN dbo.DisciplineGroupRule AS cs WITH (NOLOCK) ON cs.DisciplineTypeId = 1
-		AND cs.GroupId = emp.GroupId
+		AND cs.GroupId = ce.GroupId
 		AND cs.IsLocal = es.IsLocal
 		AND cs.Value = 1
 	-- missing check in/out
 		LEFT JOIN dbo.DisciplineGroupRule AS mio WITH (NOLOCK) ON mio.DisciplineTypeId = 2
-		AND mio.GroupId = emp.GroupId
+		AND mio.GroupId = ce.GroupId
 		AND mio.IsLocal = es.IsLocal
 		AND mio.Value = 1
 	-- late in
 		LEFT JOIN dbo.DisciplineGroupRule AS li WITH (NOLOCK) ON li.DisciplineTypeId = 3
-		AND li.GroupId = emp.GroupId
+		AND li.GroupId = ce.GroupId
 		AND li.IsLocal = es.IsLocal
 		AND li.Value = 1
 	-- early out
 		LEFT JOIN dbo.DisciplineGroupRule AS eo WITH (NOLOCK) ON eo.DisciplineTypeId = 4
-		AND eo.GroupId = emp.GroupId
+		AND eo.GroupId = ce.GroupId
 		AND eo.IsLocal = es.IsLocal
 		AND eo.Value = 1
 	-- absent
 		LEFT JOIN dbo.DisciplineGroupRule AS ab WITH (NOLOCK) ON ab.DisciplineTypeId = 5
-		AND ab.GroupId = emp.GroupId
+		AND ab.GroupId = ce.GroupId
 		AND ab.IsLocal = es.IsLocal
 		AND ab.Value = 1
 	-- unpaid leave
 		LEFT JOIN dbo.DisciplineGroupRule AS upl WITH (NOLOCK) ON upl.DisciplineTypeId = 6
-		AND upl.GroupId = emp.GroupId
+		AND upl.GroupId = ce.GroupId
 		AND upl.IsLocal = es.IsLocal
 		AND upl.Value = 1
 	-- working under time
 		LEFT JOIN dbo.DisciplineGroupRule AS wut WITH (NOLOCK) ON wut.DisciplineTypeId = 7
-		AND wut.GroupId = emp.GroupId
+		AND wut.GroupId = ce.GroupId
 		AND wut.IsLocal = es.IsLocal
 		AND wut.Value = 1
 	-- unpaid leave absent
 		LEFT JOIN dbo.DisciplineGroupRule AS upla WITH (NOLOCK) ON upla.DisciplineTypeId = 8
-		AND upla.GroupId = emp.GroupId
+		AND upla.GroupId = ce.GroupId
 		AND upla.IsLocal = es.IsLocal
 		AND upla.Value = 1
 	-- unplanned leave
 		LEFT JOIN dbo.DisciplineGroupRule AS unplanned WITH (NOLOCK) ON unplanned.DisciplineTypeId = 9
-		AND unplanned.GroupId = emp.GroupId
+		AND unplanned.GroupId = ce.GroupId
 		AND unplanned.IsLocal = es.IsLocal
 		AND unplanned.Value = 1
 	-- weekend leave
 		LEFT JOIN dbo.DisciplineGroupRule AS weekendleave WITH (NOLOCK) ON weekendleave.DisciplineTypeId = 10
-		AND weekendleave.GroupId = emp.GroupId
+		AND weekendleave.GroupId = ce.GroupId
 		AND weekendleave.IsLocal = es.IsLocal
 		AND weekendleave.Value = 1
 	-- seven days leave
 		LEFT JOIN dbo.DisciplineGroupRule AS sevendaysleave WITH (NOLOCK) ON sevendaysleave.DisciplineTypeId = 11
-		AND sevendaysleave.GroupId = emp.GroupId
+		AND sevendaysleave.GroupId = ce.GroupId
 		AND sevendaysleave.IsLocal = es.IsLocal
 		AND sevendaysleave.Value = 1
 	WHERE d.ModifiedDate > @LastModifiedDate
 		AND d.IsDeleted = 0
 	GROUP BY d.EmpId
-		,emp.OldEmpId
+		,ce.OldEmpId
 		,d.WorkDate
 
 	INSERT INTO #tblDisciplineSummary (
@@ -314,7 +311,7 @@ BEGIN
 		,ModifiedDate
 		,IsDeleted
 		)
-	SELECT CASE WHEN emp.OldEmpId IS NOT NULL THEN emp.OldEmpId ELSE emp.EmpId END AS EmpId
+	SELECT CASE WHEN ce.OldEmpId IS NOT NULL THEN ce.OldEmpId ELSE ce.EmpId END AS EmpId
 		,otherdis.WorkDate
 		,0 AS ChangeShift
 		,0 AS MissingCheckInOut
@@ -332,8 +329,7 @@ BEGIN
 		,otherdis.ModifiedDate
 		,otherdis.IsDeleted
 	FROM dbo.OtherDiscipline AS otherdis WITH (NOLOCK)
-	INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON otherdis.EmpId = emp.EmpId
-	INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId AND ce.CompanyId = @CompanyId
+	INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON otherdis.EmpId = ce.EmpId AND ce.CompanyId = @CompanyId
 	WHERE otherdis.ModifiedDate > @LastModifiedDate
 
 	INSERT INTO #tblDisciplineSummaryResult (
@@ -412,16 +408,3 @@ BEGIN
 
 	DROP TABLE #tblDisciplineSummaryResult
 END
-
-
-
-
-
-
-
-
-
-
-
-
-

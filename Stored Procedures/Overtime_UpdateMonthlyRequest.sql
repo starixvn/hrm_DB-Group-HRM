@@ -19,6 +19,7 @@ AS
 
     Revisions:
         20250722@Tim: auto approve request [Redmine: #233324]
+        20250813@Jay: change db structure [Redmine: #235678]
     Param's Explanation:
         @DailyDetailsXml:
             <Root><Row WorkDate="2019-01-01" ShiftId="1" TimeIn="07:46" TimeOut=17:00"
@@ -32,10 +33,9 @@ BEGIN
 		,@ModifiedDate DATETIME = GETDATE()
         ,@CompanyId SMALLINT
 
-    SELECT @CompanyId = ce.CompanyId
-    FROM dbo.Employee AS emp WITH (NOLOCK)
-        INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
-    WHERE emp.EmpId = @EmployeeId
+    SELECT @CompanyId = CompanyId
+    FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+    WHERE EmpId = @EmployeeId
 
 	SELECT @AutoApproveRequest = ce.AutoApproveRequest
 		,@CanOT = es.CanOT

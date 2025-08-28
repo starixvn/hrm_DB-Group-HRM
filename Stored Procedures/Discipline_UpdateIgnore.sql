@@ -10,9 +10,11 @@ AS
 /*
 Created: 20191204@Tim.Trinh
 Task: update ignore
-DB: HRM
+DB: SMSHRM
+Original:
 
 Revisions:
+        20250813@Jay: change db structure [Redmine: #235678]
 Param's Explanation:
     @IgnoreDetailXml: 
         <Root>
@@ -34,7 +36,7 @@ BEGIN
 
 		CREATE TABLE #tblIgnoredDisciplineDetail (
 			WorkDate DATE
-			,EmpId INT
+			,EmployeeId INT
 			,IsIgnoredChangeShift BIT
 			,IsIgnoredMissingCheckInOut BIT
 			,IsIgnoredLateIn BIT
@@ -55,7 +57,7 @@ BEGIN
 
 		INSERT INTO #tblIgnoredDisciplineDetail (
 			WorkDate
-			,EmpId
+			,EmployeeId
 			,IsIgnoredChangeShift
 			,IsIgnoredMissingCheckInOut
 			,IsIgnoredLateIn
@@ -89,8 +91,6 @@ BEGIN
 
 		EXEC sp_xml_removedocument @DocHandler
 
-        select * from #tblIgnoredDisciplineDetail
-
 		IF @HasUpdateOutOfControlReason = 1
 		BEGIN
 			UPDATE dis
@@ -99,20 +99,20 @@ BEGIN
 				,dis.ModifiedDate = @ModifiedDate
 			FROM dbo.Discipline AS dis WITH (NOLOCK)
 				INNER JOIN #tblIgnoredDisciplineDetail AS ignore WITH (NOLOCK) ON dis.WorkDate = ignore.WorkDate
-				AND dis.EmpId = ignore.EmpId
+				AND dis.EmpId = ignore.EmployeeId
 		END
 
 		DELETE ignore
 		FROM #tblIgnoredDisciplineDetail AS ignore WITH (NOLOCK)
-			INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON ignore.EmpId = emp.EmpId
-			AND emp.isDeleted = 0
-			AND emp.[Enabled] = 1
-			LEFT JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId
+			INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ignore.EmployeeId = ce.EmpId
+			AND ce.isDeleted = 0
+			AND ce.[Enabled] = 1
+			LEFT JOIN dbo.[Group] AS gr WITH (NOLOCK) ON ce.GroupId = gr.GroupId
 		WHERE NOT EXISTS (
 				SELECT 1
 				FROM dbo.EmployeeSupervisor AS empS WITH (NOLOCK)
 				WHERE empS.OwnerId = @ActorId
-					AND empS.EmpId = emp.EmpId
+					AND empS.EmpId = ce.EmpId
 					AND empS.ActionType = 8 -- edit discipline
 					AND empS.EmpId <> @ActorId
 					AND empS.IsDeleted = 0
@@ -129,7 +129,7 @@ BEGIN
 						SELECT 1
 						FROM dbo.EmployeeSupervisor AS empS WITH (NOLOCK)
 						WHERE empS.OwnerId <> @ActorId
-							AND empS.EmpId = emp.EmpId
+							AND empS.EmpId = ce.EmpId
 							AND empS.ActionType = 8
 							AND empS.IsDeleted = 0
 						)
@@ -147,7 +147,7 @@ BEGIN
 				,dis.ModifiedDate = @ModifiedDate
 			FROM dbo.Discipline AS dis WITH (NOLOCK)
 				INNER JOIN #tblIgnoredDisciplineDetail AS ignore WITH (NOLOCK) ON dis.WorkDate = ignore.WorkDate
-				AND dis.EmpId = ignore.EmpId
+				AND dis.EmpId = ignore.EmployeeId
 
 			UPDATE dis
 			SET dis.IsIgnoredChangeShift = ignore.IsIgnoredChangeShift
@@ -163,7 +163,7 @@ BEGIN
 				,dis.IsIgnoredSevenDaysLeave = ignore.IsIgnoredSevenDaysLeave
 			FROM dbo.DisciplineIgnore AS dis WITH (NOLOCK)
 				INNER JOIN #tblIgnoredDisciplineDetail AS ignore WITH (NOLOCK) ON dis.WorkDate = ignore.WorkDate
-				AND dis.EmpId = ignore.EmpId
+				AND dis.EmpId = ignore.EmployeeId
 		END
 
 		DROP TABLE #tblIgnoredDisciplineDetail
