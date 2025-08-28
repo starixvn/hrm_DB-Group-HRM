@@ -13,12 +13,14 @@ Revisions:
 	20250815@Mira: Exclude empty CtrId - [Redmine: #236138]
 	20250814@Lilac: restructure for transfer [Redmine: #235678]
 	20250821@Mira: Exclude special user NexHRM - [Redmine: #236138]
+	20250828@Mira: restructure for transfer [Redmine: #235678]
 */
 
 AS
     BEGIN
         SET NOCOUNT ON;
 		DECLARE @FromDate DATETIME = DATEFROMPARTS(@Year, 1, 1);
+		DECLARE @NexcelId TINYINT = 1, @LumiId TINYINT = 2,  @NexVisionId TINYINT = 34
 
 		-- select all employee haven't resigned.
 		;WITH ActiveOrResignedEmployees AS (
@@ -39,7 +41,7 @@ AS
 				ELSE ISNULL(es.IsLocal, 1) 
 			END AS IsLocal
 		FROM dbo.Employee e WITH(NOLOCK)
-		INNER JOIN dbo.CompanyEmployee ce WITH(NOLOCK) ON ce.EmpId = e.EmpId AND (ce.CompanyId NOT IN (1,2,34) OR ce.IsSpecialUser = 0)
+		INNER JOIN dbo.CompanyEmployee ce WITH(NOLOCK) ON ce.UserId = e.UserId AND (ce.CompanyId NOT IN (@NexcelId, @LumiId, @NexVisionId) OR ce.IsSpecialUser = 0)
 		OUTER APPLY (
 			SELECT GroupId = ce.GroupId
 		) AS d
