@@ -18,6 +18,7 @@ AS
         20250519@Tim: remove check JoinedDate
         20250604@Tim: add attendance processing to the queue
 		20250812@Mira: tranfer employee [Redmine: #235678]
+        20250829@Tim: fix bug time zone
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -26,8 +27,7 @@ BEGIN
 		,@TempEmpId INT
 		,@tempFromDate DATE = @fromTime
 		,@tempToDate DATE = @toTime
-		,@today DATE = GETDATE()
-        ,@serverTimeZone SMALLINT = -4
+		,@today DATE = DATEADD(DAY, 1, GETDATE())
 	DECLARE @tblDateRange TABLE (WorkDate DATE)
 	CREATE TABLE #tmpEmployee (Id INT PRIMARY KEY IDENTITY(1, 1), EmpId INT)
 
