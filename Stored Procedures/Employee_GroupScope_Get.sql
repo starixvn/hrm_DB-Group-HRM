@@ -29,6 +29,7 @@ AS
 		20250805@Lilac.Nguyen: get location(CountryCodeISO3) [Redmine: #234645]
 		20250815@Jay.Do: enhancement [Redmine: #236138]
 		20250814@Lilac: restructure for transfer [Redmine: #235678]
+		20250828@Mira: restructure for transfer [Redmine: #235678]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -44,6 +45,8 @@ BEGIN
 	INSERT INTO @CompaniesList (CompanyId)
 	SELECT value
 	FROM STRING_SPLIT(@companyIds, ',')
+
+	DECLARE @NexcelId TINYINT = 1, @LumiId TINYINT = 2,  @NexVisionId TINYINT = 34
 
 	DECLARE @Result TABLE (
 		CtrId INT,
@@ -143,7 +146,7 @@ BEGIN
 		e.Gender,
 		e.DOB
 	FROM dbo.Employee AS e WITH (NOLOCK)
-		INNER JOIN dbo.CompanyEmployee ce WITH (NOLOCK) ON ce.UserId = e.UserId
+		INNER JOIN dbo.CompanyEmployee ce WITH (NOLOCK) ON ce.UserId = e.UserId AND (ce.CompanyId NOT IN (@NexcelId, @LumiId, @NexVisionId) OR ce.IsSpecialUser = 0)
 		LEFT JOIN dbo.EmployeeSummary AS s WITH (NOLOCK) ON s.EmpId = ce.EmpId
 		LEFT JOIN dbo.[Group] AS g WITH (NOLOCK) ON ce.GroupID = g.GroupID
 		LEFT JOIN dbo.[Department] AS d WITH (NOLOCK) ON d.DepartmentId = g.DepartmentId
