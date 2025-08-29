@@ -12,6 +12,7 @@ AS
 
 	Revisions:  
 		- 20250813@Henry.Dinh: migrate data transfer feature id: #233310 
+		- 20250829@Jay.Do: restructure: #233310 
 	Param's Explanation:
 */
 BEGIN
@@ -35,7 +36,6 @@ BEGIN
 	   ,[WorkDate]
 	FROM dbo.tmpEmployeeCalendar AS ca WITH (NOLOCK)
 		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = ca.EmpId
-		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON ca.EmpId = ce.EmpId AND ce.Enabled =1
 	WHERE ce.CompanyId = @CompanyId
 		AND (@LastModifiedDate IS NULL OR ca.ModifiedDate > @LastModifiedDate)
 	UNION
@@ -81,7 +81,6 @@ BEGIN
 
 	FROM #tmpEmployeeCalendarChange AS tmp WITH (NOLOCK)
 		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = tmp.EmpId
-		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON ce.UserId = e.UserId
 		INNER JOIN dbo.EmployeeCalendar AS cl WITH (NOLOCK) ON tmp.EmpId = cl.EmpId AND tmp.WorkDate = cl.WorkDate
 		INNER JOIN dbo.tmpEmployeeCalendar as tcl  ON tcl.EmpId = tmp.EmpId AND tcl.WorkDate = tmp.WorkDate
 		LEFT JOIN dbo.EmployeeAttendance AS att ON tmp.EmpId = att.EmpId AND tmp.WorkDate = att.AttendanceDate
