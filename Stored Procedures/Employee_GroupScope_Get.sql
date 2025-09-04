@@ -30,6 +30,7 @@ AS
 		20250815@Jay.Do: enhancement [Redmine: #236138]
 		20250814@Lilac: restructure for transfer [Redmine: #235678]
 		20250828@Mira: restructure for transfer [Redmine: #235678]
+		20250903@Jay.Do: update role [Redmine: #237201]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -57,6 +58,7 @@ BEGIN
 		[Enabled] BIT,
 		JoinedDate VARCHAR(50),
 		ResignedDate VARCHAR(50),
+		ResignedReason NVARCHAR(1000),
 		isDeleted BIT,
 		FullName NVARCHAR(200),
 		IsLocal BIT,
@@ -67,6 +69,7 @@ BEGIN
 		Company NVARCHAR(200),
 		SubCompany NVARCHAR(200),
 		UnitId INT,
+		GroupUnitId INT,
 		UnitCode NVARCHAR(50),
 		UnitPIC NVARCHAR(100),
 		TeamId INT,
@@ -98,6 +101,7 @@ BEGIN
 		ce.[Enabled],
 		e.JoinedDate,
 		e.ResignedDate,
+		e.ResignedReason,
 		ce.isDeleted,
 		e.FullName,
 		s.IsLocal,
@@ -107,7 +111,8 @@ BEGIN
 		c.CompanyId,
 		c.[Name] AS Company,
 		sub.Name AS SubCompany,
-		u.GroupUnitId AS UnitId,
+		u.UnitId,
+		u.GroupUnitId,
 		u.Code AS UnitCode,
 		eu.NickName AS UnitPIC,
 		g.GroupId AS TeamId,

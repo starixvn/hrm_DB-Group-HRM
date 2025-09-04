@@ -11,7 +11,8 @@ AS
 	DB: HRM
 	Original: 
 	Revisions:  
-		- 20250410@Henry: remove company_id + update field [Redmine: #221569]
+		- 20250410@Henry: remove companyid param, update field [Redmine: #221569]
+		- 20250903@Jay: update role [Redmine: #237201]
 	Param's Explanation:
 */
 BEGIN
@@ -21,6 +22,7 @@ BEGIN
 		,u.Name
 		,u.GroupUnitId
 		,u.PICEmpId
+		,u.SupporterEmpId
 		,u.Category
 		,u.Type
 		,u.AccountableArea

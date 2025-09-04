@@ -11,6 +11,7 @@ Original:
 
 Revisions:  
 	20250421@Mira: edit Deparment - new structure [Redmine: #221568]
+	20250903@Jay: update role [Redmine: #237201]
 
 Param's Explanation:
 */
@@ -24,6 +25,7 @@ BEGIN
 	,dep.AccountableArea
 	,dep.GroupDeptId
 	,dep.PICEmpId
+	,dep.SupporterEmpId
 	,u.UnitId
 	,u.Name
 	FROM dbo.Department AS dep WITH (NOLOCK)

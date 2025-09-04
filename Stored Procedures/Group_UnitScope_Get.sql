@@ -17,8 +17,9 @@ AS
         20250515@Jay: add years of service for extra leave [Redmine: #227166]
         20250701@Hank: show Nexcel, Lumiplus, NexVision [Redmine: #225531]
         20250815@Jay.Do: enhancement [Redmine: #236138]
-	20250812@Mira: tranfer employee [Redmine: #235678]
+		20250812@Mira: tranfer employee [Redmine: #235678]
         20250819@Tim: get PICEmpId [Redmine: #235678]
+		20250904@Jay: update role [Redmine: #237201]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -74,6 +75,7 @@ BEGIN
 		,emped.CtrId AS DepartmentPICCtrId
         ,ed.EmpId AS DepartmentPICEmpId
 		,ed.NickName AS DepartmentPIC
+		,u.UnitId
 		,u.Code AS UnitCode
         ,u.PICEmpId AS UnitPICEmpId
 		,g.AccountableArea

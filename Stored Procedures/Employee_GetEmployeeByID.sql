@@ -17,6 +17,7 @@ AS
         - 20250722@Tim: add auto approve request [Remine: #233324]
         - 20250806@Tim: get CtrId [Redmine: #235227]
         - 20250813@Jay: change db structure [Redmine: #235678]
+		- 20250903@Jay: update role [Redmine: #237201]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -115,10 +116,12 @@ BEGIN
 		,ce.JobTitleId
 		,ce.ExpertGradeId
 		,ce.JobLevelId
+		,jl.[Name] AS JobLevel
 		,lk.[Name] AS JobTitle
 		,ce.SubCompanyId
 		,c.[Name] AS CompanyName
 		,ce.ManagementLevelId
+		,ml.[Name] AS ManagementLevel
         ,ce.SalaryStructureId
         ,ce.Salary
         ,ce.AutoApproveRequest
@@ -133,7 +136,9 @@ BEGIN
 		LEFT JOIN dbo.EmployeeContract AS e_cs WITH (NOLOCK) ON e_cs.EmpId = ce.EmpId
 		LEFT JOIN dbo.Country AS ct WITH (NOLOCK) ON empsum.CountryCode = ct.CountryCode
 		LEFT JOIN dbo.LookupData AS lk WITH (NOLOCK) ON ce.JobTitleId = lk.Id
-		AND lk.LookupId = 1
+			AND lk.LookupId = 1
+		LEFT JOIN dbo.JobLevel AS jl WITH (NOLOCK) ON jl.JobLevelId = ce.JobLevelId
+		LEFT JOIN dbo.ManagementLevel AS ml WITH (NOLOCK) ON ml.ManagementLevelId = ce.ManagementLevelId
 	WHERE ce.EmpId = @EmpId
 		AND (@CompanyId IS NULL OR ce.CompanyId = @CompanyId)
 END

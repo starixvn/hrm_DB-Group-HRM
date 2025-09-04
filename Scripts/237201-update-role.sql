@@ -1,0 +1,6 @@
+ALTER TABLE Unit
+ADD SupporterEmpId INT NULL
+
+ALTER TABLE Department
+ADD SupporterEmpId INT NULL
+GO

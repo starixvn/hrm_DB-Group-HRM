@@ -15,7 +15,8 @@ AS
         20250403@Tim: remove param CompanyId [Redmine: #222886]
 	    20250421@Mira: add new Deparment - new structure [Redmine: #221568]
         20250819@Tim: get PICEmpId [Redmine: #235678]
-	20250812@Mira: tranfer employee [Redmine: #235678]
+		20250812@Mira: tranfer employee [Redmine: #235678]
+		20250903@Jay: update role [Redmine: #237201]
 
     Param's Explanation:
 */
@@ -30,6 +31,7 @@ BEGIN
 		,dep.AccountableArea
 		,e.CtrId AS PICCtrId
         ,ce.EmpId AS PICEmpId
+		,ce.NickName AS PICEmployeeName
 		,u.UnitId
         ,u.Code
 		,u.[Name]
