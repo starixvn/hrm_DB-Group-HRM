@@ -13,6 +13,7 @@ AS
     DB: bodb_HRM
 
     Revisions:
+		- 20250829@Jay.Do: restructure: #233310 
     Param's Explanation:
 */
 BEGIN
@@ -95,9 +96,9 @@ BEGIN
         INNER JOIN #tmpEmployeeCalendar AS empca ON att.EmpId = empca.EmpId
         AND att.AttendanceDate = empca.WorkDate
 		AND empca.LeaveDay <> 1
-        INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON att.EmpId = e.EmpId
-        INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON e.EmpId = es.EmpId
-		INNER JOIN dbo.DisciplineGroupRule AS rul WITH (NOLOCK) ON e.GroupId = rul.GroupId
+        INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON att.EmpId = ce.EmpId
+        INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON ce.EmpId = es.EmpId
+		INNER JOIN dbo.DisciplineGroupRule AS rul WITH (NOLOCK) ON ce.GroupId = rul.GroupId
         AND es.IsLocal = rul.IsLocal
         AND rul.DisciplineTypeId = 2
 		AND rul.[Value] = 1
@@ -163,9 +164,9 @@ BEGIN
 		INNER JOIN #tmpEmployeeCalendar AS empca ON empatt.EmpId = empca.EmpId
 		AND empatt.AttendanceDate = empca.WorkDate
 		AND empca.LeaveDay <> 1
-		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON empatt.EmpId = e.EmpId
-		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON e.EmpId = es.EmpId
-		INNER JOIN dbo.DisciplineGroupRule AS rul WITH (NOLOCK) ON e.GroupId = rul.GroupId
+        INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON empatt.EmpId = ce.EmpId
+		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON ce.EmpId = es.EmpId
+		INNER JOIN dbo.DisciplineGroupRule AS rul WITH (NOLOCK) ON ce.GroupId = rul.GroupId
 		AND es.IsLocal = rul.IsLocal
 		AND rul.DisciplineTypeId = 3
 		AND rul.Value = 1
@@ -220,9 +221,9 @@ BEGIN
 		INNER JOIN #tmpEmployeeCalendar AS empca ON empatt.EmpId = empca.EmpId
 		AND empatt.AttendanceDate = empca.WorkDate
 		AND empca.LeaveDay <> 1
-		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON empatt.EmpId = e.EmpId
-		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON e.EmpId = es.EmpId
-		INNER JOIN dbo.DisciplineGroupRule AS rul WITH (NOLOCK) ON e.GroupId = rul.GroupId
+        INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON empatt.EmpId = ce.EmpId
+		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON ce.EmpId = es.EmpId
+		INNER JOIN dbo.DisciplineGroupRule AS rul WITH (NOLOCK) ON ce.GroupId = rul.GroupId
 		AND es.IsLocal = rul.IsLocal
 		AND rul.DisciplineTypeId = 4
 		AND rul.Value = 1
@@ -303,9 +304,9 @@ BEGIN
 		AND empatt.AttendanceDate = empca.WorkDate
 		AND empca.LeaveDay <> 1
 		INNER JOIN dbo.[Shift] AS s WITH (NOLOCK) ON empatt.ShiftId = s.ShiftId
-		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON empatt.EmpId = e.EmpId
-		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON e.EmpId = es.EmpId
-		INNER JOIN dbo.DisciplineGroupRule AS rul WITH (NOLOCK) ON e.GroupId = rul.GroupId
+        INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON empatt.EmpId = ce.EmpId
+		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON ce.EmpId = es.EmpId
+		INNER JOIN dbo.DisciplineGroupRule AS rul WITH (NOLOCK) ON ce.GroupId = rul.GroupId
 		AND es.IsLocal = rul.IsLocal
 		AND rul.DisciplineTypeId = 7
 		AND rul.Value = 1
@@ -442,9 +443,9 @@ BEGIN
 		,0
 		,0
 	FROM #tmpEmployeeAttendance AS att
-		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON att.EmpId = e.EmpId
-		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON e.EmpId = es.EmpId
-		INNER JOIN dbo.DisciplineGroupRule AS rul WITH (NOLOCK) ON e.GroupId = rul.GroupId
+        INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON att.EmpId = ce.EmpId
+		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON ce.EmpId = es.EmpId
+		INNER JOIN dbo.DisciplineGroupRule AS rul WITH (NOLOCK) ON ce.GroupId = rul.GroupId
 		AND es.IsLocal = rul.IsLocal
 		AND rul.DisciplineTypeId = 5
 		AND rul.Value = 1
@@ -746,7 +747,7 @@ BEGIN
 		,[IsOutOfControlWeekendLeave]
 		,IsOutOfControlSevenDaysLeave
 		)
-	SELECT e.EmpId
+	SELECT ce.EmpId
 		,cal.WorkDate
 		,(CASE 
 			WHEN (
@@ -904,35 +905,35 @@ BEGIN
 		,ISNULL(lateleave.IsOutOfControl, 0)
 		,ISNULL(wld.IsOutOfControl, 0)
 		,ISNULL(sevendays.IsOutOfControl, 0)
-	FROM dbo.Employee AS e WITH (NOLOCK)
-		INNER JOIN #tmpEmployeeCalendar AS cal WITH (NOLOCK) ON e.EmpId = cal.EmpId
-		LEFT JOIN #tmpEmployeeAttendance AS att ON e.EmpId = att.EmpId
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		INNER JOIN #tmpEmployeeCalendar AS cal WITH (NOLOCK) ON ce.EmpId = cal.EmpId
+		LEFT JOIN #tmpEmployeeAttendance AS att ON ce.EmpId = att.EmpId
 		AND cal.WorkDate = att.AttendanceDate
 		LEFT JOIN dbo.[Shift] AS sh WITH (NOLOCK) ON cal.ShiftId = sh.ShiftId
-		LEFT JOIN #tblUnpaidLeaveAbsentDiscipline AS upla ON e.EmpId = upla.EmpId
+		LEFT JOIN #tblUnpaidLeaveAbsentDiscipline AS upla ON ce.EmpId = upla.EmpId
 		AND cal.WorkDate = upla.WorkDate
-		LEFT JOIN #tblAbsentDiscipline AS ab ON e.EmpId = ab.EmpId
+		LEFT JOIN #tblAbsentDiscipline AS ab ON ce.EmpId = ab.EmpId
 		AND cal.WorkDate = ab.WorkDate
-		LEFT JOIN #tblUnplannedDiscipline AS lateleave ON e.EmpId = lateleave.EmpId
+		LEFT JOIN #tblUnplannedDiscipline AS lateleave ON ce.EmpId = lateleave.EmpId
 		AND cal.WorkDate = lateleave.WorkDate
-		LEFT JOIN #tblUnpaidLeaveDiscipline AS upl ON e.EmpId = upl.EmpId
+		LEFT JOIN #tblUnpaidLeaveDiscipline AS upl ON ce.EmpId = upl.EmpId
 		AND cal.WorkDate = upl.WorkDate
-		LEFT JOIN #tblWeekendLeaveDiscipline AS wld ON e.EmpId = wld.EmpId
+		LEFT JOIN #tblWeekendLeaveDiscipline AS wld ON ce.EmpId = wld.EmpId
 		AND cal.WorkDate = wld.WorkDate
-		LEFT JOIN #tblLateInDiscipline AS la ON e.EmpId = la.EmpId
+		LEFT JOIN #tblLateInDiscipline AS la ON ce.EmpId = la.EmpId
 		AND cal.WorkDate = la.WorkDate
-		LEFT JOIN #tblEarlyOutDiscipline AS ear ON e.EmpId = ear.EmpId
+		LEFT JOIN #tblEarlyOutDiscipline AS ear ON ce.EmpId = ear.EmpId
 		AND cal.WorkDate = ear.WorkDate
-		LEFT JOIN #tblWorkingUnderTimeDiscipline AS wud ON e.EmpId = wud.EmpId
+		LEFT JOIN #tblWorkingUnderTimeDiscipline AS wud ON ce.EmpId = wud.EmpId
 		AND cal.WorkDate = wud.WorkDate
-		LEFT JOIN #tblMissingCheckInOutDiscipline AS mis ON e.EmpId = mis.EmpId
+		LEFT JOIN #tblMissingCheckInOutDiscipline AS mis ON ce.EmpId = mis.EmpId
 		AND cal.WorkDate = mis.WorkDate
-		LEFT JOIN #tblChangeShiftDiscipline AS changeshift ON e.EmpId = changeshift.EmpId
+		LEFT JOIN #tblChangeShiftDiscipline AS changeshift ON ce.EmpId = changeshift.EmpId
 		AND cal.WorkDate = changeshift.WorkDate
-		LEFT JOIN #tblSevenDaysLeaveDiscipline AS sevendays ON e.EmpId = sevendays.EmpId
+		LEFT JOIN #tblSevenDaysLeaveDiscipline AS sevendays ON ce.EmpId = sevendays.EmpId
 		AND cal.WorkDate = sevendays.WorkDate
-	WHERE ISNULL(e.isDeleted, 0) = 0
-		AND e.[Enabled] = 1
+	WHERE ISNULL(ce.isDeleted, 0) = 0
+		AND ce.[Enabled] = 1
 		AND cal.WorkDate >= @SyncFromDate
 		AND (
 			upla.EmpId IS NOT NULL

@@ -3,7 +3,7 @@
 ALTER PROCEDURE [dbo].[Employee_GetByUserId]
 (
     @UserId INT
-    ,@CompanyId SMALLINT = 0
+    ,@CompanyId SMALLINT = NULL
 )
 AS
 /*

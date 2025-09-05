@@ -20,6 +20,7 @@ AS
 	    20250515@Hank: Separate AL and Extra leave
 	    20250516@Hank: Modified to get active range (ToDate > @fromDate)
 		20250812@Mira: change DB structure [Redmine: #235678]
+		20250829@Mira: change DB structure [Redmine: #235678]
 
 	Param's Explanation:
 */
@@ -146,8 +147,8 @@ BEGIN
 		,cb.EmpId
 		,ce.Code
 		,FullName
-		,Email
-		,NickName
+		,ce.Email
+		,ce.NickName
 		,g.[Rank]
 		,g.GroupId AS TeamId
 		,g.[Name] AS Team
