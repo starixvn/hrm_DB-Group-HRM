@@ -193,7 +193,9 @@ BEGIN
         AND (
             @hasPermissionViewAll = 1
             OR u.PICEmpId = @actorId
+			OR u.SupporterEmpId = @actorId
             OR d.PICEmpId = @actorId
+			OR d.SupporterEmpId = @actorId
             OR g.PICEmpId = @actorId
         )
 
