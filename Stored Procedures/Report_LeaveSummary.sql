@@ -20,6 +20,7 @@ AS
 	    20250408@Hank: remove section [Redmine: #222886]
         20250507@Tim: get KIV added manually
 		20250813@Lilac: restructure for transfer [Redmine: #235678]
+		20250809@Mira: restructure for transfer [Redmine: #235678]
 
 	Param's Explanation:
 */
@@ -88,7 +89,7 @@ BEGIN
 			)
 		AND (
 			ISNULL(e.isDeleted, 0) = 0
-			OR YEAR(e.ResignedDate) >= year(@todate)
+			OR YEAR(emp.ResignedDate) >= year(@todate)
 			)
 	GROUP BY e.EmpId
 
