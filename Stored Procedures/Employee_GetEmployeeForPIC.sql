@@ -15,7 +15,7 @@ AS
 */
 BEGIN
 	SET NOCOUNT ON;
-	DECLARE @NexCompaniesIds VARCHAR(100) = '1,2,34' 
+	DECLARE @NexcelId TINYINT = 1, @LumiId TINYINT = 2,  @NexVisionId TINYINT = 34
 
 	SELECT ce.[EmpId] as Id
       ,ce.[Code]
@@ -27,7 +27,7 @@ BEGIN
 		AND ISNULL(ce.IsDeleted, 0) = 0
 		AND ISNULL(ce.Enabled, 1) = 1
         AND (
-			ce.CompanyId NOT IN (SELECT CAST([value] AS INT) FROM STRING_SPLIT(@NexCompaniesIds, ','))
+			ce.CompanyId NOT IN (@NexcelId, @LumiId, @NexVisionId)
 			OR ISNULL(ce.IsSpecialUser, 0) = 0
 		)
 	INNER JOIN [dbo].Company c WITH (NOLOCK) ON c.CompanyId = ce.CompanyId
