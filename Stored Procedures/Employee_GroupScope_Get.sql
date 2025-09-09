@@ -13,7 +13,6 @@ ALTER PROCEDURE [dbo].[Employee_GroupScope_Get]
     @companyIds VARCHAR(MAX) = '',
     @isCtrID BIT = NULL,
     @isOutsource BIT = NULL,
-    @hasPermissionViewAll BIT = 0,
     @actorId INT = NULL
 )
 AS
