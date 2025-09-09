@@ -72,6 +72,8 @@ BEGIN
 		GroupUnitId INT,
 		UnitCode NVARCHAR(50),
 		UnitPIC NVARCHAR(100),
+		UnitPICEmpId INT,
+		UnitSupporterEmpId INT,
 		TeamId INT,
 		TeamCode NVARCHAR(50),
 		TeamName NVARCHAR(200),
@@ -81,6 +83,8 @@ BEGIN
 		DepartmentCode NVARCHAR(50),
 		DepartmentName NVARCHAR(200),
 		DepartmentPIC NVARCHAR(100),
+		DepartmentPICId INT,
+		DepartmentSupporterEmpId INT,
 		ManagementLevel NVARCHAR(100),
 		JobLevel NVARCHAR(100),
 		[Location] NVARCHAR(100),
@@ -115,6 +119,8 @@ BEGIN
 		u.GroupUnitId,
 		u.Code AS UnitCode,
 		eu.NickName AS UnitPIC,
+		u.PICEmpId AS UnitPICEmpId,
+		u.SupporterEmpId AS UnitSupporterEmpId,
 		g.GroupId AS TeamId,
 		g.Code AS TeamCode,
 		g.[Name] AS TeamName,
@@ -124,6 +130,8 @@ BEGIN
 		d.Code AS DepartmentCode,
 		d.[Name] AS DepartmentName,
 		ed.NickName AS DepartmentPIC,
+		d.PICEmpId AS DepartmentPICId,
+		d.SupporterEmpId AS DepartmentSupporterEmpId,
 		COALESCE(mg.[Name], ml.[Name]) AS ManagementLevel,
 		jg.[Name] AS JobLevel,
 		ct.CountryCodeISO3 AS [Location],
@@ -190,14 +198,6 @@ BEGIN
 			@isOutsource IS NULL
 			OR g.IsOutsource = @isOutsource
 		)
-        AND (
-            @hasPermissionViewAll = 1
-            OR u.PICEmpId = @actorId
-			OR u.SupporterEmpId = @actorId
-            OR d.PICEmpId = @actorId
-			OR d.SupporterEmpId = @actorId
-            OR g.PICEmpId = @actorId
-        )
 
 	SELECT @totalRow = COUNT(*) FROM @Result
 
