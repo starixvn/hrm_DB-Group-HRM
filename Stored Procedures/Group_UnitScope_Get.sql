@@ -72,12 +72,14 @@ BEGIN
         ,d.Code AS DepartmentCode
         ,d.[Name] AS DepartmentName
 		,d.PICEmpId AS DepartmentPICId
+		,d.SupporterEmpId AS DepartmentSupporterEmpId
 		,emped.CtrId AS DepartmentPICCtrId
         ,ed.EmpId AS DepartmentPICEmpId
 		,ed.NickName AS DepartmentPIC
 		,u.UnitId
 		,u.Code AS UnitCode
         ,u.PICEmpId AS UnitPICEmpId
+        ,u.SupporterEmpId AS UnitSupporterEmpId
 		,g.AccountableArea
 		,g.CompanyId
 		,c.[Name] AS CompanyName
