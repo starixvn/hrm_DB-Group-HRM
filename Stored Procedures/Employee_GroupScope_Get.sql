@@ -6,8 +6,6 @@ ALTER PROCEDURE [dbo].[Employee_GroupScope_Get]
     @teamIds VARCHAR(MAX) = '',
     @enable BIT = NULL,
     @isDelete BIT = NULL,
-    @pageNumber INT = 1,
-    @pageSize INT = NULL,
     @totalRow INT = NULL OUTPUT,
     @titleId INT = NULL,
     @companyIds VARCHAR(MAX) = '',
@@ -201,16 +199,6 @@ BEGIN
 	SELECT @totalRow = COUNT(*) FROM @Result
 
 	-- Final result
-	IF @pageSize IS NULL OR @pageSize <= 0
-	BEGIN
-		SELECT * FROM @Result
-		ORDER BY UnitCode DESC, DepartmentCode DESC, TeamCode DESC
-	END
-	ELSE
-	BEGIN
-		SELECT * FROM @Result
-		ORDER BY UnitCode DESC, DepartmentCode DESC, TeamCode DESC
-		OFFSET (@pageNumber - 1) * @pageSize ROWS
-		FETCH NEXT @pageSize ROWS ONLY
-	END
+	SELECT * FROM @Result
+	ORDER BY UnitCode DESC, DepartmentCode DESC, TeamCode DESC
 END
