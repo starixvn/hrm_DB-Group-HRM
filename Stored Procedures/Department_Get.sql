@@ -21,21 +21,23 @@ AS
     Param's Explanation:
 */
 BEGIN
-	SET NOCOUNT ON;
+    SET NOCOUNT ON;
 
-	SELECT dep.DepartmentId AS Id
-		,dep.GroupDeptId
-		,dep.Code
-		,dep.[Name]
-		,dep.IsActive
-		,dep.AccountableArea
-		,e.CtrId AS PICCtrId
+    SELECT dep.DepartmentId AS Id
+        ,dep.GroupDeptId
+        ,dep.Code
+        ,dep.[Name]
+        ,dep.IsActive
+        ,dep.AccountableArea
+        ,dep.SupporterEmpId
+        ,e.CtrId AS PICCtrId
         ,ce.EmpId AS PICEmpId
-		,ce.NickName AS PICEmployeeName
-		,u.UnitId
+        ,ce.NickName AS PICEmployeeName
+        ,u.UnitId
         ,u.Code
-		,u.[Name]
+        ,u.[Name]
         ,u.PICEmpId
+        ,u.SupporterEmpId
 	FROM dbo.Department AS dep WITH (NOLOCK)
 		LEFT JOIN dbo.Unit AS u WITH (NOLOCK) ON dep.UnitId = u.UnitId
 		LEFT JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON dep.PICEmpId = ce.EmpId
