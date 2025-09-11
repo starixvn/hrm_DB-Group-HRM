@@ -14,7 +14,7 @@ ALTER PROCEDURE [dbo].[Unit_Update]
 	,@ModifiedBy INT
 	,@ErrCode INT = 0 OUTPUT
 	,@ErrMsg VARCHAR(200) = '' OUTPUT
-	,@SupporterEmpId INT = NULL
+	,@SupporterEmpId VARCHAR(MAX) = NULL
 )
 AS
 /*

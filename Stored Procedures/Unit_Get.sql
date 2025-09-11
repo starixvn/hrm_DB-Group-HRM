@@ -30,10 +30,8 @@ BEGIN
 		,u.IsActive
 		,u.ModifiedDate
 		,u.SupporterEmpId
-		,sce.NickName AS SupporterNickName
 	FROM dbo.Unit AS u WITH (NOLOCK)
 	LEFT JOIN dbo.CompanyEmployee As ce WITH (NOLOCK) ON ce.EmpId = u.PICEmpId
-	LEFT JOIN dbo.CompanyEmployee As sce WITH (NOLOCK) ON sce.EmpId = u.SupporterEmpId
 	WHERE (
 			@IsActive IS NULL
 			OR u.IsActive = @IsActive
