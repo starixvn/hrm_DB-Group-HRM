@@ -1,6 +1,6 @@
 ALTER TABLE Unit
-ADD SupporterEmpId INT NULL
+ADD SupporterEmpId VARCHAR(MAX) NULL
 
 ALTER TABLE Department
-ADD SupporterEmpId INT NULL
+ADD SupporterEmpId VARCHAR(MAX) NULL
 GO
