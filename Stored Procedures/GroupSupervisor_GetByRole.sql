@@ -1,6 +1,6 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER   PROCEDURE [dbo].[GroupSupervisor_GetByRole]
+ALTER PROCEDURE [dbo].[GroupSupervisor_GetByRole]
 (
     @TeamId INT
     ,@Role TINYINT
@@ -13,12 +13,15 @@ AS
     DB: bodb_HRM
 
     Revisions:
-	- 20250730@Jay: Add company name for group filter [Redmine: #233324]
-	- 20250812@Mira: tranfer employee [Redmine: #235678]
+        - 20250730@Jay: Add company name for group filter [Redmine: #233324]
+        - 20250812@Mira: tranfer employee [Redmine: #235678]
+        - 20250910@Tim: fix bug get special user
     Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;
+
+	DECLARE @NexcelId SMALLINT = 1, @LumiId SMALLINT = 2,  @NexVisionId SMALLINT = 34
 
 	SELECT ce.EmpId
 		,CASE 
@@ -63,22 +66,24 @@ BEGIN
 			ELSE 0
 		END AS CanRemove
 	FROM dbo.GroupSupervisor AS su WITH (NOLOCK)
-		INNER JOIN dbo.[CompanyEmployee] AS ce WITH (NOLOCK) ON ce.EmpId = su.OwnerId AND ISNULL(ce.IsSpecialUser, 0) = 0 AND ISNULL(ce.IsDeleted, 0) = 0 AND ISNULL(ce.Enabled, 1) = 1
+		INNER JOIN dbo.[CompanyEmployee] AS ce WITH (NOLOCK) ON ce.EmpId = su.OwnerId
 		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.UserId = ce.UserId
 		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON @TeamId = g.GroupId
 		INNER JOIN dbo.[Company] AS c WITH (NOLOCK) ON c.CompanyId = ce.CompanyId
 	WHERE su.GroupId = @TeamId
-		AND su.ActionType = @Role
-		AND ISNULL(su.IsDeleted, 0) = 0
+        AND su.ActionType = @Role
+        AND ISNULL(su.IsDeleted, 0) = 0
+        AND (ce.CompanyId NOT IN (@NexcelId, @LumiId, @NexVisionId) OR ce.IsSpecialUser = 0)
+        AND ISNULL(ce.IsDeleted, 0) = 0 AND ISNULL(ce.Enabled, 1) = 1
 	GROUP BY ce.EmpId
-		,ce.NickName
-		,e.FullName
-		,g.GroupId
-		,g.Code
-		,g.[Name]
-		,su.DisplayOrder
-		,su.OwnerId
-		,c.[Name]
-		,c.CompanyId
+        ,ce.NickName
+        ,e.FullName
+        ,g.GroupId
+        ,g.Code
+        ,g.[Name]
+        ,su.DisplayOrder
+        ,su.OwnerId
+        ,c.[Name]
+        ,c.CompanyId
 	ORDER BY ISNULL(su.DisplayOrder, 0)
 END

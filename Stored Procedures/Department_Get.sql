@@ -15,25 +15,29 @@ AS
         20250403@Tim: remove param CompanyId [Redmine: #222886]
 	    20250421@Mira: add new Deparment - new structure [Redmine: #221568]
         20250819@Tim: get PICEmpId [Redmine: #235678]
-	20250812@Mira: tranfer employee [Redmine: #235678]
+		20250812@Mira: tranfer employee [Redmine: #235678]
+		20250903@Jay: update role [Redmine: #237201]
 
     Param's Explanation:
 */
 BEGIN
-	SET NOCOUNT ON;
+    SET NOCOUNT ON;
 
-	SELECT dep.DepartmentId AS Id
-		,dep.GroupDeptId
-		,dep.Code
-		,dep.[Name]
-		,dep.IsActive
-		,dep.AccountableArea
-		,e.CtrId AS PICCtrId
+    SELECT dep.DepartmentId AS Id
+        ,dep.GroupDeptId
+        ,dep.Code
+        ,dep.[Name]
+        ,dep.IsActive
+        ,dep.AccountableArea
+        ,dep.SupporterEmpId
+        ,e.CtrId AS PICCtrId
         ,ce.EmpId AS PICEmpId
-		,u.UnitId
+        ,ce.NickName AS PICEmployeeName
+        ,u.UnitId
         ,u.Code
-		,u.[Name]
+        ,u.[Name]
         ,u.PICEmpId
+        ,u.SupporterEmpId
 	FROM dbo.Department AS dep WITH (NOLOCK)
 		LEFT JOIN dbo.Unit AS u WITH (NOLOCK) ON dep.UnitId = u.UnitId
 		LEFT JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON dep.PICEmpId = ce.EmpId

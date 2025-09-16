@@ -14,6 +14,7 @@ ALTER PROCEDURE [dbo].[Unit_Update]
 	,@ModifiedBy INT
 	,@ErrCode INT = 0 OUTPUT
 	,@ErrMsg VARCHAR(200) = '' OUTPUT
+	,@SupporterEmpId VARCHAR(MAX) = NULL
 )
 AS
 /*
@@ -23,6 +24,7 @@ AS
 
 	Revisions:
 		- 20250410@Henry: remove company_id + update field [Redmine: #221569]
+		- 20250903@Jay: update role [Redmine: #237201]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -60,6 +62,7 @@ BEGIN
 		,[Name] = @Name
 		,[GroupUnitId] = @GroupUnitId
 		,[PICEmpId] = @PICEmpId
+		,[SupporterEmpId] = @SupporterEmpId
 		,[Category] = @Category
 		,[Type] = @Type
 		,[AccountableArea] = @AccountableArea

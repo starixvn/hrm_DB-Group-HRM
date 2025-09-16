@@ -1,0 +1,6 @@
+ALTER TABLE Unit
+ADD SupporterEmpId VARCHAR(MAX) NULL
+
+ALTER TABLE Department
+ADD SupporterEmpId VARCHAR(MAX) NULL
+GO
