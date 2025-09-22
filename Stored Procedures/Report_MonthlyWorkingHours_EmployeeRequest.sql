@@ -9,7 +9,7 @@ ALTER PROCEDURE [dbo].[Report_MonthlyWorkingHours_EmployeeRequest]
 	,@Employee NVARCHAR(200) = NULL
 	,@TeamIds VARCHAR(MAX) = ''
 	,@IsLocal BIT = NULL
-	,@EmployeeStatusId TINYINT = NULL
+	,@EmployeeStatusIds VARCHAR(10) = ''
 )
 AS
 /*
@@ -18,8 +18,9 @@ AS
     DB: bodb_HRM
 
     Revisions:
-        20250417@Tim: get Unit Code [Redmine: #224530]
-        20250813@Jay: change db structure [Redmine: #235678]
+        -20250417@Tim: get Unit Code [Redmine: #224530]
+        -20250813@Jay: change db structure [Redmine: #235678]
+        -20250919@Tim: user status filter [Redmine: #239089]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -49,6 +50,7 @@ BEGIN
 		,@RejectedStatusId TINYINT = 5
 		,@ProcessedStatusId TINYINT = 6
 		,@VoidStatusId TINYINT = 7
+    DECLARE @tblStatus TABLE (Id TINYINT)
 
 	CREATE TABLE #tblGroupIds (GroupId INT)
 
@@ -86,31 +88,31 @@ BEGIN
 		FROM STRING_SPLIT(@TeamIds, ',')
 	END
 
+    IF ISNULL(@EmployeeStatusIds, '') != ''
+    BEGIN
+        INSERT INTO @tblStatus (Id)
+		SELECT value
+		FROM STRING_SPLIT(@EmployeeStatusIds, ',')
+    END
+
 	INSERT INTO #tblEmployeeIds (EmpId)
 	SELECT ce.EmpId
 	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
-		INNER JOIN Employee e (NOLOCK) ON e.UserId = ce.UserId
-		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON ce.EmpId = empsum.EmpId
+		INNER JOIN dbo.Employee AS e (NOLOCK) ON e.UserId = ce.UserId
+		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON ce.EmpId = es.EmpId
 		INNER JOIN (
 		SELECT EmpId
 		FROM dbo.fnc_GetEmployeeByActorId(@ActorId, 0, 1, @CompanyId)
 		) AS [member] ON ce.EmpId = [member].EmpId
 	WHERE (
-			@EmployeeStatusId IS NULL
-			OR (
-				@EmployeeStatusId = @Enable
-				AND ce.[Enabled] = 1
-				AND ce.isDeleted = 0
-				)
-			OR (
-				@EmployeeStatusId = @Disabled
-				AND ce.[Enabled] = 0
-				AND ce.isDeleted = 0
-				)
-			OR (
-				@EmployeeStatusId = @Deleted
-				AND ce.isDeleted = 1
-				)
+			@EmployeeStatusIds IS NULL
+            OR EXISTS (
+                SELECT 1
+                FROM @tblStatus AS s
+                WHERE (s.Id = @Enable AND ce.[Enabled] = 1 AND ce.isDeleted = 0)
+                    OR (s.Id = @Disabled AND ce.[Enabled] = 0 AND ce.isDeleted = 0)
+                    OR (s.Id = @Deleted AND ce.isDeleted = 1)
+                )
 			)
 		AND (
 			ce.NickName LIKE '%' + ISNULL(@Employee, '') + '%'
@@ -118,7 +120,7 @@ BEGIN
 			)
 		AND (
 			@IsLocal IS NULL
-			OR empsum.IsLocal = @IsLocal
+			OR es.IsLocal = @IsLocal
 			)
 		AND EXISTS (
 			SELECT 1
@@ -126,66 +128,76 @@ BEGIN
 			WHERE tbl.GroupId = ce.GroupId
 			)
 
-	SELECT @FromDate = CONVERT(VARCHAR(10), @FromDate, 111)
-		,@ToDate = DATEADD(ms, - 2, DATEADD(d, 1, CONVERT(VARCHAR(10), @ToDate, 111)))
-
 	INSERT INTO #tblRequestIds (RequestId)
 	SELECT req.RequestId
 	FROM dbo.WorkingTimeRequest AS req WITH (NOLOCK)
 		INNER JOIN #tblEmployeeIds AS empid ON req.EmpId = empid.EmpId
 		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = empid.EmpId
-		LEFT JOIN dbo.LateInEarlyOutRequest AS inout WITH (NOLOCK) ON req.RequestId = inout.RequestId
-		LEFT JOIN dbo.LeaveRequest AS leavereq WITH (NOLOCK) ON req.RequestId = leavereq.RequestId
-		LEFT JOIN dbo.KeepInViewRequest AS kiv WITH (NOLOCK) ON req.RequestId = kiv.RequestId
-		LEFT JOIN dbo.CheckInOutRequest AS mio WITH (NOLOCK) ON req.RequestId = mio.RequestId
-		LEFT JOIN dbo.ChangeShiftRequest AS cs WITH (NOLOCK) ON req.RequestId = cs.RequestId
 	WHERE (
 			req.RequestType IN (@LateInRequestTypeId, @EarlyOutRequestTypeId)
-			AND inout.OnDate BETWEEN @FromDate
-					AND @ToDate
+            AND EXISTS (
+                SELECT 1
+                FROM dbo.LateInEarlyOutRequest AS inout WITH (NOLOCK) 
+                WHERE req.RequestId = inout.RequestId
+                    AND inout.OnDate BETWEEN @FromDate AND @ToDate
+                )
 			)
 		OR (
 			req.RequestType = @LeaveRequestTypeId
-			AND (
-				(
-					leavereq.FromDate BETWEEN @FromDate
-						AND @ToDate
-					AND leavereq.ToDate >= @ToDate
-					)
-				OR (
-					leavereq.FromDate <= @FromDate
-					AND leavereq.ToDate >= @ToDate
-					)
-				OR leavereq.ToDate BETWEEN @FromDate
-					AND @ToDate
-				)
+            AND EXISTS (
+                SELECT 1
+                FROM dbo.LeaveRequest AS lr WITH (NOLOCK)
+                WHERE req.RequestId = lr.RequestId
+                    AND (
+				        (
+					        lr.FromDate BETWEEN @FromDate AND @ToDate
+					        AND lr.ToDate >= @ToDate
+					        )
+				        OR (
+					        lr.FromDate <= @FromDate
+					        AND lr.ToDate >= @ToDate
+					        )
+				        OR lr.ToDate BETWEEN @FromDate AND @ToDate
+				    )
+                )
 			)
 		OR (
 			req.RequestType = @KeepInViewRequestTypeId
-			AND kiv.OnDate BETWEEN @FromDate
-				AND @ToDate
+            AND EXISTS (
+                SELECT 1
+                FROM dbo.KeepInViewRequest AS kiv WITH (NOLOCK)
+                WHERE req.RequestId = kiv.RequestId
+                    AND kiv.OnDate BETWEEN @FromDate AND @ToDate
+                )
 			)
 		OR (
 			req.RequestType IN (@CheckInRequestTypeId, @CheckOutRequestTypeId)
-			AND mio.OnDate BETWEEN @FromDate
-				AND @ToDate
+            AND EXISTS (
+                SELECT 1
+                FROM dbo.CheckInOutRequest AS mio WITH (NOLOCK)
+                WHERE req.RequestId = mio.RequestId
+			        AND mio.OnDate BETWEEN @FromDate AND @ToDate
+                )
 			)
 		OR (
 			req.RequestType = @ChangeShiftRequestTypeId
-			AND (
-				(
-					cs.FromDate BETWEEN @FromDate
-						AND @ToDate
-					AND cs.ToDate >= @ToDate
-					)
-				OR (
-					cs.FromDate <= @FromDate
-					AND cs.FromDate <= @ToDate
-					AND cs.ToDate >= @ToDate
-					)
-				OR cs.ToDate BETWEEN @FromDate
-					AND @ToDate
-				)
+            AND EXISTS (
+                SELECT 1
+                FROM dbo.ChangeShiftRequest AS cs WITH (NOLOCK)
+                WHERE req.RequestId = cs.RequestId
+			        AND (
+				        (
+					        cs.FromDate BETWEEN @FromDate AND @ToDate
+					        AND cs.ToDate >= @ToDate
+					        )
+				        OR (
+					        cs.FromDate <= @FromDate
+					        AND cs.FromDate <= @ToDate
+					        AND cs.ToDate >= @ToDate
+					        )
+				        OR cs.ToDate BETWEEN @FromDate AND @ToDate
+				        )
+                )
 			)
 
 	INSERT INTO #tblRequestInDaily (
@@ -524,4 +536,3 @@ BEGIN
 
 	DROP TABLE #tblRequestIds
 END
-

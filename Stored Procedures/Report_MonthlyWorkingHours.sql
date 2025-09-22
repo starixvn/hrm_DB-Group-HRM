@@ -9,7 +9,7 @@ ALTER PROCEDURE [dbo].[Report_MonthlyWorkingHours]
 	,@TeamIds VARCHAR(MAX) = ''
 	,@Employee NVARCHAR(200) = NULL
 	,@IsLocal BIT = NULL
-	,@EmployeeStatusId TINYINT = NULL
+	,@EmployeeStatusIds VARCHAR(10) = ''
 )
 AS
 /*
@@ -18,14 +18,15 @@ AS
     DB: bodb_HRM
 
     Revisions:
-        20250417@Tim: get Unit Code [Redmine: #224530]
-        20250813@Jay: change db structure [Redmine: #235678]
+        -20250417@Tim: get Unit Code [Redmine: #224530]
+        -20250813@Jay: change db structure [Redmine: #235678]
+        -20250919@Tim: user status filter [Redmine: #239089]
 */
 BEGIN
 	SET NOCOUNT ON;
 
 	DECLARE @Today DATE = GETDATE()
-		,@EmployeeIds VARCHAR(MAX) = ''
+		,@EmpIds VARCHAR(MAX) = ''
 		-- employee status
 		,@Enable TINYINT = 1
 		,@Disabled TINYINT = 2
@@ -33,9 +34,10 @@ BEGIN
 		-- leave type 
 		,@KIVByHourLeaveType INT = 48
 	CREATE TABLE #tblGroupIds (GroupId INT PRIMARY KEY)
-	CREATE TABLE #tblEmployeeIds (EmployeeId INT PRIMARY KEY)
+	CREATE TABLE #tblEmployeeIds (EmpId INT PRIMARY KEY)
+    DECLARE @tblStatus TABLE (Id TINYINT)
 
-	IF ISNULL(@TeamIds, '') <> ''
+	IF ISNULL(@TeamIds, '') != ''
 	BEGIN
 		INSERT INTO #tblGroupIds (GroupId)
 		SELECT value
@@ -43,10 +45,17 @@ BEGIN
 		WHERE ISNUMERIC(value) = 1
 	END
 
-	INSERT INTO #tblEmployeeIds (EmployeeId)
+    IF ISNULL(@EmployeeStatusIds, '') != ''
+    BEGIN
+        INSERT INTO @tblStatus (Id)
+		SELECT value
+		FROM STRING_SPLIT(@EmployeeStatusIds, ',')
+    END
+
+	INSERT INTO #tblEmployeeIds (EmpId)
 	SELECT ce.EmpId
 	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
-		INNER JOIN Employee e (NOLOCK) ON ce.UserId = e.UserId
+		INNER JOIN dbo.Employee AS e (NOLOCK) ON ce.UserId = e.UserId
         INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON ce.EmpId = empsum.EmpId
 			AND ce.IsSpecialUser = 0
 		INNER JOIN (
@@ -54,24 +63,17 @@ BEGIN
 		FROM dbo.fnc_GetEmployeeByActorId(@ActorId, 0, 1, @CompanyId)
 		) AS [member] ON ce.EmpId = [member].EmpId
 	WHERE (
-			@EmployeeStatusId IS NULL
-			OR (
-				@EmployeeStatusId = @Enable
-				AND ce.[Enabled] = 1
-				AND ce.isDeleted = 0
-				)
-			OR (
-				@EmployeeStatusId = @Disabled
-				AND ce.[Enabled] = 0
-				AND ce.isDeleted = 0
-				)
-			OR (
-				@EmployeeStatusId = @Deleted
-				AND ce.isDeleted = 1
-				)
+			ISNULL(@EmployeeStatusIds, '') != ''
+            OR EXISTS (
+                SELECT 1
+                FROM @tblStatus AS s
+                WHERE (s.Id = @Enable AND ce.[Enabled] = 1 AND ce.isDeleted = 0)
+                    OR (s.Id = @Disabled AND ce.[Enabled] = 0 AND ce.isDeleted = 0)
+                    OR (s.Id = @Deleted AND ce.isDeleted = 1)
+                )
 			)
 		AND (
-			ce.NickName LIKE '%' + ISNULL(@Employee, '') + '%'
+			ce.Nickname LIKE '%' + ISNULL(@Employee, '') + '%'
 			OR e.FullName LIKE '%' + ISNULL(@Employee, '') + '%'
 			)
 		AND (
@@ -84,15 +86,15 @@ BEGIN
 			WHERE tbl.GroupId = ce.GroupId
 			)
 
-	SELECT @EmployeeIds = COALESCE(@EmployeeIds + ',', '') + CAST(EmployeeId AS VARCHAR(20))
+	SELECT @EmpIds = COALESCE(@EmpIds + ',', '') + CAST(EmpId AS VARCHAR(10))
 	FROM #tblEmployeeIds WITH (NOLOCK)
 
 	EXEC dbo.tmpEmployeeCalendar_Insert @CompanyId = @CompanyId
         ,@fromDate = @fromDate
 		,@toDate = @toDate
-		,@empIds = @EmployeeIds
+		,@empIds = @EmpIds
 
-	SELECT ce.EmpId AS EmployeeId
+	SELECT ce.EmpId
 		,empca.WorkDate
 		,(CASE 
 			WHEN empatt.TotalWorkHours > 0 THEN empatt.TotalWorkHours
@@ -166,7 +168,7 @@ BEGIN
 		,lv2.[Name] AS LeaveName
 	INTO #tblEmployeeCalendar
 	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
-		INNER JOIN #tblEmployeeIds AS empid WITH (NOLOCK) ON ce.EmpId = empid.EmployeeId
+		INNER JOIN #tblEmployeeIds AS empid WITH (NOLOCK) ON ce.EmpId = empid.EmpId
 		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON ce.EmpId = empsum.EmpId
 		INNER JOIN dbo.tmpEmployeeCalendar AS empca WITH (NOLOCK) ON ce.EmpId = empca.EmpId
 		LEFT JOIN dbo.EmployeeAttendance AS empatt WITH (NOLOCK) ON ce.EmpId = empatt.EmpId
@@ -179,20 +181,22 @@ BEGIN
 	WHERE empca.WorkDate BETWEEN @fromDate
 			AND @toDate
 
-	SELECT ce.EmpId AS EmployeeId
+	SELECT ce.EmpId
 		,ce.Code
 		,ce.NickName
 		,e.FullName
+        ,ce.[Enabled]
+        ,ce.IsDeleted
 		,empsum.WorkingDays
         ,u.Code AS UnitCode
 		,dep.Code AS DepartmentCode
 		,dep.[Name] AS DepartmentName
-		,gr.GroupId AS Id
-		,gr.Code
-		,gr.[Name]
+		,gr.GroupId AS TeamId
+		,gr.Code AS TeamCode
+		,gr.[Name] AS TeamName
 	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
-		INNER JOIN Employee e (NOLOCK) ON ce.UserId = e.UserId
-		INNER JOIN #tblEmployeeIds AS empid WITH (NOLOCK) ON ce.EmpId = empid.EmployeeId
+		INNER JOIN dbo.Employee AS e (NOLOCK) ON ce.UserId = e.UserId
+		INNER JOIN #tblEmployeeIds AS empid WITH (NOLOCK) ON ce.EmpId = empid.EmpId
 		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON ce.GroupId = gr.GroupId
 		INNER JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId = gr.DepartmentId
         INNER JOIN dbo.Unit AS u WITH (NOLOCK) ON dep.UnitId = u.UnitId
@@ -200,7 +204,7 @@ BEGIN
 	ORDER BY gr.[Name]
 		,ce.Code
 
-	SELECT EmployeeId
+	SELECT EmpId
 		,WorkDate
 		,TotalWorkingHours
 		,IsHoliday
@@ -212,15 +216,15 @@ BEGIN
 		,IsAbsent
 		,RequestStatusId
 		,LeaveTypeId
-		,Code
-		,[Name]
+		,Code AS LeaveTypeCode
+		,[Name] AS LeaveTypeName
 		,FromTime
 		,ToTime
 		,LeaveTypeId2
-		,LeaveCode
-		,LeaveName
+		,LeaveCode AS LeaveTypeCode2
+		,LeaveName AS LeaveTypeName2
 	FROM #tblEmployeeCalendar WITH (NOLOCK)
-	ORDER BY EmployeeId
+	ORDER BY EmpId
 		,WorkDate
 
 	DROP TABLE #tblGroupIds
