@@ -14,6 +14,7 @@ ALTER PROCEDURE [dbo].[WorkingTimeRequest_GetRequestByCreateDate_AllType]
     ,@requestType INT = NULL
     ,@leaveTypeId INT = NULL
 	,@isShowCrossCompany BIT = 0
+	,@EmployeeStatusIds VARCHAR(10) = ''
 )
 AS
 /*
@@ -25,6 +26,7 @@ AS
         20250403@Tim: remove section [Redmine: #222886]
         20250722@Tim: auto approve request [Redmine: #233324]
 		20250812@Mira: tranfer employee [Redmine: #235678]
+        20250924@Jay: user status filter [Redmine: #239089]
     Param's Explanation:
 */
 BEGIN
@@ -37,6 +39,21 @@ BEGIN
 	CREATE TABLE #tblRequestId (RequestId INT PRIMARY KEY)
 
 	CREATE TABLE #tblTotalDaysRequestInMonth (EmpId INT, RequestType TINYINT, TotalDaysRequest INT)
+
+	DECLARE @employeeIds VARCHAR(MAX)
+        -- employee status
+		,@Enable TINYINT = 1
+		,@Disabled TINYINT = 2
+		,@Deleted TINYINT = 3
+
+    DECLARE @tblEmployeeStatus TABLE (Id TINYINT)
+
+    IF ISNULL(@EmployeeStatusIds, '') != ''
+    BEGIN
+        INSERT INTO @tblEmployeeStatus (Id)
+	    SELECT value
+	    FROM STRING_SPLIT(@EmployeeStatusIds, ',')
+    END
 
 	CREATE TABLE #tblRequestInDaily (
 		RequestID BIGINT
@@ -89,7 +106,7 @@ BEGIN
 		BEGIN
 			INSERT INTO #tblEmployeeId (EmpId)
 			EXEC dbo.Request_GetMemberByActorId @EmpId = @SupervisorId
-				,@ExcludeUserDelete = 1
+				,@ExcludeUserDelete = 0
 				,@IsShowUserInTeam = 0
 		END
 		ELSE
@@ -105,7 +122,6 @@ BEGIN
 		VALUES (@empid)
 	END
 
-	
 	UPDATE #tblEmployeeId
 	SET CompanyId = ce.CompanyId
 	FROM #tblEmployeeId AS eid WITH (NOLOCK)
@@ -116,7 +132,7 @@ BEGIN
 	SELECT r.RequestId
 	FROM dbo.WorkingTimeRequest AS r WITH (NOLOCK)
 		INNER JOIN #tblEmployeeId AS eid WITH (NOLOCK) ON r.EmpId = eid.EmpId
-		INNER JOIN dbo.CompanyEmployee AS e WITH (NOLOCK) ON e.empID = eid.empID AND e.isDeleted = 0
+		INNER JOIN dbo.CompanyEmployee AS e WITH (NOLOCK) ON e.empID = eid.empID
 		LEFT JOIN dbo.EmployeeSummary AS e_s WITH (NOLOCK) ON e_s.EmpId = eid.EmpId
 	WHERE (
 			@requestType = 0
@@ -553,6 +569,8 @@ BEGIN
 		,r.RequestType
 		,r.Currentstatus AS [Status]
 		,r.empID
+		,ce.[Enabled] AS EmpEnabled
+		,ce.[IsDeleted] AS IsEmpDeleted
 		,rd.FromDate
 		,rd.ToDate
 		,rd.TotalDays
@@ -672,6 +690,16 @@ BEGIN
         AND lv.CompanyId = tmpEmp.CompanyId
 		LEFT JOIN dbo.SystemConfigs AS sct WITH (NOLOCK) ON sct.CompanyId = tmpEmp.CompanyId AND [Key] = 'TimeZone'
 	WHERE (@leaveTypeId IS NULL OR lr.LeaveType = @leaveTypeId)
+		AND (
+			ISNULL(@EmployeeStatusIds, '') = ''
+            OR EXISTS (
+                SELECT 1
+                FROM @tblEmployeeStatus AS s
+                WHERE (s.Id = @Enable AND ce.[Enabled] = 1 AND ce.isDeleted = 0)
+                    OR (s.Id = @Disabled AND ce.[Enabled] = 0 AND ce.isDeleted = 0)
+                    OR (s.Id = @Deleted AND ce.isDeleted = 1)
+                )
+			)
 	ORDER BY r.CreatedDate DESC
 
 	SELECT csrd.RequestId

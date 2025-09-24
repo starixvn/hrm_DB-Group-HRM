@@ -9,7 +9,7 @@ ALTER PROCEDURE [dbo].[Report_WorkingHoursSummary]
 	,@TeamIds VARCHAR(MAX) = NULL
 	,@isLocal BIT = NULL
 	,@Employee NVARCHAR(200) = NULL
-	,@EmployeeStatusId TINYINT = NULL
+	,@EmployeeStatusIds VARCHAR(10) = ''
 )
 AS
 /*
@@ -21,8 +21,18 @@ AS
         20250404@Tim: remove section [Redmine: #222886]
         20250806@Tim: fix wrong hospital leave type
         20250813@Jay: change db structure [Redmine: #235678]
+        20250924@Jay: user status filter [Redmine: #239089]
 */
 BEGIN
+    DECLARE @tblStatus TABLE (Id TINYINT)
+
+    IF ISNULL(@EmployeeStatusIds, '') != ''
+    BEGIN
+        INSERT INTO @tblStatus (Id)
+	    SELECT value
+	    FROM STRING_SPLIT(@EmployeeStatusIds, ',')
+    END
+
 	DECLARE @employeeIds VARCHAR(MAX)
 		-- employee status
 		,@Enable TINYINT = 1
@@ -68,21 +78,14 @@ BEGIN
 		FROM dbo.fnc_GetEmployeeByActorId(@ActorId, 0, 1, @CompanyId)
 		) AS [member] ON ce.EmpId = [member].EmpId
 	WHERE (
-			@EmployeeStatusId IS NULL
-			OR (
-				@EmployeeStatusId = @Enable
-				AND ce.[Enabled] = 1
-				AND ce.isDeleted = 0
-				)
-			OR (
-				@EmployeeStatusId = @Disabled
-				AND ce.[Enabled] = 0
-				AND ce.isDeleted = 0
-				)
-			OR (
-				@EmployeeStatusId = @Deleted
-				AND ce.isDeleted = 1
-				)
+			ISNULL(@EmployeeStatusIds, '') = ''
+            OR EXISTS (
+                SELECT 1
+                FROM @tblStatus AS s
+                WHERE (s.Id = @Enable AND ce.[Enabled] = 1 AND ce.isDeleted = 0)
+                    OR (s.Id = @Disabled AND ce.[Enabled] = 0 AND ce.isDeleted = 0)
+                    OR (s.Id = @Deleted AND ce.isDeleted = 1)
+                )
 			)
 		AND (
 			ce.NickName LIKE '%' + ISNULL(@Employee, '') + '%'
