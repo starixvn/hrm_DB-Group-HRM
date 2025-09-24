@@ -7,7 +7,7 @@ ALTER PROCEDURE [dbo].[Report_YearlyOvertime]
 	,@MonthXml VARCHAR(MAX)
 	,@TeamIds VARCHAR(MAX) = ''
 	,@Employee NVARCHAR(200) = NULL
-	,@EmployeeStatusId TINYINT = NULL
+	,@EmployeeStatusIds VARCHAR(10) = ''
 	,@IsLocal BIT = NULL
 )
 AS
@@ -17,8 +17,9 @@ AS
     DB: bodb_HRM
 
     Revisions:
-        20250404@Tim: remove section [Redmine: #222886]
-        20250813@Jay: change db structure [Redmine: #235678]
+        -20250404@Tim: remove section [Redmine: #222886]
+        -20250813@Jay: change db structure [Redmine: #235678]
+        -20250919@Tim: user status filter [Redmine: #239089]
     Param's Explanation:
         @MonthXml: <ROOT><Row Month='{0}' FromDate='{1}' ToDate='{2}' /></ROOT>
 */
@@ -33,6 +34,7 @@ BEGIN
 		-- request status
 		,@ApprovedStatusId TINYINT = 4
 		,@ProcessedStatusId TINYINT = 6
+    DECLARE @tblStatus TABLE (Id TINYINT)
 
 	CREATE TABLE #tblEmployeeIds (EmpId INT)
 
@@ -60,6 +62,13 @@ BEGIN
 		FROM STRING_SPLIT(@TeamIds, ',')
 	END
 
+    IF ISNULL(@EmployeeStatusIds, '') != ''
+    BEGIN
+        INSERT INTO @tblStatus (Id)
+	    SELECT value
+	    FROM STRING_SPLIT(@EmployeeStatusIds, ',')
+    END
+
 	EXEC sp_xml_preparedocument @DocHandler OUTPUT
 		,@MonthXml
 
@@ -78,7 +87,7 @@ BEGIN
 	INSERT INTO #tblEmployeeIds (EmpId)
 	SELECT ce.EmpId
 	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
-		INNER JOIN Employee e (NOLOCK) ON ce.UserId = e.UserId
+		INNER JOIN dbo.Employee AS e (NOLOCK) ON ce.UserId = e.UserId
 		INNER JOIN #tblGroupIds AS tblgr WITH (NOLOCK) ON ce.GroupId = tblgr.GroupId
 		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON ce.EmpId = empsum.EmpId AND ce.IsSpecialUser = 0
 		INNER JOIN (
@@ -86,24 +95,17 @@ BEGIN
 		FROM dbo.fnc_GetEmployeeByActorId(@ActorId, 0, 1, @CompanyId)
 		) AS [member] ON ce.EmpId = [member].EmpId
 	WHERE (
-			@EmployeeStatusId IS NULL
-			OR (
-				@EmployeeStatusId = @Enable
-				AND ce.[Enabled] = 1
-				AND ce.isDeleted = 0
-				)
-			OR (
-				@EmployeeStatusId = @Disabled
-				AND ce.[Enabled] = 0
-				AND ce.isDeleted = 0
-				)
-			OR (
-				@EmployeeStatusId = @Deleted
-				AND ce.isDeleted = 1
-				)
+			ISNULL(@EmployeeStatusIds, '') = ''
+            OR EXISTS (
+                SELECT 1
+                FROM @tblStatus AS s
+                WHERE (s.Id = @Enable AND ce.[Enabled] = 1 AND ce.isDeleted = 0)
+                    OR (s.Id = @Disabled AND ce.[Enabled] = 0 AND ce.isDeleted = 0)
+                    OR (s.Id = @Deleted AND ce.isDeleted = 1)
+                )
 			)
 		AND (
-			ce.NickName LIKE '%' + ISNULL(@Employee, '') + '%'
+			ce.Nickname LIKE '%' + ISNULL(@Employee, '') + '%'
 			OR e.FullName LIKE '%' + ISNULL(@Employee, '') + '%'
 			)
 		AND (
@@ -136,8 +138,10 @@ BEGIN
 
 	SELECT EmpId
 		,Code
-		,NickName
+		,Nickname
 		,FullName
+        ,[Enabled]
+        ,IsDeleted
 		,TeamId
         ,TeamCode
 		,TeamName
@@ -158,8 +162,10 @@ BEGIN
 	FROM (
 		SELECT ce.EmpId
 			,ce.Code
-			,ce.NickName
+			,ce.Nickname
 			,e.FullName
+            ,ce.[Enabled]
+            ,ce.IsDeleted
 			,gr.GroupId AS TeamId
 			,gr.Code AS TeamCode
 			,gr.[Name] AS TeamName
@@ -168,7 +174,7 @@ BEGIN
 			,cl.[Month] AS [Month]
 			,(otsum.NormalHours + otsum.OffHours + otsum.PublicHours + otsum.SpecialHours) AS TotalHours
 		FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
-			INNER JOIN Employee e (NOLOCK) ON e.UserId = ce.UserId
+			INNER JOIN dbo.Employee AS e (NOLOCK) ON e.UserId = ce.UserId
 			INNER JOIN #tblEmployeeIds AS empid ON ce.EmpId = empid.EmpId
 			INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON ce.GroupId = gr.GroupId
 			INNER JOIN dbo.Department AS dept WITH (NOLOCK) ON gr.DepartmentId = dept.DepartmentId

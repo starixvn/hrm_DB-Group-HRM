@@ -63,7 +63,7 @@ BEGIN
 		FROM dbo.fnc_GetEmployeeByActorId(@ActorId, 0, 1, @CompanyId)
 		) AS [member] ON ce.EmpId = [member].EmpId
 	WHERE (
-			ISNULL(@EmployeeStatusIds, '') != ''
+			ISNULL(@EmployeeStatusIds, '') = ''
             OR EXISTS (
                 SELECT 1
                 FROM @tblStatus AS s
