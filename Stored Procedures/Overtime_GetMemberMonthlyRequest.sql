@@ -10,6 +10,7 @@ ALTER PROCEDURE [dbo].[Overtime_GetMemberMonthlyRequest] @ActorId INT
 	,@IsLocal BIT = NULL
 	,@CompanyId INT 
 	,@IsShowCrossCompany BIT = 0
+	,@EmployeeStatusIds VARCHAR(10) = ''
 AS
 /*
 Created: Tim.Trinh@2019-07-05
@@ -19,6 +20,7 @@ DB: HRM
 Revisions:
     20250403@Tim: remove section [Redmine: #222886]
 	20250813@Jay: change db structure [Redmine: #235678]
+	20250924@Henry: filter user status [Redmine: #239089]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -31,14 +33,21 @@ BEGIN
 		,@RejectedStatusId TINYINT = 5
 		,@ProcessedStatusId TINYINT = 6
 		,@VoidStatusId TINYINT = 7
-	-- overtime type
+
+		-- overtime type
 		,@ALLOvertimeType TINYINT = 0
 		,@NormalDay TINYINT = 1
 		,@OffDay TINYINT = 2
 		,@PublicHoliday TINYINT = 3
 		,@SpecialOT TINYINT = 4
 
+		-- employee status
+		,@Enable TINYINT = 1
+		,@Disabled TINYINT = 2
+		,@Deleted TINYINT = 3
+
 	DECLARE @tblStatusIds TABLE (StatusId TINYINT)
+    DECLARE @tblStatusEmpIds TABLE (Id TINYINT)
 
 	CREATE TABLE #tblEmployeeIds (EmployeeId INT, CompanyId INT)
 
@@ -55,6 +64,14 @@ BEGIN
 		OR (@OvertimeType = @PublicHoliday AND otmr.PublicHours > 0)
 		OR (@OvertimeType = @SpecialOT AND otmr.SpecialHours > 0)
 
+
+	IF ISNULL(@EmployeeStatusIds, '') != ''
+    BEGIN
+        INSERT INTO @tblStatusEmpIds (Id)
+		SELECT value
+		FROM STRING_SPLIT(@EmployeeStatusIds, ',')
+    END
+
 	IF @EmployeeId IS NULL
 	BEGIN
 		IF @IsProcessor = 1
@@ -62,15 +79,23 @@ BEGIN
 			INSERT INTO #tblEmployeeIds (EmployeeId)
 			SELECT ce.EmpId
 			FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
-			WHERE ce.[Enabled] = 1
-				AND ce.isDeleted = 0
+			WHERE (
+					@EmployeeStatusIds IS NULL
+					OR EXISTS (
+						SELECT 1
+						FROM @tblStatusEmpIds AS s
+						WHERE (s.Id = @Enable AND ce.[Enabled] = 1 AND ce.isDeleted = 0)
+							OR (s.Id = @Disabled AND ce.[Enabled] = 0 AND ce.isDeleted = 0)
+							OR (s.Id = @Deleted AND ce.isDeleted = 1)
+						)
+				)
 				AND ce.CompanyId = @CompanyId
 		END
 		ELSE
 		BEGIN
 			INSERT INTO #tblEmployeeIds (EmployeeId)
 			SELECT EmpId
-			FROM dbo.fnc_GetEmployeeByActorId_CrossCompany(@ActorId, 1, 0, @CompanyId)
+			FROM dbo.fnc_GetEmployeeByActorId_CrossCompany(@ActorId, @EmployeeStatusIds, 0, @CompanyId)
 		END
 	END
 	ELSE
@@ -96,6 +121,8 @@ BEGIN
 	END
 	
 	SELECT req.RequestId
+		,ce.[Enabled]
+        ,ce.IsDeleted
 		,req.[Month]
 		,req.NormalHours
 		,req.OffHours
@@ -164,8 +191,16 @@ BEGIN
 			AND empatt.EmpId = ot.EmpId
 		WHERE ot.TotalHours - ISNULL(empatt.LateIn, 0) / 60 >= s.TotalHours + 1
 		) AS att ON att.RequestId = req.RequestId
-	WHERE ce.[Enabled] = 1
-		AND ce.isDeleted = 0
+	WHERE (
+			@EmployeeStatusIds IS NULL
+            OR EXISTS (
+                SELECT 1
+                FROM @tblStatusEmpIds AS s
+                WHERE (s.Id = @Enable AND ce.[Enabled] = 1 AND ce.isDeleted = 0)
+                    OR (s.Id = @Disabled AND ce.[Enabled] = 0 AND ce.isDeleted = 0)
+                    OR (s.Id = @Deleted AND ce.isDeleted = 1)
+                )
+			)
         AND (
 			@Month IS NULL
 			OR req.[Month] = @Month
