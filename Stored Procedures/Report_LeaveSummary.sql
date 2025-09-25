@@ -1,5 +1,6 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
+
 ALTER PROCEDURE [dbo].[Report_LeaveSummary] 
 (
     @CompanyId INT
@@ -9,6 +10,7 @@ ALTER PROCEDURE [dbo].[Report_LeaveSummary]
 	,@isLocal BIT = NULL
 	,@SupervisorId INT = NULL
 	,@role VARCHAR(max) = ''
+	,@EmployeeStatusIds VARCHAR(10) = ''
 )
 AS
 /*
@@ -21,6 +23,7 @@ AS
         20250507@Tim: get KIV added manually
 		20250813@Lilac: restructure for transfer [Redmine: #235678]
 		20250809@Mira: restructure for transfer [Redmine: #235678]
+        20250924@Jay: user status filter [Redmine: #239089]
 
 	Param's Explanation:
 */
@@ -41,6 +44,21 @@ BEGIN
 
 	CREATE TABLE #tmpEmployee (EmpId INT PRIMARY KEY)
 
+	DECLARE @employeeIds VARCHAR(MAX)
+        -- employee status
+		,@Enable TINYINT = 1
+		,@Disabled TINYINT = 2
+		,@Deleted TINYINT = 3
+
+    DECLARE @tblEmployeeStatus TABLE (Id TINYINT)
+
+    IF ISNULL(@EmployeeStatusIds, '') != ''
+    BEGIN
+        INSERT INTO @tblEmployeeStatus (Id)
+	    SELECT value
+	    FROM STRING_SPLIT(@EmployeeStatusIds, ',')
+    END
+
 	IF ISNULL(@TeamIds, '') <> ''
 	BEGIN
 		INSERT INTO #tmpTeam (GroupId)
@@ -52,7 +70,7 @@ BEGIN
 	BEGIN
 		INSERT INTO #tmpEmployee (EmpId)
 		SELECT DISTINCT EmpId
-		FROM dbo.fnc_GetEmployeeByActorId(@SupervisorId, 1, 0, @CompanyId)
+		FROM dbo.fnc_GetEmployeeByActorId(@SupervisorId, 0, 0, @CompanyId)
 	END
 	ELSE
 	BEGIN
@@ -85,10 +103,6 @@ BEGIN
 	WHERE e.CompanyId = @CompanyId AND (
 			@isLocal IS NULL
 			OR es.IsLocal = @isLocal
-			)
-		AND (
-			ISNULL(e.isDeleted, 0) = 0
-			OR YEAR(emp.ResignedDate) >= YEAR(@todate)
 			)
 	GROUP BY e.EmpId
 
@@ -307,10 +321,6 @@ BEGIN
 			@isLocal IS NULL
 			OR es.IsLocal = @isLocal
 			)
-		AND (
-			ISNULL(e.isDeleted, 0) = 0
-			OR YEAR(emp.ResignedDate) >= year(@todate)
-			)
 	GROUP BY e.EmpId
 		,ISNULL(CreditDays, 0)
 
@@ -338,6 +348,8 @@ BEGIN
 		,emp.FullName
 		,e.Email
 		,e.NickName
+		,e.[Enabled]
+		,e.[IsDeleted]
 		,g.[Rank]
 		,g.GroupId AS TeamId
 		,g.[Name] AS Team
@@ -351,11 +363,20 @@ BEGIN
 		LEFT JOIN #tmpOpenBalance AS op ON OP.empid = cb.empid
 		LEFT JOIN #tmpCreditKIV AS crk ON cb.EmpId = crk.EmpId
 		LEFT JOIN #tmpCurrentKIV AS dek ON cb.EmpId = dek.EmpId
-	WHERE ISNULL(e.[Enabled], 0) = 1
-		AND (
+	WHERE (
 			@isLocal IS NULL
 			OR es.IsLocal = @isLocal
 			)
+		AND (
+		ISNULL(@EmployeeStatusIds, '') = ''
+        OR EXISTS (
+            SELECT 1
+            FROM @tblEmployeeStatus AS s
+            WHERE (s.Id = @Enable AND e.[Enabled] = 1 AND e.isDeleted = 0)
+                OR (s.Id = @Disabled AND e.[Enabled] = 0 AND e.isDeleted = 0)
+                OR (s.Id = @Deleted AND e.isDeleted = 1)
+            )
+		)
 	
 	UNION ALL
 	SELECT ISNULL(OpenKIV, 0) AS CreditKIV
@@ -381,6 +402,8 @@ BEGIN
 		,emp.FullName
 		,e.Email
 		,e.NickName
+		,e.[Enabled]
+		,e.[IsDeleted]
 		,g.[Rank]
 		,g.GroupId AS TeamId
 		,g.[Name] AS Team
@@ -397,10 +420,19 @@ BEGIN
 			SELECT EmpID
 			FROM #tmpCurrenBalace AS cb
 			)
-		AND ISNULL(e.[Enabled], 0) = 1
 		AND (
 			@isLocal IS NULL
 			OR es.IsLocal = @isLocal
+			)
+		AND (
+			ISNULL(@EmployeeStatusIds, '') = ''
+            OR EXISTS (
+                SELECT 1
+                FROM @tblEmployeeStatus AS s
+                WHERE (s.Id = @Enable AND e.[Enabled] = 1 AND e.isDeleted = 0)
+                    OR (s.Id = @Disabled AND e.[Enabled] = 0 AND e.isDeleted = 0)
+                    OR (s.Id = @Deleted AND e.isDeleted = 1)
+                )
 			)
 	ORDER BY g.[Name]
 		,e.[Code]
