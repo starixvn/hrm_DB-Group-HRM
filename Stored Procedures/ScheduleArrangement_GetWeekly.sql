@@ -1,6 +1,8 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[ScheduleArrangement_GetWeekly] @ActorId INT
+ALTER PROCEDURE [dbo].[ScheduleArrangement_GetWeekly]
+(
+    @ActorId INT
     ,@fromtime DATE
     ,@totime DATE
     ,@EmpId INT = NULL
@@ -10,6 +12,8 @@ ALTER PROCEDURE [dbo].[ScheduleArrangement_GetWeekly] @ActorId INT
     ,@CompanyId SMALLINT
     ,@CurrentCompanyId SMALLINT = NULL
     ,@IsEditScheduleUnlimited BIT = 0
+    ,@EmployeeStatusIds VARCHAR(10) = NULL
+)
 AS
 /*
     Created: 2019-04-12@Tim
@@ -17,9 +21,10 @@ AS
     DB: bodb_HRM
 
     Revisions:
-        2025-04-24@Henry: Merge action type 2, 3, 4, 5
-        20250731@Mira: setting cross company [Redmine: #233324]
-        20250813@Jay: change db structure [Redmine: #235678]
+        -20250424@Henry: Merge action type 2, 3, 4, 5
+        -20250731@Mira: setting cross company [Redmine: #233324]
+        -20250813@Jay: change db structure [Redmine: #235678]
+        -20250919@Tim: user status filter [Redmine: #239089]
     Param's Explanation:
 */
 BEGIN
@@ -34,11 +39,13 @@ BEGIN
 		,@NotVerifiedStatusId TINYINT = 3
 		,@RejectedStatusId TINYINT = 5
 		,@VoidStatusId TINYINT = 7
+        -- employee status
+        ,@Enable TINYINT = 1
+        ,@Disabled TINYINT = 2
+        ,@Deleted TINYINT = 3
 	DECLARE @tblGroupIds TABLE (GroupId INT)
-	DECLARE @tblDefaultShift TABLE (
-		EmployeeId INT
-		,ShiftId INT
-		)
+	DECLARE @tblDefaultShift TABLE (EmpId INT, ShiftId INT)
+    DECLARE @tblStatus TABLE (Id TINYINT)
 	CREATE TABLE #tblEmployeeIds (EmpId INT)
 
 	IF ISNULL(@TeamIds, '') <> ''
@@ -47,6 +54,13 @@ BEGIN
 		SELECT value
 		FROM STRING_SPLIT(@TeamIds, ',')
 	END
+
+    IF ISNULL(@EmployeeStatusIds, '') != ''
+    BEGIN
+        INSERT INTO @tblStatus (Id)
+		SELECT value
+		FROM STRING_SPLIT(@EmployeeStatusIds, ',')
+    END
 
 	INSERT INTO #tblEmployeeIds (EmpId)
 	SELECT EmpId
@@ -62,9 +76,17 @@ BEGIN
 			SELECT 1
 			FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
 				INNER JOIN @tblGroupIds AS gr ON ce.GroupId = gr.GroupId
-			WHERE ce.[Enabled] = 1
-				AND ce.isDeleted = 0
-				AND es.EmpId = ce.EmpId
+			WHERE es.EmpId = ce.EmpId
+                AND (
+                    ISNULL(@EmployeeStatusIds, '') = ''
+                    OR EXISTS (
+                        SELECT 1
+                        FROM @tblStatus AS s
+                        WHERE (s.Id = @Enable AND ce.[Enabled] = 1 AND ce.isDeleted = 0)
+                            OR (s.Id = @Disabled AND ce.[Enabled] = 0 AND ce.isDeleted = 0)
+                            OR (s.Id = @Deleted AND ce.isDeleted = 1)
+                        )
+                    )
 			)
 
 	INSERT INTO #tblEmployeeIds (EmpId)
@@ -74,8 +96,16 @@ BEGIN
 	WHERE gs.OwnerId = @ActorId
 		AND gs.ActionType = @ShiftManagerRoleId
 		AND ISNULL(gs.IsDeleted, 0) = 0
-		AND ce.[Enabled] = 1
-		AND ce.isDeleted = 0
+        AND (
+            ISNULL(@EmployeeStatusIds, '') = ''
+            OR EXISTS (
+                SELECT 1
+                FROM @tblStatus AS s
+                WHERE (s.Id = @Enable AND ce.[Enabled] = 1 AND ce.isDeleted = 0)
+                    OR (s.Id = @Disabled AND ce.[Enabled] = 0 AND ce.isDeleted = 0)
+                    OR (s.Id = @Deleted AND ce.isDeleted = 1)
+                )
+            )
 		AND (
 			@EmpId IS NULL
 			OR ce.EmpId = @EmpId
@@ -97,12 +127,21 @@ BEGIN
 		INSERT INTO #tblEmployeeIds (EmpId)
 		SELECT EmpId
 		FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
-		WHERE [Enabled] = 1
-			AND isDeleted = 0
-			AND (
+		WHERE ce.CompanyId = @CompanyId
+            AND (
 				@EmpId IS NULL
 				OR ce.EmpId = @EmpId
 				)
+            AND (
+                ISNULL(@EmployeeStatusIds, '') = ''
+                OR EXISTS (
+                    SELECT 1
+                    FROM @tblStatus AS s
+                    WHERE (s.Id = @Enable AND ce.[Enabled] = 1 AND ce.isDeleted = 0)
+                        OR (s.Id = @Disabled AND ce.[Enabled] = 0 AND ce.isDeleted = 0)
+                        OR (s.Id = @Deleted AND ce.isDeleted = 1)
+                    )
+                )
 			AND EXISTS (
 				SELECT 1
 				FROM @tblGroupIds AS gr
@@ -187,20 +226,14 @@ BEGIN
 				)
 	END
 
-	INSERT INTO @tblDefaultShift (
-		EmployeeId
-		,ShiftId
-		)
+	INSERT INTO @tblDefaultShift (EmpId, ShiftId)
 	SELECT emp.EmpId
 		,defaultshift.ShiftId
 	FROM #tblEmployeeIds AS emp WITH (NOLOCK)
 		INNER JOIN dbo.ScheduleArrangementDefaultShift AS defaultshift WITH (NOLOCK) ON emp.EmpId = defaultshift.EmployeeId
 	WHERE defaultshift.FromDate = @fromtime
 
-	INSERT INTO @tblDefaultShift (
-		EmployeeId
-		,ShiftId
-		)
+	INSERT INTO @tblDefaultShift (EmpId, ShiftId)
 	SELECT data.EmployeeId
 		,defaultshift.ShiftId
 	FROM (
@@ -215,13 +248,15 @@ BEGIN
 	WHERE NOT EXISTS (
 			SELECT 1
 			FROM @tblDefaultShift AS tbl
-			WHERE defaultshift.EmployeeId = tbl.EmployeeId
+			WHERE defaultshift.EmployeeId = tbl.EmpId
 			)
 
 	SELECT ce.EmpId AS EmployeeId
 		,ce.Code
-		,ce.NickName
+		,ce.Nickname
 		,e.FullName
+        ,ce.[Enabled]
+        ,ce.IsDeleted
 		,ISNULL(esum.OffDaysbyWeek, 0) AS OffDaysbyWeek
 		,ce.PickupRemark
 		,arrange.Remark
@@ -240,13 +275,13 @@ BEGIN
 		,[shift].IsInAfterDay
 		,[shift].IsOutAfterDay
 	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
-		INNER JOIN Employee e (NOLOCK) ON ce.UserId = e.UserId
+		INNER JOIN dbo.Employee AS e (NOLOCK) ON ce.UserId = e.UserId
 		INNER JOIN #tblEmployeeIds AS tblemp WITH (NOLOCK) ON ce.EmpId = tblemp.EmpId
 		LEFT JOIN dbo.EmployeeSummary AS esum WITH (NOLOCK) ON ce.EmpId = esum.EmpId
 		LEFT JOIN dbo.[Group] AS gr WITH (NOLOCK) ON ce.GroupId = gr.GroupId
 		LEFT JOIN dbo.ScheduleArrangement AS arrange WITH (NOLOCK) ON ce.EmpId = arrange.EmployeeId
 		LEFT JOIN dbo.ScheduleArrangementGroupOrder AS gorder WITH (NOLOCK) ON gr.GroupId = gorder.GroupId
-		LEFT JOIN @tblDefaultShift AS defaultshift ON ce.EmpId = defaultshift.EmployeeId
+		LEFT JOIN @tblDefaultShift AS defaultshift ON ce.EmpId = defaultshift.EmpId
 		LEFT JOIN dbo.[Shift] AS [shift] WITH (NOLOCK) ON defaultshift.ShiftId = [shift].ShiftId
 		AND ISNULL([shift].IsDisabled, 0) = 0
 		OUTER APPLY (
