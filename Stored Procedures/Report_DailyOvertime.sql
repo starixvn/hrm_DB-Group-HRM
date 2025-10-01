@@ -9,7 +9,7 @@ ALTER PROCEDURE [dbo].[Report_DailyOvertime]
 	,@TeamIds VARCHAR(MAX) = NULL
 	,@isLocal BIT = NULL
 	,@Employee NVARCHAR(200) = NULL
-	,@EmployeeStatusId TINYINT = NULL
+	,@EmployeeStatusIds VARCHAR(10) = ''
 )
 AS
 /*
@@ -19,8 +19,9 @@ AS
     Original:
 
     Revisions:
-        20250404@Tim: remove section [Redmine: #222886]
-        20250813@Jay: change db structure [Redmine: #235678]
+        -20250404@Tim: remove section [Redmine: #222886]
+        -20250813@Jay: change db structure [Redmine: #235678]
+        -20250919@Tim: user status filter [Redmine: #239089]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -33,11 +34,19 @@ BEGIN
 
 	CREATE TABLE #tmpGroupIds (GroupId INT PRIMARY KEY)
 	CREATE TABLE #tmpMembers (EmpId INT PRIMARY KEY)
+    DECLARE @tblStatus TABLE (Id TINYINT)
 
 	INSERT INTO #tmpGroupIds (GroupId)
 	SELECT DISTINCT value
 	FROM STRING_SPLIT(@TeamIds, ',')
 	WHERE ISNUMERIC(value) = 1
+
+    IF ISNULL(@EmployeeStatusIds, '') != ''
+    BEGIN
+        INSERT INTO @tblStatus (Id)
+		SELECT value
+		FROM STRING_SPLIT(@EmployeeStatusIds, ',')
+    END
 
 	INSERT INTO #tmpMembers (EmpId)
 	SELECT DISTINCT EmpId
@@ -81,21 +90,14 @@ BEGIN
 	WHERE ot.OvertimeDate BETWEEN @fromDate
 			AND @toDate
 		AND (
-			@EmployeeStatusId IS NULL
-			OR (
-				@EmployeeStatusId = @Enable
-				AND ce.[Enabled] = 1
-				AND ce.isDeleted = 0
-				)
-			OR (
-				@EmployeeStatusId = @Disabled
-				AND ce.[Enabled] = 0
-				AND ce.isDeleted = 0
-				)
-			OR (
-				@EmployeeStatusId = @Deleted
-				AND ce.isDeleted = 1
-				)
+			ISNULL(@EmployeeStatusIds, '') = ''
+            OR EXISTS (
+                SELECT 1
+                FROM @tblStatus AS s
+                WHERE (s.Id = @Enable AND ce.[Enabled] = 1 AND ce.isDeleted = 0)
+                    OR (s.Id = @Disabled AND ce.[Enabled] = 0 AND ce.isDeleted = 0)
+                    OR (s.Id = @Deleted AND ce.isDeleted = 1)
+                )
 			)
 		AND (
 			ce.NickName LIKE '%' + ISNULL(@Employee, '') + '%'
