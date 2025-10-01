@@ -56,6 +56,8 @@ BEGIN
 		,ce.NickName
 		,e.FullName
 		,ce.Code
+		,ce.[Enabled]
+		,ce.[IsDeleted]
 		,gr.GroupId
         ,gr.Code AS TeamCode
 		,gr.[Name] AS TeamName
