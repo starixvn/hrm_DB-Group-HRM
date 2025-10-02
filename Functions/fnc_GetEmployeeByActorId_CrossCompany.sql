@@ -2,7 +2,7 @@
 
 ALTER   FUNCTION [dbo].[fnc_GetEmployeeByActorId_CrossCompany] (
 	@EmpId INT = NULL
-	,@ExcludeUserDelete INT = 1
+	,@EmployeeStatusIds VARCHAR(10) = '' 
 	,@IsShowUserInTeam BIT = 1
 	,@CompanyId INT
 	)
@@ -15,6 +15,7 @@ RETURNS TABLE
 	Revisions:
         20250606@Hank: add @IsShowCrossCompany
         20250813@Jay: change db structure [Redmine: #235678]
+		20250925@Henry: replace @ExcludeUserDelete to @EmployeeStatusIds
 	Param's Explanation:
 */
 AS
@@ -78,12 +79,21 @@ cteAll AS (
 	SELECT EmpId FROM cteBySameGroup
 	UNION ALL
 	SELECT EmpId FROM cteBySelf
+),
+cteStatus AS (
+	SELECT value AS Id
+	FROM STRING_SPLIT(@EmployeeStatusIds, ',')
 )
-
 SELECT DISTINCT ce.EmpId
 FROM cteAll AS ca
     INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = ca.EmpId
 WHERE (
-    (@ExcludeUserDelete = 1 AND ce.isDeleted = 0 AND ce.[Enabled] = 1)
-	OR @ExcludeUserDelete = 0
-    )
+	NOT EXISTS (SELECT 1 FROM cteStatus) -- nếu @EmployeeStatusIds rỗng => lấy hết
+	OR EXISTS (
+		SELECT 1
+		FROM cteStatus AS s
+		WHERE (s.Id = 1 AND ce.Enabled = 1 AND ce.isDeleted = 0)  -- Enable
+		   OR (s.Id = 2 AND ce.Enabled = 0 AND ce.isDeleted = 0)  -- Disable
+		   OR (s.Id = 3 AND ce.isDeleted = 1)                     -- Deleted
+	)
+);

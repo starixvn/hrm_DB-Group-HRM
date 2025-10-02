@@ -9,6 +9,7 @@ ALTER PROCEDURE [dbo].[Report_LeaveSummaryForJoinedDate]
 	,@isLocal BIT = NULL
 	,@SupervisorId INT = NULL
 	,@role VARCHAR(max) = ''
+	,@EmployeeStatusIds VARCHAR(10) = ''
 )
 AS
 /*
@@ -21,6 +22,7 @@ AS
 	    20250516@Hank: Modified to get active range (ToDate > @fromDate)
 		20250812@Mira: change DB structure [Redmine: #235678]
 		20250829@Mira: change DB structure [Redmine: #235678]
+        20250924@Jay: user status filter [Redmine: #239089]
 
 	Param's Explanation:
 */
@@ -30,6 +32,20 @@ BEGIN
 	CREATE TABLE #tmpTeam (GroupId INT)
 
 	CREATE TABLE #tmpEmployee (EmpId INT PRIMARY KEY)
+
+	-- employee status
+	DECLARE @Enable TINYINT = 1
+		,@Disabled TINYINT = 2
+		,@Deleted TINYINT = 3
+
+    DECLARE @tblEmployeeStatus TABLE (Id TINYINT)
+
+    IF ISNULL(@EmployeeStatusIds, '') != ''
+    BEGIN
+        INSERT INTO @tblEmployeeStatus (Id)
+	    SELECT value
+	    FROM STRING_SPLIT(@EmployeeStatusIds, ',')
+    END
 
 	-- Create temp table for storing employee leave ranges
 	CREATE TABLE #tmpLeaveRange (
@@ -49,7 +65,7 @@ BEGIN
 	BEGIN
 		INSERT INTO #tmpEmployee (EmpId)
 		SELECT DISTINCT EmpId
-		FROM dbo.fnc_GetEmployeeByActorId(@SupervisorId, 1, 0, @CompanyId)
+		FROM dbo.fnc_GetEmployeeByActorId(@SupervisorId, 0, 0, @CompanyId)
 	END
 	ELSE
 	BEGIN
@@ -110,7 +126,7 @@ BEGIN
 			AND ISNULL(ltrans.Deleted, 0) <> 1
 			AND ltrans.CreditDays > 0
 		GROUP BY ltrans.EmpId
-		) cred ON e.EmpId = cred.Empid
+		) cred ON ce.EmpId = cred.Empid
 		LEFT JOIN (
 		SELECT ltrans.EmpId
 			,SUM(ltrans.ExtraDays) AS ExtraDays
@@ -127,10 +143,6 @@ BEGIN
 	WHERE (
 			@isLocal IS NULL
 			OR es.IsLocal = @isLocal
-			)
-		AND (
-			ISNULL(ce.isDeleted, 0) = 0
-			OR YEAR(e.ResignedDate) >= YEAR(@fromDate)
 			)
 	GROUP BY ce.EmpId
 		,ISNULL(CreditDays, 0)
@@ -149,6 +161,8 @@ BEGIN
 		,FullName
 		,ce.Email
 		,ce.NickName
+		,ce.[Enabled]
+		,ce.[IsDeleted]
 		,g.[Rank]
 		,g.GroupId AS TeamId
 		,g.[Name] AS Team
@@ -159,11 +173,19 @@ BEGIN
 		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON g.GroupId = ce.GroupId
 		INNER JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId = g.DepartmentId
 		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON ce.EmpId = es.EmpId
-
-	WHERE ISNULL(ce.[Enabled], 0) = 1
-		AND (
+	WHERE (
 			@isLocal IS NULL
 			OR es.IsLocal = @isLocal
+			)
+		AND (
+			ISNULL(@EmployeeStatusIds, '') = ''
+            OR EXISTS (
+                SELECT 1
+                FROM @tblEmployeeStatus AS s
+                WHERE (s.Id = @Enable AND ce.[Enabled] = 1 AND ce.isDeleted = 0)
+                    OR (s.Id = @Disabled AND ce.[Enabled] = 0 AND ce.isDeleted = 0)
+                    OR (s.Id = @Deleted AND ce.isDeleted = 1)
+                )
 			)
 	ORDER BY g.[Name]
 		,ce.[Code]

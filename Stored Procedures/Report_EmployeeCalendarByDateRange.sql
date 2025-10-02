@@ -9,7 +9,7 @@ ALTER PROCEDURE [dbo].[Report_EmployeeCalendarByDateRange]
 	,@TeamIds VARCHAR(MAX) = ''
 	,@IsLocal BIT = NULL
 	,@Employee NVARCHAR(200) = NULL
-	,@EmployeeStatusId TINYINT = NULL
+	,@EmployeeStatusIds VARCHAR(10) = ''
 )
 AS
 /*
@@ -20,6 +20,7 @@ AS
     Revisions:
         20250404@Tim: remove section [Redmine: #222886]
         20250813@Jay: change db structure [Redmine: #235678]
+        20250924@Jay: user status filter [Redmine: #239089]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -31,6 +32,14 @@ BEGIN
 		,@Deleted TINYINT = 3
 	DECLARE @tblGroupIds TABLE (GroupId INT)
 	DECLARE @tblEmployeeIds TABLE (EmpId INT)
+    DECLARE @tblStatus TABLE (Id TINYINT)
+
+    IF ISNULL(@EmployeeStatusIds, '') != ''
+    BEGIN
+        INSERT INTO @tblStatus (Id)
+	    SELECT value
+	    FROM STRING_SPLIT(@EmployeeStatusIds, ',')
+    END
 
 	IF ISNULL(@TeamIds, '') <> ''
     BEGIN
@@ -50,21 +59,14 @@ BEGIN
 		INNER JOIN Employee e (NOLOCK) ON e.UserId = ce.UserId
 		INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON ce.EmpId = empsum.EmpId AND ce.IsSpecialUser = 0
 	WHERE (
-			@EmployeeStatusId IS NULL
-			OR (
-				@EmployeeStatusId = @Enable
-				AND ce.[Enabled] = 1
-				AND ce.isDeleted = 0
-				)
-			OR (
-				@EmployeeStatusId = @Disabled
-				AND ce.[Enabled] = 0
-				AND ce.isDeleted = 0
-				)
-			OR (
-				@EmployeeStatusId = @Deleted
-				AND ce.isDeleted = 1
-				)
+			ISNULL(@EmployeeStatusIds, '') = ''
+            OR EXISTS (
+                SELECT 1
+                FROM @tblStatus AS s
+                WHERE (s.Id = @Enable AND ce.[Enabled] = 1 AND ce.isDeleted = 0)
+                    OR (s.Id = @Disabled AND ce.[Enabled] = 0 AND ce.isDeleted = 0)
+                    OR (s.Id = @Deleted AND ce.isDeleted = 1)
+                )
 			)
 		AND (
 			ce.NickName LIKE '%' + ISNULL(@Employee, '') + '%'
@@ -96,6 +98,8 @@ BEGIN
 		,g.[Name] AS TeamName
 		,dept.Code as DepartmentCode
 		,dept.[Name] as DepartmentName
+        ,[Enabled]
+        ,ce.IsDeleted
 		,empca.WorkDate
 		,empca.IsOffDay
 		,empca.IsHoliday

@@ -7,11 +7,12 @@ ALTER PROCEDURE [dbo].[EmployeeAttendance_GetByType]
 	,@totime DATE
 	,@EmpId INT = NULL
 	,@TeamIds VARCHAR(MAX) = ''
-	,@excludeUserDelete INT = 1
+	,@excludeUserDelete INT = 0
 	,@isLocal BIT = NULL
 	,@SupervisorId INT = NULL
 	,@type SMALLINT
 	,@isRealDate BIT = 0
+	,@EmployeeStatusIds VARCHAR(10) = ''
 )
 AS
 /*
@@ -23,6 +24,7 @@ AS
 	    - 20250408@Hank: remove section [Redmine: #222886]
         - 20250512@Tim: fix bug duplicate record when creating 2 requests 1/2 day
         20250813@Jay: change db structure [Redmine: #235678]
+		20250924@Mira: user status filter [Redmine: #239089]
 
     Param's Explanation:
 	    @type: 0-all, 1-missing checkin; 2-missing check out, 3: latein; 4-earlyout, 5- not work
@@ -35,6 +37,10 @@ BEGIN
 		,@StartDate DATETIME
 		,@EndDate DATETIME
 		,@employeeIds VARCHAR(MAX)
+		-- employee status
+		,@Enable TINYINT = 1
+		,@Disabled TINYINT = 2
+		,@Deleted TINYINT = 3
 		-- request type
 		,@LateInRequestTypeId TINYINT = 3
 		,@EarlyOutRequestTypeId TINYINT = 4
@@ -49,7 +55,10 @@ BEGIN
 		,@clientTimeZone REAL
 	CREATE TABLE #tmpGroup (GroupId INT PRIMARY KEY)
 
-	CREATE TABLE #tmpEmployee (EmpId INT PRIMARY KEY)
+	CREATE TABLE #tmpEmployeeByActorId (EmpId INT PRIMARY KEY)
+	CREATE TABLE #tmpEmployee (EmpId INT PRIMARY KEY) -- filter #tmpEmployeeByActorId by user status
+
+    DECLARE @tblStatus TABLE (Id TINYINT)
 
 	SELECT @clientTimeZone = config.[Value]
     FROM dbo.SystemConfigs AS config WITH (NOLOCK)
@@ -58,7 +67,13 @@ BEGIN
 
 	SET @clientTimeZone = ISNULL(@clientTimeZone, @serverTimeZone)
 
-	
+	IF ISNULL(@EmployeeStatusIds, '') != ''
+    BEGIN
+        INSERT INTO @tblStatus (Id)
+		SELECT value
+		FROM STRING_SPLIT(@EmployeeStatusIds, ',')
+    END
+
 	IF @isRealDate = 1
 	BEGIN
 		SET @fromtime = DATEADD(d, - 1, @fromtime)
@@ -80,15 +95,28 @@ BEGIN
 
 	IF @EmpId IS NULL
 	BEGIN
-		INSERT INTO #tmpEmployee (EmpId)
+		INSERT INTO #tmpEmployeeByActorId (EmpId)
 		SELECT DISTINCT EmpId
 		FROM dbo.fnc_GetEmployeeByActorId(@SupervisorId, @excludeUserDelete, 1, @companyId)
 	END
 	ELSE
 	BEGIN
-		INSERT INTO #tmpEmployee (EmpId)
+		INSERT INTO #tmpEmployeeByActorId (EmpId)
 		VALUES (@EmpId)
 	END
+
+	INSERT INTO #tmpEmployee
+	SELECT DISTINCT t.EmpId
+	FROM #tmpEmployeeByActorId t
+	INNER JOIN dbo.CompanyEmployee ce WITH(NOLOCK) ON ce.EmpId = t.EmpId
+	WHERE ISNULL(@EmployeeStatusIds, '') = ''
+		OR EXISTS (
+            SELECT 1
+            FROM @tblStatus AS s
+            WHERE (s.Id = @Enable AND ce.[Enabled] = 1 AND ce.isDeleted = 0)
+                OR (s.Id = @Disabled AND ce.[Enabled] = 0 AND ce.isDeleted = 0)
+                OR (s.Id = @Deleted AND ce.isDeleted = 1)
+        )
 
 	SET @now = DATEADD(MINUTE, @clientTimeZone * 60, DATEADD(HOUR, ABS(@serverTimeZone), GETDATE()))
 	SET @today = convert(VARCHAR(10), @now, 111) -- use UTC because the server use GMT-4
@@ -452,6 +480,8 @@ BEGIN
 		,T.EmpId
 		,T.FullName
 		,T.NickName
+		,T.Enabled
+		,T.IsDeleted
 		,T.[Team]
 		,T.[TeamCode]
 		,T.[Rank]
@@ -596,6 +626,8 @@ BEGIN
 			,ce.EmpId
 			,FullName
 			,ce.NickName
+			,ce.Enabled
+			,ce.IsDeleted
 			,g.[Name] [Team]
 			,g.Code [TeamCode]
 			,g.[Rank]

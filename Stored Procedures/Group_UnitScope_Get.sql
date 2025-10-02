@@ -20,6 +20,7 @@ AS
 		20250812@Mira: tranfer employee [Redmine: #235678]
         20250819@Tim: get PICEmpId [Redmine: #235678]
 		20250904@Jay: update role [Redmine: #237201]
+		20250926@Jay: count special [Redmine: #239089]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -33,6 +34,8 @@ BEGIN
 
 	CREATE TABLE #tmpGroupEmployees (GroupId INT, EmpId INT)
 
+	DECLARE @NexcelId SMALLINT = 1, @LumiId SMALLINT = 2,  @NexVisionId SMALLINT = 34
+
 	INSERT INTO #tmpGroupEmployees (GroupId, EmpId)
 	SELECT DISTINCT emp.GroupId, emp.EmpId
 	FROM dbo.CompanyEmployee AS emp WITH (NOLOCK)
@@ -40,7 +43,7 @@ BEGIN
 	WHERE emp.GroupId IS NOT NULL
 		AND emp.isDeleted = 0 
 		AND emp.[Enabled] = 1
-		AND emp.IsSpecialUser = 0
+		AND (emp.CompanyId NOT IN (@NexcelId, @LumiId, @NexVisionId) OR emp.IsSpecialUser = 0)
 
 	INSERT INTO #tmpGroup (
 		GroupId
