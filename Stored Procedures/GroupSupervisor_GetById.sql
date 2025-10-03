@@ -29,51 +29,22 @@ BEGIN
 		,ActionType TINYINT
 		)
 
-	INSERT INTO @SupervisorActions (
-		GroupId
-		,ActionType
-		)
-	VALUES (
-		@TeamId
-		,2
-		) -- verify
-
-	INSERT INTO @SupervisorActions (
-		GroupId
-		,ActionType
-		)
-	VALUES (
-		@TeamId
-		,3
-		) -- approve
-			
-	INSERT INTO @SupervisorActions (
-		GroupId
-		,ActionType
-		)
-	VALUES (
-		@TeamId
-		,4
-		) -- shift
+	INSERT INTO @SupervisorActions (GroupId, ActionType)
+	SELECT @TeamId, 2  -- verify
+	UNION ALL
+	SELECT @TeamId, 3  -- approve
+	UNION ALL
+	SELECT @TeamId, 4  -- shift
+	UNION ALL
+	SELECT @TeamId, 8 -- edit discipline
+	UNION ALL
+	SELECT @TeamId, 14; -- leader takeover
 
 	IF (@IsGroupSpace = 0)
-		INSERT INTO @SupervisorActions (
-			GroupId
-			,ActionType
-			)
-		VALUES (
-			@TeamId
-			,5
-			) -- on behalf request
-			
-	INSERT INTO @SupervisorActions (
-		GroupId
-		,ActionType
-		)
-	VALUES (
-		@TeamId
-		,8
-		) -- edit discipline
+	BEGIN
+		INSERT INTO @SupervisorActions (GroupId, ActionType)
+		VALUES (@TeamId, 5); -- on behalf request
+	END
 
 	INSERT INTO @Supervisors (
 		GroupId
@@ -99,7 +70,7 @@ BEGIN
 						LEFT JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.Empid = e.Empid AND ISNULL(ce.IsDeleted, 0) = 0 AND ISNULL(ce.Enabled, 1) = 1
 						LEFT JOIN dbo.Company AS c WITH (NOLOCK) ON c.CompanyId = ce.CompanyId
 					WHERE su.GroupId = @TeamId
-						AND su.ActionType IN (2, 3, 4, 5, 8)
+						AND su.ActionType IN (2, 3, 4, 5, 8, 14)
 						AND ISNULL(su.IsDeleted, 0) = 0
 					) AS a
 				WHERE a.GroupId = es.GroupId
