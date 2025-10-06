@@ -15,6 +15,7 @@ Revisions:
 	20250721@Mira: get shift arrangement setting and discipline setting for group space [Redmine: #232922]
 	20250812@Mira: tranfer employee [Redmine: #235678]
 	20241003@Lilac: Get list leader takeover [Redmine: #240215]
+	20251006@Jay.Do: on behalf [Redmine: #240214]
 Param's Explanation:
 */
 BEGIN
@@ -39,13 +40,9 @@ BEGIN
 	UNION ALL
 	SELECT @TeamId, 8 -- edit discipline
 	UNION ALL
+	SELECT @TeamId, 5; -- on behalf request
+	UNION ALL
 	SELECT @TeamId, 14; -- leader takeover
-
-	IF (@IsGroupSpace = 0)
-	BEGIN
-		INSERT INTO @SupervisorActions (GroupId, ActionType)
-		VALUES (@TeamId, 5); -- on behalf request
-	END
 
 	INSERT INTO @Supervisors (
 		GroupId
