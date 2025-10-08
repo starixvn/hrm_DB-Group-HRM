@@ -40,6 +40,8 @@ BEGIN
 	UNION ALL
 	SELECT @TeamId, 8 -- edit discipline
 	UNION ALL
+	SELECT @TeamId, 14 -- leader takeover
+	UNION ALL
 	SELECT @TeamId, 5; -- on behalf request
 	UNION ALL
 	SELECT @TeamId, 14; -- leader takeover
