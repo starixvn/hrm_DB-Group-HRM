@@ -9,7 +9,6 @@ ALTER PROCEDURE [dbo].[EmployeeAttendance_GetByType]
 	,@TeamIds VARCHAR(MAX) = ''
 	,@excludeUserDelete INT = 0
 	,@isLocal BIT = NULL
-	,@SupervisorId INT = NULL
 	,@type SMALLINT
 	,@isRealDate BIT = 0
 	,@EmployeeStatusIds VARCHAR(10) = ''
@@ -25,6 +24,7 @@ AS
         - 20250512@Tim: fix bug duplicate record when creating 2 requests 1/2 day
         20250813@Jay: change db structure [Redmine: #235678]
 		20250924@Mira: user status filter [Redmine: #239089]
+		20251001@Mira: Get employee by data permission [Redmine: #240215]
 
     Param's Explanation:
 	    @type: 0-all, 1-missing checkin; 2-missing check out, 3: latein; 4-earlyout, 5- not work
@@ -55,7 +55,6 @@ BEGIN
 		,@clientTimeZone REAL
 	CREATE TABLE #tmpGroup (GroupId INT PRIMARY KEY)
 
-	CREATE TABLE #tmpEmployeeByActorId (EmpId INT PRIMARY KEY)
 	CREATE TABLE #tmpEmployee (EmpId INT PRIMARY KEY) -- filter #tmpEmployeeByActorId by user status
 
     DECLARE @tblStatus TABLE (Id TINYINT)
@@ -93,23 +92,11 @@ BEGIN
 		WHERE ISNULL(IsDeleted, 0) = 0
 	END
 
-	IF @EmpId IS NULL
-	BEGIN
-		INSERT INTO #tmpEmployeeByActorId (EmpId)
-		SELECT DISTINCT EmpId
-		FROM dbo.fnc_GetEmployeeByActorId(@SupervisorId, @excludeUserDelete, 1, @companyId)
-	END
-	ELSE
-	BEGIN
-		INSERT INTO #tmpEmployeeByActorId (EmpId)
-		VALUES (@EmpId)
-	END
-
 	INSERT INTO #tmpEmployee
-	SELECT DISTINCT t.EmpId
-	FROM #tmpEmployeeByActorId t
-	INNER JOIN dbo.CompanyEmployee ce WITH(NOLOCK) ON ce.EmpId = t.EmpId
-	WHERE ISNULL(@EmployeeStatusIds, '') = ''
+	SELECT DISTINCT ce.EmpId
+	FROM dbo.CompanyEmployee ce WITH(NOLOCK)
+	WHERE ce.CompanyId = @companyId
+		AND ISNULL(@EmployeeStatusIds, '') = ''
 		OR EXISTS (
             SELECT 1
             FROM @tblStatus AS s
