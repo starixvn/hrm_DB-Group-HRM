@@ -10,6 +10,7 @@ DB: bodb_HRM
 Original:
 
 Revisions:
+	20241003@Lilac: Get list leader takeover [Redmine: #240215]
 Param's Explanation:
 */
 BEGIN
@@ -37,6 +38,6 @@ BEGIN
 		AND su.ActionType = 14 -- edit discipline
 		AND su.RequestType = 0
 		AND ISNULL(su.IsDeleted, 0) = 0
-	ORDER BY ISNULL(su.DisplayOrder, 0)
-		,ce.NickName
+	ORDER BY ISNULL(su.DisplayOrder, 0) ASC
+		,ce.NickName ASC
 END

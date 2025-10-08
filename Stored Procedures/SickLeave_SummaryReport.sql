@@ -151,8 +151,8 @@ BEGIN
 			OR es.IsLocal = @isLocal
 			)
 		AND (@EmpId IS NULL OR emp.EmpId = @EmpId)
-	ORDER BY gr.[Name]
-		,emp.Code
+	ORDER BY gr.[Name] ASC
+		,emp.Code ASC
 
 	DROP TABLE #tblGroupId
 

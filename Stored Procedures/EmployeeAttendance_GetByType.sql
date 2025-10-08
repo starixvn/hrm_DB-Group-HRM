@@ -92,18 +92,20 @@ BEGIN
 		WHERE ISNULL(IsDeleted, 0) = 0
 	END
 
-	INSERT INTO #tmpEmployee
+	INSERT INTO #tmpEmployee (EmpId)
 	SELECT DISTINCT ce.EmpId
 	FROM dbo.CompanyEmployee ce WITH(NOLOCK)
 	WHERE ce.CompanyId = @companyId
-		AND ISNULL(@EmployeeStatusIds, '') = ''
-		OR EXISTS (
-            SELECT 1
-            FROM @tblStatus AS s
-            WHERE (s.Id = @Enable AND ce.[Enabled] = 1 AND ce.isDeleted = 0)
-                OR (s.Id = @Disabled AND ce.[Enabled] = 0 AND ce.isDeleted = 0)
-                OR (s.Id = @Deleted AND ce.isDeleted = 1)
-        )
+		AND (@EmpId IS NULL OR ce.EmpId = @EmpId)
+		AND (ISNULL(@EmployeeStatusIds, '') = ''
+			OR EXISTS (
+				SELECT 1
+				FROM @tblStatus AS s
+				WHERE (s.Id = @Enable AND ce.[Enabled] = 1 AND ce.isDeleted = 0)
+					OR (s.Id = @Disabled AND ce.[Enabled] = 0 AND ce.isDeleted = 0)
+					OR (s.Id = @Deleted AND ce.isDeleted = 1)
+			)
+		)
 
 	SET @now = DATEADD(MINUTE, @clientTimeZone * 60, DATEADD(HOUR, ABS(@serverTimeZone), GETDATE()))
 	SET @today = convert(VARCHAR(10), @now, 111) -- use UTC because the server use GMT-4
@@ -441,18 +443,18 @@ BEGIN
 			,cl.EmpId
 		FROM dbo.EmployeeCalendar AS cl WITH (NOLOCK)
 			INNER JOIN (
-			SELECT c.EmpId
-			FROM dbo.EmployeeCalendar AS c WITH (NOLOCK)
-				INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON c.EmpId = es.EmpId
-			WHERE WorkDate BETWEEN @StartDate_tmp AND @EndDate_tmp
-				AND c.IsOffDay = 1
-				AND (
-					@EmpId IS NULL
-					OR c.EmpId = @EmpId
-					)
-			GROUP BY c.EmpId
-				,es.OffDaysbyWeek
-			HAVING COUNT(c.EmpId) > es.OffDaysbyWeek
+				SELECT c.EmpId
+				FROM dbo.EmployeeCalendar AS c WITH (NOLOCK)
+					INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON c.EmpId = es.EmpId
+				WHERE WorkDate BETWEEN @StartDate_tmp AND @EndDate_tmp
+					AND c.IsOffDay = 1
+					AND (
+						@EmpId IS NULL
+						OR c.EmpId = @EmpId
+						)
+				GROUP BY c.EmpId
+					,es.OffDaysbyWeek
+				HAVING COUNT(c.EmpId) > es.OffDaysbyWeek
 			) AS a ON cl.EmpId = a.EmpId
 		WHERE WorkDate BETWEEN @StartDate_tmp
 				AND @EndDate_tmp
@@ -739,8 +741,7 @@ BEGIN
 		) AS T
 		LEFT JOIN dbo.LeaveType AS lv WITH (NOLOCK) ON lv.LeaveTypeId = T.LeaveTypeId AND lv.CompanyId = @companyId
 		LEFT JOIN dbo.LeaveType AS lv2 WITH (NOLOCK) ON lv2.LeaveTypeId = T.LeaveTypeId2 AND lv2.CompanyId = @companyId
-		LEFT JOIN @OutOffDay AS od ON t.AttendanceDate = od.WorkDate
-		AND t.EmpId = od.EmpId
+		LEFT JOIN @OutOffDay AS od ON t.AttendanceDate = od.WorkDate AND t.EmpId = od.EmpId
 	WHERE @type = 0
 		OR (
 			@type = 1
@@ -763,9 +764,9 @@ BEGIN
 			AND T.isNotWork = 1
 			)
 	ORDER BY attendancedate DESC
-		,[Rank]
-		,TeamCode
-		,T.code
+		,[Rank] ASC
+		,TeamCode ASC
+		,T.code ASC
 
 	SELECT c.WorkDate
 		,rd.EmpId

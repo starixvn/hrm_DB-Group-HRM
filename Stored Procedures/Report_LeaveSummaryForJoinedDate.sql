@@ -171,8 +171,8 @@ BEGIN
                     OR (s.Id = @Deleted AND ce.isDeleted = 1)
                 )
 			)
-	ORDER BY g.[Name]
-		,ce.[Code]
+	ORDER BY g.[Name] ASC
+		,ce.[Code] ASC
 	
 	DROP TABLE #tmpCurrenBalace
 	DROP TABLE #tmpTeam

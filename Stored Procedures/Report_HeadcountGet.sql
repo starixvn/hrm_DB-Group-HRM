@@ -14,6 +14,7 @@ Revisions:
 	20250814@Lilac: restructure for transfer [Redmine: #235678]
 	20250821@Mira: Exclude special user NexHRM - [Redmine: #236138]
 	20250828@Mira: restructure for transfer [Redmine: #235678]
+	20251001@Mira: correct SP [Redmine: #240215]
 */
 
 AS
@@ -46,7 +47,7 @@ AS
 			SELECT GroupId = ce.GroupId
 		) AS d
 		INNER JOIN dbo.[Group] g WITH(NOLOCK) ON g.GroupId = d.GroupId AND g.IsOutsource = 0
-		LEFT JOIN dbo.EmployeeSummary es WITH(NOLOCK) ON es.EmpId = e.EmpId
+		LEFT JOIN dbo.EmployeeSummary es WITH(NOLOCK) ON es.EmpId = ce.EmpId
 		OUTER APPLY (
 			SELECT
 				JoinedDate = CASE 
@@ -68,7 +69,7 @@ AS
 		WHERE
 			(
 				e.CtrId IS NOT NULL AND
-				(safeDates.ResignedDate >= @FromDate OR (safeDates.ResignedDate IS NULL AND ISNULL(ce.Enabled, e.Enabled) = 1))
+				(safeDates.ResignedDate >= @FromDate OR (safeDates.ResignedDate IS NULL AND ce.Enabled = 1))
 			)
 	)
 

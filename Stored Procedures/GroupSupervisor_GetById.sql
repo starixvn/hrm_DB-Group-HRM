@@ -14,6 +14,7 @@ Revisions:
 	20250530@Jay: add company name for who come from different company & add manage role for group space [Redmine: #225528]
 	20250721@Mira: get shift arrangement setting and discipline setting for group space [Redmine: #232922]
 	20250812@Mira: tranfer employee [Redmine: #235678]
+	20241003@Lilac: Get list leader takeover [Redmine: #240215]
 Param's Explanation:
 */
 BEGIN
@@ -78,8 +79,8 @@ BEGIN
 				FOR XML PATH('')
 				), 1, 1, '') AS Supervisor
 	FROM @SupervisorActions AS es
-	ORDER BY es.GroupId
-		,es.ActionType
+	ORDER BY es.GroupId ASC
+		,es.ActionType ASC
 
 	SELECT g.GroupId AS TeamId
 		,g.Code
@@ -88,6 +89,6 @@ BEGIN
 		,sp.Supervisors
 	FROM @Supervisors AS sp
 		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON sp.GroupId = g.GroupId
-	ORDER BY sp.GroupId
-		,sp.ActionType
+	ORDER BY sp.GroupId ASC
+		,sp.ActionType ASC
 END

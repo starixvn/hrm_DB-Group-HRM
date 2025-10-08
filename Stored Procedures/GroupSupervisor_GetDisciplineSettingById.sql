@@ -40,6 +40,6 @@ BEGIN
 		AND su.ActionType = 8 -- edit discipline
 		AND su.RequestType = 0
 		AND ISNULL(su.IsDeleted, 0) = 0
-	ORDER BY ISNULL(su.DisplayOrder, 0)
-		,ce.NickName
+	ORDER BY ISNULL(su.DisplayOrder, 0) ASC
+		,ce.NickName ASC
 END

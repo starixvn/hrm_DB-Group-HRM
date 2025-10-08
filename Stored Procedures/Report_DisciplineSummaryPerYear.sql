@@ -190,8 +190,8 @@ BEGIN
 	FROM #tmpEmployeeDiscipline AS dis WITH (NOLOCK)
 	GROUP BY dis.EmpId
 		,YEAR(dis.WorkDate)
-	ORDER BY dis.EmpId
-		,YEAR(dis.WorkDate)
+	ORDER BY dis.EmpId ASC
+		,YEAR(dis.WorkDate) ASC
 
 	DROP TABLE #tmpDiscipline
 

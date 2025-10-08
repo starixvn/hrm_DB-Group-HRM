@@ -1,3 +1,12 @@
+/*
+    Created: 20251008@Tim
+    Task: Initialize data permission for all HRM sites
+    DB: bodb_IUC
+
+    Revisions:
+        20251001@Mira: Scripts init data permission for all HRM sites [Redmine: #240215]
+*/
+
 USE [bodb_IUC]
 GO
 

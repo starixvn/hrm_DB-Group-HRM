@@ -418,8 +418,8 @@ BEGIN
                     OR (s.Id = @Deleted AND e.isDeleted = 1)
                 )
 			)
-	ORDER BY g.[Name]
-		,e.[Code]
+	ORDER BY g.[Name] ASC 
+		,e.[Code] ASC
 
 	DROP TABLE #tmpOpenBalance
 
