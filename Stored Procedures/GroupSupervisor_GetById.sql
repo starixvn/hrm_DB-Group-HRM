@@ -43,8 +43,6 @@ BEGIN
 	SELECT @TeamId, 14 -- leader takeover
 	UNION ALL
 	SELECT @TeamId, 5; -- on behalf request
-	UNION ALL
-	SELECT @TeamId, 14; -- leader takeover
 
 	INSERT INTO @Supervisors (
 		GroupId
@@ -67,8 +65,8 @@ BEGIN
 						c.CompanyId
 					FROM [dbo].GroupSupervisor AS su WITH (NOLOCK)
 						INNER JOIN dbo.CompanyEmployee AS e WITH (NOLOCK) ON su.OwnerId = e.EmpId
-						LEFT JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.Empid = e.Empid AND ISNULL(ce.IsDeleted, 0) = 0 AND ISNULL(ce.Enabled, 1) = 1
-						LEFT JOIN dbo.Company AS c WITH (NOLOCK) ON c.CompanyId = ce.CompanyId
+						INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.Empid = e.Empid AND ISNULL(ce.IsDeleted, 0) = 0 AND ISNULL(ce.Enabled, 1) = 1
+						INNER JOIN dbo.Company AS c WITH (NOLOCK) ON c.CompanyId = ce.CompanyId
 					WHERE su.GroupId = @TeamId
 						AND su.ActionType IN (2, 3, 4, 5, 8, 14)
 						AND ISNULL(su.IsDeleted, 0) = 0
