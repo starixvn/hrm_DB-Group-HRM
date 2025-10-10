@@ -8,8 +8,6 @@ ALTER PROCEDURE [dbo].[Report_LeaveSummary]
 	,@TeamIds VARCHAR(max) = ''
 	,@year INT
 	,@isLocal BIT = NULL
-	,@SupervisorId INT = NULL
-	,@role VARCHAR(max) = ''
 	,@EmployeeStatusIds VARCHAR(10) = ''
 )
 AS
@@ -24,6 +22,7 @@ AS
 		20250813@Lilac: restructure for transfer [Redmine: #235678]
 		20250809@Mira: restructure for transfer [Redmine: #235678]
         20250924@Jay: user status filter [Redmine: #239089]
+		20251001@Mira: Get employee by data permission [Redmine: #240215]
 
 	Param's Explanation:
 */
@@ -41,8 +40,6 @@ BEGIN
 		)
 
 	CREATE TABLE #tmpTeam (GroupId INT)
-
-	CREATE TABLE #tmpEmployee (EmpId INT PRIMARY KEY)
 
 	DECLARE @employeeIds VARCHAR(MAX)
         -- employee status
@@ -66,18 +63,6 @@ BEGIN
 		FROM STRING_SPLIT(@TeamIds, ',')
 	END
 
-	IF @empid IS NULL
-	BEGIN
-		INSERT INTO #tmpEmployee (EmpId)
-		SELECT DISTINCT EmpId
-		FROM dbo.fnc_GetEmployeeByActorId(@SupervisorId, 0, 0, @CompanyId)
-	END
-	ELSE
-	BEGIN
-		INSERT INTO #tmpEmployee (EmpId)
-		VALUES (@empid)
-	END
-
 	DECLARE @fromdate DATETIME
 		,@todate DATETIME
 
@@ -91,7 +76,6 @@ BEGIN
 	INTO #tmpOpenBalance
 	FROM dbo.CompanyEmployee AS e WITH (NOLOCK)
         INNER JOIN dbo.Employee AS emp ON e.UserId = emp.UserId
-		INNER JOIN #tmpEmployee AS tmpe ON tmpe.EmpId = e.EmpId
         INNER JOIN #tmpTeam AS t ON e.GroupId = t.GroupId
 		LEFT JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON e.EmpId = es.EmpId
 		LEFT JOIN (
@@ -104,6 +88,7 @@ BEGIN
 			@isLocal IS NULL
 			OR es.IsLocal = @isLocal
 			)
+			AND (@empId IS NULL OR e.EmpId = @empId) 
 	GROUP BY e.EmpId
 
 	SELECT tmpdata.EmpId
@@ -113,19 +98,18 @@ BEGIN
         SELECT w.EmpId
 			,CASE WHEN kiv.IsHalfDay = 1 THEN 0.5 ELSE 1 END AS CreditDays
         FROM dbo.WorkingTimeRequest AS w WITH (NOLOCK)
-		    INNER JOIN #tmpEmployee AS e ON w.EmpId = e.EmpId
             INNER JOIN dbo.KeepInViewRequest AS kiv WITH (NOLOCK) ON w.RequestId = kiv.RequestId
 		    AND kiv.OnDate BETWEEN @fromdate AND @todate
 	    WHERE w.CurrentStatus IN (4, 6)
 		    AND kiv.KeepInViewType = @KeepInViewByDay
-
+			AND (@empId IS NULL OR w.EmpId = @empId)
         UNION ALL
 		SELECT kt.EmpId
 			,kt.CreditDays
 		FROM dbo.KeepInViewByDayTrans AS kt WITH (NOLOCK)
-		    INNER JOIN #tmpEmployee AS e ON kt.EmpId = e.EmpId
 		WHERE kt.RequestId < 0
 			AND kt.[InYear] = @year
+			AND (@empId IS NULL OR kt.EmpId = @empId)
         ) AS tmpdata
 	GROUP BY tmpdata.EmpId
 
@@ -142,7 +126,6 @@ BEGIN
 				ELSE rq.TotalDays END
 				) AS DECIMAL(18, 2)) AS DeductDays
 	FROM dbo.EmployeeCalendar AS cl WITH (NOLOCK)
-        INNER JOIN #tmpEmployee AS e WITH (NOLOCK) ON cl.EmpId = e.EmpId
 		LEFT JOIN (
 		    SELECT w.RequestId
 			    ,w.EmpId
@@ -152,9 +135,9 @@ BEGIN
 			    ,lv.TotalDays
 			    ,lv.LeaveType
 		    FROM dbo.LeaveRequest AS lv WITH (NOLOCK)
-                INNER JOIN #tmpEmployee AS e WITH (NOLOCK) ON lv.EmpId = e.EmpId
 			    INNER JOIN dbo.WorkingTimeRequest AS w WITH (NOLOCK) ON lv.RequestId = w.RequestId
 		    WHERE lv.LeaveType = 10
+					AND (@empId IS NULL OR lv.EmpId = @empId)
 		) AS rq ON cl.EmpId = rq.EmpId
 		AND cl.WorkDate BETWEEN rq.FromDate
 			AND rq.ToDate
@@ -162,6 +145,7 @@ BEGIN
 		AND cl.WorkDate BETWEEN rq.FromDate AND rq.ToDate
 		AND rq.CurrentStatus IN (4, 6)
 		AND cl.WorkDate BETWEEN @fromdate AND DATEADD(dd, - 1, @todate)
+		AND (@empId IS NULL OR cl.EmpId = @empId)
 
 	-- General leave
 	INSERT #tmpDeductKIV (
@@ -177,12 +161,12 @@ BEGIN
 				) AS DECIMAL(18, 2)) AS DeductDays
 	FROM dbo.LeaveRequestDetail AS ldt WITH (NOLOCK)
 		INNER JOIN dbo.LeaveRequest AS lv WITH (NOLOCK) ON ldt.RequestId = lv.RequestId
-        INNER JOIN #tmpEmployee AS e WITH (NOLOCK) ON lv.EmpId = e.EmpId
 		INNER JOIN dbo.WorkingTimeRequest AS w WITH (NOLOCK) ON ldt.RequestId = w.RequestId
 	WHERE ldt.LeaveType = 10
 		AND lv.LeaveType = 0
 		AND w.CurrentStatus IN (4, 6)
 		AND ldt.OnDate BETWEEN @fromdate AND DATEADD(dd, - 1, @todate)
+		AND (@empId IS NULL OR lv.EmpId = @empId)
 
 	SELECT EmpId
 		,SUM(DeductDays) AS DeductKIVDays
@@ -292,27 +276,26 @@ BEGIN
 				END) DEC
 	INTO #tmpCurrenBalace
 	FROM dbo.CompanyEmployee AS e WITH (NOLOCK)
-        INNER JOIN #tmpEmployee AS tmpe WITH (NOLOCK) ON tmpe.EmpId = e.EmpId
         INNER JOIN #tmpTeam AS t WITH (NOLOCK) ON e.GroupId = t.GroupId
 		LEFT JOIN (
 		SELECT ltrans.EmpId
 			,ltrans.DeductDays
 			,ltrans.FromDate
 		FROM dbo.LeaveTrans AS ltrans WITH (NOLOCK)
-            INNER JOIN #tmpEmployee AS tmpe WITH (NOLOCK) ON tmpe.EmpId = ltrans.EmpId
 		WHERE YEAR(ltrans.FromDate) = @year
 			AND ISNULL(ltrans.Deleted, 0) = 0
+			AND (@empId IS NULL OR ltrans.EmpId = @empId)
 		) AS ded ON e.EmpId = ded.EmpId
 		LEFT JOIN (
 		SELECT ltrans.EmpId
 			,SUM(ltrans.CreditDays) CreditDays
 		FROM dbo.LeaveTrans AS ltrans WITH (NOLOCK)
-            INNER JOIN #tmpEmployee AS tmpe WITH (NOLOCK) ON tmpe.EmpId = ltrans.EmpId
 		WHERE ltrans.FromDate >= @fromdate
 			AND ltrans.FromDate < @todate
 			AND ISNULL(ltrans.Deleted, 0) <> 1
 			AND ltrans.CreditDays > 0
 			AND ISNULL(ltrans.Deleted, 0) <> 1
+			AND (@empId IS NULL OR ltrans.EmpId = @empId)
 		GROUP BY ltrans.EmpId
 		) cred ON e.EmpId = cred.Empid
 		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON e.EmpId = es.EmpId
@@ -321,6 +304,7 @@ BEGIN
 			@isLocal IS NULL
 			OR es.IsLocal = @isLocal
 			)
+			AND (@empId IS NULL OR e.EmpId = @empId)
 	GROUP BY e.EmpId
 		,ISNULL(CreditDays, 0)
 
@@ -434,10 +418,8 @@ BEGIN
                     OR (s.Id = @Deleted AND e.isDeleted = 1)
                 )
 			)
-	ORDER BY g.[Name]
-		,e.[Code]
-
-    DROP TABLE #tmpEmployee
+	ORDER BY g.[Name] ASC 
+		,e.[Code] ASC
 
 	DROP TABLE #tmpOpenBalance
 

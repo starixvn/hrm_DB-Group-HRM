@@ -4,7 +4,6 @@ ALTER PROCEDURE [dbo].[SickLeave_SummaryReport] @EmpId INT = NULL
 	,@TeamIds VARCHAR(max) = ''
 	,@Year INT
 	,@isLocal BIT = NULL
-	,@SupervisorId INT = NULL
 	,@CompanyId INT
 AS
 /*
@@ -15,6 +14,9 @@ AS
 
 	Revisions:
 		- 20250408@Hank: remove section [Redmine: #222886]
+		20251001@Mira: Get employee by data permission [Redmine: #240215]
+		20251001@Mira: Get employee by data permission [Redmine: #240215]
+		
 	Param's Explanation:
 */
 BEGIN
@@ -22,25 +24,11 @@ BEGIN
 
 	CREATE TABLE #tblGroupId (GroupId INT)
 
-	CREATE TABLE #tblEmployeeId (EmpId INT)
-
 	IF ISNULL(@TeamIds, '') <> ''
 	BEGIN
 		INSERT INTO #tblGroupId (GroupId)
 		SELECT value
 		FROM STRING_SPLIT(@TeamIds, ',')
-	END
-
-	IF @empid IS NULL
-	BEGIN
-		INSERT INTO #tblEmployeeId (EmpId)
-		SELECT EmpId
-		FROM dbo.fnc_GetEmployeeByActorId(@SupervisorId, 1, 0, @CompanyId)
-	END
-	ELSE
-	BEGIN
-		INSERT INTO #tblEmployeeId (EmpId)
-		VALUES (@EmpId)
 	END
 
 	DECLARE @fromdate DATETIME
@@ -101,10 +89,10 @@ BEGIN
 				ELSE 0
 				END) AS [DEC]
 	INTO #tblCurrenBalace
-	FROM dbo.Employee AS emp WITH (NOLOCK)
-		INNER JOIN #tblEmployeeId AS tblemp WITH (NOLOCK) ON emp.EmpId = tblemp.EmpId
+	FROM dbo.CompanyEmployee AS emp WITH (NOLOCK)
 		INNER JOIN #tblGroupId AS tblgr WITH (NOLOCK) ON emp.GroupId = tblgr.GroupId
 		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON emp.EmpId = es.EmpId
+		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.UserId = emp.UserId
 		LEFT JOIN dbo.SickLeaveTrans AS deduct WITH (NOLOCK) ON emp.EmpId = deduct.EmpId
 		AND YEAR(deduct.FromDate) = @Year
 		AND deduct.IsDeleted = 0
@@ -124,14 +112,15 @@ BEGIN
 			)
 		AND (
 			ISNULL(emp.isDeleted, 0) = 0
-			OR YEAR(emp.ResignedDate) >= year(@todate)
+			OR YEAR(e.ResignedDate) >= year(@todate)
 			)
+		AND (@EmpId IS NULL OR emp.EmpId = @EmpId)
 	GROUP BY emp.EmpId
 		,ISNULL(credit.CreditDays, 0)
 
 	SELECT emp.EmpId
 		,emp.Code
-		,emp.FullName
+		,e.FullName
 		,emp.NickName
 		,gr.[Name] AS Team
 		,dep.[Name] AS Department
@@ -149,8 +138,8 @@ BEGIN
 		,cb.Nov
 		,cb.[Dec]
 		,ISNULL(cb.CreditDays, 0) - ISNULL(cb.DeductDays, 0) AS RemainingBalance
-	FROM dbo.Employee AS emp WITH (NOLOCK)
-		INNER JOIN #tblEmployeeId AS tblemp WITH (NOLOCK) ON emp.EmpId = tblemp.EmpId
+	FROM dbo.CompanyEmployee AS emp WITH (NOLOCK)
+		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.UserId = emp.UserId
 		INNER JOIN #tblGroupId AS tblgr WITH (NOLOCK) ON emp.GroupId = tblgr.GroupId
 		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId
 		INNER JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId = gr.DepartmentId
@@ -161,10 +150,9 @@ BEGIN
 			@isLocal IS NULL
 			OR es.IsLocal = @isLocal
 			)
-	ORDER BY gr.[Name]
-		,emp.Code
-
-	DROP TABLE #tblEmployeeId
+		AND (@EmpId IS NULL OR emp.EmpId = @EmpId)
+	ORDER BY gr.[Name] ASC
+		,emp.Code ASC
 
 	DROP TABLE #tblGroupId
 

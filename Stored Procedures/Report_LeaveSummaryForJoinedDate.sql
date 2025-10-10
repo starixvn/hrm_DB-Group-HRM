@@ -7,8 +7,6 @@ ALTER PROCEDURE [dbo].[Report_LeaveSummaryForJoinedDate]
 	,@TeamIds VARCHAR(max) = ''
 	,@fromDate DATETIME
 	,@isLocal BIT = NULL
-	,@SupervisorId INT = NULL
-	,@role VARCHAR(max) = ''
 	,@EmployeeStatusIds VARCHAR(10) = ''
 )
 AS
@@ -23,6 +21,7 @@ AS
 		20250812@Mira: change DB structure [Redmine: #235678]
 		20250829@Mira: change DB structure [Redmine: #235678]
         20250924@Jay: user status filter [Redmine: #239089]
+		20251001@Mira: Get employee by data permission [Redmine: #240215]
 
 	Param's Explanation:
 */
@@ -30,8 +29,6 @@ BEGIN
 	SET NOCOUNT ON;
 
 	CREATE TABLE #tmpTeam (GroupId INT)
-
-	CREATE TABLE #tmpEmployee (EmpId INT PRIMARY KEY)
 
 	-- employee status
 	DECLARE @Enable TINYINT = 1
@@ -61,18 +58,6 @@ BEGIN
 		FROM STRING_SPLIT(@TeamIds, ',')
 	END
 
-	IF @empId IS NULL
-	BEGIN
-		INSERT INTO #tmpEmployee (EmpId)
-		SELECT DISTINCT EmpId
-		FROM dbo.fnc_GetEmployeeByActorId(@SupervisorId, 0, 0, @CompanyId)
-	END
-	ELSE
-	BEGIN
-		INSERT INTO #tmpEmployee (EmpId)
-		VALUES (@empId)
-	END
-
 	-- Get leave ranges for each employee
 	INSERT INTO #tmpLeaveRange (EmpId, RangeStartDate, RangeEndDate)
 	SELECT 
@@ -91,7 +76,7 @@ BEGIN
 		) AS RangeEndDate
 	FROM dbo.CompanyEmployee ce WITH (NOLOCK)
 	INNER JOIN dbo.Employee e WITH (NOLOCK) ON e.UserId = ce.UserId
-	WHERE ce.EmpId IN (SELECT EmpId FROM #tmpEmployee)
+	WHERE @empId IS NULL OR ce.EmpId = @empId
 
 
 	-- calculate the balance for the current range
@@ -103,28 +88,27 @@ BEGIN
 	INTO #tmpCurrenBalace
 	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
         INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.UserId = ce.UserId
-        INNER JOIN #tmpEmployee AS tmpe WITH (NOLOCK) ON tmpe.EmpId = ce.EmpId
         INNER JOIN #tmpTeam AS t WITH (NOLOCK) ON ce.GroupId = t.GroupId
 		LEFT JOIN (
 		SELECT ltrans.EmpId
 			,ltrans.DeductDays
 			,ltrans.FromDate
 		FROM dbo.LeaveTrans AS ltrans WITH (NOLOCK)
-            INNER JOIN #tmpEmployee AS tmpe WITH (NOLOCK) ON tmpe.EmpId = ltrans.EmpId
 		WHERE ltrans.FromDate >= (SELECT RangeStartDate FROM #tmpLeaveRange WHERE EmpId = ltrans.EmpId)
 			AND ltrans.ToDate <= (SELECT RangeEndDate FROM #tmpLeaveRange WHERE EmpId = ltrans.EmpId)
 			AND ISNULL(ltrans.Deleted, 0) = 0
+			AND (@empId IS NULL OR ltrans.EmpId = @empId)
 		) AS ded ON ce.EmpId = ded.EmpId
 		LEFT JOIN (
 		SELECT ltrans.EmpId
 			,SUM(ltrans.CreditDays) AS CreditDays
 			,MIN(ltrans.FromDate) AS FromDate
 		FROM dbo.LeaveTrans AS ltrans WITH (NOLOCK)
-            INNER JOIN #tmpEmployee AS tmpe WITH (NOLOCK) ON tmpe.EmpId = ltrans.EmpId
 		WHERE ltrans.FromDate >= (SELECT RangeStartDate FROM #tmpLeaveRange WHERE EmpId = ltrans.EmpId)
 			AND ltrans.ToDate <= (SELECT RangeEndDate FROM #tmpLeaveRange WHERE EmpId = ltrans.EmpId)
 			AND ISNULL(ltrans.Deleted, 0) <> 1
 			AND ltrans.CreditDays > 0
+			AND (@empId IS NULL OR ltrans.EmpId = @empId)
 		GROUP BY ltrans.EmpId
 		) cred ON ce.EmpId = cred.Empid
 		LEFT JOIN (
@@ -132,11 +116,11 @@ BEGIN
 			,SUM(ltrans.ExtraDays) AS ExtraDays
 			,MIN(ltrans.FromDate) AS FromDate
 		FROM dbo.LeaveTrans AS ltrans WITH (NOLOCK)
-            INNER JOIN #tmpEmployee AS tmpe WITH (NOLOCK) ON tmpe.EmpId = ltrans.EmpId
 		WHERE ltrans.FromDate >= (SELECT RangeStartDate FROM #tmpLeaveRange WHERE EmpId = ltrans.EmpId)
 			AND ltrans.ToDate <= (SELECT RangeEndDate FROM #tmpLeaveRange WHERE EmpId = ltrans.EmpId)
 			AND ISNULL(ltrans.Deleted, 0) <> 1
 			AND ltrans.ExtraDays > 0
+			AND (@empId IS NULL OR ltrans.EmpId = @empId)
 		GROUP BY ltrans.EmpId
 		) extra ON ce.EmpId = extra.EmpId
 		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON ce.EmpId = es.EmpId
@@ -187,11 +171,9 @@ BEGIN
                     OR (s.Id = @Deleted AND ce.isDeleted = 1)
                 )
 			)
-	ORDER BY g.[Name]
-		,ce.[Code]
+	ORDER BY g.[Name] ASC
+		,ce.[Code] ASC
 	
-
-    DROP TABLE #tmpEmployee
 	DROP TABLE #tmpCurrenBalace
 	DROP TABLE #tmpTeam
 	DROP TABLE #tmpLeaveRange

@@ -16,10 +16,11 @@ AS
     DB: bodb_HRM
 
     Revisions:
-        20250512@Tim: sync time record Hong Ma [Redmine: 226225]
-        20250606@Tim: enhance performance
-        20250609@Tim: fix bug incorrect employee mapping
-		20250812@Mira: change DB structure [Redmine: #235678]
+        -20250512@Tim: sync time record Hong Ma [Redmine: 226225]
+        -20250606@Tim: enhance performance
+        -20250609@Tim: fix bug incorrect employee mapping
+        -20250812@Mira: change DB structure [Redmine: #235678]
+        -20251002@Tim: remove hard-coded mapping for Hong Ma
     Param's Explanation:
         - @TimeRecordXml: "<Root>
 		        <Row EmpNo={0} InOutType={1} RecordTime={2} />
@@ -32,7 +33,6 @@ BEGIN
 	    ,@DocHandler INT
         ,@serverTimeZone SMALLINT = -4
         ,@SMSCompanyId SMALLINT = 3
-        ,@HongMaCompanyId SMALLINT = 4
 
 	CREATE TABLE #tmpTimeRecord (
 		EmpId INT
@@ -58,7 +58,6 @@ BEGIN
 	FROM OPENXML(@DocHandler, '/Root/Row', 1) WITH (EmpNo VARCHAR(20), InOutType TINYINT, RecordTime DATETIME) AS d
         INNER JOIN dbo.CompanyEmployee AS emp WITH (NOLOCK) ON d.EmpNo = emp.Code
             OR (@CompanyId = @SMSCompanyId AND ISNULL(TRY_PARSE(emp.Code AS INT), 0) = ISNULL(TRY_PARSE(d.EmpNo AS INT), -1))
-            OR (@CompanyId = @HongMaCompanyId AND RIGHT(emp.Code, 4) = RIGHT(d.EmpNo, 4))
         INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.EmpId = ce.EmpId
         LEFT JOIN dbo.SystemConfigs AS config WITH (NOLOCK) ON ce.CompanyId = config.CompanyId
         AND config.[Key] = 'TimeZone'

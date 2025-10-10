@@ -12,13 +12,17 @@ Original:
 Revisions:
 	- 20250730@Jay: Add company name for personal setting page [Redmine: #233324]
 	- 20250812@Mira: tranfer employee [Redmine: #235678]
+	- 20241003@Lilac: add nickname (company name)
 Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;
 
 	SELECT su.OwnerId
-		,ce.NickName
+		,CASE 
+			WHEN @CompanyId IS NOT NULL AND @CompanyId = c.CompanyId THEN ce.NickName
+			ELSE ce.NickName + ' (' + ISNULL(c.Name, '') + ')'
+		END AS NickName
 		,e.FullName
 		,CASE 
 			WHEN @CompanyId IS NOT NULL AND @CompanyId = c.CompanyId THEN 1
@@ -36,6 +40,6 @@ BEGIN
 		AND su.ActionType = 8 -- edit discipline
 		AND su.RequestType = 0
 		AND ISNULL(su.IsDeleted, 0) = 0
-	ORDER BY ISNULL(su.DisplayOrder, 0)
-		,ce.NickName
+	ORDER BY ISNULL(su.DisplayOrder, 0) ASC
+		,ce.NickName ASC
 END
