@@ -5,18 +5,17 @@ ALTER PROCEDURE [dbo].[GroupSupervisor_GetById] @TeamId INT,
 	@CompanyId INT = NULL
 AS
 /*
-Created: 20140723@Quinn.Vo
-Task: Get list supervisors by group.
-DB: HRM
-Original:
+    Created: 20140723@Quinn.Vo
+    Task: Get list supervisors by group.
+    DB: bodb_HRM
 
-Revisions:
-	20250530@Jay: add company name for who come from different company & add manage role for group space [Redmine: #225528]
-	20250721@Mira: get shift arrangement setting and discipline setting for group space [Redmine: #232922]
-	20250812@Mira: tranfer employee [Redmine: #235678]
-	20241003@Lilac: Get list leader takeover [Redmine: #240215]
-	20251006@Jay.Do: on behalf [Redmine: #240214]
-Param's Explanation:
+    Revisions:
+	    20250530@Jay: add company name for who come from different company & add manage role for group space [Redmine: #225528]
+	    20250721@Mira: get shift arrangement setting and discipline setting for group space [Redmine: #232922]
+	    20250812@Mira: tranfer employee [Redmine: #235678]
+	    20241003@Lilac: Get list leader takeover [Redmine: #240215]
+	    20251006@Jay.Do: on behalf [Redmine: #240214]
+    Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;
