@@ -14,6 +14,7 @@ AS
     Revisions:
         20250306@Tim: initial - [Redmine: #217976]
         20250813@Jay: change db structure [Redmine: #235678]
+        20251013@Tim: get CompanyId field
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -26,6 +27,7 @@ BEGIN
 		,ce.[Enabled]
 		,ce.IsSpecialUser AS IsTopManager
         ,ce.AutoApproveRequest
+		,ce.CompanyId
 	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
         INNER JOIN dbo.Employee AS e ON e.UserId = ce.UserId
 		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON ce.EmpId = es.EmpId
