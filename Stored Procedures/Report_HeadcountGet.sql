@@ -14,6 +14,7 @@ ALTER PROCEDURE [dbo].[Report_HeadcountGet] @Year INT
 	    20250821@Mira: Exclude special user NexHRM - [Redmine: #236138]
 	    20250828@Mira: restructure for transfer [Redmine: #235678]
 	    20251001@Mira: correct SP [Redmine: #240215]
+	    20251014@Mira: exclude employee of deleted group [Redmine: #240215]
 */
 AS
     BEGIN
@@ -44,7 +45,7 @@ AS
 		    OUTER APPLY (
 			    SELECT GroupId = ce.GroupId
 		    ) AS d
-		    INNER JOIN dbo.[Group] AS g WITH(NOLOCK) ON g.GroupId = d.GroupId AND g.IsOutsource = 0
+		    INNER JOIN dbo.[Group] AS g WITH(NOLOCK) ON g.GroupId = d.GroupId AND g.IsOutsource = 0 AND g.IsDeleted = 0
 		    LEFT JOIN dbo.EmployeeSummary AS es WITH(NOLOCK) ON es.EmpId = ce.EmpId
 		    OUTER APPLY (
 			    SELECT
