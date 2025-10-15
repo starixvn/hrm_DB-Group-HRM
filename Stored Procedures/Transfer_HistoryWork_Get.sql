@@ -20,13 +20,11 @@ BEGIN
 
 	SELECT LogDate,
 		OldValue AS OldData,
-		[Value] AS Data,
+		[Value] AS [Data],
 		Field,
-		ce.Nickname,
-		'Transfer Employee' AS Action
+		ce.Nickname
 	FROM HistoryWork hw  (NOLOCK)
 	LEFT JOIN dbo.CompanyEmployee ce (NOLOCK) ON ce.EmpId = hw.ModifiedBy
 	WHERE hw.EmpId = @EmpId
-		AND Field = 'Company'
 	ORDER BY LogDate DESC
 END
