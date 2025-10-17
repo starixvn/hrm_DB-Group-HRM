@@ -8,6 +8,8 @@ ALTER PROCEDURE [dbo].[Employee_Transfer]
 	@Remark NVARCHAR(1000),
 	@CreatedBy INT,
 	@TransferInDate DATE,
+	@AnnualLeaveBalance NUMERIC(18, 2),
+	@CompensationLeaveBalance NUMERIC(18, 2),
 	@ErrCode INT = 0 OUTPUT,
     @ErrMsg NVARCHAR(200) = '' OUTPUT
 )
@@ -39,6 +41,12 @@ BEGIN
 
 	SET @xml = (SELECT 0 AS '@Enabled' FOR XML PATH('Row'),TYPE);
 	DECLARE @logData NVARCHAR(MAX) = REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"');
+	-- Log activity
+	EXEC dbo.ActivityLog_Insert @UserId = @CreatedBy
+		,@ObjectTypeId = 1
+		,@ObjectId = @EmpId
+		,@OldData = @logOldData
+		,@Data = @logData
 
 	SELECT @CompanyId = ce.CompanyId,
 		@UserId = ce.UserId
@@ -90,12 +98,6 @@ BEGIN
 			,GETDATE()
 			,@CreatedBy
 			)
-		-- Log activity
-		EXEC dbo.ActivityLog_Insert @UserId = @CreatedBy
-			,@ObjectTypeId = 1
-			,@ObjectId = @EmpId
-			,@OldData = @logOldData
-			,@Data = @logData
 
 		INSERT INTO dbo.EmployeeSummary (EmpId, IsDefaultSchedule)
 		VALUES (@NewEmpId, 0)
@@ -105,6 +107,34 @@ BEGIN
 
 		INSERT INTO dbo.EmployeeDefaultShift (EmpId)
 		VALUES (@NewEmpId)
+
+		EXEC dbo.AnnualLeave_InsertMultipleTransactions -- insert annual leave balance
+			@CompanyId = @TargetCompanyId
+			,@EmployeeIds = @NewEmpId
+			,@FromDate = @TransferInDate
+			,@DeductDays = 0
+			,@CreditDays = @AnnualLeaveBalance
+			,@ActorId = @CreatedBy
+			,@ErrCode = @ErrCode
+			,@ErrMsg = @ErrMsg
+
+		--Insert Compensation Leave
+		INSERT INTO dbo.KeepInViewByDayTrans (
+			EmpId
+			,RequestId
+			,CreditDays
+			,DeductDays
+			,InYear
+			,InsertedDate
+			)
+		VALUES (
+			@NewEmpId
+			,-1
+			,@CompensationLeaveBalance
+			,0
+			,YEAR(@TransferInDate)
+			,GETDATE()
+			)
 	END
 
 	-- Insert into Employee Transfer with new EmpId
