@@ -66,7 +66,8 @@ BEGIN
 			a.Enabled = 1,
 			a.GroupId = @GroupId,
 			a.Roles = b.Roles,
-			a.CompanyDate = @TransferInDate
+			a.CompanyDate = @TransferInDate,
+			a.ModifiedDate = GETDATE()
 		FROM bodb_HRM.dbo.CompanyEmployee AS a WITH (ROWLOCK)
 		INNER JOIN bodb_HRM.dbo.CompanyEmployee AS b 
 			ON a.EmpId = b.EmpId AND b.CompanyId = @CompanyId
@@ -99,8 +100,8 @@ BEGIN
 			,@CreatedBy
 			)
 
-		INSERT INTO dbo.EmployeeSummary (EmpId, IsDefaultSchedule)
-		VALUES (@NewEmpId, 0)
+		INSERT INTO dbo.EmployeeSummary (EmpId, IsDefaultSchedule, OffDaysbyWeek)
+		VALUES (@NewEmpId, 0, NULL)
 
 		INSERT INTO dbo.EmployeeContract (EmpId)
 		VALUES (@NewEmpId)
