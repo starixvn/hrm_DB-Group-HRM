@@ -17,6 +17,7 @@ AS
 		2025-04-24@Henry: Merge action type 2, 3, 4, 5
         20250523@Tim: call func get member
 		20250812@Mira: tranfer employee [Redmine: #235678]
+		20251020@Mira: get deleted/disable user [Redmine: #241816]
 
 	Param's Explanation:
 */
@@ -29,7 +30,7 @@ BEGIN
 
 	INSERT INTO #tblEmployeeIds (EmpId)
 	SELECT EmpId
-	FROM dbo.fnc_GetEmployeeByActorId(@SupervisorId, 1, 1, @CompanyId)
+	FROM dbo.fnc_GetEmployeeByActorId(@SupervisorId, 0, 1, @CompanyId)
 
 	SELECT ce.EmpId
 		,ce.NickName

@@ -5,13 +5,12 @@ ALTER PROCEDURE [dbo].[Report_DisciplineDetail]
     @CompanyId SMALLINT
     ,@FromDate DATE
     ,@ToDate DATE
-    ,@ApproverId INT
+    ,@ApproverUserId INT
     ,@TeamIds VARCHAR(MAX) = ''
     ,@EmployeeId INT = NULL
     ,@ReasonId INT = NULL
     ,@IsLocal BIT = NULL
     ,@HasIgnored BIT = NULL
-    ,@RoleIds VARCHAR(1000) = ''
 )
 AS
 /*
@@ -23,6 +22,7 @@ AS
         20250404@Tim: add param @RoleIds [Redmine: #222886]
         20250627@Tim: fix bug rule ignored
         20250813@Jay: change db structure [Redmine: #235678]
+		20251020@Mira: remove get data by hardcode roleId [Redmine: #241816]
     Param's Explanation:
 */
 BEGIN
@@ -37,7 +37,14 @@ BEGIN
 		FROM STRING_SPLIT(@TeamIds, ',')
 	END
 
-	DECLARE @HasEditDisciplineRole INT = 0
+	DECLARE @tmpEmp TABLE (EmpId INT)
+    INSERT INTO @tmpEmp (EmpId)
+    SELECT EmpId
+    FROM dbo.CompanyEmployee WITH (NOLOCK)
+    WHERE UserId = @ApproverUserId
+        AND [Enabled] = 1
+        AND IsDeleted = 0;
+
 	--request type
 	DECLARE @ChangeShift TINYINT = 5
 		,@CheckIn TINYINT = 1
@@ -57,7 +64,6 @@ BEGIN
 		,@UnplannedLeaveId TINYINT = 9
 		,@WeekendLeaveId TINYINT = 10
 		,@SevenDaysLeaveId TINYINT = 11
-	DECLARE @tblRole TABLE (RoleId INT)
 
 	CREATE TABLE #tmpDisciplineDetail (
 		EmployeeId INT
@@ -80,14 +86,6 @@ BEGIN
 		,IsOutOfControlReason BIT
 		)
 
-	INSERT INTO @tblRole (RoleId)
-	SELECT value
-	FROM STRING_SPLIT(@RoleIds, ',')
-
-	SELECT @HasEditDisciplineRole = 1
-	FROM @tblRole
-	WHERE RoleId = 8 -- edit discipline
-
 	INSERT INTO #tmpDisciplineDetail
 	SELECT DISTINCT ce.EmpId
 		,dis.WorkDate
@@ -99,8 +97,11 @@ BEGIN
 		,0 AS ChangeShiftHasViolated
 		,ignored.IsIgnoredChangeShift AS ChangeShiftHasIgnored
 		,(CASE 
-			WHEN @HasEditDisciplineRole = 1
-				AND dbo.fncCheckPermissionIgnoreDisciplineInReport(@ApproverId, gr.GroupId, ce.EmpId) = 1 THEN 1
+			WHEN EXISTS (
+				SELECT 1
+				FROM @tmpEmp tmp
+				WHERE dbo.fncCheckPermissionIgnoreDisciplineInReport(tmp.EmpId, gr.GroupId, ce.EmpId) = 1
+			) THEN 1
 			ELSE 0 END
 			) AS ChangeShiftHasApprovedBy
 		,@MissingCheckInOutId AS MissingCheckInOutId
@@ -109,8 +110,11 @@ BEGIN
 		,0 AS MissingCheckInOutHasViolated
 		,ignored.IsIgnoredMissingCheckInOut AS MissingCheckInOutHasIgnored
 		,(CASE 
-			WHEN @HasEditDisciplineRole = 1
-				AND (dbo.fncCheckPermissionIgnoreDisciplineInReport(@ApproverId, gr.GroupId, ce.EmpId) = 1) THEN 1
+			WHEN EXISTS (
+				SELECT 1
+				FROM @tmpEmp tmp
+				WHERE dbo.fncCheckPermissionIgnoreDisciplineInReport(tmp.EmpId, gr.GroupId, ce.EmpId) = 1
+			) THEN 1
 			ELSE 0 END
 			) AS MissingCheckInOutHasApprovedBy
 		,@LateInId AS LateInId
@@ -119,8 +123,11 @@ BEGIN
 		,0 AS LateInHasViolated
 		,ignored.IsIgnoredLateIn AS LateInHasIgnored
 		,(CASE 
-			WHEN @HasEditDisciplineRole = 1
-				AND dbo.fncCheckPermissionIgnoreDisciplineInReport(@ApproverId, gr.GroupId, ce.EmpId) = 1 THEN 1
+			WHEN EXISTS (
+				SELECT 1
+				FROM @tmpEmp tmp
+				WHERE dbo.fncCheckPermissionIgnoreDisciplineInReport(tmp.EmpId, gr.GroupId, ce.EmpId) = 1
+			) THEN 1
 			ELSE 0 END
 			) AS LateInHasApprovedBy
 		,@EarlyOutId AS EarlyOutId
@@ -129,8 +136,11 @@ BEGIN
 		,0 AS EarlyOutHasViolated
 		,ignored.IsIgnoredEarlyOut AS EarlyOutHasIgnored
 		,(CASE 
-			WHEN @HasEditDisciplineRole = 1
-				AND dbo.fncCheckPermissionIgnoreDisciplineInReport(@ApproverId, gr.GroupId, ce.EmpId) = 1 THEN 1
+			WHEN EXISTS (
+				SELECT 1
+				FROM @tmpEmp tmp
+				WHERE dbo.fncCheckPermissionIgnoreDisciplineInReport(tmp.EmpId, gr.GroupId, ce.EmpId) = 1
+			) THEN 1
 			ELSE 0 END
 			) AS EarlyOutHasApprovedBy
 		,@AbsentId AS AbsentId
@@ -139,8 +149,11 @@ BEGIN
 		,0 AS AbsentHasViolated
 		,ignored.IsIgnoredAbsent AS AbsentHasIgnored
 		,(CASE 
-			WHEN @HasEditDisciplineRole = 1
-				AND dbo.fncCheckPermissionIgnoreDisciplineInReport(@ApproverId, gr.GroupId, ce.EmpId) = 1 THEN 1
+			WHEN EXISTS (
+				SELECT 1
+				FROM @tmpEmp tmp
+				WHERE dbo.fncCheckPermissionIgnoreDisciplineInReport(tmp.EmpId, gr.GroupId, ce.EmpId) = 1
+			) THEN 1
 			ELSE 0 END
 			) AS AbsentHasApprovedBy
 		,@UnplannedLeaveId AS UnplannedLeaveId
@@ -149,8 +162,11 @@ BEGIN
 		,0 AS UnplannedLeaveHasViolated
 		,ignored.IsIgnoredUnplannedLeave AS UnplannedLeaveHasIgnored
 		,(CASE 
-			WHEN @HasEditDisciplineRole = 1
-				AND dbo.fncCheckPermissionIgnoreDisciplineInReport(@ApproverId, gr.GroupId, ce.EmpId) = 1 THEN 1
+			WHEN EXISTS (
+				SELECT 1
+				FROM @tmpEmp tmp
+				WHERE dbo.fncCheckPermissionIgnoreDisciplineInReport(tmp.EmpId, gr.GroupId, ce.EmpId) = 1
+			) THEN 1
 			ELSE 0 END
 			) AS UnplannedLeaveHasApprovedBy
 		,@UnpaidLeaveId AS UnpaidLeaveId
@@ -159,8 +175,11 @@ BEGIN
 		,0 AS UnpaidLeaveHasViolated
 		,ignored.IsIgnoredUnpaidLeave AS UnpaidLeaveHasIgnored
 		,(CASE 
-			WHEN @HasEditDisciplineRole = 1
-				AND dbo.fncCheckPermissionIgnoreDisciplineInReport(@ApproverId, gr.GroupId, ce.EmpId) = 1 THEN 1
+			WHEN EXISTS (
+				SELECT 1
+				FROM @tmpEmp tmp
+				WHERE dbo.fncCheckPermissionIgnoreDisciplineInReport(tmp.EmpId, gr.GroupId, ce.EmpId) = 1
+			) THEN 1
 			ELSE 0 END
 			) AS UnpaidLeaveHasApprovedBy
 		,@WorkingUnderTimeId AS WorkingUnderTimeId
@@ -169,8 +188,11 @@ BEGIN
 		,0 AS WorkingUnderTimeHasViolated
 		,ignored.IsIgnoredWorkingUndertime AS WorkingUnderTimeHasIgnored
 		,(CASE 
-			WHEN @HasEditDisciplineRole = 1
-				AND dbo.fncCheckPermissionIgnoreDisciplineInReport(@ApproverId, gr.GroupId, ce.EmpId) = 1 THEN 1
+			WHEN EXISTS (
+				SELECT 1
+				FROM @tmpEmp tmp
+				WHERE dbo.fncCheckPermissionIgnoreDisciplineInReport(tmp.EmpId, gr.GroupId, ce.EmpId) = 1
+			) THEN 1
 			ELSE 0 END
 			) AS WorkingUnderTimeHasApprovedBy
 		,@UnpaidLeaveAbsentId AS UnpaidLeaveAbsentId
@@ -179,8 +201,11 @@ BEGIN
 		,0 AS UnpaidLeaveAbsentHasViolated
 		,ignored.IsIgnoredUnpaidLeaveAbsent AS UnpaidLeaveAbsentHasIgnored
 		,(CASE 
-			WHEN @HasEditDisciplineRole = 1
-				AND dbo.fncCheckPermissionIgnoreDisciplineInReport(@ApproverId, gr.GroupId, ce.EmpId) = 1 THEN 1
+			WHEN EXISTS (
+				SELECT 1
+				FROM @tmpEmp tmp
+				WHERE dbo.fncCheckPermissionIgnoreDisciplineInReport(tmp.EmpId, gr.GroupId, ce.EmpId) = 1
+			) THEN 1
 			ELSE 0 END
 			) AS UnpaidLeaveAbsentHasApprovedBy
 		,@WeekendLeaveId AS WeekendLeaveId
@@ -189,8 +214,11 @@ BEGIN
 		,0 AS WeekendLeaveHasViolated
 		,ignored.IsIgnoredWeekendLeave AS WeekendLeaveHasIgnored
 		,(CASE 
-			WHEN @HasEditDisciplineRole = 1
-				AND dbo.fncCheckPermissionIgnoreDisciplineInReport(@ApproverId, gr.GroupId, ce.EmpId) = 1 THEN 1
+			WHEN EXISTS (
+				SELECT 1
+				FROM @tmpEmp tmp
+				WHERE dbo.fncCheckPermissionIgnoreDisciplineInReport(tmp.EmpId, gr.GroupId, ce.EmpId) = 1
+			) THEN 1
 			ELSE 0 END
 			) AS WeekendLeaveHasApprovedBy
 		,@SevenDaysLeaveId AS SevenDaysLeaveId
@@ -199,8 +227,11 @@ BEGIN
 		,0 AS SevenDaysLeaveHasViolated
 		,ignored.IsIgnoredSevenDaysLeave AS SevenDaysLeaveHasIgnored
 		,(CASE 
-			WHEN @HasEditDisciplineRole = 1
-				AND dbo.fncCheckPermissionIgnoreDisciplineInReport(@ApproverId, gr.GroupId, ce.EmpId) = 1 THEN 1
+			WHEN EXISTS (
+				SELECT 1
+				FROM @tmpEmp tmp
+				WHERE dbo.fncCheckPermissionIgnoreDisciplineInReport(tmp.EmpId, gr.GroupId, ce.EmpId) = 1
+			) THEN 1
 			ELSE 0 END
 			) AS SevenDaysLeaveHasApprovedBy
 		,dis.EmployeeComment
@@ -235,71 +266,6 @@ BEGIN
 			SELECT 1
 			FROM #tmpGroupIds AS tbl
 			WHERE ce.GroupId = tbl.GroupId
-			)
-		AND (
-			EXISTS (
-				SELECT 1
-				FROM @tblRole
-				WHERE RoleId IN (6, 7, 12) -- HR, SA, HR Assistant
-				)
-			OR EXISTS (
-				SELECT 1
-				FROM dbo.EmployeeSupervisor AS empS WITH (NOLOCK)
-				WHERE empS.OwnerId = @ApproverId
-					AND empS.EmpId = ce.EmpId
-					AND empS.ActionType = 8 -- edit discipline
-					AND empS.EmpId <> @ApproverId
-					AND ISNULL(empS.IsDeleted, 0) = 0
-				)
-			OR EXISTS (
-				SELECT 1
-				FROM dbo.GroupSupervisor AS grS WITH (NOLOCK)
-				WHERE gr.GroupId = grS.GroupId
-					AND @ApproverId = grS.OwnerId
-					AND grS.ActionType = 8 -- edit discipline
-					AND ce.EmpId <> @ApproverId
-					AND ISNULL(grS.IsDeleted, 0) = 0
-					AND NOT EXISTS (
-						SELECT 1
-						FROM dbo.EmployeeSupervisor AS empS WITH (NOLOCK)
-						WHERE empS.OwnerId <> @ApproverId
-							AND empS.EmpId = ce.EmpId
-							AND empS.ActionType = 8
-							AND ISNULL(empS.IsDeleted, 0) = 0
-						)
-				)
-			OR EXISTS (
-				SELECT 1
-				FROM dbo.EmployeeSupervisor AS empS WITH (NOLOCK)
-				WHERE empS.OwnerId = @ApproverId
-					AND empS.EmpId = ce.EmpId
-					AND empS.ActionType IN (2, 3)
-					AND ISNULL(empS.IsDeleted, 0) = 0
-				)
-			OR EXISTS (
-				SELECT 1
-				FROM dbo.GroupSupervisor AS grS WITH (NOLOCK)
-				WHERE ce.GroupId = grS.GroupId
-					AND @ApproverId = grS.OwnerId
-					AND grS.ActionType IN (2, 3)
-					AND ISNULL(grS.IsDeleted, 0) = 0
-					AND NOT EXISTS (
-						SELECT 1
-						FROM dbo.EmployeeSupervisor AS empS WITH (NOLOCK)
-						WHERE empS.OwnerId <> @ApproverId
-							AND empS.EmpId = ce.EmpId
-							AND empS.ActionType IN (2, 3)
-							AND ISNULL(empS.IsDeleted, 0) = 0
-						)
-				)
-			OR (
-				EXISTS (
-					SELECT 1
-					FROM @tblRole
-					WHERE RoleId = 1 -- Employee
-					)
-				AND ce.EmpId = @ApproverId
-				)
 			)
 		AND (
 			@IsLocal IS NULL
