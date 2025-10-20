@@ -28,6 +28,8 @@ AS
 		20250814@Lilac: restructure for transfer [Redmine: #235678]
 		20250828@Mira: restructure for transfer [Redmine: #235678]
 		20250903@Jay.Do: update role [Redmine: #237201]
+		20251020@Lilac: rename LocalSalary to BasicSalary [Redmine: #241810]
+
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -210,7 +212,7 @@ BEGIN
     UPDATE e
     SET e.Salary = CASE
 			WHEN e.Salary IS NOT NULL THEN e.Salary
-			WHEN e.IsLocal = 1 THEN std.LocalSalary
+			WHEN e.IsLocal = 1 THEN std.BasicSalary
 			ELSE std.ExpatSalary END
     FROM #tmpEmployeeInfo AS e
 		INNER JOIN dbo.SalaryStructureDetail AS std WITH (NOLOCK) ON std.JobLevelId = e.JobLevelId 

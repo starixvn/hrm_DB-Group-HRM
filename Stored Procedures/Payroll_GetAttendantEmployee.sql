@@ -14,6 +14,8 @@ AS
     Revisions:
         20250730@Jay.Do: init function [Redmine: #217977]
 		20250821@Jay: restructure for transfer [Redmine: #235678]
+		20251020@Lilac: rename LocalSalary to BasicSalary [Redmine: #241810]
+
     Param's Explanation:
 */
 BEGIN
@@ -162,7 +164,7 @@ BEGIN
 				WHEN ce.Salary IS NOT NULL
 					THEN ce.Salary
 				WHEN es.IsLocal = 1
-					THEN LocalSalary
+					THEN BasicSalary
 				ELSE ExpatSalary
 			END
 		) AS Salary,

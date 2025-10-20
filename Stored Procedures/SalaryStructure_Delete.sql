@@ -15,6 +15,8 @@ AS
 
     Revisions:
         20250704@Tim: init [Redmine: #230542]
+		20251020@Lilac: rename LocalSalary to BasicSalary [Redmine: #241810]
+
     Param's Explanation:
 */
 BEGIN
@@ -40,7 +42,7 @@ BEGIN
 		    ,[Name] AS '@Name'
             ,(
                 SELECT JobLevelId AS '@JobLevelId'
-		            ,LocalSalary AS '@LocalSalary'
+		            ,BasicSalary AS '@BasicSalary'
 		            ,ExpatSalary AS '@ExpatSalary'
                 FROM dbo.SalaryStructureDetail WITH (NOLOCK)
                 WHERE SalaryStructureId = @SalaryStructureId

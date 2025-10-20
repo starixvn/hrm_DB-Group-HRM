@@ -13,6 +13,7 @@ AS
     Revisions:
         20250704@Tim: init [Redmine: #230542]
 		20250812@Mira: tranfer employee [Redmine: #235678]
+		20251020@Lilac: rename LocalSalary to BasicSalary [Redmine: #241810]
 
     Param's Explanation:
 */
@@ -24,7 +25,7 @@ BEGIN
     WHERE ss.CompanyId = @CompanyId
     ORDER BY ss.[Name]
 
-    SELECT ss.SalaryStructureId, jl.JobLevelId, jl.[Name], dt.LocalSalary, dt.ExpatSalary
+    SELECT ss.SalaryStructureId, jl.JobLevelId, jl.[Name], dt.BasicSalary, dt.ExpatSalary
     FROM dbo.SalaryStructure AS ss WITH (NOLOCK)
         INNER JOIN dbo.SalaryStructureDetail AS dt WITH (NOLOCK) ON ss.SalaryStructureId = dt.SalaryStructureId
         INNER JOIN dbo.JobLevel AS jl WITH (NOLOCK) ON dt.JobLevelId = jl.JobLevelId
