@@ -33,6 +33,6 @@ BEGIN
     INNER JOIN [dbo].[PayrollItemSetting] pis WITH (NOLOCK) 
         ON ais.[PayrollItemSettingId] = pis.[PayrollItemSettingId]
     WHERE epa.[EmpId] = @EmpId
-    ORDER BY pis.[Type], ais.[ItemName];
+    ORDER BY pis.[Type] ASC, ais.[ItemName] ASC;
 
 END

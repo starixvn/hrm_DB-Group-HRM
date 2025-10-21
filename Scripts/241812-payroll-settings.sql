@@ -1,4 +1,3 @@
--- Create PayrollItemSetting table
 CREATE TABLE [dbo].[PayrollItemSetting](
 	[PayrollItemSettingId] [int] IDENTITY(1,1) NOT NULL,
 	[CompanyId] [smallint] NOT NULL,
@@ -17,7 +16,6 @@ CREATE TABLE [dbo].[PayrollItemSetting](
 ) ON [PRIMARY]
 GO
 
--- Create AllowanceItemSetting table
 CREATE TABLE [dbo].[AllowanceItemSetting](
 	[AllowanceItemSettingId] [int] IDENTITY(1,1) NOT NULL,
 	[PayrollItemSettingId] [int] NOT NULL,
@@ -35,7 +33,6 @@ CREATE TABLE [dbo].[AllowanceItemSetting](
 ) ON [PRIMARY]
 GO
 
--- Create EmployeePayroll table
 CREATE TABLE [dbo].[EmployeePayroll](
 	[EmpId] [int] NOT NULL,
 	[SalaryStructureId] [int] NOT NULL,
@@ -52,7 +49,6 @@ CREATE TABLE [dbo].[EmployeePayroll](
 ) ON [PRIMARY]
 GO
 
--- Create EmployeePayrollAllowance table
 CREATE TABLE [dbo].[EmployeePayrollAllowance](
 	[EmpId] [int] NOT NULL,
 	[AllowanceItemSettingId] [int] NOT NULL,
@@ -68,16 +64,6 @@ CREATE TABLE [dbo].[EmployeePayrollAllowance](
 ) ON [PRIMARY]
 GO
 
--- Add foreign key constraints
-ALTER TABLE [dbo].[AllowanceItemSetting] ADD CONSTRAINT [FK_AllowanceItemSetting_PayrollItemSetting] 
-FOREIGN KEY([PayrollItemSettingId]) REFERENCES [dbo].[PayrollItemSetting] ([PayrollItemSettingId])
-GO
-
-ALTER TABLE [dbo].[EmployeePayrollAllowance] ADD CONSTRAINT [FK_EmployeePayrollAllowance_AllowanceItemSetting] 
-FOREIGN KEY([AllowanceItemSettingId]) REFERENCES [dbo].[AllowanceItemSetting] ([AllowanceItemSettingId])
-GO
-
--- Add default constraints
 ALTER TABLE [dbo].[PayrollItemSetting] ADD CONSTRAINT [DF_PayrollItemSetting_Taxable] DEFAULT ((1)) FOR [Taxable]
 GO
 
@@ -90,7 +76,6 @@ GO
 ALTER TABLE [dbo].[EmployeePayroll] ADD CONSTRAINT [DF_EmployeePayroll_NoOfDependent] DEFAULT ((0)) FOR [NoOfDependent]
 GO
 
--- Insert sample data for PayrollItemSetting
 INSERT INTO [dbo].[PayrollItemSetting] ([CompanyId], [Type], [Taxable], [Category], [IsMultiSelect])
 VALUES 
 (3, 'Basic Salary', 1, 'SalaryStructure', 0),

@@ -160,7 +160,7 @@ BEGIN
 	SELECT @OldAllowanceItemSettingIds = COALESCE(@OldAllowanceItemSettingIds + ',', '') + CAST(AllowanceItemSettingId AS NVARCHAR(10))
 	FROM dbo.EmployeePayrollAllowance WITH (NOLOCK)
 	WHERE EmpId = @EmpId
-	ORDER BY AllowanceItemSettingId 
+	ORDER BY AllowanceItemSettingId ASC 
 
 	SET @xml = (
 			SELECT ce.Code AS '@Code'
