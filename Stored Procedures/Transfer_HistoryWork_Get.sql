@@ -1,6 +1,6 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE OR ALTER   PROCEDURE [dbo].[Transfer_HistoryWork_Get]
+ALTER PROCEDURE [dbo].[Transfer_HistoryWork_Get]
 (
     @EmpId INT
 )
@@ -23,8 +23,8 @@ BEGIN
 		[Value] AS [Data],
 		Field,
 		ce.Nickname
-	FROM HistoryWork hw  (NOLOCK)
-	LEFT JOIN dbo.CompanyEmployee ce (NOLOCK) ON ce.EmpId = hw.ModifiedBy
+	FROM dbo.HistoryWork AS hw (NOLOCK)
+	    LEFT JOIN dbo.CompanyEmployee AS ce (NOLOCK) ON ce.EmpId = hw.ModifiedBy
 	WHERE hw.EmpId = @EmpId
 	ORDER BY LogDate DESC
 END
