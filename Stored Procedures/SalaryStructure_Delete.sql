@@ -27,8 +27,9 @@ BEGIN
 
 	IF EXISTS (
 		SELECT 1
-		FROM dbo.CompanyEmployee WITH (NOLOCK)
-		WHERE SalaryStructureId = @SalaryStructureId
+		FROM dbo.CompanyEmployee AS ce WITH (NOLOCK) 
+		INNER JOIN EmployeePayroll AS ep ON ep.EmpId = ce.EmpId
+		WHERE ep.SalaryStructureId = @SalaryStructureId
 		)
 	BEGIN
 		SELECT @ErrCode = 1
@@ -44,6 +45,7 @@ BEGIN
                 SELECT JobLevelId AS '@JobLevelId'
 		            ,BasicSalary AS '@BasicSalary'
 		            ,ExpatSalary AS '@ExpatSalary'
+		            ,JobLevelAddOn AS '@JobLevelAddOn'
                 FROM dbo.SalaryStructureDetail WITH (NOLOCK)
                 WHERE SalaryStructureId = @SalaryStructureId
                 FOR XML PATH('Row'), TYPE

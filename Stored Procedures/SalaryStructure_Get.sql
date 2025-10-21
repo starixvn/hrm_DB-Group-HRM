@@ -25,7 +25,7 @@ BEGIN
     WHERE ss.CompanyId = @CompanyId
     ORDER BY ss.[Name]
 
-    SELECT ss.SalaryStructureId, jl.JobLevelId, jl.[Name], dt.BasicSalary, dt.ExpatSalary
+    SELECT ss.SalaryStructureId, jl.JobLevelId, jl.[Name], dt.BasicSalary, dt.ExpatSalary, dt.JobLevelAddOn
     FROM dbo.SalaryStructure AS ss WITH (NOLOCK)
         INNER JOIN dbo.SalaryStructureDetail AS dt WITH (NOLOCK) ON ss.SalaryStructureId = dt.SalaryStructureId
         INNER JOIN dbo.JobLevel AS jl WITH (NOLOCK) ON dt.JobLevelId = jl.JobLevelId
