@@ -3,7 +3,7 @@ CREATE TABLE [dbo].[PayrollItemSetting](
 	[CompanyId] [smallint] NOT NULL,
 	[Type] [nvarchar](255) NOT NULL,
 	[Taxable] [bit] NOT NULL,
-	[Category] [nvarchar](100) NOT NULL,
+	[Category] [smallint] NOT NULL,
 	[IsMultiSelect] [bit] NOT NULL,
 	[CreatedBy] [int] NULL,
 	[CreatedDate] [datetime] NULL,

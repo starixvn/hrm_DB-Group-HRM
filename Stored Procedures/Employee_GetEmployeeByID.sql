@@ -133,6 +133,12 @@ BEGIN
 		,ISNULL(ce.GroupId, - 1) AS [TeamId]
 		,g.Code
 		,g.[Name]
+		,STUFF((
+			SELECT ',' + CAST(epa.AllowanceItemSettingId AS VARCHAR(10))
+			FROM dbo.EmployeePayrollAllowance epa WITH (NOLOCK)
+			WHERE epa.EmpId = ce.EmpId
+			FOR XML PATH('')
+		), 1, 1, '') AS AllowanceItemSettingIds
 	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
 		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON ce.UserId = e.UserId
 		LEFT JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON empsum.EmpId = ce.EmpId
