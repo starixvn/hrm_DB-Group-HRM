@@ -35,7 +35,6 @@ BEGIN
     SET XACT_ABORT ON;
 
     BEGIN TRY
-        -- Update or Insert EmployeePayroll
         IF @SalaryStructureId IS NOT NULL OR @SpecialSubsidy IS NOT NULL OR @NoOfDependent > 0
         BEGIN
             MERGE [dbo].[EmployeePayroll] AS target
@@ -53,21 +52,23 @@ BEGIN
                 VALUES (source.[EmpId], source.[SalaryStructureId], source.[SpecialSubsidy], source.[NoOfDependent], GETDATE(), @ModifiedBy);
         END
 
-        -- Handle EmployeePayrollAllowance updates
+        DECLARE @NewAllowances TABLE (
+            AllowanceItemSettingId INT
+        );
+
         IF @AllowanceItemSettingIds IS NOT NULL AND @AllowanceItemSettingIds != ''
         BEGIN
-            DECLARE @NewAllowances TABLE (
-                AllowanceItemSettingId INT
-            );
-
             INSERT INTO @NewAllowances (AllowanceItemSettingId)
             SELECT CAST(value AS INT) AS AllowanceItemSettingId
             FROM STRING_SPLIT(@AllowanceItemSettingIds, ',')
             WHERE value IS NOT NULL AND value != '';
+        END
 
-            DELETE FROM [dbo].[EmployeePayrollAllowance] 
-            WHERE [EmpId] = @EmpId;
+        DELETE FROM [dbo].[EmployeePayrollAllowance] 
+        WHERE [EmpId] = @EmpId;
 
+        IF EXISTS (SELECT 1 FROM @NewAllowances)
+        BEGIN
             INSERT INTO [dbo].[EmployeePayrollAllowance] ([EmpId], [AllowanceItemSettingId], [CreatedDate], [CreatedBy])
             SELECT @EmpId, AllowanceItemSettingId, GETDATE(), @ModifiedBy
             FROM @NewAllowances;
