@@ -13,6 +13,7 @@ Revisions:
 	- 20250730@Jay: Add company name for personal setting page [Redmine: #233324]
 	- 20250812@Mira: tranfer employee [Redmine: #235678]
 	- 20241003@Lilac: add nickname (company name)
+	20251020@Mira: not get deleted/disable user [Redmine: #241816]
 Param's Explanation:
 */
 BEGIN
@@ -40,6 +41,7 @@ BEGIN
 		AND su.ActionType = 8 -- edit discipline
 		AND su.RequestType = 0
 		AND ISNULL(su.IsDeleted, 0) = 0
+		AND ISNULL(ce.Enabled, 1) = 1
 	ORDER BY ISNULL(su.DisplayOrder, 0) ASC
 		,ce.NickName ASC
 END

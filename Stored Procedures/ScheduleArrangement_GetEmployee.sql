@@ -69,7 +69,7 @@ BEGIN
 					AND ce.GroupId = gs.GroupId
 				)
 			)
-	ORDER BY ce.NickName
+	ORDER BY ce.NickName ASC
 
 	DROP TABLE #tblGroupIds
 END
