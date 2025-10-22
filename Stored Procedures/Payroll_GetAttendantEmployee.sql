@@ -1,6 +1,6 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER       PROCEDURE [dbo].[Payroll_GetAttendantEmployee]
+ALTER PROCEDURE [dbo].[Payroll_GetAttendantEmployee]
 (
 	@CompanyId INT,
 	@Date DATETIME

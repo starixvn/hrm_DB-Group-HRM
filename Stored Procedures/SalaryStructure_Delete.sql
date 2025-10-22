@@ -1,6 +1,6 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE OR ALTER PROCEDURE [dbo].[SalaryStructure_Delete]
+ALTER PROCEDURE [dbo].[SalaryStructure_Delete]
 (
     @SalaryStructureId INT
 	,@DeletedBy INT

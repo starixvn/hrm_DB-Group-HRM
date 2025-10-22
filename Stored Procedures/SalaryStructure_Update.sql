@@ -1,6 +1,6 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE OR ALTER PROCEDURE [dbo].[SalaryStructure_Update]
+ALTER PROCEDURE [dbo].[SalaryStructure_Update]
 (
     @SalaryStructureId INT
     ,@CompanyId SMALLINT
