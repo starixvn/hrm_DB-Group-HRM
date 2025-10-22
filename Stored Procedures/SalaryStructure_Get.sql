@@ -1,6 +1,6 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE OR ALTER PROCEDURE [dbo].[SalaryStructure_Get]
+ALTER   PROCEDURE [dbo].[SalaryStructure_Get]
 (
     @CompanyId SMALLINT
 )
@@ -31,5 +31,7 @@ BEGIN
         INNER JOIN dbo.JobLevel AS jl WITH (NOLOCK) ON dt.JobLevelId = jl.JobLevelId
     WHERE ss.CompanyId = @CompanyId
         AND jl.IsDeleted = 0
-    ORDER BY ss.SalaryStructureId ASC, jl.[Name] ASC
+    ORDER BY 
+		LEFT(jl.[Name], CHARINDEX('-', jl.[Name] + '-') - 1) ASC,
+		SUBSTRING(jl.[Name], CHARINDEX('-', jl.[Name] + '-') + 1, LEN(jl.[Name])) DESC;
 END
