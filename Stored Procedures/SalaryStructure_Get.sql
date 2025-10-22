@@ -23,7 +23,7 @@ BEGIN
 	SELECT ss.SalaryStructureId, ss.[Name]
     FROM dbo.SalaryStructure AS ss WITH (NOLOCK)
     WHERE ss.CompanyId = @CompanyId
-    ORDER BY ss.[Name]
+    ORDER BY ss.[Name] ASC
 
     SELECT ss.SalaryStructureId, jl.JobLevelId, jl.[Name], dt.BasicSalary, dt.ExpatSalary, dt.JobLevelAddOn
     FROM dbo.SalaryStructure AS ss WITH (NOLOCK)
@@ -31,5 +31,5 @@ BEGIN
         INNER JOIN dbo.JobLevel AS jl WITH (NOLOCK) ON dt.JobLevelId = jl.JobLevelId
     WHERE ss.CompanyId = @CompanyId
         AND jl.IsDeleted = 0
-    ORDER BY ss.SalaryStructureId, jl.[Name]
+    ORDER BY ss.SalaryStructureId ASC, jl.[Name] ASC
 END

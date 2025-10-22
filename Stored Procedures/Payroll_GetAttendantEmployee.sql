@@ -36,7 +36,7 @@ BEGIN
 		OnDate DATETIME
 	)
 
-	INSERT INTO @TempPendingCheckInOut
+	INSERT INTO @TempPendingCheckInOut (EmpId, RequestTime, RequestType, OnDate)
 	SELECT cior.EmpId,
 		RequestTime,
 		wtr.RequestType,
@@ -59,7 +59,7 @@ BEGIN
 		LeaveTypeId INT
 	)
 
-	INSERT INTO @TempEmployeeWorkingCalendar
+	INSERT INTO @TempEmployeeWorkingCalendar (EmpId, WorkDate, IsHoliday, IsOffDay, CheckIn, CheckOut, UnpaidLeaveDay, LeaveTypeId)
 	SELECT tec.EmpId,
 		tec.WorkDate,
 		tec.IsHoliday,
@@ -191,5 +191,5 @@ BEGIN
 		LEFT JOIN SalaryStructureDetail std WITH (NOLOCK) ON std.JobLevelId = ce.JobLevelId 
 			AND ce.SalaryStructureId = std.SalaryStructureId
 	GROUP BY tewc.EmpId
-	order by tewc.empid
+	ORDER BY tewc.EmpId ASC
 END

@@ -220,7 +220,54 @@ BEGIN
 		INNER JOIN dbo.SalaryStructureDetail AS std WITH (NOLOCK) ON std.JobLevelId = e.JobLevelId 
 		AND e.SalaryStructureId = std.SalaryStructureId
 
-    SELECT * FROM #tmpEmployeeInfo
+    SELECT 
+        CtrId,
+        EmpId,
+        EmployeeCode,
+        Nickname,
+        FullName,
+        Gender,
+        DOB,
+        JobTitleId,
+        JobTitle,
+        [Enabled],
+        JoinedDate,
+        ResignedDate,
+        ResignedReason,
+        isDeleted,
+        IsLocal,
+        IsSpecial,
+        CompanyDate,
+        CompanyId,
+        Company,
+        SubCompany,
+        UnitId,
+        GroupUnitId,
+        UnitCode,
+        UnitPIC,
+        UnitPICEmpId,
+        UnitSupporterEmpId,
+        TeamId,
+        TeamCode,
+        TeamName,
+        TeamPIC,
+        AccountableArea,
+        DepartmentId,
+        DepartmentCode,
+        DepartmentName,
+        DepartmentPIC,
+        DepartmentPICId,
+        DepartmentSupporterEmpId,
+        ManagementLevelId,
+        ManagementLevel,
+        JobLevelId,
+        JobLevel,
+        [Location],
+        SalaryStructureId,
+        Salary,
+        Currency,
+        CountryName
+    FROM #tmpEmployeeInfo
 
     DROP TABLE #tmpCompany
     DROP TABLE #tmpGroup
