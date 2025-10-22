@@ -27,9 +27,10 @@ BEGIN
 
 	IF EXISTS (
 		SELECT 1
-		FROM dbo.CompanyEmployee AS ce WITH (NOLOCK) 
-		INNER JOIN EmployeePayroll AS ep ON ep.EmpId = ce.EmpId
-		WHERE ep.SalaryStructureId = @SalaryStructureId
+		FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		WHERE ce.SalaryStructureId = @SalaryStructureId
+		--INNER JOIN EmployeePayroll AS ep ON ep.EmpId = ce.EmpId
+		--WHERE ep.SalaryStructureId = @SalaryStructureId
 		)
 	BEGIN
 		SELECT @ErrCode = 1
