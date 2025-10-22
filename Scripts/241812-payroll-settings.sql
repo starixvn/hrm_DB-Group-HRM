@@ -41,11 +41,7 @@ CREATE TABLE [dbo].[EmployeePayroll](
 	[EmpId] [int] NOT NULL,
 	[SalaryStructureId] [int] NOT NULL,
 	[SpecialSubsidy] [varchar](100) NULL,
-	[NoOfDependent] [int] NOT NULL,
-	[CreatedBy] [int] NULL,
-	[CreatedDate] [datetime] NULL,
-	[ModifiedBy] [int] NULL,
-	[ModifiedDate] [datetime] NULL,
+	[NoOfDependent] [int] NOT NULL
  CONSTRAINT [PK_EmployeePayroll] PRIMARY KEY CLUSTERED 
 (
 	[EmpId] ASC
@@ -90,4 +86,18 @@ VALUES
 (3, 'Mobilephone Allowance', 0, 'Allowance', 0, 1, 0),
 (3, 'Transportation Allowance', 1, 'Allowance', 0, 1, 0),
 (3, 'Heavy Job Allowance', 0, 'Allowance', 0, 1, 0)
+GO
+
+INSERT INTO [dbo].[EmployeePayroll] ([EmpId], [SalaryStructureId], [SpecialSubsidy], [NoOfDependent])
+SELECT 
+    ce.[EmpId],
+    ce.[SalaryStructureId],
+    ce.[Salary],
+    0 AS [NoOfDependent]
+FROM [dbo].[CompanyEmployee] ce
+WHERE NOT EXISTS (
+        SELECT 1 
+        FROM [dbo].[EmployeePayroll] ep 
+        WHERE ep.[EmpId] = ce.[EmpId]
+    )
 GO
