@@ -13,7 +13,7 @@ AS
     Revisions:
         20250704@Tim: init [Redmine: #230542]
 		20250812@Mira: tranfer employee [Redmine: #235678]
-		20251020@Lilac: rename LocalSalary to BasicSalary [Redmine: #241810]
+		20251020@Lilac: rename LocalSalary to BasicSalary, add JobLevelAddOn [Redmine: #241810]
 
     Param's Explanation:
 */
