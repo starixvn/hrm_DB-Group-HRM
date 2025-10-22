@@ -5,6 +5,8 @@ CREATE TABLE [dbo].[PayrollItemSetting](
 	[Taxable] [bit] NOT NULL,
 	[Category] [smallint] NOT NULL,
 	[IsMultiSelect] [bit] NOT NULL,
+	[IsActive] [bit] NULL,
+	[IsDeleted] [bit] NULL,
 	[CreatedBy] [int] NULL,
 	[CreatedDate] [datetime] NULL,
 	[ModifiedBy] [int] NULL,
@@ -22,6 +24,8 @@ CREATE TABLE [dbo].[AllowanceItemSetting](
 	[ItemName] [nvarchar](255) NOT NULL,
 	[Amount] [varchar](100) NULL,
 	[IsPercent] [bit] NOT NULL,
+	[IsActive] [bit] NULL,
+	[IsDeleted] [bit] NULL,
 	[CreatedBy] [int] NULL,
 	[CreatedDate] [datetime] NULL,
 	[ModifiedBy] [int] NULL,
@@ -76,14 +80,14 @@ GO
 ALTER TABLE [dbo].[EmployeePayroll] ADD CONSTRAINT [DF_EmployeePayroll_NoOfDependent] DEFAULT ((0)) FOR [NoOfDependent]
 GO
 
-INSERT INTO [dbo].[PayrollItemSetting] ([CompanyId], [Type], [Taxable], [Category], [IsMultiSelect])
+INSERT INTO [dbo].[PayrollItemSetting] ([CompanyId], [Type], [Taxable], [Category], [IsMultiSelect], [IsActive], [IsDeleted])
 VALUES 
-(3, 'Basic Salary', 1, 'SalaryStructure', 0),
-(3, 'Job Level Add-On', 1, 'SalaryStructure', 0),
-(3, 'Management Allowance', 1, 'Allowance', 0),
-(3, 'Overseas Allowance', 1, 'Allowance', 0),
-(3, 'Skill Set Add-On', 1, 'Allowance', 1),
-(3, 'Mobilephone Allowance', 0, 'Allowance', 0),
-(3, 'Transportation Allowance', 1, 'Allowance', 0),
-(3, 'Heavy Job Allowance', 0, 'Allowance', 0)
+(3, 'Basic Salary', 1, 'SalaryStructure', 0, 1, 0),
+(3, 'Job Level Add-On', 1, 'SalaryStructure', 0, 1, 0),
+(3, 'Management Allowance', 1, 'Allowance', 0, 1, 0),
+(3, 'Overseas Allowance', 1, 'Allowance', 0, 1, 0),
+(3, 'Skill Set Add-On', 1, 'Allowance', 1, 1, 0),
+(3, 'Mobilephone Allowance', 0, 'Allowance', 0, 1, 0),
+(3, 'Transportation Allowance', 1, 'Allowance', 0, 1, 0),
+(3, 'Heavy Job Allowance', 0, 'Allowance', 0, 1, 0)
 GO

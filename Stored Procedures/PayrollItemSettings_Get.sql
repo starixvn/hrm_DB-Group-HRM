@@ -2,6 +2,7 @@
 
 CREATE PROCEDURE PayrollItemSettings_Get (
 	@PayrollItemSettingId INT = NULL,
+	@Category NVARCHAR(255) = NULL,
 	@CompanyId INT = NULL
 )
 AS
@@ -25,11 +26,16 @@ BEGIN
 		IsMultiSelect,
 		CompanyId,
 		ais.AllowanceItemSettingId,
-		ItemName,
+		ais.ItemName,
 		ais.Amount,
-		ais.IsPercent
-	FROM PayrollItemSetting pis (NOLOCK)
-	LEFT JOIN AllowanceItemSetting ais (NOLOCK) ON pis.PayrollItemSettingId = ais.PayrollItemSettingId
+		ais.IsPercent,
+		pis.IsActive,
+		pis.IsDeleted
+	FROM [dbo].[PayrollItemSetting] pis (NOLOCK)
+	LEFT JOIN [dbo].[AllowanceItemSetting] ais (NOLOCK) ON pis.PayrollItemSettingId = ais.PayrollItemSettingId AND ais.IsActive = 1 AND ais.IsDeleted = 0
 	WHERE (@CompanyId IS NULL OR @CompanyId = pis.CompanyId)
 		AND (@PayrollItemSettingId IS NULL OR @PayrollItemSettingId = pis.PayrollItemSettingId)
+		AND (@Category IS NULL OR @Category = pis.Category)
+		AND pis.IsActive = 1
+		AND pis.IsDeleted = 0
 END
