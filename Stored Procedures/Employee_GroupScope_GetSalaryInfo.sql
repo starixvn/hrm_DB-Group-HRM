@@ -43,7 +43,8 @@ BEGIN
 	FROM #tmpEmp AS e
 	INNER JOIN dbo.EmployeePayrollAllowance AS epa WITH (NOLOCK) ON epa.EmpId = e.EmpId
 	INNER JOIN dbo.AllowanceItemSetting AS item WITH (NOLOCK) ON item.AllowanceItemSettingId = epa.AllowanceItemSettingId
-	INNER JOIN dbo.PayrollItemSetting AS p WITH (NOLOCK) ON p.PayrollItemSettingId = item.PayrollItemSettingId AND p.Category = 2 -- Allowance
+	INNER JOIN dbo.PayrollItemSetting AS p WITH (NOLOCK) ON p.PayrollItemSettingId = item.PayrollItemSettingId  AND p.Category = 2 -- Allowance
+	WHERE p.IsActive = 1 AND p.IsDeleted = 0
 
 	DROP TABLE #tmpEmp
 END
