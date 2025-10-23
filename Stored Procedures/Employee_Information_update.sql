@@ -299,7 +299,6 @@ BEGIN
 		@SpecialSubsidy = @SpecialSubsidy,
 		@NoOfDependent = 0,
 		@AllowanceItemSettingIds = @AllowanceItemSettingIds,
-		@ModifiedBy = @ModifiedBy,
 		@ErrCode = @ErrCode OUTPUT,
 		@ErrMsg = @ErrMsg OUTPUT
 

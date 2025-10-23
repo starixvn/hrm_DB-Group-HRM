@@ -1,3 +1,15 @@
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+
+/*
+	Created: 20251023@Henry
+	Task:  create payroll settings
+	DB: bodb_HRM
+
+	Revisions:
+		20251023@Henry: create payroll settings - [Redmine: #241812]
+*/
+
+
 CREATE TABLE [dbo].[PayrollItemSetting](
 	[PayrollItemSettingId] [int] IDENTITY(1,1) NOT NULL,
 	[CompanyId] [smallint] NOT NULL,
@@ -51,11 +63,7 @@ GO
 
 CREATE TABLE [dbo].[EmployeePayrollAllowance](
 	[EmpId] [int] NOT NULL,
-	[AllowanceItemSettingId] [int] NOT NULL,
-	[CreatedBy] [int] NULL,
-	[CreatedDate] [datetime] NULL,
-	[ModifiedBy] [int] NULL,
-	[ModifiedDate] [datetime] NULL,
+	[AllowanceItemSettingId] [int] NOT NULL
  CONSTRAINT [PK_EmployeePayrollAllowance] PRIMARY KEY CLUSTERED 
 (
 	[EmpId] ASC,
@@ -76,18 +84,70 @@ GO
 ALTER TABLE [dbo].[EmployeePayroll] ADD CONSTRAINT [DF_EmployeePayroll_NoOfDependent] DEFAULT ((0)) FOR [NoOfDependent]
 GO
 
+-- Insert PayrollItemSetting for all companies
 INSERT INTO [dbo].[PayrollItemSetting] ([CompanyId], [Type], [Taxable], [Category], [IsMultiSelect], [IsActive], [IsDeleted])
-VALUES 
-(3, 'Basic Salary', 1, 'SalaryStructure', 0, 1, 0),
-(3, 'Job Level Add-On', 1, 'SalaryStructure', 0, 1, 0),
-(3, 'Management Allowance', 1, 'Allowance', 0, 1, 0),
-(3, 'Overseas Allowance', 1, 'Allowance', 0, 1, 0),
-(3, 'Skill Set Add-On', 1, 'Allowance', 1, 1, 0),
-(3, 'Mobilephone Allowance', 0, 'Allowance', 0, 1, 0),
-(3, 'Transportation Allowance', 1, 'Allowance', 0, 1, 0),
-(3, 'Heavy Job Allowance', 0, 'Allowance', 0, 1, 0)
+SELECT 
+    c.CompanyId,
+    pis.[Type],
+    pis.[Taxable],
+    pis.[Category],
+    pis.[IsMultiSelect],
+    pis.[IsActive],
+    pis.[IsDeleted]
+FROM [dbo].[Company] c
+CROSS JOIN (
+    VALUES 
+    ('Basic Salary', 1, 1, 0, 1, 0),
+    ('Job Level Add-On', 1, 1, 0, 1, 0),
+    ('Management Allowance', 1, 2, 0, 1, 0),
+    ('Overseas Allowance', 1, 2, 0, 1, 0),
+    ('Skill Set Add-On', 1, 2, 1, 1, 0),
+    ('Mobilephone Allowance', 0, 2, 0, 1, 0),
+    ('Transportation Allowance', 1, 2, 0, 1, 0),
+    ('Heavy Job Allowance', 0, 2, 0, 1, 0)
+) AS pis([Type], [Taxable], [Category], [IsMultiSelect], [IsActive], [IsDeleted])
 GO
 
+-- Insert Management Allowance items for each ManagementLevel
+INSERT INTO [dbo].[AllowanceItemSetting] ([PayrollItemSettingId], [ItemName], [Amount], [IsPercent], [IsActive], [IsDeleted], [CreatedDate])
+SELECT 
+    pis.PayrollItemSettingId,
+    ml.[Name] AS ItemName,
+    'XyvgtDHO0Uo=' AS Amount, -- 0
+    0 AS IsPercent,
+    1 AS IsActive,
+    0 AS IsDeleted,
+    GETDATE() AS CreatedDate
+FROM [dbo].[ManagementLevel] ml
+CROSS JOIN [dbo].[PayrollItemSetting] pis
+INNER JOIN [dbo].[Company] c ON pis.CompanyId = c.CompanyId
+WHERE ml.IsDeleted = 0
+    AND pis.[Type] = 'Management Allowance'
+GO
+
+
+-- Insert ManagementAllowance for users based on their ManagementLevel
+INSERT INTO [dbo].[EmployeePayrollAllowance] ([EmpId], [AllowanceItemSettingId])
+SELECT 
+    ce.[EmpId],
+    ais.[AllowanceItemSettingId]
+FROM [dbo].[CompanyEmployee] ce
+INNER JOIN [dbo].[ManagementLevel] ml ON ce.[ManagementLevelId] = ml.[ManagementLevelId]
+INNER JOIN [dbo].[PayrollItemSetting] pis ON pis.[CompanyId] = ce.[CompanyId] 
+    AND pis.[Type] = 'Management Allowance'
+INNER JOIN [dbo].[AllowanceItemSetting] ais ON ais.[PayrollItemSettingId] = pis.[PayrollItemSettingId]
+    AND ais.[ItemName] = ml.[Name]
+WHERE ce.[ManagementLevelId] IS NOT NULL
+    AND ml.[IsDeleted] = 0
+    AND NOT EXISTS (
+        SELECT 1 
+        FROM [dbo].[EmployeePayrollAllowance] epa 
+        WHERE epa.[EmpId] = ce.[EmpId] 
+            AND epa.[AllowanceItemSettingId] = ais.[AllowanceItemSettingId]
+    )
+GO
+
+-- Insert EmployeePayroll for all employees from data of CompanyEmployee
 INSERT INTO [dbo].[EmployeePayroll] ([EmpId], [SalaryStructureId], [SpecialSubsidy], [NoOfDependent])
 SELECT 
     ce.[EmpId],
@@ -101,3 +161,7 @@ WHERE NOT EXISTS (
         WHERE ep.[EmpId] = ce.[EmpId]
     )
 GO
+
+
+
+

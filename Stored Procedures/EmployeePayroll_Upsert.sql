@@ -7,7 +7,6 @@ CREATE OR ALTER PROCEDURE [dbo].[EmployeePayroll_Upsert]
     @SpecialSubsidy VARCHAR(100) = NULL,
     @NoOfDependent INT = 0,
     @AllowanceItemSettingIds NVARCHAR(MAX) = NULL,
-    @ModifiedBy INT,
     @ErrCode INT = 0 OUTPUT,
     @ErrMsg NVARCHAR(200) = '' OUTPUT
 )
@@ -44,12 +43,10 @@ BEGIN
                 UPDATE SET 
                     [SalaryStructureId] = ISNULL(source.[SalaryStructureId], target.[SalaryStructureId]),
                     [SpecialSubsidy] = ISNULL(source.[SpecialSubsidy], target.[SpecialSubsidy]),
-                    [NoOfDependent] = ISNULL(source.[NoOfDependent], target.[NoOfDependent]),
-                    [ModifiedDate] = GETDATE(),
-                    [ModifiedBy] = @ModifiedBy
+                    [NoOfDependent] = ISNULL(source.[NoOfDependent], target.[NoOfDependent])
             WHEN NOT MATCHED THEN
-                INSERT ([EmpId], [SalaryStructureId], [SpecialSubsidy], [NoOfDependent], [CreatedDate], [CreatedBy])
-                VALUES (source.[EmpId], source.[SalaryStructureId], source.[SpecialSubsidy], source.[NoOfDependent], GETDATE(), @ModifiedBy);
+                INSERT ([EmpId], [SalaryStructureId], [SpecialSubsidy], [NoOfDependent])
+                VALUES (source.[EmpId], source.[SalaryStructureId], source.[SpecialSubsidy], source.[NoOfDependent]);
         END
 
         DECLARE @NewAllowances TABLE (
@@ -69,8 +66,8 @@ BEGIN
 
         IF EXISTS (SELECT 1 FROM @NewAllowances)
         BEGIN
-            INSERT INTO [dbo].[EmployeePayrollAllowance] ([EmpId], [AllowanceItemSettingId], [CreatedDate], [CreatedBy])
-            SELECT @EmpId, AllowanceItemSettingId, GETDATE(), @ModifiedBy
+            INSERT INTO [dbo].[EmployeePayrollAllowance] ([EmpId], [AllowanceItemSettingId])
+            SELECT @EmpId, AllowanceItemSettingId
             FROM @NewAllowances;
         END
     END TRY
