@@ -57,5 +57,7 @@ BEGIN
     INSERT INTO dbo.MenuItem (FunctionId, SiteId, ParentId, MenuItemName, URL, IsActive, DisplayOrder)
     VALUES (@PayrollSettingsFunctionId, @SiteId, @ParentMenuId, 'Payroll Settings', '/payrollsettings/index', 1, 12)
 
+    Update [dbo].[Function] set FunctionName ='Salary Structure' WHERE FunctionName = 'Salary Structure Configuration'
+
     SET @RowIndex = @RowIndex + 1
 END
