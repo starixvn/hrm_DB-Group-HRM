@@ -155,7 +155,7 @@ BEGIN
 	SELECT @Roles_old = COALESCE(@Roles_old + ',', '') + CONVERT(NVARCHAR(2), RoleId)
 	FROM dbo.EmployeeRole WITH (NOLOCK)
 	WHERE EmployeeId = @EmpId
-	Order by RoleID
+	Order by RoleID ASC
 
 	SELECT @OldAllowanceItemSettingIds = COALESCE(@OldAllowanceItemSettingIds + ',', '') + CAST(AllowanceItemSettingId AS NVARCHAR(10))
 	FROM dbo.EmployeePayrollAllowance WITH (NOLOCK)
