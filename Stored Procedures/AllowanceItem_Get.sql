@@ -1,6 +1,6 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE OR ALTER PROCEDURE [dbo].[AllowanceItemSetting_Get]
+CREATE OR ALTER PROCEDURE [dbo].[AllowanceItem_Get]
 (
     @PayrollItemSettingId INT = NULL,
     @CompanyId SMALLINT = NULL
