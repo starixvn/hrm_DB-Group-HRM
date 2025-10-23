@@ -104,7 +104,6 @@ CROSS JOIN (
     ('Skill Set Add-On', 1, 2, 1, 1, 0),
     ('Mobilephone Allowance', 0, 2, 0, 1, 0),
     ('Transportation Allowance', 1, 2, 0, 1, 0),
-    ('Heavy Job Allowance', 0, 2, 0, 1, 0)
 ) AS pis([Type], [Taxable], [Category], [IsMultiSelect], [IsActive], [IsDeleted])
 GO
 
