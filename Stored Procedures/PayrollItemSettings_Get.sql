@@ -32,7 +32,7 @@ BEGIN
 		pis.IsActive,
 		pis.IsDeleted
 	FROM [dbo].[PayrollItemSetting] pis (NOLOCK)
-	LEFT JOIN [dbo].[AllowanceItemSetting] ais (NOLOCK) ON pis.PayrollItemSettingId = ais.PayrollItemSettingId AND ais.IsActive = 1 AND ais.IsDeleted = 0
+	INNER JOIN [dbo].[AllowanceItemSetting] ais (NOLOCK) ON pis.PayrollItemSettingId = ais.PayrollItemSettingId AND ais.IsActive = 1 AND ais.IsDeleted = 0
 	WHERE (@CompanyId IS NULL OR @CompanyId = pis.CompanyId)
 		AND (@PayrollItemSettingId IS NULL OR @PayrollItemSettingId = pis.PayrollItemSettingId)
 		AND (@Category IS NULL OR @Category = pis.Category)
