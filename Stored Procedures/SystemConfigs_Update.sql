@@ -4,6 +4,7 @@ ALTER PROCEDURE [dbo].[SystemConfigs_Update]
     @CompanyId INT,
     @SettingsJson NVARCHAR(MAX),
     @ModifiedBy INT,
+    @ObjectTypeId INT,
 	@ErrCode INT = 0 OUTPUT,
 	@ErrMsg VARCHAR(200) = '' OUTPUT
 AS
@@ -16,6 +17,7 @@ Original:
 
 Revisions:
 	20250725@Lilac.Nguyen: write log
+	20251023@Lilac.Nguyen: edit object type
 
 */
 
@@ -71,7 +73,7 @@ BEGIN
     BEGIN
         EXEC dbo.ActivityLog_Insert 
             @UserId = @ModifiedBy,
-            @ObjectTypeId = 5,
+            @ObjectTypeId = @ObjectTypeId,
             @ObjectId = @CompanyId,
             @OldData = @logOldData,
             @Data = @logData,
@@ -102,7 +104,7 @@ BEGIN
     BEGIN
         EXEC dbo.ActivityLog_Insert 
             @UserId = @ModifiedBy,
-            @ObjectTypeId = 5,
+            @ObjectTypeId = @ObjectTypeId,
             @ObjectId = @CompanyId,
             @OldData = NULL,
             @Data = @logData,
