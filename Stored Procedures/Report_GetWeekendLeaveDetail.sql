@@ -212,7 +212,7 @@ BEGIN
             INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON emp.UserId = ce.UserId
 			INNER JOIN #tmpEmployee AS em ON ce.EmpId = em.EmpId
 			INNER JOIN (
-			SELECT EmpId
+			SELECT EmpId, WorkDate, IsLeaveDay, LeaveTypeId, LeaveTypeId2, LeaveDay
 			FROM dbo.EmployeeCalendar WITH (NOLOCK)
 			WHERE (
 					@EmployeeId = EmpId
