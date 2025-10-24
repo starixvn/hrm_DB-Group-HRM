@@ -1,6 +1,6 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER       PROCEDURE [dbo].[Payroll_GetAttendantEmployee]
+ALTER PROCEDURE [dbo].[Payroll_GetAttendantEmployee]
 (
 	@CompanyId INT,
 	@Date DATETIME
@@ -14,6 +14,8 @@ AS
     Revisions:
         20250730@Jay.Do: init function [Redmine: #217977]
 		20250821@Jay: restructure for transfer [Redmine: #235678]
+		20251020@Lilac: rename LocalSalary to BasicSalary [Redmine: #241810]
+
     Param's Explanation:
 */
 BEGIN
@@ -34,7 +36,7 @@ BEGIN
 		OnDate DATETIME
 	)
 
-	INSERT INTO @TempPendingCheckInOut
+	INSERT INTO @TempPendingCheckInOut (EmpId, RequestTime, RequestType, OnDate)
 	SELECT cior.EmpId,
 		RequestTime,
 		wtr.RequestType,
@@ -57,7 +59,7 @@ BEGIN
 		LeaveTypeId INT
 	)
 
-	INSERT INTO @TempEmployeeWorkingCalendar
+	INSERT INTO @TempEmployeeWorkingCalendar (EmpId, WorkDate, IsHoliday, IsOffDay, CheckIn, CheckOut, UnpaidLeaveDay, LeaveTypeId)
 	SELECT tec.EmpId,
 		tec.WorkDate,
 		tec.IsHoliday,
@@ -162,7 +164,7 @@ BEGIN
 				WHEN ce.Salary IS NOT NULL
 					THEN ce.Salary
 				WHEN es.IsLocal = 1
-					THEN LocalSalary
+					THEN BasicSalary
 				ELSE ExpatSalary
 			END
 		) AS Salary,
@@ -189,5 +191,5 @@ BEGIN
 		LEFT JOIN SalaryStructureDetail std WITH (NOLOCK) ON std.JobLevelId = ce.JobLevelId 
 			AND ce.SalaryStructureId = std.SalaryStructureId
 	GROUP BY tewc.EmpId
-	order by tewc.empid
+	ORDER BY tewc.EmpId ASC
 END

@@ -14,6 +14,8 @@ AS
     Revisions:
         20250730@Jay.Do: Get data for payroll calculation [Redmine: #233324]
 		20250821@Jay: restructure for transfer [Redmine: #235678]
+		20251020@Lilac: rename LocalSalary to BasicSalary [Redmine: #241810]
+
     Param's Explanation:
 */
 BEGIN
@@ -68,7 +70,7 @@ BEGIN
 				ELSE 0 
 			END
 		) AS TotalUnpaidLeaves,
-		MAX(LocalSalary) AS Salary,
+		MAX(BasicSalary) AS Salary,
 		MAX(
 			CASE 
 				WHEN es.WorkingDays IS NOT NULL THEN es.WorkingDays

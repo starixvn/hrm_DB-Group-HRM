@@ -1,6 +1,6 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE OR ALTER PROCEDURE [dbo].[SalaryStructure_Delete]
+ALTER PROCEDURE [dbo].[SalaryStructure_Delete]
 (
     @SalaryStructureId INT
 	,@DeletedBy INT
@@ -15,6 +15,8 @@ AS
 
     Revisions:
         20250704@Tim: init [Redmine: #230542]
+		20251020@Lilac: rename LocalSalary to BasicSalary [Redmine: #241810]
+
     Param's Explanation:
 */
 BEGIN
@@ -25,8 +27,10 @@ BEGIN
 
 	IF EXISTS (
 		SELECT 1
-		FROM dbo.CompanyEmployee WITH (NOLOCK)
-		WHERE SalaryStructureId = @SalaryStructureId
+		FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		WHERE ce.SalaryStructureId = @SalaryStructureId
+		--INNER JOIN EmployeePayroll AS ep ON ep.EmpId = ce.EmpId
+		--WHERE ep.SalaryStructureId = @SalaryStructureId
 		)
 	BEGIN
 		SELECT @ErrCode = 1
@@ -40,8 +44,9 @@ BEGIN
 		    ,[Name] AS '@Name'
             ,(
                 SELECT JobLevelId AS '@JobLevelId'
-		            ,LocalSalary AS '@LocalSalary'
+		            ,BasicSalary AS '@BasicSalary'
 		            ,ExpatSalary AS '@ExpatSalary'
+		            ,JobLevelAddOn AS '@JobLevelAddOn'
                 FROM dbo.SalaryStructureDetail WITH (NOLOCK)
                 WHERE SalaryStructureId = @SalaryStructureId
                 FOR XML PATH('Row'), TYPE

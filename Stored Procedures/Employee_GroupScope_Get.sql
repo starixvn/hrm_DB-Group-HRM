@@ -28,6 +28,8 @@ AS
 		20250814@Lilac: restructure for transfer [Redmine: #235678]
 		20250828@Mira: restructure for transfer [Redmine: #235678]
 		20250903@Jay.Do: update role [Redmine: #237201]
+		20251020@Lilac: rename LocalSalary to BasicSalary [Redmine: #241810]
+
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -137,6 +139,7 @@ BEGIN
 		ce.ManagementLevelId, ce.JobLevelId,
 		ct.CountryCodeISO3,
 		ce.SalaryStructureId, ce.Salary,
+		--ep.SalaryStructureId, ep.SpecialSubsidy AS Salary,
 		tmpc.CurrencyCode,
 		ect.CountryName
 	FROM dbo.Employee AS e WITH (NOLOCK)
@@ -153,6 +156,8 @@ BEGIN
 		LEFT JOIN dbo.CompanyEmployee AS eg WITH (NOLOCK) ON eg.EmpId = g.PICEmpId
 		LEFT JOIN dbo.Country AS ct WITH (NOLOCK) ON ct.CountryCode = c.CountryCode
 		LEFT JOIN dbo.Country AS ect (NOLOCK) ON s.CountryCode = ect.CountryCode
+		--LEFT JOIN dbo.EmployeePayroll AS ep (NOLOCK) ON ep.EmpId = ce.EmpId
+
 	WHERE (ce.CompanyId NOT IN (@NexcelId, @LumiId, @NexVisionId) OR ce.IsSpecialUser = 0)
 		AND (@enable IS NULL OR (ISNULL(ce.isDeleted, 0) = 0 AND ce.Enabled = @enable))
 		AND (@isDelete IS NULL OR ISNULL(ce.isDeleted, 0) = @isDelete)
@@ -210,13 +215,60 @@ BEGIN
     UPDATE e
     SET e.Salary = CASE
 			WHEN e.Salary IS NOT NULL THEN e.Salary
-			WHEN e.IsLocal = 1 THEN std.LocalSalary
+			WHEN e.IsLocal = 1 THEN std.BasicSalary
 			ELSE std.ExpatSalary END
     FROM #tmpEmployeeInfo AS e
 		INNER JOIN dbo.SalaryStructureDetail AS std WITH (NOLOCK) ON std.JobLevelId = e.JobLevelId 
 		AND e.SalaryStructureId = std.SalaryStructureId
 
-    SELECT * FROM #tmpEmployeeInfo
+    SELECT 
+        CtrId,
+        EmpId,
+        EmployeeCode,
+        Nickname,
+        FullName,
+        Gender,
+        DOB,
+        JobTitleId,
+        JobTitle,
+        [Enabled],
+        JoinedDate,
+        ResignedDate,
+        ResignedReason,
+        isDeleted,
+        IsLocal,
+        IsSpecial,
+        CompanyDate,
+        CompanyId,
+        Company,
+        SubCompany,
+        UnitId,
+        GroupUnitId,
+        UnitCode,
+        UnitPIC,
+        UnitPICEmpId,
+        UnitSupporterEmpId,
+        TeamId,
+        TeamCode,
+        TeamName,
+        TeamPIC,
+        AccountableArea,
+        DepartmentId,
+        DepartmentCode,
+        DepartmentName,
+        DepartmentPIC,
+        DepartmentPICId,
+        DepartmentSupporterEmpId,
+        ManagementLevelId,
+        ManagementLevel,
+        JobLevelId,
+        JobLevel,
+        [Location],
+        SalaryStructureId,
+        Salary,
+        Currency,
+        CountryName
+    FROM #tmpEmployeeInfo
 
     DROP TABLE #tmpCompany
     DROP TABLE #tmpGroup
