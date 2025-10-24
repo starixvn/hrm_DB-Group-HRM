@@ -9,7 +9,7 @@ DB: HRM
 Original: 
 
 Revisions:  
-	Jay.Do@20251021: sort job level [#241812]
+	20251021@Jay.Do: sort job level [#241812]
 Param's Explanation:
 */
 BEGIN
