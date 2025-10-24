@@ -137,7 +137,6 @@ BEGIN
 		d.DepartmentId, d.Code AS DepartmentCode, d.[Name], ed.Nickname, d.PICEmpId, d.SupporterEmpId,
 		ce.ManagementLevelId, ce.JobLevelId,
 		ct.CountryCodeISO3,
-		--ep.SalaryStructureId, ep.SpecialSubsidy AS Salary,
 		tmpc.CurrencyCode,
 		ect.CountryName
 	FROM dbo.Employee AS e WITH (NOLOCK)
@@ -154,7 +153,6 @@ BEGIN
 		LEFT JOIN dbo.CompanyEmployee AS eg WITH (NOLOCK) ON eg.EmpId = g.PICEmpId
 		LEFT JOIN dbo.Country AS ct WITH (NOLOCK) ON ct.CountryCode = c.CountryCode
 		LEFT JOIN dbo.Country AS ect (NOLOCK) ON s.CountryCode = ect.CountryCode
-		--LEFT JOIN dbo.EmployeePayroll AS ep (NOLOCK) ON ep.EmpId = ce.EmpId
 
 	WHERE (ce.CompanyId NOT IN (@NexcelId, @LumiId, @NexVisionId) OR ce.IsSpecialUser = 0)
 		AND (@enable IS NULL OR (ISNULL(ce.isDeleted, 0) = 0 AND ce.Enabled = @enable))
@@ -210,25 +208,16 @@ BEGIN
 		INNER JOIN dbo.JobLevel AS jl WITH (NOLOCK) ON ejg.JobGradeId = jl.JobLevelId
     WHERE e.CompanyId IN (@NexcelId, @LumiId, @NexVisionId)
 
-    SELECT CtrId, EmpId,
+    SELECT 
+        CtrId,
+        EmpId,
         EmployeeCode,
-        Nickname, FullName,
+        Nickname,
+        FullName,
         Gender,
         DOB,
         JobTitleId,
-        [Enabled],
-        JoinedDate,
-        ResignedDate, ResignedReason,
-        isDeleted, IsLocal, IsSpecial,
-        CompanyDate, CompanyId, Company, SubCompany,
-        UnitId, GroupUnitId, UnitCode, UnitPIC, UnitPICEmpId, UnitSupporterEmpId,
-        TeamId, TeamCode, TeamName, TeamPIC, AccountableArea,
-        DepartmentId, DepartmentCode, DepartmentName, DepartmentPIC, DepartmentPICId, DepartmentSupporterEmpId,
-        ManagementLevelId, JobLevelId,
-        [Location],
-        Currency,
-        CountryName
-	FROM #tmpEmployeeInfo
+        JobTitle,
         [Enabled],
         JoinedDate,
         ResignedDate,
@@ -262,8 +251,6 @@ BEGIN
         JobLevelId,
         JobLevel,
         [Location],
-        SalaryStructureId,
-        Salary,
         Currency,
         CountryName
     FROM #tmpEmployeeInfo
