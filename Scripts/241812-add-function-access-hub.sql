@@ -17,6 +17,7 @@ BEGIN
     DECLARE @SiteId SMALLINT = NULL,
         @EmployeeManagementParentId INT = NULL,
         @PayrollInfoFunctionId INT = NULL,
+        @HRSpaceParentId INT = NULL,
         @PayrollSettingsFunctionId INT = NULL,
         @ParentMenuId INT = NULL
 
@@ -45,7 +46,16 @@ BEGIN
     INSERT INTO dbo.[Function] (SiteId, FunctionKey, FunctionName, ParentId, Policy, IsActive)
     VALUES (@SiteId, 'PayrollInfoWithAmount', 'Payroll Info With Amount', @PayrollInfoFunctionId, NULL, 1)
 
-    -- Add menu item for Payroll Settings
+    -- Get HR Space FunctionId as parent
+    SELECT @HRSpaceParentId = FunctionId
+    FROM dbo.[Function]
+    WHERE SiteId = @SiteId AND FunctionKey = 'HRSpace'
+
+    -- Insert Payroll Setting function under HR Space
+    INSERT INTO dbo.[Function] (SiteId, FunctionKey, FunctionName, ParentId, Policy, IsActive)
+    VALUES (@SiteId, 'PayrollSetting', 'Payroll Setting', @HRSpaceParentId, NULL, 1)
+
+    -- Get Payroll Setting FunctionId for menu item
     SELECT @PayrollSettingsFunctionId = FunctionId
     FROM dbo.[Function]
     WHERE SiteId = @SiteId AND FunctionKey = 'PayrollSetting'
