@@ -13,6 +13,7 @@ DB: HRM
 
 Revisions:
         20250813@Jay: change db structure [Redmine: #235678]
+        20251020@Mira: get deleted/disable user [Redmine: #241816]
 Param's Explanation:
 */
 BEGIN
@@ -35,9 +36,7 @@ BEGIN
 		,ce.NickName
 	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
 		INNER JOIN Employee e (NOLOCK) ON ce.UserId = e.UserId
-	WHERE ce.[Enabled] = 1
-		AND ce.isDeleted = 0
-		AND (
+	WHERE (
 			ce.NickName LIKE @q
 			OR e.FullName LIKE @q
 			)
@@ -59,7 +58,6 @@ BEGIN
 				SELECT 1
 				FROM dbo.EmployeeSupervisor AS es WITH (NOLOCK)
 				WHERE es.EmpId = @ActorId
-					AND ISNULL(es.IsDeleted, 0) = 0
 					AND es.ActionType = @ShiftManagerRoleId
 					AND es.OwnerId = ce.EmpId
 				)
@@ -67,12 +65,11 @@ BEGIN
 				SELECT 1
 				FROM dbo.GroupSupervisor AS gs WITH (NOLOCK)
 				WHERE gs.OwnerId = @ActorId
-					AND ISNULL(gs.IsDeleted, 0) = 0
 					AND gs.ActionType = @ShiftManagerRoleId
 					AND ce.GroupId = gs.GroupId
 				)
 			)
-	ORDER BY ce.NickName
+	ORDER BY ce.NickName ASC
 
 	DROP TABLE #tblGroupIds
 END

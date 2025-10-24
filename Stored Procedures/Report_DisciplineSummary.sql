@@ -5,13 +5,12 @@ ALTER PROCEDURE [dbo].[Report_DisciplineSummary]
     @CompanyId SMALLINT
     ,@FromDate DATE
     ,@ToDate DATE
-    ,@ApproverId INT
+    ,@ApproverUserId INT
     ,@TeamIds VARCHAR(MAX) = ''
     ,@EmployeeId INT = NULL
     ,@ReasonId INT = NULL
     ,@IsLocal BIT = NULL
     ,@IsShowAll BIT = 0
-    ,@RoleIds VARCHAR(1000) = ''
 )
 AS
 /*
@@ -23,6 +22,7 @@ AS
         20250404@Tim: add param @RoleIds [Redmine: #222886]
         20250627@Tim: fix bug rule ignored
         20250813@Jay: change db structure [Redmine: #235678]
+		20251020@Mira: remove get data by hardcode roleId [Redmine: #241816]
     Param's Explanation:
 */
 BEGIN
@@ -39,6 +39,14 @@ BEGIN
 		,@UnplannedLeaveId TINYINT = 9
 		,@WeekendLeaveId TINYINT = 10
 		,@SevenDaysLeaveId TINYINT = 11
+
+	DECLARE @tmpEmp TABLE (EmpId INT)
+    INSERT INTO @tmpEmp (EmpId)
+    SELECT EmpId
+    FROM dbo.CompanyEmployee WITH (NOLOCK)
+    WHERE UserId = @ApproverUserId
+        AND [Enabled] = 1
+        AND IsDeleted = 0;
 
 	CREATE TABLE #tmpGroupIds (GroupId INT)
 
@@ -248,22 +256,6 @@ BEGIN
 			)
 		AND tbldis.OtherDisciplineScore = 0
 
-	DECLARE @Is_HR_SA BIT
-	DECLARE @tblRole TABLE (RoleId SMALLINT)
-
-	INSERT INTO @tblRole (RoleId)
-	SELECT value
-	FROM STRING_SPLIT(@RoleIds, ',')
-
-	SET @Is_HR_SA = CASE 
-			WHEN EXISTS (
-					SELECT 1
-					FROM @tblRole
-					WHERE RoleId IN (6, 7, 12) -- HR, SA, HR Assistant
-					) THEN 1
-			ELSE 0
-			END
-
 	SELECT SUM(ISNULL(empD.ChangeShift, 0)) AS ChangeShift
 		,SUM(ISNULL(empD.MissingCheckInOut, 0)) AS MissingCheckInOut
 		,SUM(ISNULL(empD.LateIn, 0)) AS LateIn
@@ -280,37 +272,38 @@ BEGIN
 		,SUM(ISNULL(empD.OtherDisciplineScore, 0) + ISNULL(empF.ApproverSubtractScore, 0)) AS ApproverSubtractScore
 		,Permission = (CASE 
 			WHEN EXISTS (
-					SELECT 1
-					FROM @tblRole
-					WHERE RoleId = 8 -- edit discipline
-					)
-				AND (
-					EXISTS (
 						SELECT 1
 						FROM dbo.EmployeeSupervisor AS empS WITH (NOLOCK)
-						WHERE empS.OwnerId = @ApproverId
+						WHERE empS.OwnerId IN (
+								SELECT EmpId FROM @tmpEmp
+							)
 							AND empS.EmpId = ce.EmpId
 							AND empS.ActionType = 8 -- edit discipline
-							AND empS.EmpId <> @ApproverId
+							AND empS.EmpId NOT IN (
+								SELECT EmpId FROM @tmpEmp
+							)
 							AND ISNULL(empS.IsDeleted, 0) = 0
 						)
-					OR EXISTS (
-						SELECT 1
-						FROM dbo.GroupSupervisor AS grS WITH (NOLOCK)
-						WHERE gr.GroupId = grS.GroupId
-							AND @ApproverId = grS.OwnerId
-							AND grS.ActionType = 8 -- edit discipline
-							-- AND emp.EmpId <> @ApproverId
-							AND ISNULL(grS.IsDeleted, 0) = 0
-							AND NOT EXISTS (
-								SELECT 1
-								FROM dbo.EmployeeSupervisor AS empS WITH (NOLOCK)
-								WHERE empS.OwnerId <> @ApproverId
-									AND empS.EmpId = ce.EmpId
-									AND empS.ActionType = 8
-									AND ISNULL(empS.IsDeleted, 0) = 0
-								)
+				OR EXISTS (
+					SELECT 1
+					FROM dbo.GroupSupervisor AS grS WITH (NOLOCK)
+					WHERE gr.GroupId = grS.GroupId
+						AND grS.OwnerId IN (
+							SELECT EmpId FROM @tmpEmp
 						)
+						AND grS.ActionType = 8 -- edit discipline
+						-- AND emp.EmpId <> @ApproverId
+						AND ISNULL(grS.IsDeleted, 0) = 0
+						AND NOT EXISTS (
+							SELECT 1
+							FROM dbo.EmployeeSupervisor AS empS WITH (NOLOCK)
+							WHERE empS.OwnerId NOT IN (
+									SELECT EmpId FROM @tmpEmp
+								)
+								AND empS.EmpId = ce.EmpId
+								AND empS.ActionType = 8
+								AND ISNULL(empS.IsDeleted, 0) = 0
+							)
 					) THEN 2 -- Host
 			ELSE 1 END
 			)
@@ -348,67 +341,6 @@ BEGIN
 					FROM #tmpEmployeeDiscipline AS tmpd
 					WHERE ce.EmpId = tmpd.EmpId
 					)
-				)
-			)
-		AND (
-			@Is_HR_SA = 1 -- SA, HR can view all member of company
-			OR EXISTS (
-				SELECT 1
-				FROM dbo.EmployeeSupervisor AS empS WITH (NOLOCK)
-				WHERE empS.OwnerId = @ApproverId
-					AND empS.EmpId = ce.EmpId
-					AND empS.ActionType = 8 -- edit discipline
-					AND empS.EmpId <> @ApproverId
-					AND ISNULL(empS.IsDeleted, 0) = 0
-				)
-			OR EXISTS (
-				SELECT 1
-				FROM dbo.GroupSupervisor AS grS WITH (NOLOCK)
-				WHERE gr.GroupId = grS.GroupId
-					AND @ApproverId = grS.OwnerId
-					AND grS.ActionType = 8 -- edit discipline
-					AND ce.EmpId <> @ApproverId
-					AND ISNULL(grS.IsDeleted, 0) = 0
-					AND NOT EXISTS (
-						SELECT 1
-						FROM dbo.EmployeeSupervisor AS empS WITH (NOLOCK)
-						WHERE empS.OwnerId <> @ApproverId
-							AND empS.EmpId = ce.EmpId
-							AND empS.ActionType = 8
-							AND ISNULL(emps.IsDeleted, 0) = 0
-						)
-				)
-			OR EXISTS (
-				SELECT 1
-				FROM dbo.EmployeeSupervisor AS empS WITH (NOLOCK)
-				WHERE empS.OwnerId = @ApproverId
-					AND empS.EmpId = ce.EmpId
-					AND empS.ActionType IN (2, 3) -- Approver and Verifier
-					AND ISNULL(empS.IsDeleted, 0) = 0
-				)
-			OR EXISTS (
-				SELECT 1
-				FROM dbo.GroupSupervisor AS grS WITH (NOLOCK)
-				WHERE gr.GroupId = grS.GroupId
-					AND @ApproverId = grS.OwnerId
-					AND grS.ActionType IN (2, 3) -- Approver and Verifier
-					AND ISNULL(grS.IsDeleted, 0) = 0
-					AND NOT EXISTS (
-						SELECT 1
-						FROM dbo.EmployeeSupervisor AS empS WITH (NOLOCK)
-						WHERE empS.OwnerId <> @ApproverId
-							AND empS.EmpId = ce.EmpId
-							AND empS.ActionType IN (2, 3)
-							AND ISNULL(emps.IsDeleted, 0) = 0
-						)
-				)
-			OR (
-				EXISTS (
-					SELECT 1
-					FROM @tblRole
-					WHERE RoleId = 1 -- Employee
-					)
-				AND ce.EmpId = @ApproverId
 				)
 			)
 		AND (
