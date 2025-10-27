@@ -23,6 +23,8 @@ BEGIN
     SET NOCOUNT ON;
 
     SELECT 
+        pis.[PayrollItemSettingId],
+        pis.[Type],
         ais.[AllowanceItemSettingId],
         ais.[ItemName],
         ais.[Amount],
