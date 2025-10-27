@@ -1,8 +1,6 @@
-USE [bodb_HRM]
-GO
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE PROCEDURE [dbo].[AllowanceItem_Create] (
+CREATE OR ALTER PROCEDURE [dbo].[AllowanceItem_Create] (
 	@PayrollItemSettingId INT,
 	@ItemName NVARCHAR(255),
 	@Amount NVARCHAR(255),
@@ -12,13 +10,13 @@ CREATE PROCEDURE [dbo].[AllowanceItem_Create] (
 )
 AS
 /*
-Created: 20251021@Jay.Do
-Task: create allowance item
-DB: HRM
-Original: 
+	Created: 20251021@Jay.Do
+	Task: create allowance item
+	DB: HRM
+	Original: 
 
-Revisions:  
-Param's Explanation:
+	Revisions:  
+	Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;

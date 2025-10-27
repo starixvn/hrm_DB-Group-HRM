@@ -1,3 +1,12 @@
+/*
+    Created: Henry@20252710
+    Task: add function access hub
+    DB: bodb_HRM
+
+    Revisions:
+        20252710@Henry: add function access hub [Redmine: #241812]
+*/
+
 USE bodb_IUC
 GO
 
