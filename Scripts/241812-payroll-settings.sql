@@ -1,14 +1,14 @@
-/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
-
 /*
-	Created: 20251023@Henry
-	Task:  create payroll settings
-	DB: bodb_HRM
+    Created: Henry@20252710
+    Task: create payroll settings
+    DB: bodb_HRM
 
-	Revisions:
-		20251023@Henry: create payroll settings - [Redmine: #241812]
+    Revisions:
+        20252710@Henry: init table PayrollItemSetting, AllowanceItemSetting, EmployeePayroll, EmployeePayrollAllowance [Redmine: #241812]
 */
 
+USE [bodb_HRM]
+GO
 
 CREATE TABLE [dbo].[PayrollItemSetting](
 	[PayrollItemSettingId] [int] IDENTITY(1,1) NOT NULL,
