@@ -16,7 +16,7 @@ AS
     Revisions:
         20250704@Tim: init [Redmine: #230542]
 		20251020@Lilac: rename LocalSalary to BasicSalary [Redmine: #241810]
-
+		20251028@Henry: move salary structure to employee payroll [Redmine: #241812]
     Param's Explanation:
 */
 BEGIN
@@ -27,10 +27,9 @@ BEGIN
 
 	IF EXISTS (
 		SELECT 1
-		FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
-		WHERE ce.SalaryStructureId = @SalaryStructureId
-		--INNER JOIN EmployeePayroll AS ep ON ep.EmpId = ce.EmpId
-		--WHERE ep.SalaryStructureId = @SalaryStructureId
+		FROM dbo.CompanyEmployee AS ce WITH (NOLOCK) 
+		INNER JOIN EmployeePayroll AS ep ON ep.EmpId = ce.EmpId
+		WHERE ep.SalaryStructureId = @SalaryStructureId
 		)
 	BEGIN
 		SELECT @ErrCode = 1
