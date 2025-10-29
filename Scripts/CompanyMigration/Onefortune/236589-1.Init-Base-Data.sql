@@ -1,3 +1,11 @@
+/*
+    Created: 20251029@Tim
+    Task: migrate onefortune
+    DB: bodb_HRM
+
+    Revisions:
+        20251029@Tim: init [Redmine: #236589]
+*/
 USE [bodb_HRM]
 GO
 

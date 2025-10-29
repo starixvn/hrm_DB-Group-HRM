@@ -1,3 +1,12 @@
+/*
+    Created: 20251029@Tim
+    Task: migrate onefortune
+    DB: bodb_HRM
+
+    Revisions:
+        20251029@Tim: init [Redmine: #236589]
+*/
+
 USE [bodb_HRM]
 GO
 
@@ -147,7 +156,7 @@ SELECT
     g.ExpatBasicAnnualLeaveBalance, g.ExpatWorkingDays, g.ExpatWorkingHours, g.ExpatOffDaysbyWeek,
     g.LocalWorkingHoursbyWeek, g.ExpatWorkingHoursbyWeek, @CompanyId,
 	@departmentId, g.[Name],
-	ROW_NUMBER() OVER (ORDER BY (SELECT 1)) + @maxGroupTeamId, g.GroupId AS OldGroupId
+	ROW_NUMBER() OVER (ORDER BY (SELECT 1) ASC) + @maxGroupTeamId, g.GroupId AS OldGroupId
 FROM OnefortuneHRM.dbo.[Group] AS g
 WHERE NOT EXISTS (
     SELECT 1
