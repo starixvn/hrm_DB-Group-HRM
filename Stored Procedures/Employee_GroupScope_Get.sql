@@ -29,6 +29,7 @@ AS
 		20250828@Mira: restructure for transfer [Redmine: #235678]
 		20250903@Jay.Do: update role [Redmine: #237201]
 		20251020@Lilac: rename LocalSalary to BasicSalary [Redmine: #241810]
+		20251022@Mira: remove salary info  [Redmine: #241812]
 
 */
 BEGIN
@@ -90,7 +91,6 @@ BEGIN
         ManagementLevelId INT, ManagementLevel NVARCHAR(100),
         JobLevelId INT, JobLevel NVARCHAR(100),
         [Location] NVARCHAR(100),
-        SalaryStructureId INT, Salary NVARCHAR(100),
         Currency NVARCHAR(10),
         CountryName NVARCHAR(100)
 	)
@@ -116,7 +116,6 @@ BEGIN
         DepartmentId, DepartmentCode, DepartmentName, DepartmentPIC, DepartmentPICId, DepartmentSupporterEmpId,
         ManagementLevelId, JobLevelId,
         [Location],
-        SalaryStructureId, Salary,
         Currency,
         CountryName
 	)
@@ -138,8 +137,6 @@ BEGIN
 		d.DepartmentId, d.Code AS DepartmentCode, d.[Name], ed.Nickname, d.PICEmpId, d.SupporterEmpId,
 		ce.ManagementLevelId, ce.JobLevelId,
 		ct.CountryCodeISO3,
-		ce.SalaryStructureId, ce.Salary,
-		--ep.SalaryStructureId, ep.SpecialSubsidy AS Salary,
 		tmpc.CurrencyCode,
 		ect.CountryName
 	FROM dbo.Employee AS e WITH (NOLOCK)
@@ -156,7 +153,6 @@ BEGIN
 		LEFT JOIN dbo.CompanyEmployee AS eg WITH (NOLOCK) ON eg.EmpId = g.PICEmpId
 		LEFT JOIN dbo.Country AS ct WITH (NOLOCK) ON ct.CountryCode = c.CountryCode
 		LEFT JOIN dbo.Country AS ect (NOLOCK) ON s.CountryCode = ect.CountryCode
-		--LEFT JOIN dbo.EmployeePayroll AS ep (NOLOCK) ON ep.EmpId = ce.EmpId
 
 	WHERE (ce.CompanyId NOT IN (@NexcelId, @LumiId, @NexVisionId) OR ce.IsSpecialUser = 0)
 		AND (@enable IS NULL OR (ISNULL(ce.isDeleted, 0) = 0 AND ce.Enabled = @enable))
@@ -212,15 +208,6 @@ BEGIN
 		INNER JOIN dbo.JobLevel AS jl WITH (NOLOCK) ON ejg.JobGradeId = jl.JobLevelId
     WHERE e.CompanyId IN (@NexcelId, @LumiId, @NexVisionId)
 
-    UPDATE e
-    SET e.Salary = CASE
-			WHEN e.Salary IS NOT NULL THEN e.Salary
-			WHEN e.IsLocal = 1 THEN std.BasicSalary
-			ELSE std.ExpatSalary END
-    FROM #tmpEmployeeInfo AS e
-		INNER JOIN dbo.SalaryStructureDetail AS std WITH (NOLOCK) ON std.JobLevelId = e.JobLevelId 
-		AND e.SalaryStructureId = std.SalaryStructureId
-
     SELECT 
         CtrId,
         EmpId,
@@ -264,8 +251,6 @@ BEGIN
         JobLevelId,
         JobLevel,
         [Location],
-        SalaryStructureId,
-        Salary,
         Currency,
         CountryName
     FROM #tmpEmployeeInfo

@@ -61,8 +61,9 @@ ALTER PROCEDURE [dbo].[Employee_Information_update]
     ,@CompanyId SMALLINT
     ,@SubCompanyId INT = NULL
     ,@SalaryStructureId INT = NULL
-    ,@Salary VARCHAR(100) = NULL
+    ,@SpecialSubsidy VARCHAR(100) = NULL
     ,@AutoApproveRequest BIT = 0
+	,@AllowanceItemSettingIds NVARCHAR(MAX) = NULL
 )
 AS
 /*
@@ -75,6 +76,7 @@ AS
         - 20250707@Tim: add salary structure [Redmine: #230542]
         - 20250722@Tim: add auto approve request [Remine: #233324]
 		- 20250812@Mira: tranfer employee [Redmine: #235678]
+		- 20251017@Henry: update payroll settings [Redmine: #241812]
     Param's Explanation:
 */
 BEGIN
@@ -95,6 +97,7 @@ BEGIN
 		,@logData NVARCHAR(MAX)
 		,@logOldData NVARCHAR(MAX)
 		,@UserId INT
+		,@OldAllowanceItemSettingIds NVARCHAR(MAX) = ''
 
 	SELECT @UserId = UserId
 	FROM dbo.CompanyEmployee ce
@@ -152,7 +155,12 @@ BEGIN
 	SELECT @Roles_old = COALESCE(@Roles_old + ',', '') + CONVERT(NVARCHAR(2), RoleId)
 	FROM dbo.EmployeeRole WITH (NOLOCK)
 	WHERE EmployeeId = @EmpId
-	Order by RoleID 
+	Order by RoleID ASC
+
+	SELECT @OldAllowanceItemSettingIds = COALESCE(@OldAllowanceItemSettingIds + ',', '') + CAST(AllowanceItemSettingId AS NVARCHAR(10))
+	FROM dbo.EmployeePayrollAllowance WITH (NOLOCK)
+	WHERE EmpId = @EmpId
+	ORDER BY AllowanceItemSettingId ASC 
 
 	SET @xml = (
 			SELECT ce.Code AS '@Code'
@@ -209,12 +217,14 @@ BEGIN
 				,e.MilitaryFromDate AS '@MilitaryFromDate'
 				,e.MilitaryToDate AS '@MilitaryToDate'
 				,ce.SubCompanyId AS '@SubCompanyId'
-                ,ce.SalaryStructureId AS '@SalaryStructureId'
-                ,ce.Salary AS '@Salary'
                 ,ce.AutoApproveRequest AS '@AutoApproveRequest'
+				,ep.SalaryStructureId AS '@SalaryStructureId'
+				,ep.SpecialSubsidy AS '@SpecialSubsidy'
+				,@OldAllowanceItemSettingIds AS '@AllowanceItemSettingIds'
 			FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
 				INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON ce.EmpId = empsum.EmpId
 				INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.UserId = ce.UserId
+				LEFT JOIN dbo.EmployeePayroll AS ep WITH (NOLOCK) ON ce.EmpId = ep.EmpId
                 AND ce.CompanyId = @CompanyId
 			WHERE ce.EmpId = @EmpId
 			FOR XML PATH('Row')
@@ -262,8 +272,6 @@ BEGIN
 
 	UPDATE CompanyEmployee  WITH (ROWLOCK)
 	SET SubCompanyId = @SubCompanyId
-        ,SalaryStructureId = @SalaryStructureId
-        ,Salary = @Salary
         ,AutoApproveRequest = @AutoApproveRequest
 		,Code = @Code
 		,DomainUsername = @DomainUsername
@@ -284,6 +292,15 @@ BEGIN
 		,ModifiedBy = @ModifiedBy
 	WHERE EmpId = @EmpId
         AND CompanyId = @CompanyId
+
+	EXEC dbo.EmployeePayroll_Upsert 
+		@EmpId = @EmpId,
+		@SalaryStructureId = @SalaryStructureId,
+		@SpecialSubsidy = @SpecialSubsidy,
+		@NoOfDependent = 0,
+		@AllowanceItemSettingIds = @AllowanceItemSettingIds,
+		@ErrCode = @ErrCode OUTPUT,
+		@ErrMsg = @ErrMsg OUTPUT
 
 	EXEC dbo.EmployeeRole_Update @EmployeeId = @EmpId
 		,@RoleIds = @Roles
@@ -364,12 +381,14 @@ BEGIN
 				,e.MilitaryFromDate AS '@MilitaryFromDate'
 				,e.MilitaryToDate AS '@MilitaryToDate'
 				,ce.SubCompanyId AS '@SubCompanyId'
-                ,ce.SalaryStructureId AS '@SalaryStructureId'
-                ,ce.Salary AS '@Salary'
-                ,ce.AutoApproveRequest AS '@AutoApproveRequest'
+				,ce.AutoApproveRequest AS '@AutoApproveRequest'
+				,ep.SalaryStructureId AS '@SalaryStructureId'
+				,ep.SpecialSubsidy AS '@SpecialSubsidy'
+				,@AllowanceItemSettingIds AS '@AllowanceItemSettingIds'
 			FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
 				INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON ce.EmpId = empsum.EmpId
 				INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON ce.UserId = e.UserId
+				LEFT JOIN dbo.EmployeePayroll AS ep WITH (NOLOCK) ON ce.EmpId = ep.EmpId
                 AND ce.CompanyId = @CompanyId
 			WHERE ce.EmpId = @EmpId
 			FOR XML PATH('Row')

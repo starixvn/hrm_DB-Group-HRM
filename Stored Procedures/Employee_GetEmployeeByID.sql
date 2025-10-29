@@ -18,6 +18,7 @@ AS
         - 20250806@Tim: get CtrId [Redmine: #235227]
         - 20250813@Jay: change db structure [Redmine: #235678]
 		- 20250903@Jay: update role [Redmine: #237201]
+		- 20251017@Henry: add payroll settings field [Redmine: #241812]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -122,9 +123,19 @@ BEGIN
 		,c.[Name] AS CompanyName
 		,ce.ManagementLevelId
 		,ml.[Name] AS ManagementLevel
-        ,ce.SalaryStructureId
-        ,ce.Salary
+        ,ep.SalaryStructureId
+		,ep.SpecialSubsidy
+		,ep.NoOfDependent
+        ,ss.Name AS SalaryStructure
+		,ssd.BasicSalary
+		,ssd.JobLevelAddOn
         ,ce.AutoApproveRequest
+		,STUFF((
+			SELECT ',' + CAST(epa.AllowanceItemSettingId AS VARCHAR(10))
+			FROM dbo.EmployeePayrollAllowance epa WITH (NOLOCK)
+			WHERE epa.EmpId = ce.EmpId
+			FOR XML PATH('')
+		), 1, 1, '') AS AllowanceItemSettingIds
 		,ISNULL(ce.GroupId, - 1) AS [TeamId]
 		,g.Code
 		,g.[Name]
@@ -139,6 +150,9 @@ BEGIN
 			AND lk.LookupId = 1
 		LEFT JOIN dbo.JobLevel AS jl WITH (NOLOCK) ON jl.JobLevelId = ce.JobLevelId
 		LEFT JOIN dbo.ManagementLevel AS ml WITH (NOLOCK) ON ml.ManagementLevelId = ce.ManagementLevelId
+		LEFT JOIN dbo.EmployeePayroll AS ep WITH (NOLOCK) ON ep.EmpId = ce.EmpId
+		LEFT JOIN dbo.SalaryStructure AS ss WITH (NOLOCK) ON ss.SalaryStructureId = ep.SalaryStructureId
+		LEFT JOIN dbo.SalaryStructureDetail AS ssd WITH (NOLOCK) ON ssd.SalaryStructureId = ss.SalaryStructureId AND ssd.JobLevelId = ce.JobLevelId
 	WHERE ce.EmpId = @EmpId
 		AND (@CompanyId IS NULL OR ce.CompanyId = @CompanyId)
 END
