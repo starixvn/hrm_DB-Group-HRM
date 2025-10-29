@@ -1,6 +1,6 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE OR ALTER PROCEDURE [dbo].[EmployeePayrollAllowance_GetByEmpId]
+ALTER PROCEDURE [dbo].[EmployeePayrollAllowance_GetByEmpId]
 (
     @EmpId INT
 )

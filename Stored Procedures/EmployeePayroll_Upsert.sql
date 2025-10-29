@@ -1,6 +1,6 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE OR ALTER PROCEDURE [dbo].[EmployeePayroll_Upsert]
+ALTER PROCEDURE [dbo].[EmployeePayroll_Upsert]
 (
     @EmpId INT,
     @SalaryStructureId INT = NULL,
