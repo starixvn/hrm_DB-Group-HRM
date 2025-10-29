@@ -1,6 +1,6 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE OR ALTER PROCEDURE [dbo].[AllowanceItem_Create] (
+CREATE PROCEDURE [dbo].[AllowanceItem_Create] (
 	@PayrollItemSettingId INT,
 	@ItemName NVARCHAR(255),
 	@Amount NVARCHAR(255),
@@ -16,6 +16,7 @@ AS
 	Original: 
 
 	Revisions:  
+		20251029@Jay.Do: allowance item [Redmine: #241812]
 	Param's Explanation:
 */
 BEGIN

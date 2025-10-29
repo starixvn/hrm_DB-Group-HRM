@@ -13,6 +13,7 @@ DB: HRM
 Original: 
 
 Revisions:  
+		20251029@Jay.Do: payroll item settings [Redmine: #241812]
 Param's Explanation:
 */
 BEGIN

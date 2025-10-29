@@ -16,6 +16,7 @@ DB: HRM
 Original: 
 
 Revisions:  
+		20251029@Jay.Do: allowance item [Redmine: #241812]
 Param's Explanation:
 */
 BEGIN
