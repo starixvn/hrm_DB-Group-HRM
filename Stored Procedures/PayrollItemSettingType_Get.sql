@@ -1,7 +1,8 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 CREATE   PROCEDURE [dbo].[PayrollItemSettingType_Get]
 (
-    @CompanyId INT
+    @CompanyId INT,
+	@PayrollSettingCategory INT = 2
 )
 AS
 /*
@@ -22,4 +23,5 @@ BEGIN
 	WHERE @CompanyId = CompanyId 
 		AND IsActive = 1
 		AND IsDeleted = 0
+		AND Category = @PayrollSettingCategory
 END
