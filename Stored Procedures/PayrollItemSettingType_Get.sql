@@ -2,7 +2,7 @@
 CREATE   PROCEDURE [dbo].[PayrollItemSettingType_Get]
 (
     @CompanyId INT,
-	@PayrollSettingCategory INT = 2
+	@PayrollSettingCategory INT
 )
 AS
 /*
