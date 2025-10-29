@@ -10,6 +10,29 @@
 USE [bodb_HRM]
 GO
 
+EXEC sp_rename 'EmployeePayroll', 'EmployeePayrollUpload'
+GO
+
+ALTER TABLE [dbo].[EmployeePayroll] DROP CONSTRAINT [PK_EmployeePayroll] WITH ( ONLINE = OFF )
+GO
+
+ALTER TABLE [dbo].[EmployeePayrollUpload] ADD CONSTRAINT [PK_EmployeePayrollUpload] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+
+ALTER TABLE [dbo].[EmployeePayroll] DROP CONSTRAINT [UQ_EmployeePayroll_EmpId_Month_PeriodType]
+GO
+
+ALTER TABLE [dbo].[EmployeePayrollUpload] ADD  CONSTRAINT [UQ_EmployeePayrollUpload_EmpId_Month_PeriodType] UNIQUE NONCLUSTERED 
+(
+	[EmpId] ASC,
+	[Month] ASC,
+	[PeriodType] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+
 CREATE TABLE [dbo].[PayrollItemSetting](
 	[PayrollItemSettingId] [int] IDENTITY(1,1) NOT NULL,
 	[CompanyId] [smallint] NOT NULL,
