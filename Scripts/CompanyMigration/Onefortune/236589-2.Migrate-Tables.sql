@@ -141,7 +141,7 @@ WHERE ce.CompanyId = @CompanyId
 
 --#region NEW STRUCTURE =============================================================================================================
 DECLARE @unitId INT = 35, @departmentId INT = 47
-DECLARE @maxGroupTeamId INT = ISNULL((SELECT MAX(GroupTeamId) FROM dbo.[Group]), 0);
+DECLARE @maxGroupTeamId INT = ISNULL((SELECT MAX(ISNULL(GroupTeamId, 0)) FROM dbo.[Group]), 0);
 
 INSERT INTO dbo.[Group] (
     Code, [Name], [Rank], CreatedDate, CreatedBy, ModifiedDate, ModifiedBy, IsDeleted, MailGroup,
