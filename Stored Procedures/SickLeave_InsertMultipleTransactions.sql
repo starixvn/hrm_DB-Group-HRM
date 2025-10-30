@@ -10,13 +10,14 @@ ALTER PROCEDURE [dbo].[SickLeave_InsertMultipleTransactions] @EmployeeIds VARCHA
 	,@ErrMsg VARCHAR(200) = '' OUTPUT
 AS
 /*
-Created: Tim.Trinh@2021-08-23
-Task: insert multiple
-DB: HRM_SMS
-Original:
+	Created: Tim.Trinh@2021-08-23
+	Task: insert multiple
+	DB: HRM_SMS
+	Original:
 
-Revisions:
-Param's Explanation:
+	Revisions:
+		20251027@Henry: fix issue with company employee 
+	Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -37,16 +38,16 @@ BEGIN
 		,CreatedDate
 		,CreatedBy
 		)
-	SELECT emp.EmpId
+	SELECT ce.EmpId
 		,@Description
 		,@FromDate
 		,@DeductDays
 		,@CreditDays
 		,GETDATE()
 		,@ActorId
-	FROM dbo.Employee AS emp WITH (NOLOCK)
-		INNER JOIN #tblEmployeeIds AS empid ON emp.EmpId = empid.EmployeeId
-	WHERE ISNULL(emp.isDeleted, 0) = 0
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		INNER JOIN #tblEmployeeIds AS empid ON ce.EmpId = empid.EmployeeId
+	WHERE ISNULL(ce.isDeleted, 0) = 0
 
 	UPDATE dbo.EmployeeSummary WITH (ROWLOCK, UPDLOCK)
 	SET SickLeaveBalance = ISNULL(SickLeaveBalance, 0) + ISNULL(@CreditDays, 0) - ISNULL(@DeductDays, 0)
@@ -58,9 +59,6 @@ BEGIN
 	
 	DROP TABLE #tblEmployeeIds
 END
-
-
-
 
 
 

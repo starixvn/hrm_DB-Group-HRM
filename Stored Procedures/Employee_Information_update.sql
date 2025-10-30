@@ -141,6 +141,30 @@ BEGIN
 		RETURN
 	END
 
+	-- Check if employee is already active in another company
+	IF @Enabled = 1
+	BEGIN
+		DECLARE @ActiveCompanyId SMALLINT
+			,@ActiveCompanyName NVARCHAR(50)
+
+		SELECT TOP 1 @ActiveCompanyId = ce.CompanyId
+			,@ActiveCompanyName = c.[Name]
+		FROM dbo.CompanyEmployee ce WITH (NOLOCK)
+			INNER JOIN dbo.Company c WITH (NOLOCK) ON c.CompanyId = ce.CompanyId
+		WHERE ce.UserId = @UserId
+			AND ce.CompanyId <> @CompanyId
+			AND ce.[Enabled] = 1
+			AND ce.isDeleted = 0
+
+		IF @ActiveCompanyId IS NOT NULL
+		BEGIN
+			SELECT @ErrCode = 100
+				,@ErrMsg = N'Employee is already active in another company: ' + @ActiveCompanyName
+
+			RETURN
+		END
+	END
+
 	SELECT @Enabled_old = [Enabled]
 		,@IsDeleted_old = isDeleted
 	FROM dbo.CompanyEmployee WITH (NOLOCK)

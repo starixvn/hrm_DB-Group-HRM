@@ -25,10 +25,12 @@ BEGIN
 
 	DECLARE @KIVLeaveBalance NUMERIC(18, 2)
 		,@AnnualLeaveBalance NUMERIC(18, 2)
+		,@SickLeaveBalance NUMERIC(18, 2)
 		,@Today DATE = GETDATE()
 
 	SELECT @KIVLeaveBalance = dbo.fnc_GetKIVByDayBalance(@EmpId, @Today, NULL)
 		,@AnnualLeaveBalance = dbo.fnc_GetAnnualLeaveBalance(@EmpId, @Today, NULL)
+		,@SickLeaveBalance = dbo.fnc_GetSickLeaveBalance(@EmpId, YEAR(@Today), NULL)
 		
 	SELECT e.CtrId
         ,ce.EmpId
@@ -60,6 +62,7 @@ BEGIN
 		,e.Marriage
 		,e.LastLogin
 		,@AnnualLeaveBalance AS AnnualLeaveBalance
+		,@SickLeaveBalance AS SickLeaveBalance
 		,@KIVLeaveBalance AS KeepInViewBalance
 		,empsum.CountryCode
 		,ct.CountryName
