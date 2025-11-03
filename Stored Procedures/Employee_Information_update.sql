@@ -77,6 +77,7 @@ AS
         - 20250722@Tim: add auto approve request [Remine: #233324]
 		- 20250812@Mira: tranfer employee [Redmine: #235678]
 		- 20251017@Henry: update payroll settings [Redmine: #241812]
+		- 20251017@Henry: dont allow enable employee if they have active in another company [Redmine: #242668]
     Param's Explanation:
 */
 BEGIN

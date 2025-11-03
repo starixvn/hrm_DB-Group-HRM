@@ -19,6 +19,7 @@ AS
         - 20250813@Jay: change db structure [Redmine: #235678]
 		- 20250903@Jay: update role [Redmine: #237201]
 		- 20251017@Henry: add payroll settings field [Redmine: #241812]
+		- 20251017@Henry: get sick leave balance [Redmine: #242668]
 */
 BEGIN
 	SET NOCOUNT ON;
