@@ -15,6 +15,7 @@ ALTER PROCEDURE [dbo].[Report_HeadcountGet] @Year INT
 	    20250828@Mira: restructure for transfer [Redmine: #235678]
 	    20251001@Mira: correct SP [Redmine: #240215]
 	    20251014@Mira: exclude employee of deleted group [Redmine: #240215]
+		20251027@Mira: get employee transfer - [Redmine: #242668]
 */
 AS
     BEGIN
@@ -36,6 +37,7 @@ AS
 			safeDates.JoinedDate,
 			safeDates.ConfirmedDate,
 			safeDates.ResignedDate,
+			ce.Enabled,
 			CASE
 				WHEN ce.EmpId IN (6081, 6596) THEN 0 -- Sean, Yves nexcel
 				ELSE ISNULL(es.IsLocal, 1) 
@@ -56,21 +58,23 @@ AS
 				    END,
 				    ConfirmedDate = CASE 
 					    WHEN e.ConfirmedDate >= '1900-01-01' AND e.ConfirmedDate <= '2079-06-06' THEN e.ConfirmedDate
-					    WHEN e.ConfirmedDate >= '1900-01-01' AND e.ConfirmedDate <= '2079-06-06' THEN e.ConfirmedDate
 					    ELSE '1990-01-01'
 				    END,
 				    ResignedDate = CASE 
 					    WHEN e.ResignedDate >= '1900-01-01' AND e.ResignedDate <= '2079-06-06' THEN e.ResignedDate
-					    WHEN e.ResignedDate >= '1900-01-01' AND e.ResignedDate <= '2079-06-06' THEN e.ResignedDate
 					    ELSE NULL
 				    END
 		    ) AS safeDates
+			LEFT JOIN dbo.EmployeeTransfer AS et WITH(NOLOCK) ON et.FromEmpId = ce.EmpId
 		WHERE
 			(
-				e.CtrId IS NOT NULL AND
-				(safeDates.ResignedDate >= @FromDate OR (safeDates.ResignedDate IS NULL AND ce.Enabled = 1))
+				e.CtrId IS NOT NULL AND (
+					safeDates.ResignedDate >= @FromDate OR -- be active emp
+					(safeDates.ResignedDate IS NULL AND ce.Enabled = 1) OR -- Exclude inactive emp
+					(safeDates.ResignedDate IS NULL AND ce.Enabled = 0 AND et.TransferId IS NOT NULL) -- Get info Transfer Out
+				)
 			)
-	)
+		)
 
 	SELECT
 		e.EmpId,
@@ -87,15 +91,22 @@ AS
 			WHEN ISNULL(sub.Name, c.Name) IN ('WGI', 'BPO', 'SRM', 'EXT', 'OSEAS', NULL, '') THEN 'OTHER'
 			ELSE ct.CountryName
 		END AS Country,
-		ISNULL(CAST(ct.CountryCodeISO3 AS VARCHAR(10)), 'Other') AS CountryCode,
+		CASE 
+			WHEN secondCountry.CountryCodeISO3 IS NOT NULL THEN secondCountry.CountryCodeISO3
+			ELSE ISNULL(CAST(ct.CountryCodeISO3 AS VARCHAR(10)), 'Other')
+		END AS CountryCode,
 		e.JoinedDate,
 		e.ConfirmedDate,
 		e.ResignedDate,
-		e.IsLocal
+		e.IsLocal,
+		e.Enabled
 	FROM ActiveOrResignedEmployees AS e
 	    LEFT JOIN dbo.Company AS c WITH(NOLOCK) ON c.CompanyId = e.CompanyId
 	    LEFT JOIN dbo.SubCompany AS sub WITH(NOLOCK) ON sub.SubCompanyId = e.SubCompanyId
 	    LEFT JOIN dbo.Country AS ct WITH(NOLOCK) ON ct.CountryCode = c.CountryCode
-	    INNER JOIN dbo.Department AS d WITH(NOLOCK) ON d.DepartmentId = e.DepartmentId
-	    INNER JOIN dbo.Unit AS unit WITH(NOLOCK) ON unit.UnitId = d.UnitId;
+	    LEFT JOIN dbo.Department AS d WITH(NOLOCK) ON d.DepartmentId = e.DepartmentId
+	    LEFT JOIN dbo.Unit AS unit WITH(NOLOCK) ON unit.UnitId = d.UnitId
+		LEFT JOIN dbo.CompanySecondmentEmployee AS secondEmp WITH(NOLOCK) ON secondEmp.EmpId = e.EmpId
+		LEFT JOIN dbo.Company AS secondComp WITH(NOLOCK) ON secondComp.CompanyId = secondEmp.CompanyId
+		LEFT JOIN dbo.Country AS secondCountry WITH(NOLOCK) ON secondCountry.CountryCode = secondComp.CountryCode;
 END

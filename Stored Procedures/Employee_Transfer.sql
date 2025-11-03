@@ -10,6 +10,7 @@ ALTER PROCEDURE [dbo].[Employee_Transfer]
 	@TransferInDate DATE,
 	@AnnualLeaveBalance NUMERIC(18, 2),
 	@CompensationLeaveBalance NUMERIC(18, 2),
+	@SickLeaveBalance NUMERIC(18, 2) = NULL,
 	@ErrCode INT = 0 OUTPUT,
     @ErrMsg NVARCHAR(200) = '' OUTPUT
 )
@@ -21,6 +22,7 @@ AS
 
     Revisions:
 		20251010@Mira: transfer employee [Redmine: #233310]
+		20251027@Henry: add sick leave balance [Redmine: #242668]
     Param's Explanation:
 */
 BEGIN
@@ -30,7 +32,8 @@ BEGIN
 
 	DECLARE @CompanyId SMALLINT; -- Current company
 	DECLARE @NewEmpId INT, @UserId INT;
-	   
+	DECLARE @Now DATETIME = GETDATE();
+
 	-- Disable EmpId in current company
 	DECLARE @xml XML = (SELECT 1 AS '@Enabled' FOR XML PATH('Row'),TYPE);
 	DECLARE @logOldData NVARCHAR(MAX) = REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"');
@@ -109,33 +112,57 @@ BEGIN
 		INSERT INTO dbo.EmployeeDefaultShift (EmpId)
 		VALUES (@NewEmpId)
 
-		EXEC dbo.AnnualLeave_InsertMultipleTransactions -- insert annual leave balance
-			@CompanyId = @TargetCompanyId
-			,@EmployeeIds = @NewEmpId
-			,@FromDate = @TransferInDate
-			,@DeductDays = 0
-			,@CreditDays = @AnnualLeaveBalance
-			,@ActorId = @CreatedBy
-			,@ErrCode = @ErrCode
-			,@ErrMsg = @ErrMsg
+		--Insert Annual Leave Balance
+		IF @AnnualLeaveBalance > 0
+		BEGIN
+			EXEC dbo.AnnualLeave_InsertMultipleTransactions
+				@CompanyId = @TargetCompanyId
+				,@EmployeeIds = @NewEmpId
+				,@FromDate = @TransferInDate
+				,@DeductDays = 0
+				,@CreditDays = @AnnualLeaveBalance
+				,@ActorId = @CreatedBy
+				,@ErrCode = @ErrCode OUTPUT
+				,@ErrMsg = @ErrMsg OUTPUT
+		END
 
 		--Insert Compensation Leave
-		INSERT INTO dbo.KeepInViewByDayTrans (
-			EmpId
-			,RequestId
-			,CreditDays
-			,DeductDays
-			,InYear
-			,InsertedDate
-			)
-		VALUES (
-			@NewEmpId
-			,-1
-			,@CompensationLeaveBalance
-			,0
-			,YEAR(@TransferInDate)
-			,GETDATE()
-			)
+		IF @CompensationLeaveBalance > 0
+		BEGIN
+			INSERT INTO dbo.KeepInViewByDayTrans (
+				EmpId
+				,RequestId
+				,CreditDays
+				,DeductDays
+				,InYear
+				,InsertedDate
+				)
+			VALUES (
+				@NewEmpId
+				,-1
+				,@CompensationLeaveBalance
+				,0
+				,YEAR(@TransferInDate)
+				,GETDATE()
+				)
+		END
+
+		--Insert Sick Leave Balance
+		IF @SickLeaveBalance IS NOT NULL AND @SickLeaveBalance > 0
+		BEGIN
+			EXEC dbo.SickLeave_InsertTransaction
+				@EmpId = @NewEmpId
+				,@RequestId = NULL
+				,@Description = N'Transfer In - Initial Balance'
+				,@FromDate = @TransferInDate
+				,@ToDate = NULL
+				,@DeductDays = 0
+				,@CreditDays = @SickLeaveBalance
+				,@CreatedDate = @Now
+				,@CreatedBy = @CreatedBy
+				,@ErrCode = @ErrCode OUTPUT
+				,@ErrMsg = @ErrMsg OUTPUT
+		END
 	END
 
 	-- Insert into Employee Transfer with new EmpId
