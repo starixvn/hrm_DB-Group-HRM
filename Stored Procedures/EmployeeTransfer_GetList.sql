@@ -1,5 +1,5 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
-CREATE OR ALTER PROCEDURE [dbo].[EmployeeTransfer_GetList]
+ALTER PROCEDURE [dbo].[EmployeeTransfer_GetList]
 (
     @CurrentEmpId INT,
     @IsViewAll BIT = 0
