@@ -16,6 +16,7 @@ ALTER PROCEDURE [dbo].[Report_HeadcountGet] @Year INT
 	    20251001@Mira: correct SP [Redmine: #240215]
 	    20251014@Mira: exclude employee of deleted group [Redmine: #240215]
 		20251027@Mira: get employee transfer - [Redmine: #242668]
+		20251030@Mira: correct confirmDate [Redmine: #242636]
 */
 AS
     BEGIN
@@ -58,7 +59,7 @@ AS
 				    END,
 				    ConfirmedDate = CASE 
 					    WHEN e.ConfirmedDate >= '1900-01-01' AND e.ConfirmedDate <= '2079-06-06' THEN e.ConfirmedDate
-					    ELSE '1990-01-01'
+					    ELSE NULL
 				    END,
 				    ResignedDate = CASE 
 					    WHEN e.ResignedDate >= '1900-01-01' AND e.ResignedDate <= '2079-06-06' THEN e.ResignedDate
