@@ -239,6 +239,6 @@ INNER JOIN LevelBase lb
     ON sm.JobGradeName = lb.JobGradeName
 INNER JOIN [dbo].[SalaryStructure] ss
     ON ss.[Name] = sm.SalaryStructureName
-   AND ss.[CompanyId] = 1
+   AND ss.[CompanyId] = @CompanyId
 INNER JOIN [HRM].[dbo].[JobGrade] jg
     ON jg.[Name] = sm.JobGradeName;
