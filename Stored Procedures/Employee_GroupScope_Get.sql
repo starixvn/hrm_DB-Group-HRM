@@ -1,5 +1,4 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
-
 ALTER PROCEDURE [dbo].[Employee_GroupScope_Get]
 (
     @query NVARCHAR(256) = NULL,
@@ -30,6 +29,7 @@ AS
 		20250903@Jay.Do: update role [Redmine: #237201]
 		20251020@Lilac: rename LocalSalary to BasicSalary [Redmine: #241810]
 		20251022@Mira: remove salary info  [Redmine: #241812]
+		20251106@Jay: group dashboard  [Redmine: #243640]
 
 */
 BEGIN
@@ -92,7 +92,9 @@ BEGIN
         JobLevelId INT, JobLevel NVARCHAR(100),
         [Location] NVARCHAR(100),
         Currency NVARCHAR(10),
-        CountryName NVARCHAR(100)
+        CountryName NVARCHAR(100),
+		MilitaryFromDate DATE,
+		MilitaryToDate Date
 	)
     CREATE NONCLUSTERED INDEX IX_tmpEmployeeInfo_CompanyId_EmpId
     ON #tmpEmployeeInfo (CompanyId, EmpId) INCLUDE (ManagementLevelId, JobLevelId, JobTitleId)
@@ -117,7 +119,9 @@ BEGIN
         ManagementLevelId, JobLevelId,
         [Location],
         Currency,
-        CountryName
+        CountryName,
+		MilitaryFromDate,
+		MilitaryToDate
 	)
     SELECT 
 		e.CtrId,
@@ -138,7 +142,9 @@ BEGIN
 		ce.ManagementLevelId, ce.JobLevelId,
 		ct.CountryCodeISO3,
 		tmpc.CurrencyCode,
-		ect.CountryName
+		ect.CountryName,
+		e.MilitaryFromDate,
+		e.MilitaryToDate
 	FROM dbo.Employee AS e WITH (NOLOCK)
 		INNER JOIN dbo.CompanyEmployee ce WITH (NOLOCK) ON ce.UserId = e.UserId
         INNER JOIN #tmpCompany AS tmpc ON ce.CompanyId = tmpc.CompanyId
@@ -153,7 +159,6 @@ BEGIN
 		LEFT JOIN dbo.CompanyEmployee AS eg WITH (NOLOCK) ON eg.EmpId = g.PICEmpId
 		LEFT JOIN dbo.Country AS ct WITH (NOLOCK) ON ct.CountryCode = c.CountryCode
 		LEFT JOIN dbo.Country AS ect (NOLOCK) ON s.CountryCode = ect.CountryCode
-
 	WHERE (ce.CompanyId NOT IN (@NexcelId, @LumiId, @NexVisionId) OR ce.IsSpecialUser = 0)
 		AND (@enable IS NULL OR (ISNULL(ce.isDeleted, 0) = 0 AND ce.Enabled = @enable))
 		AND (@isDelete IS NULL OR ISNULL(ce.isDeleted, 0) = @isDelete)
@@ -252,7 +257,9 @@ BEGIN
         JobLevel,
         [Location],
         Currency,
-        CountryName
+        CountryName,
+		MilitaryFromDate,
+		MilitaryToDate
     FROM #tmpEmployeeInfo
 
     DROP TABLE #tmpCompany
