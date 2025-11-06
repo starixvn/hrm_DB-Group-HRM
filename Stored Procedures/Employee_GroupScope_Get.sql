@@ -134,7 +134,12 @@ BEGIN
 		ce.[Enabled],
 		e.JoinedDate,
 		e.ResignedDate, e.ResignedReason,
-		ce.isDeleted, s.IsLocal, ce.IsSpecialUser,
+		ce.isDeleted,
+        CASE
+            WHEN ce.EmpId IN (6081, 6596) THEN 0 -- Sean, Yves nexcel
+            ELSE ISNULL(s.IsLocal, 1)
+            END AS IsLocal,
+        ce.IsSpecialUser,
 		ce.CompanyDate, c.CompanyId, c.[Name] AS Company, sub.Name AS SubCompany,
 		u.UnitId, u.GroupUnitId, u.Code AS UnitCode, eu.Nickname AS UnitPIC, u.PICEmpId AS UnitPICEmpId, u.SupporterEmpId AS UnitSupporterEmpId,
 		g.GroupId, g.Code, g.[Name], eg.Nickname, g.AccountableArea,
@@ -174,6 +179,7 @@ BEGIN
 			OR g.IsOutsource = @isOutsource
 		)
 
+    -- job title
     UPDATE e
     SET e.JobTitle = jt.[Name]
     FROM #tmpEmployeeInfo AS e
@@ -182,21 +188,16 @@ BEGIN
     WHERE e.CompanyId NOT IN (@NexcelId, @LumiId, @NexVisionId)
 
     UPDATE e
-    SET e.JobLevel = ejt.[Name]
+    SET e.JobTitle = ejt.[Name]
     FROM #tmpEmployeeInfo AS e
         INNER JOIN HRM.dbo.JobTitle AS ejt WITH (NOLOCK) ON ejt.JobTitleId = e.JobTitleId AND ejt.IsDeleted = 0
     WHERE e.CompanyId IN (@NexcelId, @LumiId, @NexVisionId)
 
+    -- management level
     UPDATE e
     SET e.ManagementLevel = ml.[Name]
     FROM #tmpEmployeeInfo AS e
         INNER JOIN dbo.ManagementLevel AS ml WITH (NOLOCK) ON e.ManagementLevelId = ml.ManagementLevelId
-    WHERE e.CompanyId NOT IN (@NexcelId, @LumiId, @NexVisionId)
-
-    UPDATE e
-    SET e.JobLevel = jl.[Name]
-    FROM #tmpEmployeeInfo AS e
-        INNER JOIN dbo.JobLevel AS jl WITH (NOLOCK) ON e.JobLevelId = jl.JobLevelId
     WHERE e.CompanyId NOT IN (@NexcelId, @LumiId, @NexVisionId)
 
     UPDATE e
@@ -206,8 +207,16 @@ BEGIN
         INNER JOIN HRM.dbo.ManagementGrade AS mg WITH (NOLOCK) ON mg.ManagementGradeId = em.ManagementGradeId AND ISNULL(mg.IsDeleted, 0) = 0
     WHERE e.CompanyId IN (@NexcelId, @LumiId, @NexVisionId)
 
+    -- job level
     UPDATE e
     SET e.JobLevel = jl.[Name]
+    FROM #tmpEmployeeInfo AS e
+        INNER JOIN dbo.JobLevel AS jl WITH (NOLOCK) ON e.JobLevelId = jl.JobLevelId
+    WHERE e.CompanyId NOT IN (@NexcelId, @LumiId, @NexVisionId)
+
+    UPDATE e
+    SET e.JobLevel = jl.[Name]
+        ,e.JobLevelId = jl.JobLevelId
     FROM #tmpEmployeeInfo AS e
         INNER JOIN HRM.dbo.EmployeeJobGrade ejg WITH (NOLOCK) ON ejg.EmpId = e.EmpId AND ejg.IsCurrentUsed = 1 AND ISNULL(ejg.IsDeleted, 0) = 0
 		INNER JOIN dbo.JobLevel AS jl WITH (NOLOCK) ON ejg.JobGradeId = jl.JobLevelId
