@@ -232,7 +232,7 @@ SELECT
     ss.SalaryStructureId,
     jg.JobGradeId,
     lb.BaseSalary,              -- luôn là BS theo level
-    0 AS ExpatSalary,
+    NULL AS ExpatSalary,
     sm.JobLevelAddOn            -- số tiền theo SD1/SD2/... đưa vào JobLevelAddOn
 FROM SalaryMatrix sm
 INNER JOIN LevelBase lb
