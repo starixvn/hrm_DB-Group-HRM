@@ -18,6 +18,7 @@ AS
     Revisions:
         20250722@Tim: auto approve request [Redmine: #233324]
         20250813@Jay: change db structure [Redmine: #235678]
+        20251110@Tim: merge action type [Redmine: #243412]
     Param's Explanation:
 */
 BEGIN
@@ -36,35 +37,6 @@ BEGIN
 		AND EmpId = @EmpId
 
 	INSERT INTO #tblSupervisors (OwnerId)
-	SELECT DISTINCT OwnerId
-	FROM dbo.EmployeeSupervisor AS es WITH (NOLOCK)
-        INNER JOIN dbo.CompanyEmployee ce WITH (NOLOCK) ON ce.EmpId = es.OwnerId
-		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON ce.UserId = emp.UserId
-	WHERE es.EmpId = @EmpId
-		AND ce.CompanyId = @CompanyId
-        AND ce.[Enabled] = 1
-		AND ce.isDeleted = 0
-		AND ISNULL(es.IsDeleted, 0) = 0
-		AND es.ActionType IN (@ShiftManagerRoleId, @OnBehalfRequestRoleId)
-		AND (
-			@Role IS NULL
-			OR es.ActionType = @Role
-			)
-		AND (
-			@RequestType IS NULL
-			OR es.RequestType = @RequestType
-			)
-		AND (
-			ce.NickName LIKE @q
-			OR emp.FullName LIKE @q
-			)
-		AND NOT EXISTS (
-			SELECT 1
-			FROM #tblSupervisors AS tbl WITH (NOLOCK)
-			WHERE ce.EmpId = tbl.OwnerId
-			)
-
-	INSERT INTO #tblSupervisors (OwnerId)
 	SELECT DISTINCT ce.EmpId
 	FROM dbo.EmployeeSupervisor AS es WITH (NOLOCK)
         INNER JOIN dbo.CompanyEmployee ce WITH (NOLOCK) ON ce.EmpId = es.EmpId
@@ -74,7 +46,6 @@ BEGIN
 		AND ce.[Enabled] = 1
 		AND ce.isDeleted = 0
 		AND ISNULL(es.IsDeleted, 0) = 0
-		AND es.ActionType NOT IN (@ShiftManagerRoleId, @OnBehalfRequestRoleId)
 		AND (
 			@Role IS NULL
 			OR es.ActionType = @Role

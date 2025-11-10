@@ -25,6 +25,7 @@ AS
     Revisions:
         20250722@Tim: auto approve request [Redmine: #233324]
         20250813@Jay: change db structure [Redmine: #235678]
+        20251110@Tim: remove check on behalf [Redmine: #243412]
     Param's Explanation:
 	    @DetailXml: '<ROOT><Row OnDate={0} FromShiftId={1} ToShiftId={2} Remark={3} ToDate={4} /></ROOT>'
 */
@@ -38,7 +39,6 @@ BEGIN
 		-- action type
 		,@VerifyRequest TINYINT = 2
 		,@ApproveRequest TINYINT = 3
-		,@OnBehalfRequest TINYINT = 5
 		,@AutoApproveRequest BIT
 		-- change shift type
 		,@ChangeShift TINYINT = 1
@@ -129,35 +129,6 @@ BEGIN
 		SET @ErrMsg = 'Verifier, Approver is required.'
 
 		RETURN
-	END
-
-	IF @EmpId <> @ActorId
-	BEGIN
-		IF NOT EXISTS (
-				SELECT 1
-				FROM dbo.EmployeeSupervisor WITH (NOLOCK)
-				WHERE OwnerId = @EmpId
-					AND EmpId = @ActorId
-					AND RequestType = @RequestType
-					AND ActionType = @OnBehalfRequest
-					AND ISNULL(IsDeleted, 0) = 0
-				)
-			AND NOT EXISTS (
-				SELECT 1
-				FROM dbo.GroupSupervisor AS gs WITH (NOLOCK)
-					INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON gs.GroupId = ce.GroupId
-						AND ce.EmpId = @EmpId
-				WHERE gs.OwnerId = @ActorId
-					AND gs.RequestType = @RequestType
-					AND gs.ActionType = @OnBehalfRequest
-					AND ISNULL(gs.IsDeleted, 0) = 0
-				)
-		BEGIN
-			SET @ErrCode = 104
-			SET @ErrMsg = 'You do not have permision.'
-
-			RETURN
-		END
 	END
 
 	IF @AutoApproveRequest = 0
