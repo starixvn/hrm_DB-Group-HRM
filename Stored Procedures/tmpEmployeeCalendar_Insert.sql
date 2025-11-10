@@ -17,10 +17,12 @@ AS
     DB: bodb_HRM
 
     Revisions:
-        - 20250603@Tim: fix bug update leave request
-        - 20250627@Mira: fix bug update leave request
-        - 20250806@Tim: fix bug update leave request 1/2 day
-        - 20250813@Jay: change db structure [Redmine: #235678]
+        20250603@Tim: fix bug update leave request
+        20250627@Mira: fix bug update leave request
+        20250806@Tim: fix bug update leave request 1/2 day
+        20250813@Jay: change db structure [Redmine: #235678]
+        20251110@Tim: fix bug update leave request 1/2 day
+
     Param's Explanation:
 */
 BEGIN
@@ -48,25 +50,17 @@ BEGIN
 		,@RejectedStatusId TINYINT = 5
 		,@VoidStatusId TINYINT = 7
 
-	CREATE TABLE #tempEmployeeIds (
-		EmpId INT PRIMARY KEY
-        ,JoinedDate DATE
-		,ResignedDate DATE
-		)
+	CREATE TABLE #tempEmployeeIds (EmpId INT PRIMARY KEY, JoinedDate DATE, CompanyDate DATE, ResignedDate DATE)
 
 	CREATE TABLE #tempEmployeeCalendar (
-		EmpId INT
-		,WorkDate DATE
-		,ShiftId INT
-		,IsOffDay BIT
-		,IsHoliday BIT
+		EmpId INT, WorkDate DATE, ShiftId INT, IsOffDay BIT, IsHoliday BIT
 		,PRIMARY KEY (EmpId, WorkDate)
-		)
+	)
 
 	IF ISNULL(@empIds, '') <> ''
 	BEGIN
-		INSERT INTO #tempEmployeeIds (EmpId, JoinedDate, ResignedDate)
-		SELECT ce.EmpId, e.JoinedDate, e.ResignedDate
+		INSERT INTO #tempEmployeeIds (EmpId, JoinedDate, CompanyDate, ResignedDate)
+		SELECT ce.EmpId, e.JoinedDate, ce.CompanyDate, e.ResignedDate
 		FROM STRING_SPLIT(@empIds, ',') AS tmp
 			INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON CAST(tmp.value AS INT) = ce.EmpId
 				AND (@isEnable IS NULL OR [Enabled] = @isEnable)
@@ -74,21 +68,15 @@ BEGIN
 	END
 	ELSE
 	BEGIN
-		INSERT INTO #tempEmployeeIds (EmpId, JoinedDate, ResignedDate)
-		SELECT ce.EmpId, e.JoinedDate, e.ResignedDate
-		FROM dbo.CompanyEmployee ce WITH (NOLOCK)
-			INNER JOIN dbo.Employee e WITH (NOLOCK) ON ce.UserId = e.UserId
+		INSERT INTO #tempEmployeeIds (EmpId, JoinedDate, CompanyDate, ResignedDate)
+		SELECT ce.EmpId, e.JoinedDate, ce.CompanyDate, e.ResignedDate
+		FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+			INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON ce.UserId = e.UserId
 		WHERE (@isEnable IS NULL OR ce.[Enabled] = @isEnable)
 			AND (@isDelete IS NULL OR ce.isDeleted = @isDelete)
 	END
 
-	INSERT INTO #tempEmployeeCalendar (
-		EmpId
-		,WorkDate
-		,ShiftId
-		,IsOffDay
-		,IsHoliday
-		)
+	INSERT INTO #tempEmployeeCalendar(EmpId, WorkDate, ShiftId, IsOffDay, IsHoliday)
 	SELECT empca.EmpId
 		,empca.WorkDate
 		,empca.ShiftId
@@ -100,17 +88,12 @@ BEGIN
 
 	WHILE @tempDate <= @toDate
 	BEGIN
-		INSERT INTO #tempEmployeeCalendar (
-			EmpId
-			,WorkDate
-			,ShiftId
-			,IsOffDay
-			,IsHoliday
-			)
+		INSERT INTO #tempEmployeeCalendar(EmpId, WorkDate, ShiftId, IsOffDay, IsHoliday)
 		SELECT ce.EmpId
 			,@tempDate
 			,CASE 
-				WHEN DATEPART(dw, @tempDate) = 1 THEN empshift.SunShift
+				WHEN tblemp.CompanyDate > @tempDate THEN NULL
+                WHEN DATEPART(dw, @tempDate) = 1 THEN empshift.SunShift
 				WHEN DATEPART(dw, @tempDate) = 2 THEN empshift.MonShift
 				WHEN DATEPART(dw, @tempDate) = 3 THEN empshift.TueShift
 				WHEN DATEPART(dw, @tempDate) = 4 THEN empshift.WedShift
@@ -119,6 +102,7 @@ BEGIN
 				WHEN DATEPART(dw, @tempDate) = 7 THEN empshift.SatShift
 				END
 			,CASE 
+				WHEN tblemp.CompanyDate > @tempDate THEN 0
 				WHEN DATEPART(dw, @tempDate) = 1
 					AND ISNULL(empshift.SunShift, @OffDayShiftId) = @OffDayShiftId THEN 1
 				WHEN DATEPART(dw, @tempDate) = 2
@@ -133,8 +117,7 @@ BEGIN
 					AND ISNULL(empshift.FriShift, @OffDayShiftId) = @OffDayShiftId THEN 1
 				WHEN DATEPART(dw, @tempDate) = 7
 					AND ISNULL(empshift.SatShift, @OffDayShiftId) = @OffDayShiftId THEN 1
-				ELSE 0
-				END
+				ELSE 0 END
 			,(CASE
 			    WHEN (
 					    empsum.IsLocal = 1
@@ -162,16 +145,10 @@ BEGIN
 					AND tbl.WorkDate = @tempDate
 				)
 
-		INSERT INTO #tempEmployeeCalendar (
-			EmpId
-			,WorkDate
-			,ShiftId
-			,IsOffDay
-			,IsHoliday
-			)
+		INSERT INTO #tempEmployeeCalendar(EmpId, WorkDate, ShiftId, IsOffDay, IsHoliday)
 		SELECT ce.EmpId
 			,@tempDate
-			,empshift.ShiftId
+			,CASE WHEN tblemp.CompanyDate > @tempDate THEN NULL ELSE empshift.ShiftId END
 			,0
 			,(CASE
 			    WHEN (
@@ -209,15 +186,6 @@ BEGIN
 
 		SET @tempDate = DATEADD(d, 1, @tempDate)
 	END
-
-	UPDATE empca
-	SET empca.ShiftId = NULL
-		,empca.IsOffDay = 0
-		,empca.IsHoliday = 0
-	FROM #tempEmployeeCalendar AS empca
-		INNER JOIN #tempEmployeeIds AS emp ON empca.EmpId = emp.EmpId
-	WHERE (emp.JoinedDate > empca.WorkDate OR emp.ResignedDate <= empca.WorkDate)
-		AND (empca.ShiftId IS NOT NULL OR empca.IsOffDay = 1 AND empca.IsHoliday = 1)
 
 	UPDATE empca
 	SET empca.ShiftId = tmp.ShiftId
@@ -259,7 +227,7 @@ BEGIN
 		,tmp.IsOffDay
 		,tmp.IsHoliday
 		,CASE 
-			WHEN emp.JoinedDate <= tmp.WorkDate
+			WHEN emp.CompanyDate <= tmp.WorkDate
 				AND (
 					emp.ResignedDate IS NULL
 					OR emp.ResignedDate > tmp.WorkDate
@@ -634,7 +602,7 @@ BEGIN
         AND lrdt.LeaveType = lv.LeaveTypeId
 	WHERE (@CompanyId IS NULL OR ce.CompanyId = @CompanyId)
 
-	UPDATE empca
+    UPDATE empca
 	SET empca.RequestId = rq.RequestId
 		,empca.RequestTypeId = rq.RequestTypeId
 		,empca.IsLeaveDay = CASE WHEN rq.RequestId IS NOT NULL THEN 1 ELSE 0 END
@@ -657,10 +625,7 @@ BEGIN
                 AND empca.LeaveTypeId IS NOT NULL
                 AND empca.LeaveDay = 0.5
             )
-            OR (
-                rq.RequestId IS NOT NULL
-                AND ISNULL(empca.LeaveTypeId, 0) != ISNULL(rq.LeaveTypeId, 0)
-            )
+            OR rq.RequestId IS NOT NULL
         )
 
 	UPDATE empca
