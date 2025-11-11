@@ -28,6 +28,7 @@ BEGIN
             ELSE ISNULL(g.ExpatBasicAnnualLeaveBalance, 0)
         END AS AnnualLeave,
 		JoinedDate,
+		ConfirmedDate,
 		es.WorkingDays,
         CASE 
             WHEN s.[Value] = @JoinedDateRuleType THEN 0
