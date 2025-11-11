@@ -30,6 +30,7 @@ BEGIN
 		JoinedDate,
 		ConfirmedDate,
 		es.WorkingDays,
+		IsLocal,
         CASE 
             WHEN s.[Value] = @JoinedDateRuleType THEN 0
             WHEN es.IsLocal = 1 THEN ISNULL(g.LocalYearsOfServiceForExtraLeave, 0)
