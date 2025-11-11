@@ -100,7 +100,7 @@ BEGIN
 		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON tbl.OwnerId = ce.EmpId
 		INNER JOIN dbo.Employee AS emp WITH (NOLOCK) ON ce.UserId = emp.UserId
         AND ce.CompanyId = @CompanyId
-	ORDER BY Nickname
+	ORDER BY Nickname ASC
 
 	DROP TABLE #tblSupervisors
 END

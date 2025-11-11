@@ -50,5 +50,5 @@ BEGIN
 					AND gr.GroupId = gs.GroupId
 				)
 			)
-	ORDER BY gr.Code
+	ORDER BY gr.Code ASC
 END

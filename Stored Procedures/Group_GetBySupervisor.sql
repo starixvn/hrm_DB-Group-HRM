@@ -3,17 +3,14 @@
 ALTER PROCEDURE [dbo].[Group_GetBySupervisor] @SupervisorId INT
 AS
 /*
-Created: 20151027@Quinn.Vo
-Task: Get all group by supervisor
-DB: HRM
-Original:
+    Created: 20151027@Quinn.Vo
+    Task: Get all group by supervisor
+    DB: bodb_HRM
 
-Revisions:
-		20250813@Lilac: restructure for transfer [Redmine: #235678]
-		20251111@Lilac: merge ActionType [Redmine: #243412]
-
-Param's Explanation:
-
+    Revisions:
+        20250813@Lilac: restructure for transfer [Redmine: #235678]
+        20251111@Lilac: merge ActionType [Redmine: #243412]
+    Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -68,6 +65,5 @@ BEGIN
 	FROM dbo.[Group] AS g WITH (NOLOCK)
 		INNER JOIN @tblGroupId AS gr ON g.GroupId = gr.GroupId
 	WHERE ISNULL(g.isDeleted, 0) = 0
-	ORDER BY g.[Rank]
-		,g.Code
+	ORDER BY g.Code ASC
 END
