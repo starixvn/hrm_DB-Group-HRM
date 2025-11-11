@@ -29,6 +29,7 @@ AS
         20250423@Tim: fix bug validate request in the same range
         20250722@Tim: auto approve request [Redmine: #233324]
         20250813@Jay: change db structure [Redmine: #235678]
+		20251111@Lilac: remove on behalf request [Redmine: #243412]
     Param's Explanation:
 	    - @ListDetail: '<Root><Row OnDate='' ShiftId='' LeaveType='' IsHalfDay='' WorkType='' FromTime='' ToTime='' /></Root>'
 	    - @WorkType: 1. off, 2. leave, 3. work
@@ -49,7 +50,6 @@ BEGIN
         ,@BusinessDuringWorkingLeaveType TINYINT = 26
         ,@SickLeaveTypeId TINYINT = 29
         ,@HospitalizationLeaveTypeId TINYINT = 39
-        ,@OnbehalfActionType TINYINT = 5
         ,@VerifyActionType TINYINT = 2
         ,@ApproveActionType TINYINT = 3
         ,@LeaveWorkType TINYINT = 2
@@ -137,33 +137,6 @@ BEGIN
 	BEGIN
 		SET @ErrCode = 103
 		SET @ErrMsg = 'You cannot submit a cross-leave request based on your Group Date. Please split it into 2 separate requests.'
-
-		RETURN;
-	END
-
-	IF @EmpId <> @CreatedBy
-		AND NOT EXISTS (
-			SELECT 1
-			FROM dbo.EmployeeSupervisor WITH (NOLOCK)
-			WHERE OwnerId = @EmpId
-				AND EmpId = @CreatedBy
-				AND ActionType = @OnbehalfActionType
-				AND RequestType = @RequestType
-				AND ISNULL(IsDeleted, 0) = 0
-			)
-		AND NOT EXISTS (
-			SELECT 1
-			FROM dbo.GroupSupervisor AS g WITH (NOLOCK)
-				INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON g.GroupId = ce.GroupId
-			WHERE ce.EmpId = @EmpId
-				AND g.OwnerId = @CreatedBy
-				AND g.RequestType = @RequestType
-				AND g.ActionType = @OnbehalfActionType
-				AND ISNULL(g.IsDeleted, 0) = 0
-			)
-	BEGIN
-		SET @ErrCode = 106
-		SET @ErrMsg = 'You have not on behalf permision on this employee.'
 
 		RETURN;
 	END

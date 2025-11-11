@@ -9,7 +9,9 @@ DB: HRM
 Original:
 
 Revisions:
-	20250813@Lilac: restructure for transfer [Redmine: #235678]
+		20250813@Lilac: restructure for transfer [Redmine: #235678]
+		20251111@Lilac: merge ActionType [Redmine: #243412]
+
 Param's Explanation:
 
 */
@@ -52,19 +54,7 @@ BEGIN
 				INNER JOIN dbo.CompanyEmployee AS e WITH (NOLOCK) ON es.EmpId = e.EmpId
 				INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON e.GroupId = g.GroupId
 			WHERE es.OwnerId = @SupervisorId
-				AND es.ActionType IN (2, 3)
-				AND e.[Enabled] = 1
-				AND ISNULL(e.isDeleted, 0) = 0
-				AND ISNULL(g.isDeleted, 0) = 0
-			GROUP BY g.GroupId
-			
-			UNION
-			SELECT g.GroupId
-			FROM dbo.EmployeeSupervisor AS es WITH (NOLOCK)
-				INNER JOIN dbo.CompanyEmployee AS e WITH (NOLOCK) ON es.EmpId = e.EmpId
-				INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON e.GroupId = g.GroupId
-			WHERE es.EmpId = @SupervisorId
-				AND es.ActionType IN (4, 5)
+				AND es.ActionType IN (2, 3, 4, 5)
 				AND e.[Enabled] = 1
 				AND ISNULL(e.isDeleted, 0) = 0
 				AND ISNULL(g.isDeleted, 0) = 0

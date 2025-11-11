@@ -12,6 +12,7 @@ Original:
 
 Revisions:
         20250813@Jay: change db structure [Redmine: #235678]
+		20251111@Lilac: merge ActionType [Redmine: #243412]
 Param's Explanation:
 */
 BEGIN
@@ -31,23 +32,7 @@ BEGIN
 			OR @ExcludeUserDelete = 0
 			)
 		AND es.IsDeleted = 0
-		AND es.ActionType IN (2, 3) -- verifier, approver
-	
-	UNION
-	SELECT es.EmpId
-	FROM dbo.EmployeeSupervisor AS es WITH (NOLOCK)
-		INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON es.EmpId = ce.EmpId
-	WHERE es.EmpId = @EmpId
-		AND (
-			(
-				@ExcludeUserDelete = 1
-				AND ce.isDeleted = 0
-				AND ce.[Enabled] = 1
-				)
-			OR @ExcludeUserDelete = 0
-			)
-		AND es.IsDeleted = 0
-		AND es.ActionType IN (4, 5) -- shift manager, on behalf request
+		AND es.ActionType IN (2, 3, 4, 5) -- verifier, approver, shift manager, on behalf request
 	
 	UNION
 	SELECT ce.EmpId
