@@ -1,20 +1,24 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-ALTER PROCEDURE [dbo].[ScheduleArrangement_GetEmployee] @ActorId INT
+ALTER PROCEDURE [dbo].[ScheduleArrangement_GetEmployee]
+(
+    @ActorId INT
 	,@TeamIds VARCHAR(MAX) = ''
 	,@Query NVARCHAR(256) = ''
 	,@IsIFrame BIT = 0
     ,@IsEditScheduleUnlimited BIT = 0
+)
 AS
 /*
-Created: Tim.Trinh@2019-05-02
-Task: get employee
-DB: HRM
+    Created: 20190502@Tim
+    Task: get employee
+    DB: bodb_HRM
 
-Revisions:
+    Revisions:
         20250813@Jay: change db structure [Redmine: #235678]
         20251020@Mira: get deleted/disable user [Redmine: #241816]
-Param's Explanation:
+        20251110@Tim: unify team and personal setting [Redmine: #243412]
+    Param's Explanation:
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -35,7 +39,7 @@ BEGIN
 		,e.FullName
 		,ce.NickName
 	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
-		INNER JOIN Employee e (NOLOCK) ON ce.UserId = e.UserId
+		INNER JOIN dbo.Employee AS e (NOLOCK) ON ce.UserId = e.UserId
 	WHERE (
 			ce.NickName LIKE @q
 			OR e.FullName LIKE @q
@@ -57,9 +61,9 @@ BEGIN
 			OR EXISTS (
 				SELECT 1
 				FROM dbo.EmployeeSupervisor AS es WITH (NOLOCK)
-				WHERE es.EmpId = @ActorId
+				WHERE es.OwnerId = @ActorId
 					AND es.ActionType = @ShiftManagerRoleId
-					AND es.OwnerId = ce.EmpId
+					AND es.EmpId = ce.EmpId
 				)
 			OR EXISTS (
 				SELECT 1
