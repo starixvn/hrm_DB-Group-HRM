@@ -53,7 +53,7 @@ BEGIN
               AND lt.DeductDays = 0
               AND lt.CreditDays > 0
               AND lt.RequestId IS NULL
-              AND lt.Deleted = 0
+              AND ISNULL(lt.Deleted, 0) = 0
     )
 
 	INSERT INTO dbo.LeaveTrans (
@@ -86,7 +86,7 @@ BEGIN
               AND lt.DeductDays = 0
               AND lt.CreditDays > 0
               AND lt.RequestId IS NULL
-              AND lt.Deleted = 0
+              AND ISNULL(lt.Deleted, 0) = 0
     )
 
 	UPDATE lt
@@ -97,7 +97,7 @@ BEGIN
 		AND lt.DeductDays = 0
 		AND lt.CreditDays > 0
 		AND lt.RequestId IS NULL
-		AND lt.Deleted = 0
+        AND ISNULL(lt.Deleted, 0) = 0
 		AND t.ExtraLeaves > 0
 		AND (lt.ExtraDays = 0 OR lt.ExtraDays IS NULL)
 END

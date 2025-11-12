@@ -1,6 +1,6 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE OR ALTER   PROCEDURE [dbo].[Auto_AnnualLeaveBalance_JoinedDate_Update]
+ALTER   PROCEDURE [dbo].[Auto_AnnualLeaveBalance_JoinedDate_Update]
 (
 	@ListAnnualLeaveJson NVARCHAR(MAX)
 )
@@ -13,6 +13,7 @@ AS
     Revisions:
 		20250814@Lilac: restructure for transfer [Redmine: #235678]
 		20250812@Mira: change DB structure [Redmine: #235678]
+		20251112@Jay.Do: update delete column [Redmine: #243413]
     Param's Explanation:
 */
 BEGIN
@@ -54,7 +55,7 @@ BEGIN
               AND lt.DeductDays = 0
               AND lt.CreditDays > 0
               AND lt.RequestId IS NULL
-              AND lt.Deleted = 0
+              AND ISNULL(lt.Deleted, 0) = 0
     )
 
 	INSERT INTO dbo.LeaveTrans (
@@ -88,7 +89,7 @@ BEGIN
               AND lt.DeductDays = 0
               AND lt.CreditDays > 0
               AND lt.RequestId IS NULL
-              AND lt.Deleted = 0
+              AND ISNULL(lt.Deleted, 0) = 0
     )
 
 	UPDATE lt
@@ -99,7 +100,7 @@ BEGIN
 		AND lt.DeductDays = 0
 		AND lt.CreditDays > 0
 		AND lt.RequestId IS NULL
-		AND lt.Deleted = 0
+        AND ISNULL(lt.Deleted, 0) = 0
 		AND t.ExtraLeaves > 0
 		AND (lt.ExtraDays = 0 OR lt.ExtraDays IS NULL)
 END
