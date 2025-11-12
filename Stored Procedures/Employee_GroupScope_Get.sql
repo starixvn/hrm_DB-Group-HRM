@@ -1,5 +1,4 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
-
 ALTER PROCEDURE [dbo].[Employee_GroupScope_Get]
 (
     @query NVARCHAR(256) = NULL,
@@ -30,6 +29,7 @@ AS
 		20250903@Jay.Do: update role [Redmine: #237201]
 		20251020@Lilac: rename LocalSalary to BasicSalary [Redmine: #241810]
 		20251022@Mira: remove salary info  [Redmine: #241812]
+		20251106@Jay: group dashboard  [Redmine: #243640]
 
 */
 BEGIN
@@ -92,7 +92,9 @@ BEGIN
         JobLevelId INT, JobLevel NVARCHAR(100),
         [Location] NVARCHAR(100),
         Currency NVARCHAR(10),
-        CountryName NVARCHAR(100)
+        CountryName NVARCHAR(100),
+		MilitaryFromDate DATE,
+		MilitaryToDate Date
 	)
     CREATE NONCLUSTERED INDEX IX_tmpEmployeeInfo_CompanyId_EmpId
     ON #tmpEmployeeInfo (CompanyId, EmpId) INCLUDE (ManagementLevelId, JobLevelId, JobTitleId)
@@ -117,7 +119,9 @@ BEGIN
         ManagementLevelId, JobLevelId,
         [Location],
         Currency,
-        CountryName
+        CountryName,
+		MilitaryFromDate,
+		MilitaryToDate
 	)
     SELECT 
 		e.CtrId,
@@ -130,7 +134,12 @@ BEGIN
 		ce.[Enabled],
 		e.JoinedDate,
 		e.ResignedDate, e.ResignedReason,
-		ce.isDeleted, s.IsLocal, ce.IsSpecialUser,
+		ce.isDeleted,
+        CASE
+            WHEN ce.EmpId IN (6081, 6596) THEN 0 -- Sean, Yves nexcel
+            ELSE ISNULL(s.IsLocal, 1)
+            END AS IsLocal,
+        ce.IsSpecialUser,
 		ce.CompanyDate, c.CompanyId, c.[Name] AS Company, sub.Name AS SubCompany,
 		u.UnitId, u.GroupUnitId, u.Code AS UnitCode, eu.Nickname AS UnitPIC, u.PICEmpId AS UnitPICEmpId, u.SupporterEmpId AS UnitSupporterEmpId,
 		g.GroupId, g.Code, g.[Name], eg.Nickname, g.AccountableArea,
@@ -138,7 +147,9 @@ BEGIN
 		ce.ManagementLevelId, ce.JobLevelId,
 		ct.CountryCodeISO3,
 		tmpc.CurrencyCode,
-		ect.CountryName
+		ect.CountryName,
+		e.MilitaryFromDate,
+		e.MilitaryToDate
 	FROM dbo.Employee AS e WITH (NOLOCK)
 		INNER JOIN dbo.CompanyEmployee ce WITH (NOLOCK) ON ce.UserId = e.UserId
         INNER JOIN #tmpCompany AS tmpc ON ce.CompanyId = tmpc.CompanyId
@@ -153,7 +164,6 @@ BEGIN
 		LEFT JOIN dbo.CompanyEmployee AS eg WITH (NOLOCK) ON eg.EmpId = g.PICEmpId
 		LEFT JOIN dbo.Country AS ct WITH (NOLOCK) ON ct.CountryCode = c.CountryCode
 		LEFT JOIN dbo.Country AS ect (NOLOCK) ON s.CountryCode = ect.CountryCode
-
 	WHERE (ce.CompanyId NOT IN (@NexcelId, @LumiId, @NexVisionId) OR ce.IsSpecialUser = 0)
 		AND (@enable IS NULL OR (ISNULL(ce.isDeleted, 0) = 0 AND ce.Enabled = @enable))
 		AND (@isDelete IS NULL OR ISNULL(ce.isDeleted, 0) = @isDelete)
@@ -169,6 +179,7 @@ BEGIN
 			OR g.IsOutsource = @isOutsource
 		)
 
+    -- job title
     UPDATE e
     SET e.JobTitle = jt.[Name]
     FROM #tmpEmployeeInfo AS e
@@ -177,21 +188,16 @@ BEGIN
     WHERE e.CompanyId NOT IN (@NexcelId, @LumiId, @NexVisionId)
 
     UPDATE e
-    SET e.JobLevel = ejt.[Name]
+    SET e.JobTitle = ejt.[Name]
     FROM #tmpEmployeeInfo AS e
         INNER JOIN HRM.dbo.JobTitle AS ejt WITH (NOLOCK) ON ejt.JobTitleId = e.JobTitleId AND ejt.IsDeleted = 0
     WHERE e.CompanyId IN (@NexcelId, @LumiId, @NexVisionId)
 
+    -- management level
     UPDATE e
     SET e.ManagementLevel = ml.[Name]
     FROM #tmpEmployeeInfo AS e
         INNER JOIN dbo.ManagementLevel AS ml WITH (NOLOCK) ON e.ManagementLevelId = ml.ManagementLevelId
-    WHERE e.CompanyId NOT IN (@NexcelId, @LumiId, @NexVisionId)
-
-    UPDATE e
-    SET e.JobLevel = jl.[Name]
-    FROM #tmpEmployeeInfo AS e
-        INNER JOIN dbo.JobLevel AS jl WITH (NOLOCK) ON e.JobLevelId = jl.JobLevelId
     WHERE e.CompanyId NOT IN (@NexcelId, @LumiId, @NexVisionId)
 
     UPDATE e
@@ -201,8 +207,16 @@ BEGIN
         INNER JOIN HRM.dbo.ManagementGrade AS mg WITH (NOLOCK) ON mg.ManagementGradeId = em.ManagementGradeId AND ISNULL(mg.IsDeleted, 0) = 0
     WHERE e.CompanyId IN (@NexcelId, @LumiId, @NexVisionId)
 
+    -- job level
     UPDATE e
     SET e.JobLevel = jl.[Name]
+    FROM #tmpEmployeeInfo AS e
+        INNER JOIN dbo.JobLevel AS jl WITH (NOLOCK) ON e.JobLevelId = jl.JobLevelId
+    WHERE e.CompanyId NOT IN (@NexcelId, @LumiId, @NexVisionId)
+
+    UPDATE e
+    SET e.JobLevel = jl.[Name]
+        ,e.JobLevelId = jl.JobLevelId
     FROM #tmpEmployeeInfo AS e
         INNER JOIN HRM.dbo.EmployeeJobGrade ejg WITH (NOLOCK) ON ejg.EmpId = e.EmpId AND ejg.IsCurrentUsed = 1 AND ISNULL(ejg.IsDeleted, 0) = 0
 		INNER JOIN dbo.JobLevel AS jl WITH (NOLOCK) ON ejg.JobGradeId = jl.JobLevelId
@@ -252,7 +266,9 @@ BEGIN
         JobLevel,
         [Location],
         Currency,
-        CountryName
+        CountryName,
+		MilitaryFromDate,
+		MilitaryToDate
     FROM #tmpEmployeeInfo
 
     DROP TABLE #tmpCompany
