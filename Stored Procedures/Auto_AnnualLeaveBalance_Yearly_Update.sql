@@ -2,7 +2,8 @@
 
 CREATE   PROCEDURE [dbo].[Auto_AnnualLeaveBalance_Yearly_Update]
 (
-	@ListAnnualLeaveJson NVARCHAR(MAX)
+	@ListAnnualLeaveJson NVARCHAR(MAX),
+	@Year INT
 )
 AS
 /*
@@ -22,22 +23,19 @@ BEGIN
 	DECLARE @TempListAnnualLeaves TABLE (
 		AnnualLeaves INT,
 		ExtraLeaves INT,
-		EmpId INT,
-		[Year] INT
+		EmpId INT
 	)
 
 	INSERT INTO @TempListAnnualLeaves
 	SELECT DISTINCT
 		j.AnnualLeaves,
 		j.ExtraLeaves,
-		j.EmpId,
-		j.[Year]
+		j.EmpId
 	FROM OPENJSON(@ListAnnualLeaveJson)
 	WITH (
 		AnnualLeaves INT,
 		ExtraLeaves INT,
-		EmpId INT,
-		[Year] INT
+		EmpId INT
 	) AS j
 	WHERE j.AnnualLeaves > 0 
 
@@ -49,7 +47,7 @@ BEGIN
         SELECT 1
         FROM dbo.LeaveTrans AS lt WITH (NOLOCK)
         WHERE es.EmpId = lt.EmpId
-              AND YEAR(lt.FromDate) = t.[Year]
+              AND YEAR(lt.FromDate) = @Year
               AND lt.DeductDays = 0
               AND lt.CreditDays > 0
               AND lt.RequestId IS NULL
@@ -69,8 +67,8 @@ BEGIN
 		)
 	SELECT t.EmpId
 		,@Description
-		,DATEFROMPARTS(t.[Year], 1, 1) AS FromDate
-		,DATEFROMPARTS(t.[Year], 12, 31) AS ToDate
+		,DATEFROMPARTS(@Year, 1, 1) AS FromDate
+		,DATEFROMPARTS(@Year, 12, 31) AS ToDate
 		,0 AS DeductDays
 		,t.AnnualLeaves AS CreditDays
 		,t.ExtraLeaves AS ExtraDays
@@ -82,7 +80,7 @@ BEGIN
         SELECT 1
         FROM dbo.LeaveTrans AS lt WITH (NOLOCK)
         WHERE t.EmpId = lt.EmpId
-              AND YEAR(lt.FromDate) = t.[Year]
+              AND YEAR(lt.FromDate) = @Year
               AND lt.DeductDays = 0
               AND lt.CreditDays > 0
               AND lt.RequestId IS NULL
@@ -93,7 +91,7 @@ BEGIN
 	SET lt.ExtraDays = t.ExtraLeaves
 	FROM dbo.LeaveTrans AS lt WITH (ROWLOCK, UPDLOCK)
 		INNER JOIN @TempListAnnualLeaves AS t ON t.EmpId = lt.EmpId
-	WHERE YEAR(lt.FromDate) = t.[Year]
+	WHERE YEAR(lt.FromDate) = @Year
 		AND lt.DeductDays = 0
 		AND lt.CreditDays > 0
 		AND lt.RequestId IS NULL
