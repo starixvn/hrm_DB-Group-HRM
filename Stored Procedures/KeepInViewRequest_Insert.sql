@@ -26,6 +26,8 @@ AS
     Revisions:
         20250722@Tim: auto approve request [Redmine: #233324]
         20250813@Jay: change db structure [Redmine: #235678]
+		20251111@Lilac: remove on behalf request [Redmine: #243412]
+
     Param's Explanation:
 */
 BEGIN
@@ -38,7 +40,6 @@ BEGIN
 		-- action type
 		,@VerifyRequest TINYINT = 2
 		,@ApproveRequest TINYINT = 3
-		,@OnBehalfRequest TINYINT = 5
 		-- keep in view type
 		,@KeepInViewByDay TINYINT = 1
 		,@KeepInViewByHour TINYINT = 2
@@ -171,35 +172,6 @@ BEGIN
 
 				RETURN
 			END
-	END
-
-	IF @EmpId <> @CreatedBy
-	BEGIN
-		IF NOT EXISTS (
-				SELECT 1
-				FROM dbo.EmployeeSupervisor WITH (NOLOCK)
-				WHERE OwnerId = @EmpId
-					AND EmpId = @CreatedBy
-					AND ActionType = @OnBehalfRequest
-					AND RequestType = @KeepInViewRequestTypeId
-					AND ISNULL(IsDeleted, 0) = 0
-				)
-			AND NOT EXISTS (
-				SELECT 1
-				FROM dbo.GroupSupervisor AS gs WITH (NOLOCK)
-					INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON gs.GroupId = ce.GroupId
-						AND ce.EmpId = @EmpId
-				WHERE gs.OwnerId = @CreatedBy
-					AND gs.ActionType = @OnBehalfRequest
-					AND gs.RequestType = @KeepInViewRequestTypeId
-					AND ISNULL(gs.IsDeleted, 0) = 0
-				)
-		BEGIN
-			SET @ErrCode = 103
-			SET @ErrMsg = 'You do not have permision.'
-
-			RETURN;
-		END
 	END
 
 	SELECT @AutoApproveRequest = AutoApproveRequest

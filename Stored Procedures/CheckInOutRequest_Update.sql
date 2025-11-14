@@ -26,6 +26,7 @@ AS
     Revisions:
         20250722@Tim: auto approve request [Redmine: #233324]
         20250813@Jay: change db structure [Redmine: #235678]
+        20251110@Tim: remove check on behalf [Redmine: #243412]
     Param's Explanation:
 */
 BEGIN
@@ -36,7 +37,6 @@ BEGIN
 		-- action type
 		,@VerifyRequest TINYINT = 2
 		,@ApproveRequest TINYINT = 3
-		,@OnBehalfRequest TINYINT = 5
 		-- request type
 		,@CheckInRequestTypeId TINYINT = 1
 		,@CheckOutRequestTypeId TINYINT = 2
@@ -93,35 +93,6 @@ BEGIN
 		SET @ErrMsg = 'Verifier, Approver is required.'
 
 		RETURN;
-	END
-
-	IF @EmpId <> @ModifiedBy
-	BEGIN
-		IF NOT EXISTS (
-				SELECT 1
-				FROM dbo.EmployeeSupervisor WITH (NOLOCK)
-				WHERE OwnerId = @EmpId
-					AND EmpId = @ModifiedBy
-					AND ActionType = @OnBehalfRequest
-					AND RequestType IN (@CheckInRequestTypeId, @CheckOutRequestTypeId)
-					AND ISNULL(IsDeleted, 0) = 0
-				)
-			AND NOT EXISTS (
-				SELECT 1
-				FROM dbo.GroupSupervisor AS gs WITH (NOLOCK)
-					INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON gs.GroupId = ce.GroupId
-				WHERE gs.OwnerId = @ModifiedBy
-					AND ce.EmpId = @EmpId
-					AND gs.ActionType = @OnBehalfRequest
-					AND gs.RequestType IN (@CheckInRequestTypeId, @CheckOutRequestTypeId)
-					AND ISNULL(gs.IsDeleted, 0) = 0
-				)
-		BEGIN
-			SET @ErrCode = 103
-			SET @ErrMsg = 'You do not have permision.'
-
-			RETURN;
-		END
 	END
 
 	IF @AutoApproveRequest = 0

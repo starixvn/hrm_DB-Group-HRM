@@ -30,6 +30,7 @@ AS
         20250423@Tim: fix bug validate request in the same range
         20250722@Tim: auto approve request [Redmine: #233324]
         20250813@Jay: change db structure [Redmine: #235678]
+		20251111@Lilac: remove on behalf request [Redmine: #243412]
     Param's Explanation:
 	    - @ListDetail: '<ROOT><Row OnDate='' ShiftID='' LeaveType='' IsHalfDay='' WorkType='' FromTime='' ToTime='' /></ROOT>'
 	    - @WorkType : 1. off, 2. leave, 3. work
@@ -50,7 +51,6 @@ BEGIN
         ,@BusinessDuringWorkingLeaveType TINYINT = 26
         ,@SickLeaveTypeId TINYINT = 29
         ,@HospitalizationLeaveTypeId TINYINT = 39
-        ,@OnbehalfActionType TINYINT = 5
         ,@VerifyActionType TINYINT = 2
         ,@ApproveActionType TINYINT = 3
         ,@LeaveWorkType TINYINT = 2
@@ -165,33 +165,6 @@ BEGIN
 
 		RETURN;
     END
-
-	IF @EmpId <> @ModifiedBy
-		AND NOT EXISTS (
-			SELECT 1
-			FROM [dbo].[EmployeeSupervisor] sp WITH (NOLOCK)
-			WHERE sp.OwnerId = @EmpId
-				AND sp.EmpId = @ModifiedBy
-				AND sp.ActionType = @OnbehalfActionType
-				AND sp.RequestType = @RequestType
-				AND ISNULL(sp.IsDeleted, 0) = 0
-			)
-		AND NOT EXISTS (
-			SELECT 1
-			FROM dbo.GroupSupervisor AS g WITH (NOLOCK)
-				INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON g.GroupId = ce.GroupId
-			WHERE ce.EmpId = @EmpId
-				AND g.OwnerId = @ModifiedBy
-				AND g.RequestType = @RequestType
-				AND g.ActionType = @OnbehalfActionType
-				AND ISNULL(g.IsDeleted, 0) = 0
-			)
-	BEGIN
-		SET @ErrCode = 106
-		SET @ErrMsg = 'You have not on behalf permision on this employee.'
-
-		RETURN;
-	END
 
 	SELECT @AutoApproveRequest = AutoApproveRequest
 	FROM dbo.CompanyEmployee WITH (NOLOCK)

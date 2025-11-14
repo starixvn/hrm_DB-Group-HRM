@@ -26,6 +26,8 @@ AS
     Revisions:
         20250722@Tim: auto approve request [Redmine: #233324]
         20250813@Jay: change db structure [Redmine: #235678]
+		20251111@Lilac: remove on behalf request [Redmine: #243412]
+
     Param's Explanation:
 */
 BEGIN
@@ -39,7 +41,6 @@ BEGIN
 		-- action type
 		,@VerifyRequest TINYINT = 2
 		,@ApproveRequest TINYINT = 3
-		,@OnBehalfRequest TINYINT = 5
 		-- request type
 		,@LateInRequestTypeId TINYINT = 3
 		,@EarlyOutRequestTypeId TINYINT = 4
@@ -63,35 +64,6 @@ BEGIN
 		SET @ErrMsg = 'There is another request in the same date.'
 
 		RETURN;
-	END
-
-	IF @EmpId <> @CreatedBy
-	BEGIN
-		IF NOT EXISTS (
-				SELECT 1
-				FROM dbo.EmployeeSupervisor AS sp WITH (NOLOCK)
-				WHERE sp.OwnerId = @EmpId
-					AND sp.EmpId = @CreatedBy
-					AND sp.ActionType = @OnBehalfRequest
-					AND sp.RequestType IN (@LateInRequestTypeId, @EarlyOutRequestTypeId)
-					AND ISNULL(sp.IsDeleted, 0) = 0
-				)
-			AND NOT EXISTS (
-				SELECT 1
-				FROM dbo.GroupSupervisor AS gs WITH (NOLOCK)
-					INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON gs.GroupId = ce.GroupId
-						AND ce.EmpId = @EmpId
-				WHERE gs.OwnerId = @CreatedBy
-					AND gs.ActionType = @OnBehalfRequest
-					AND gs.RequestType IN (@LateInRequestTypeId, @EarlyOutRequestTypeId)
-					AND ISNULL(gs.IsDeleted, 0) = 0
-				)
-		BEGIN
-			SET @ErrCode = 102
-			SET @ErrMsg = 'You do not have permision.'
-
-			RETURN;
-		END
 	END
 
 	SELECT @AutoApproveRequest = AutoApproveRequest
