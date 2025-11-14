@@ -42,10 +42,13 @@ BEGIN
 	SELECT 
 		e.EmpId,
 		salary.BasicSalary AS EncryptBasicSalary,
-		salary.ExpatSalary AS EncryptExpatSalary,
 		salary.JobLevelAddOn AS EncryptJobLevelAddOn,
+		salary.ExpatSalary AS EncryptExpatBasicSalary, -- todo
+		salary.JobLevelAddOn AS EncryptExpatJobLevelAddOn, -- todo
 		payroll.SpecialSubsidy AS EncryptSpecialSubsidy,
-		currency.CurrencyCode
+		'USD' AS SpecialSubsidyCurrencyCode, -- todo
+		currency.CurrencyCode AS LocalCurrencyCode,		
+		'USD' AS ExpatCurrencyCode
 	FROM #tmpEmp AS e
 	    INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = e.EmpId
 	    INNER JOIN dbo.EmployeePayroll AS payroll WITH (NOLOCK) ON payroll.EmpId = e.EmpId
@@ -67,7 +70,8 @@ BEGIN
 		p.Type,
 		p.Taxable,
 		item.ItemName,
-		item.Amount AS EncryptAmount
+		item.Amount AS EncryptAmount,
+		'USD' CurrencyCode -- todo
 	FROM #tmpEmp AS e
 	    INNER JOIN dbo.EmployeePayrollAllowance AS epa WITH (NOLOCK) ON epa.EmpId = e.EmpId
 	    INNER JOIN dbo.AllowanceItemSetting AS item WITH (NOLOCK) ON item.AllowanceItemSettingId = epa.AllowanceItemSettingId
