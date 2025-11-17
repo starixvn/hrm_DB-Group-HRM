@@ -26,7 +26,7 @@ BEGIN
 		EmpId INT
 	)
 
-	INSERT INTO @TempListAnnualLeaves
+	INSERT INTO @TempListAnnualLeaves (AnnualLeaves, ExtraLeaves, EmpId)
 	SELECT DISTINCT
 		j.AnnualLeaves,
 		j.ExtraLeaves,
@@ -86,16 +86,4 @@ BEGIN
               AND lt.RequestId IS NULL
               AND ISNULL(lt.Deleted, 0) = 0
     )
-
-	UPDATE lt
-	SET lt.ExtraDays = t.ExtraLeaves
-	FROM dbo.LeaveTrans AS lt WITH (ROWLOCK, UPDLOCK)
-		INNER JOIN @TempListAnnualLeaves AS t ON t.EmpId = lt.EmpId
-	WHERE YEAR(lt.FromDate) = @Year
-		AND lt.DeductDays = 0
-		AND lt.CreditDays > 0
-		AND lt.RequestId IS NULL
-        AND ISNULL(lt.Deleted, 0) = 0
-		AND t.ExtraLeaves > 0
-		AND (lt.ExtraDays = 0 OR lt.ExtraDays IS NULL)
 END
