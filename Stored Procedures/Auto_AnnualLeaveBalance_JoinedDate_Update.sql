@@ -13,6 +13,7 @@ AS
     Revisions:
 		20250814@Lilac: restructure for transfer [Redmine: #235678]
 		20250812@Mira: change DB structure [Redmine: #235678]
+		20251112@Jay.Do: update delete column [Redmine: #243413]
     Param's Explanation:
 */
 BEGIN
