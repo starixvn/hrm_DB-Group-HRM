@@ -1,0 +1,41 @@
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+
+ALTER TABLE [SalaryStructureDetail] 
+ADD ExpatJobLevelAddOn VARCHAR(100) NULL
+GO
+
+ALTER TABLE AllowanceItemSetting
+ADD CurrencyId INT NULL
+GO
+
+ALTER TABLE EmployeePayroll
+ADD SpecialSubsidyCurrencyId INT NULL
+GO
+
+;WITH CurrencyConfig AS
+(
+    SELECT
+        CompanyId,
+        FirstCurrencyId = CAST(
+            LEFT(
+                LTRIM(RTRIM([Value])),
+                CASE 
+                    WHEN CHARINDEX(',', LTRIM(RTRIM([Value]))) > 0 
+                        THEN CHARINDEX(',', LTRIM(RTRIM([Value]))) - 1
+                    ELSE LEN(LTRIM(RTRIM([Value])))
+                END
+            ) AS INT
+        )
+    FROM SystemConfigs
+    WHERE [Key] = 'Currency'
+      AND NULLIF(LTRIM(RTRIM([Value])), '') IS NOT NULL
+)
+-- 2. Update AllowanceItemSetting.CurrencyId
+UPDATE ais
+SET ais.CurrencyId = c.FirstCurrencyId
+FROM AllowanceItemSetting AS ais
+JOIN PayrollItemSetting AS pis
+    ON pis.PayrollItemSettingId = ais.PayrollItemSettingId
+JOIN CurrencyConfig AS c
+    ON c.CompanyId = pis.CompanyId
+

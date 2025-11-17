@@ -19,6 +19,7 @@ AS
     Revisions:
         20250704@Tim: init [Redmine: #230542]
 		20251020@Lilac: rename LocalSalary to BasicSalary, add JobLevelAddOn [Redmine: #241810]
+		20251114@Jay: enhance salary [Redmine: #244343]
 
     Param's Explanation:
 
@@ -44,7 +45,7 @@ BEGIN
 		RETURN
 	END
 
-    CREATE TABLE #tmpDetail (JobLevelId INT, BasicSalary VARCHAR(100), ExpatSalary VARCHAR(100), JobLevelAddOn VARCHAR(100))
+    CREATE TABLE #tmpDetail (JobLevelId INT, BasicSalary VARCHAR(100), ExpatSalary VARCHAR(100), JobLevelAddOn VARCHAR(100), ExpatJobLevelAddOn VARCHAR(100))
 
     SET @xml = (
         SELECT CompanyId AS '@CompanyId'
@@ -54,6 +55,7 @@ BEGIN
 		            ,BasicSalary AS '@BasicSalary'
 		            ,ExpatSalary AS '@ExpatSalary'
 		            ,JobLevelAddOn AS '@JobLevelAddOn'
+		            ,ExpatJobLevelAddOn AS '@ExpatJobLevelAddOn'
                 FROM dbo.SalaryStructureDetail WITH (NOLOCK)
                 WHERE SalaryStructureId = @SalaryStructureId
                 FOR XML PATH('Row'), TYPE
@@ -64,10 +66,10 @@ BEGIN
 		)
 	SET @logOldData = REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"')
 
-    INSERT INTO #tmpDetail (JobLevelId, BasicSalary, ExpatSalary, JobLevelAddOn)
-    SELECT JobLevelId, BasicSalary, ExpatSalary, JobLevelAddOn
+    INSERT INTO #tmpDetail (JobLevelId, BasicSalary, ExpatSalary, JobLevelAddOn, ExpatJobLevelAddOn)
+    SELECT JobLevelId, BasicSalary, ExpatSalary, JobLevelAddOn, ExpatJobLevelAddOn
     FROM OPENJSON(@Details)
-    WITH (JobLevelId INT, BasicSalary VARCHAR(100), ExpatSalary VARCHAR(100), JobLevelAddOn VARCHAR(100))
+    WITH (JobLevelId INT, BasicSalary VARCHAR(100), ExpatSalary VARCHAR(100), JobLevelAddOn VARCHAR(100), ExpatJobLevelAddOn VARCHAR(100))
 	
 	UPDATE dbo.SalaryStructure WITH (ROWLOCK)
     SET CompanyId = @CompanyId
@@ -79,8 +81,8 @@ BEGIN
     DELETE FROM dbo.SalaryStructureDetail
     WHERE SalaryStructureId = @SalaryStructureId
 
-    INSERT INTO dbo.SalaryStructureDetail (SalaryStructureId, JobLevelId, BasicSalary, ExpatSalary, JobLevelAddOn)
-    SELECT @SalaryStructureId, JobLevelId, BasicSalary, ExpatSalary, JobLevelAddOn
+    INSERT INTO dbo.SalaryStructureDetail (SalaryStructureId, JobLevelId, BasicSalary, ExpatSalary, JobLevelAddOn, ExpatJobLevelAddOn)
+    SELECT @SalaryStructureId, JobLevelId, BasicSalary, ExpatSalary, JobLevelAddOn, ExpatJobLevelAddOn
     FROM #tmpDetail
 
     SET @xml = (
@@ -91,6 +93,7 @@ BEGIN
 		            ,BasicSalary AS '@BasicSalary'
 		            ,ExpatSalary AS '@ExpatSalary'
 		            ,JobLevelAddOn AS '@JobLevelAddOn'
+		            ,ExpatJobLevelAddOn AS '@ExpatJobLevelAddOn'
                 FROM dbo.SalaryStructureDetail WITH (NOLOCK)
                 WHERE SalaryStructureId = @SalaryStructureId
                 FOR XML PATH('Row'), TYPE

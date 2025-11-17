@@ -1,9 +1,10 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE PROCEDURE [dbo].[AllowanceItem_Edit] (
+ALTER PROCEDURE [dbo].[AllowanceItem_Edit] (
 	@AllowanceItemSettingId INT,
 	@ItemName NVARCHAR(255),
 	@Amount NVARCHAR(255),
+	@CurrencyId INT,
 	@IsPercent BIT,
 	@IsActive BIT,
 	@ModifiedBy INT
@@ -17,6 +18,7 @@ Original:
 
 Revisions:  
 		20251029@Jay.Do: allowance item [Redmine: #241812]
+		20251114@Jay: enhance salary [Redmine: #244343]
 Param's Explanation:
 */
 BEGIN
@@ -30,6 +32,7 @@ BEGIN
 			SELECT PayrollItemSettingId AS '@PayrollItemSettingId',
 				ItemName AS '@ItemName',
 				Amount AS '@Amount',
+				CurrencyId AS '@CurrencyId',
 				IsPercent AS '@IsPercent',
 				CreatedBy AS '@CreatedBy',
 				CreatedDate AS '@CreatedDate',
@@ -46,6 +49,7 @@ BEGIN
 	UPDATE [dbo].[AllowanceItemSetting]
 	SET [ItemName] = @ItemName,
 		[Amount] = @Amount,
+		[CurrencyId] = @CurrencyId,
 		[IsPercent] = @IsPercent,
 		[IsActive] = @IsActive,
 		[ModifiedBy] = @ModifiedBy,
@@ -56,6 +60,7 @@ BEGIN
 			SELECT PayrollItemSettingId AS '@PayrollItemSettingId',
 				ItemName AS '@ItemName',
 				Amount AS '@Amount',
+				CurrencyId AS '@CurrencyId',
 				IsPercent AS '@IsPercent',
 				CreatedBy AS '@CreatedBy',
 				CreatedDate AS '@CreatedDate',

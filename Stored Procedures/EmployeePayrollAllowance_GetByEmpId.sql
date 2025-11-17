@@ -12,6 +12,7 @@ AS
 
     Revisions:
         - 20251017@Henry: create SP to get employee payroll allowance [Redmine: #241812]
+		- 20251117@Jay: enhance salary [Redmine: #244343]
     
     Param's Explanation:
         @EmpId - Employee ID
@@ -24,6 +25,7 @@ BEGIN
         ais.[ItemName],
         ais.[Amount],
         ais.[IsPercent],
+		c.[CurrencyCode],
         pis.[Type] AS AllowanceName,
         pis.[Taxable],
         pis.[IsMultiSelect]
@@ -32,6 +34,7 @@ BEGIN
         ON epa.[AllowanceItemSettingId] = ais.[AllowanceItemSettingId]
     INNER JOIN [dbo].[PayrollItemSetting] pis WITH (NOLOCK) 
         ON ais.[PayrollItemSettingId] = pis.[PayrollItemSettingId]
+	LEFT JOIN [dbo].Currency c (NOLOCK) ON ais.CurrencyId = c.Id
     WHERE epa.[EmpId] = @EmpId
     ORDER BY pis.[Type] ASC, ais.[ItemName] ASC;
 

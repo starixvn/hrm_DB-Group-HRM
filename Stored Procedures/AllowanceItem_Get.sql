@@ -1,6 +1,6 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE PROCEDURE [dbo].[AllowanceItem_Get]
+ALTER PROCEDURE [dbo].[AllowanceItem_Get]
 (
     @PayrollItemSettingId INT = NULL,
     @CompanyId SMALLINT = NULL
@@ -13,6 +13,7 @@ AS
 
     Revisions:
         - 20251017@Henry: create SP to get allowance item settings [Redmine: #241812]
+		- 20251114@Jay: enhance salary [Redmine: #244343]
     
     Param's Explanation:
         @AllowanceItemSettingId - Allowance Item Setting ID (optional filter)
@@ -25,6 +26,7 @@ BEGIN
     SELECT 
         pis.[PayrollItemSettingId],
         pis.[Type],
+        ais.[CurrencyId],
         ais.[AllowanceItemSettingId],
         ais.[ItemName],
         ais.[Amount],
