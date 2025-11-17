@@ -2,7 +2,8 @@
 
 ALTER PROCEDURE [dbo].[Employee_GroupScope_GetPayrollInfo]
 (
-    @EmpIds NVARCHAR(MAX)
+    @EmpIds NVARCHAR(MAX),
+	@IsLocal BIT = 1
 )
 AS
 /*
@@ -41,18 +42,16 @@ BEGIN
 	-- get salary structure
 	SELECT 
 		e.EmpId,
-		salary.BasicSalary AS EncryptBasicSalary,
-		salary.JobLevelAddOn AS EncryptJobLevelAddOn,
-		salary.ExpatSalary AS EncryptExpatBasicSalary, -- todo
-		salary.JobLevelAddOn AS EncryptExpatJobLevelAddOn, -- todo
-		payroll.SpecialSubsidy AS EncryptSpecialSubsidy,
-		'USD' AS SpecialSubsidyCurrencyCode, -- todo
-		currency.CurrencyCode AS LocalCurrencyCode,		
-		'USD' AS ExpatCurrencyCode
+		IIF(@IsLocal = 1, salary.BasicSalary, salary.ExpatSalary) 'EncryptBasicSalary',
+		IIF(@IsLocal = 1, salary.JobLevelAddOn, salary.ExpatJobLevelAddOn) 'EncryptJobLevelAddOn',
+		IIF(@IsLocal = 1, currency.CurrencyCode, 'USD') 'CurrencyCode',
+		payroll.SpecialSubsidy 'EncryptSpecialSubsidy',
+		ISNULL(subsidyCurrency.CurrencyCode, currency.CurrencyCode) 'SpecialSubsidyCurrencyCode'
 	FROM #tmpEmp AS e
 	    INNER JOIN dbo.CompanyEmployee AS ce WITH (NOLOCK) ON ce.EmpId = e.EmpId
 	    INNER JOIN dbo.EmployeePayroll AS payroll WITH (NOLOCK) ON payroll.EmpId = e.EmpId
 	    LEFT JOIN dbo.SalaryStructureDetail AS salary WITH (NOLOCK) ON salary.SalaryStructureId = payroll.SalaryStructureId AND salary.JoblevelId = e.JobLevelId
+	    LEFT JOIN dbo.Currency AS subsidyCurrency WITH (NOLOCK) ON subsidyCurrency.Id = payroll.SpecialSubsidyCurrencyId
 	    OUTER APPLY (
             SELECT TOP 1 c.CurrencyCode
             FROM dbo.Currency AS c WITH (NOLOCK)
@@ -71,11 +70,12 @@ BEGIN
 		p.Taxable,
 		item.ItemName,
 		item.Amount AS EncryptAmount,
-		'USD' CurrencyCode -- todo
+		ISNULL(currency.CurrencyCode, 'VND') 'CurrencyCode' -- todo
 	FROM #tmpEmp AS e
 	    INNER JOIN dbo.EmployeePayrollAllowance AS epa WITH (NOLOCK) ON epa.EmpId = e.EmpId
 	    INNER JOIN dbo.AllowanceItemSetting AS item WITH (NOLOCK) ON item.AllowanceItemSettingId = epa.AllowanceItemSettingId
 	    INNER JOIN dbo.PayrollItemSetting AS p WITH (NOLOCK) ON p.PayrollItemSettingId = item.PayrollItemSettingId  AND p.Category = 2 -- Allowance
+		LEFT JOIN dbo.Currency AS currency WITH (NOLOCK) ON currency.Id = item.CurrencyId
 	    WHERE p.IsActive = 1 AND p.IsDeleted = 0
 
 	DROP TABLE #tmpEmp
