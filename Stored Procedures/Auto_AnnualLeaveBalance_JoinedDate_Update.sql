@@ -28,7 +28,7 @@ BEGIN
 		[Year] INT
 	)
 
-	INSERT INTO @TempListAnnualLeaves
+	INSERT INTO @TempListAnnualLeaves (AnnualLeaves, ExtraLeaves, EmpId, [Year])
 	SELECT DISTINCT
 		j.AnnualLeaves,
 		j.ExtraLeaves,
