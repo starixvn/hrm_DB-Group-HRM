@@ -12,6 +12,24 @@ ALTER TABLE EmployeePayroll
 ADD SpecialSubsidyCurrencyId INT NULL
 GO
 
+ALTER TABLE [dbo].[Currency]
+ADD [Rounding] SMALLINT NULL;
+GO
+
+CREATE TABLE [dbo].[CurrencyExchangeRate](
+    [EffectiveDate] [date] NOT NULL,
+    [CurrencyId] [int] NOT NULL,
+    [ExchangeRate] [decimal](20, 10) NULL,
+    [ModifiedBy] [int] NULL,
+    [ModifiedDate] [datetime] NULL,
+    CONSTRAINT [PK_CurrencyExchangeRate] PRIMARY KEY CLUSTERED 
+    (
+        [EffectiveDate] ASC,
+        [CurrencyId] ASC
+    )
+);
+GO
+
 ;WITH CurrencyConfig AS
 (
     SELECT
