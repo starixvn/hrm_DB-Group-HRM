@@ -24,6 +24,6 @@ BEGIN
         cer.ModifiedDate
     FROM Currency c
     INNER JOIN CurrencyExchangeRate cer ON c.Id = cer.CurrencyId 
-    ORDER BY c.CurrencyCode, cer.EffectiveDate DESC;
+    ORDER BY cer.EffectiveDate DESC;
 END
 GO
