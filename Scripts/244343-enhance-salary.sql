@@ -48,6 +48,35 @@ GO
     WHERE [Key] = 'Currency'
       AND NULLIF(LTRIM(RTRIM([Value])), '') IS NOT NULL
 )
+-- 2. Update EmployeePayroll.SpecialSubsidyCurrencyId
+UPDATE ep
+SET ep.SpecialSubsidyCurrencyId = c.FirstCurrencyId
+FROM EmployeePayroll AS ep
+JOIN CompanyEmployee AS ce
+    ON ce.EmpId = ep.EmpId
+JOIN CurrencyConfig AS c
+    ON c.CompanyId = ce.CompanyId
+WHERE ep.SpecialSubsidy IS NOT NULL
+GO
+
+;WITH CurrencyConfig AS
+(
+    SELECT
+        CompanyId,
+        FirstCurrencyId = CAST(
+            LEFT(
+                LTRIM(RTRIM([Value])),
+                CASE 
+                    WHEN CHARINDEX(',', LTRIM(RTRIM([Value]))) > 0 
+                        THEN CHARINDEX(',', LTRIM(RTRIM([Value]))) - 1
+                    ELSE LEN(LTRIM(RTRIM([Value])))
+                END
+            ) AS INT
+        )
+    FROM SystemConfigs
+    WHERE [Key] = 'Currency'
+      AND NULLIF(LTRIM(RTRIM([Value])), '') IS NOT NULL
+)
 -- 2. Update AllowanceItemSetting.CurrencyId
 UPDATE ais
 SET ais.CurrencyId = c.FirstCurrencyId
