@@ -6,8 +6,9 @@ ALTER PROCEDURE [dbo].[CurrencyExchangeRate_Update]
     @ExchangeRate DECIMAL(20, 10),
     @EffectiveDate DATE,
     @ModifiedBy INT,
-    @Rounding SMALLINT,
-    @CurrencyCode VARCHAR(3) = NULL
+    @CurrencyCode VARCHAR(3) = NULL,
+    @ErrCode INT = 0 OUTPUT,
+    @ErrMsg NVARCHAR(255) = '' OUTPUT
 AS
 
 /*
@@ -22,28 +23,30 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE @errmsg NVARCHAR(255) = '';
-    DECLARE @errcode INT = 0;
+    -- Initialize error variables
+    SET @ErrCode = 0;
+    SET @ErrMsg = '';
+
     DECLARE @OldCurrencyCode VARCHAR(3);
-    DECLARE @xml XML
-        ,@logData NVARCHAR(MAX)
-        ,@logOldData NVARCHAR(MAX)
+    DECLARE @xml XML;
+    DECLARE @logData NVARCHAR(MAX);
+    DECLARE @logOldData NVARCHAR(MAX);
 
     BEGIN TRY
-        -- Get currency code
+        -- Validation: Check if currency exists
         SELECT @OldCurrencyCode = CurrencyCode
         FROM Currency
         WHERE Id = @CurrencyId;
 
         IF @OldCurrencyCode IS NULL
         BEGIN
-            SET @errcode = 1;
-            SET @errmsg = 'Currency not found';
-            GOTO ErrorHandler;
+            SELECT @ErrCode = 1
+                ,@ErrMsg = 'Currency not found';
+            RETURN;
         END
 
-        -- If CurrencyCode is provided, check if it already exists (if changed)
-        IF @CurrencyCode IS NOT NULL AND @CurrencyCode <> @OldCurrencyCode
+        -- Validation: Check if CurrencyCode already exists for different currency
+        IF @CurrencyCode IS NOT NULL
         BEGIN
             IF EXISTS (
                 SELECT 1 
@@ -52,13 +55,13 @@ BEGIN
                     AND Id <> @CurrencyId
             )
             BEGIN
-                SET @errcode = 1;
-                SET @errmsg = 'Currency code ' + @CurrencyCode + ' already exists';
-                GOTO ErrorHandler;
+                SELECT @ErrCode = 1
+                    ,@ErrMsg = 'Currency code ' + @CurrencyCode + ' already exists';
+                RETURN;
             END
         END
 
-        -- Check if exchange rate exists
+        -- Validation: Check if exchange rate exists
         IF NOT EXISTS (
             SELECT 1 
             FROM CurrencyExchangeRate 
@@ -66,12 +69,12 @@ BEGIN
                 AND EffectiveDate = @OldEffectiveDate
         )
         BEGIN
-            SET @errcode = 1;
-            SET @errmsg = 'Exchange rate not found';
-            GOTO ErrorHandler;
+            SELECT @ErrCode = 1
+                ,@ErrMsg = 'Exchange rate not found';
+            RETURN;
         END
 
-        -- Check if new EffectiveDate already exists (if EffectiveDate changed)
+        -- Validation: Check if new EffectiveDate already exists (if changed)
         IF @EffectiveDate <> @OldEffectiveDate
         BEGIN
             IF EXISTS (
@@ -81,27 +84,25 @@ BEGIN
                     AND EffectiveDate = @EffectiveDate
             )
             BEGIN
-                SET @errcode = 1;
-                SET @errmsg = 'Exchange Rate for ' + @OldCurrencyCode + ' with effective date ' + CONVERT(VARCHAR, @EffectiveDate) + ' already exists';
-                GOTO ErrorHandler;
+                SELECT @ErrCode = 1
+                    ,@ErrMsg = 'Exchange Rate for ' + @OldCurrencyCode + ' with effective date ' + CONVERT(VARCHAR, @EffectiveDate) + ' already exists';
+                RETURN;
             END
         END
 
-        -- Get old data for log
+        -- Get old data for activity log
         SET @xml = (
-                SELECT cer.CurrencyId AS '@CurrencyId'
-                    ,cer.ExchangeRate AS '@ExchangeRate'
-                    ,cer.EffectiveDate AS '@EffectiveDate'
-                    ,c.Rounding AS '@Rounding'
-                    ,c.CurrencyCode AS '@CurrencyCode'
-                FROM dbo.CurrencyExchangeRate cer WITH (NOLOCK)
-                INNER JOIN dbo.Currency c WITH (NOLOCK) ON cer.CurrencyId = c.Id
-                WHERE cer.CurrencyId = @CurrencyId
-                    AND cer.EffectiveDate = @OldEffectiveDate
-                FOR XML PATH('Row')
-                    ,TYPE
-                )
-        SET @logOldData = REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"')
+            SELECT cer.CurrencyId AS '@CurrencyId'
+                ,cer.ExchangeRate AS '@ExchangeRate'
+                ,cer.EffectiveDate AS '@EffectiveDate'
+                ,c.CurrencyCode AS '@CurrencyCode'
+            FROM dbo.CurrencyExchangeRate cer WITH (NOLOCK)
+            INNER JOIN dbo.Currency c WITH (NOLOCK) ON cer.CurrencyId = c.Id
+            WHERE cer.CurrencyId = @CurrencyId
+                AND cer.EffectiveDate = @OldEffectiveDate
+            FOR XML PATH('Row'), TYPE
+        );
+        SET @logOldData = REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"');
 
         -- Update the exchange rate
         UPDATE CurrencyExchangeRate
@@ -112,27 +113,35 @@ BEGIN
         WHERE CurrencyId = @CurrencyId 
             AND EffectiveDate = @OldEffectiveDate;
 
-        -- Update CurrencyCode and Rounding in Currency table
-        UPDATE Currency
-        SET CurrencyCode = CASE WHEN @CurrencyCode IS NOT NULL THEN @CurrencyCode ELSE CurrencyCode END,
-            Rounding = @Rounding
-        WHERE Id = @CurrencyId;
+        -- Check if update was successful
+        IF @@ROWCOUNT = 0
+        BEGIN
+            SELECT @ErrCode = 1
+                ,@ErrMsg = 'No records were updated';
+            RETURN;
+        END
 
-        -- Get new data for log
+        -- Update CurrencyCode in Currency table (if provided and changed)
+        IF @CurrencyCode IS NOT NULL AND @CurrencyCode <> @OldCurrencyCode
+        BEGIN
+            UPDATE Currency
+            SET CurrencyCode = @CurrencyCode
+            WHERE Id = @CurrencyId;
+        END
+
+        -- Get new data for activity log
         SET @xml = (
-                SELECT cer.CurrencyId AS '@CurrencyId'
-                    ,cer.ExchangeRate AS '@ExchangeRate'
-                    ,cer.EffectiveDate AS '@EffectiveDate'
-                    ,c.Rounding AS '@Rounding'
-                    ,c.CurrencyCode AS '@CurrencyCode'
-                FROM dbo.CurrencyExchangeRate cer WITH (NOLOCK)
-                INNER JOIN dbo.Currency c WITH (NOLOCK) ON cer.CurrencyId = c.Id
-                WHERE cer.CurrencyId = @CurrencyId
-                    AND cer.EffectiveDate = @EffectiveDate
-                FOR XML PATH('Row')
-                    ,TYPE
-                )
-        SET @logData = REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"')
+            SELECT cer.CurrencyId AS '@CurrencyId'
+                ,cer.ExchangeRate AS '@ExchangeRate'
+                ,cer.EffectiveDate AS '@EffectiveDate'
+                ,c.CurrencyCode AS '@CurrencyCode'
+            FROM dbo.CurrencyExchangeRate cer WITH (NOLOCK)
+            INNER JOIN dbo.Currency c WITH (NOLOCK) ON cer.CurrencyId = c.Id
+            WHERE cer.CurrencyId = @CurrencyId
+                AND cer.EffectiveDate = @EffectiveDate
+            FOR XML PATH('Row'), TYPE
+        );
+        SET @logData = REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"');
 
         -- Log activity
         EXEC dbo.ActivityLog_Insert
@@ -141,26 +150,24 @@ BEGIN
             ,@UserId = @ModifiedBy
             ,@OldData = @logOldData
             ,@Data = @logData
-            ,@ErrCode = @errcode OUTPUT
-            ,@ErrMsg = @errmsg OUTPUT
+            ,@ErrCode = @ErrCode OUTPUT
+            ,@ErrMsg = @ErrMsg OUTPUT;
 
-        SET @errmsg = 'Exchange Rate updated successfully';
-        GOTO SuccessHandler;
+        -- Check if ActivityLog_Insert failed
+        IF @ErrCode <> 0
+        BEGIN
+            RETURN;
+        END
+
+        SELECT @ErrCode = 0
+            ,@ErrMsg = 'Exchange Rate updated successfully';
+        RETURN;
 
     END TRY
     BEGIN CATCH
-        SET @errcode = 1;
-        SET @errmsg = ERROR_MESSAGE();
-        GOTO ErrorHandler;
+        SELECT @ErrCode = 1
+            ,@ErrMsg = ERROR_MESSAGE();
+        RETURN;
     END CATCH
-
-    SuccessHandler:
-        SELECT @errcode AS errcode, @errmsg AS errmsg;
-        RETURN;
-
-    ErrorHandler:
-        SELECT @errcode AS errcode, @errmsg AS errmsg;
-        RETURN;
 END
 GO
-

@@ -19,9 +19,18 @@ BEGIN
         c.Id AS CurrencyId,
         c.CurrencyCode AS BaseCurrency,
         cer.ExchangeRate AS ToUsd,
-        c.Rounding,
         cer.EffectiveDate,
-        cer.ModifiedDate
+        cer.ModifiedDate,
+        CASE 
+            WHEN EXISTS (
+                SELECT 1
+                FROM SystemConfigs sc
+                CROSS APPLY STRING_SPLIT(sc.[Value], ',') AS tmpc
+                WHERE sc.[Key] = 'Currency'
+                    AND CAST(tmpc.value AS INT) = c.Id
+            ) THEN 1
+            ELSE 0
+        END AS IsUsed
     FROM Currency c
     INNER JOIN CurrencyExchangeRate cer ON c.Id = cer.CurrencyId 
     ORDER BY cer.EffectiveDate DESC;
