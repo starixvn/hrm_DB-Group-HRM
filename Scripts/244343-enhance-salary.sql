@@ -30,6 +30,56 @@ CREATE TABLE [dbo].[CurrencyExchangeRate](
 );
 GO
 
+  UPDATE c
+SET c.Rounding = v.Rounding
+FROM Currency c
+JOIN (VALUES
+    ('USD', -1),
+    ('VND', -4),
+    ('PHP', -2),
+    ('SGD', -1),
+    ('MYR', -1),
+    ('NTD', -1),
+    ('CNY', 0),
+    ('THB', 0),
+    ('GBP', 0),
+    ('EUR', 0)
+) v (Code, Rounding)
+    ON c.CurrencyCode = v.Code;
+
+
+INSERT INTO [dbo].[CurrencyExchangeRate]
+(
+    [EffectiveDate],
+    [CurrencyId],
+    [ExchangeRate],
+    [ModifiedBy],
+    [ModifiedDate]
+)
+
+SELECT 
+    '2025-11-01',
+    c.Id,
+    v.Rate,
+    NULL,
+    GETDATE()
+FROM Currency AS c
+INNER JOIN 
+(
+    VALUES
+        ('MYR', 0.23202708),
+        ('NTD', 0.03058717),
+        ('CNY', 0.13862883),
+        ('THB', 0.03039631),
+        ('GBP', 1.33330459),
+        ('EUR', 1.13825178),
+        ('PHP', 0.01725000),
+        ('SGD', 0.76986547),
+        ('VND', 0.00004000)
+) AS v (Code, Rate)
+    ON c.CurrencyCode = v.Code;
+
+
 ;WITH CurrencyConfig AS
 (
     SELECT
