@@ -1,3 +1,6 @@
+USE bodb_HRM
+GO
+
 ALTER TABLE EmployeeWorkFromHome
 ALTER COLUMN ToDate DATE NULL;
 GO
