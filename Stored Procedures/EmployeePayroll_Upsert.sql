@@ -5,6 +5,7 @@ ALTER PROCEDURE [dbo].[EmployeePayroll_Upsert]
     @EmpId INT,
     @SalaryStructureId INT = NULL,
     @SpecialSubsidy VARCHAR(100) = NULL,
+    @SpecialSubsidyCurrencyId INT = NULL,
     @NoOfDependent INT = 0,
     @AllowanceItemSettingIds NVARCHAR(MAX) = NULL,
     @ErrCode INT = 0 OUTPUT,
@@ -18,11 +19,13 @@ AS
 
     Revisions:
         - 20251017@Henry: create separate SP for payroll operations [Redmine: #241812]
+		- 20251117@Jay: enhance salary [Redmine: #244343]
     
     Param's Explanation:
         @EmpId - Employee ID
         @SalaryStructureId - Salary Structure ID (optional)
         @SpecialSubsidy - Special Subsidy amount (encrypted, optional)
+        @SpecialSubsidyCurrencyId - Special Subsidy Currency (optional)
         @NoOfDependent - Number of dependents (default 0)
         @AllowanceItemSettingIds - Comma-separated list of AllowanceItemSettingId values to assign to employee
         @ModifiedBy - User ID who modified the record
@@ -37,12 +40,18 @@ BEGIN
         IF @SalaryStructureId IS NOT NULL OR @SpecialSubsidy IS NOT NULL OR @NoOfDependent > 0
         BEGIN
             MERGE [dbo].[EmployeePayroll] AS target
-            USING (SELECT @EmpId AS EmpId, @SalaryStructureId AS SalaryStructureId, @SpecialSubsidy AS SpecialSubsidy, @NoOfDependent AS NoOfDependent) AS source
+            USING (SELECT @EmpId AS EmpId, 
+				@SalaryStructureId AS SalaryStructureId, 
+				@SpecialSubsidy AS SpecialSubsidy, 
+				@SpecialSubsidyCurrencyId AS SpecialSubsidyCurrencyId,
+				@NoOfDependent AS NoOfDependent
+			) AS source
             ON target.[EmpId] = source.[EmpId]
             WHEN MATCHED THEN
                 UPDATE SET 
                     [SalaryStructureId] = ISNULL(source.[SalaryStructureId], target.[SalaryStructureId]),
                     [SpecialSubsidy] = ISNULL(source.[SpecialSubsidy], target.[SpecialSubsidy]),
+					[SpecialSubsidyCurrencyId] = ISNULL(source.[SpecialSubsidyCurrencyId], target.[SpecialSubsidyCurrencyId]),
                     [NoOfDependent] = ISNULL(source.[NoOfDependent], target.[NoOfDependent])
             WHEN NOT MATCHED THEN
                 INSERT ([EmpId], [SalaryStructureId], [SpecialSubsidy], [NoOfDependent])

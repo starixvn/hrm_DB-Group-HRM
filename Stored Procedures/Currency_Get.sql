@@ -1,6 +1,6 @@
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE PROCEDURE [dbo].[Currency_Get]
+ALTER PROCEDURE [dbo].[Currency_Get]
 AS
 /*
 Created: 20250714@Lilac.Nguyen
@@ -8,7 +8,8 @@ Task: get currency
 DB: HRM
 Original: 
 
-Revisions:  
+Revisions:
+	20251117@Lilac: get rounding
 Param's Explanation:
 */
 BEGIN
@@ -16,5 +17,6 @@ BEGIN
 
 	SELECT  Id
 		,[CurrencyCode]
+		,Rounding
 	FROM dbo.Currency WITH (NOLOCK)
 END

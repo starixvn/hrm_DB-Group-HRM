@@ -18,6 +18,7 @@ AS
     Revisions:
         20250704@Tim: init [Redmine: #230542]
 		20251020@Lilac: rename LocalSalary to BasicSalary, add JobLevelAddOn [Redmine: #241810]
+		20251114@Jay: enhance salary [Redmine: #244343]
 
     Param's Explanation:
 */
@@ -41,12 +42,12 @@ BEGIN
 		RETURN
 	END
 
-    CREATE TABLE #tmpDetail (JobLevelId INT, BasicSalary VARCHAR(100), ExpatSalary VARCHAR(100), JobLevelAddOn VARCHAR(100))
+    CREATE TABLE #tmpDetail (JobLevelId INT, BasicSalary VARCHAR(100), ExpatSalary VARCHAR(100), JobLevelAddOn VARCHAR(100), ExpatJobLevelAddOn VARCHAR(100))
 
-    INSERT INTO #tmpDetail (JobLevelId, BasicSalary, ExpatSalary, JobLevelAddOn)
-    SELECT JobLevelId, BasicSalary, ExpatSalary, JobLevelAddOn
+    INSERT INTO #tmpDetail (JobLevelId, BasicSalary, ExpatSalary, JobLevelAddOn, ExpatJobLevelAddOn)
+    SELECT JobLevelId, BasicSalary, ExpatSalary, JobLevelAddOn, ExpatJobLevelAddOn
     FROM OPENJSON(@Details)
-    WITH (JobLevelId INT, BasicSalary VARCHAR(100), ExpatSalary VARCHAR(100), JobLevelAddOn VARCHAR(100))
+    WITH (JobLevelId INT, BasicSalary VARCHAR(100), ExpatSalary VARCHAR(100), JobLevelAddOn VARCHAR(100), ExpatJobLevelAddOn VARCHAR(100))
 	
 	INSERT INTO dbo.SalaryStructure (
 		CompanyId
@@ -65,8 +66,8 @@ BEGIN
 
     SELECT @SalaryStructureId = SCOPE_IDENTITY()
 
-    INSERT INTO dbo.SalaryStructureDetail (SalaryStructureId, JobLevelId, BasicSalary, ExpatSalary, JobLevelAddOn)
-    SELECT @SalaryStructureId, JobLevelId, BasicSalary, ExpatSalary, JobLevelAddOn
+    INSERT INTO dbo.SalaryStructureDetail (SalaryStructureId, JobLevelId, BasicSalary, ExpatSalary, JobLevelAddOn, ExpatJobLevelAddOn)
+    SELECT @SalaryStructureId, JobLevelId, BasicSalary, ExpatSalary, JobLevelAddOn, ExpatJobLevelAddOn
     FROM #tmpDetail
 
     SET @xml = (
@@ -77,6 +78,7 @@ BEGIN
 		            ,BasicSalary AS '@BasicSalary'
 		            ,ExpatSalary AS '@ExpatSalary'
 					,JobLevelAddOn AS '@JobLevelAddOn'
+					,ExpatJobLevelAddOn AS '@ExpatJobLevelAddOn'
                 FROM dbo.SalaryStructureDetail WITH (NOLOCK)
                 WHERE SalaryStructureId = @SalaryStructureId
                 FOR XML PATH('Row'), TYPE

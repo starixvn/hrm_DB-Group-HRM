@@ -62,6 +62,7 @@ ALTER PROCEDURE [dbo].[Employee_Information_update]
     ,@SubCompanyId INT = NULL
     ,@SalaryStructureId INT = NULL
     ,@SpecialSubsidy VARCHAR(100) = NULL
+	,@SpecialSubsidyCurrencyId INT = NULL
     ,@AutoApproveRequest BIT = 0
 	,@AllowanceItemSettingIds NVARCHAR(MAX) = NULL
 )
@@ -78,6 +79,7 @@ AS
 		- 20250812@Mira: tranfer employee [Redmine: #235678]
 		- 20251017@Henry: update payroll settings [Redmine: #241812]
 		- 20251017@Henry: dont allow enable employee if they have active in another company [Redmine: #242668]
+		- 20251117@Jay: enhance salary [Redmine: #244343]
     Param's Explanation:
 */
 BEGIN
@@ -245,6 +247,7 @@ BEGIN
                 ,ce.AutoApproveRequest AS '@AutoApproveRequest'
 				,ep.SalaryStructureId AS '@SalaryStructureId'
 				,ep.SpecialSubsidy AS '@SpecialSubsidy'
+				,ep.SpecialSubsidyCurrencyId AS '@SpecialSubsidyCurrencyId'
 				,@OldAllowanceItemSettingIds AS '@AllowanceItemSettingIds'
 			FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
 				INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON ce.EmpId = empsum.EmpId
@@ -255,7 +258,7 @@ BEGIN
 			FOR XML PATH('Row')
 				,TYPE
 			)
-	
+
 	SET @logOldData = REPLACE(CONVERT(NVARCHAR(MAX), @xml), '" />', '"/"')
 
 	IF @Enabled_old = 0 AND @Enabled = 1 AND @IsDeleted_old = 1
@@ -322,6 +325,7 @@ BEGIN
 		@EmpId = @EmpId,
 		@SalaryStructureId = @SalaryStructureId,
 		@SpecialSubsidy = @SpecialSubsidy,
+		@SpecialSubsidyCurrencyId = @SpecialSubsidyCurrencyId,
 		@NoOfDependent = 0,
 		@AllowanceItemSettingIds = @AllowanceItemSettingIds,
 		@ErrCode = @ErrCode OUTPUT,
@@ -409,6 +413,7 @@ BEGIN
 				,ce.AutoApproveRequest AS '@AutoApproveRequest'
 				,ep.SalaryStructureId AS '@SalaryStructureId'
 				,ep.SpecialSubsidy AS '@SpecialSubsidy'
+				,ep.SpecialSubsidyCurrencyId AS '@SpecialSubsidyCurrencyId'
 				,@AllowanceItemSettingIds AS '@AllowanceItemSettingIds'
 			FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
 				INNER JOIN dbo.EmployeeSummary AS empsum WITH (NOLOCK) ON ce.EmpId = empsum.EmpId

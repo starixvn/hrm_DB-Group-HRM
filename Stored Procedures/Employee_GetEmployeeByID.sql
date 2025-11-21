@@ -20,6 +20,7 @@ AS
 		- 20250903@Jay: update role [Redmine: #237201]
 		- 20251017@Henry: add payroll settings field [Redmine: #241812]
 		- 20251017@Henry: get sick leave balance [Redmine: #242668]
+		- 20251117@Jay: enhance salary [Redmine: #244343]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -129,6 +130,8 @@ BEGIN
 		,ml.[Name] AS ManagementLevel
         ,ep.SalaryStructureId
 		,ep.SpecialSubsidy
+		,ep.SpecialSubsidyCurrencyId
+		,ssc.CurrencyCode AS SpecialSubsidyCurrency
 		,ep.NoOfDependent
         ,ss.Name AS SalaryStructure
 		,ssd.BasicSalary
@@ -155,6 +158,7 @@ BEGIN
 		LEFT JOIN dbo.JobLevel AS jl WITH (NOLOCK) ON jl.JobLevelId = ce.JobLevelId
 		LEFT JOIN dbo.ManagementLevel AS ml WITH (NOLOCK) ON ml.ManagementLevelId = ce.ManagementLevelId
 		LEFT JOIN dbo.EmployeePayroll AS ep WITH (NOLOCK) ON ep.EmpId = ce.EmpId
+		LEFT JOIN dbo.Currency AS ssc (NOLOCK) ON ssc.Id = ep.SpecialSubsidyCurrencyId
 		LEFT JOIN dbo.SalaryStructure AS ss WITH (NOLOCK) ON ss.SalaryStructureId = ep.SalaryStructureId
 		LEFT JOIN dbo.SalaryStructureDetail AS ssd WITH (NOLOCK) ON ssd.SalaryStructureId = ss.SalaryStructureId AND ssd.JobLevelId = ce.JobLevelId
 	WHERE ce.EmpId = @EmpId
