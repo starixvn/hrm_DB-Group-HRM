@@ -81,8 +81,8 @@ BEGIN
 			OR (@IsPermanent = 1 AND ew.ToDate IS NULL)
 			OR (@IsPermanent = 0 AND ew.ToDate IS NOT NULL)
 		)
-	ORDER BY ew.FromDate
-		,g.[Name]
+	ORDER BY ew.FromDate DESC
+		,g.[Name] ASC
 
     DROP TABLE #tmpTeam
 END
