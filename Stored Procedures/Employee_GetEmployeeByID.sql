@@ -21,6 +21,7 @@ AS
 		- 20251017@Henry: add payroll settings field [Redmine: #241812]
 		- 20251017@Henry: get sick leave balance [Redmine: #242668]
 		- 20251117@Jay: enhance salary [Redmine: #244343]
+		20251120@Mira: get default balance from last year [Redmine: #244781]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -30,7 +31,7 @@ BEGIN
 		,@SickLeaveBalance NUMERIC(18, 2)
 		,@Today DATE = GETDATE()
 
-	SELECT @KIVLeaveBalance = dbo.fnc_GetKIVByDayBalance(@EmpId, @Today, NULL)
+	SELECT @KIVLeaveBalance = dbo.fnc_GetKIVByDayBalance(@EmpId, @Today, NULL, 1)
 		,@AnnualLeaveBalance = dbo.fnc_GetAnnualLeaveBalance(@EmpId, @Today, NULL)
 		,@SickLeaveBalance = dbo.fnc_GetSickLeaveBalance(@EmpId, YEAR(@Today), NULL)
 		

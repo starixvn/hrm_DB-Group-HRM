@@ -100,7 +100,7 @@ BEGIN
         FROM dbo.WorkingTimeRequest AS w WITH (NOLOCK)
             INNER JOIN dbo.KeepInViewRequest AS kiv WITH (NOLOCK) ON w.RequestId = kiv.RequestId
 		    AND kiv.OnDate BETWEEN @fromdate AND @todate
-	    WHERE w.CurrentStatus IN (4, 6)
+	    WHERE w.CurrentStatus IN (4, 6) -- Approved, Processed
 		    AND kiv.KeepInViewType = @KeepInViewByDay
 			AND (@empId IS NULL OR w.EmpId = @empId)
         UNION ALL
@@ -143,7 +143,7 @@ BEGIN
 			AND rq.ToDate
 	WHERE cl.IsLeaveDay = 1
 		AND cl.WorkDate BETWEEN rq.FromDate AND rq.ToDate
-		AND rq.CurrentStatus IN (4, 6)
+		AND rq.CurrentStatus NOT IN (3, 5, 7) -- NotVerified, Rejected, Void
 		AND cl.WorkDate BETWEEN @fromdate AND DATEADD(dd, - 1, @todate)
 		AND (@empId IS NULL OR cl.EmpId = @empId)
 
@@ -162,9 +162,9 @@ BEGIN
 	FROM dbo.LeaveRequestDetail AS ldt WITH (NOLOCK)
 		INNER JOIN dbo.LeaveRequest AS lv WITH (NOLOCK) ON ldt.RequestId = lv.RequestId
 		INNER JOIN dbo.WorkingTimeRequest AS w WITH (NOLOCK) ON ldt.RequestId = w.RequestId
-	WHERE ldt.LeaveType = 10
-		AND lv.LeaveType = 0
-		AND w.CurrentStatus IN (4, 6)
+	WHERE ldt.LeaveType = 10 -- Compensation Leave (by Day)
+		AND lv.LeaveType = 0 -- Request Type
+		AND w.CurrentStatus NOT IN (3, 5, 7) -- NotVerified, Rejected, Void
 		AND ldt.OnDate BETWEEN @fromdate AND DATEADD(dd, - 1, @todate)
 		AND (@empId IS NULL OR lv.EmpId = @empId)
 
@@ -325,7 +325,8 @@ BEGIN
 		,(cb.Nov + ISNULL(dek.Nov, 0)) AS Nov
 		,(cb.[Dec] + ISNULL(dek.[Dec], 0)) AS [Dec]
 		,ISNULL(CreditDays, 0) - ISNULL(cb.DeductDays, 0) AS LeaveBalance
-		,ISNULL(OpenKIV, 0) - ISNULL(dek.DeductKIVDays, 0) AS KIVBalance
+		,dbo.fnc_GetKIVByDayBalance(e.EmpId, @fromdate, NULL, 1) AS KIVBalance
+		,dbo.fnc_GetKIVByHourBalance(e.EmpId, @fromdate, NULL) AS KIVMinuteBalance
 		,'' AS Remark
 		,cb.EmpId
 		,e.Code
@@ -379,7 +380,8 @@ BEGIN
 		,dek.Nov
 		,dek.[Dec]
 		,ISNULL(OpenBalance, 0) AS LeaveBalance
-		,ISNULL(OpenKIV, 0) - ISNULL(dek.DeductKIVDays, 0) AS KIVBalance
+		,dbo.fnc_GetKIVByDayBalance(e.EmpId, @fromdate, NULL, 1) AS KIVBalance
+		,dbo.fnc_GetKIVByHourBalance(e.EmpId, @fromdate, NULL) AS KIVMinuteBalance
 		,'' AS Remark
 		,op.EmpId
 		,e.[Code]

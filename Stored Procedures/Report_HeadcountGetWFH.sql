@@ -9,6 +9,7 @@ DB: bodb_HRM
 
 Revisions:
 	20250219@Mira: Get data for headcount report - [Redmine: #231008]
+	20251120@Mira: Only get CountInHeadcount WFH emp [Redmine: #244781]
 */
 AS 
 
@@ -21,7 +22,7 @@ BEGIN
 		e.FromDate,
 		e.ToDate
 	FROM dbo.EmployeeWorkFromHome e WITH (NOLOCK)
-	WHERE e.FromDate <= @ToDate AND e.ToDate >= @FromDate
+	WHERE e.FromDate <= @ToDate AND e.ToDate >= @FromDate AND e.IsCountInHeadcount = 1
 	-- Nexcel
 	UNION 
 	SELECT e.EmpId,

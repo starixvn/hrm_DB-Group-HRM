@@ -31,6 +31,7 @@ AS
         20250722@Tim: auto approve request [Redmine: #233324]
         20250813@Jay: change db structure [Redmine: #235678]
 		20251111@Lilac: remove on behalf request [Redmine: #243412]
+		20251120@Mira: get default balance from last year [Redmine: #244781]
     Param's Explanation:
 	    - @ListDetail: '<ROOT><Row OnDate='' ShiftID='' LeaveType='' IsHalfDay='' WorkType='' FromTime='' ToTime='' /></ROOT>'
 	    - @WorkType : 1. off, 2. leave, 3. work
@@ -541,7 +542,7 @@ BEGIN
 
 	IF @KIVLeaveDay > 0
 	BEGIN
-		IF @KIVLeaveDay > dbo.fnc_GetKIVByDayBalance(@EmpId, @ToDate, @RequestId)
+		IF @KIVLeaveDay > dbo.fnc_GetKIVByDayBalance(@EmpId, @ToDate, @RequestId, 1)
 		BEGIN
 			SET @ErrCode = 111
 			SET @ErrMsg = 'Not enough Compensation Leave days to request.'

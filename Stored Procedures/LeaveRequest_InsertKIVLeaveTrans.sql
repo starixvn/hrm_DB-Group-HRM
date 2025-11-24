@@ -10,6 +10,7 @@ Original:
 
 Revisions:
 	20150927@Quinn.Vo: insert kiv temp leave balance
+	20251120@Mira: insert kiv temp leave balance [Redmine: #244781]
 Param's Explanation:
 
 */
@@ -115,6 +116,12 @@ BEGIN
 
 	IF ISNULL(@KIVLeaveDay, 0) > 0
 	BEGIN
+		SELECT @onDate = lr.ToDate,
+			@empId = lr.EmpId
+		FROM dbo.LeaveRequest lr WITH (NOLOCK)
+		WHERE Requestid = @RequestId
+
+		DECLARE @KIVBalanceLastYear NUMERIC(18, 2) = dbo.fnc_GetKIVByDayBalance(@empId, DATEADD(YEAR, -1, @onDate), @RequestId, 0);
 		INSERT INTO dbo.KeepInViewByDayTrans (
 			[EmpId]
 			,[RequestId]
@@ -123,14 +130,16 @@ BEGIN
 			,[InYear]
 			,[InsertedDate]
 			)
-		SELECT EmpId
+		SELECT @empId
 			,@RequestId
 			,0
 			,ISNULL(@KIVLeaveDay, 0)
-			,YEAR(ToDate)
-			,@startTime
-		FROM dbo.LeaveRequest WITH (NOLOCK)
-		WHERE Requestid = @RequestId
+			,CASE 
+				WHEN @KIVBalanceLastYear > 0 
+					THEN YEAR(@onDate) - 1 -- Priority deduction of last year's balance
+				ELSE YEAR(@onDate)
+			END
+			,@startTime		
 	END
 
 	IF ISNULL(@KIVLeaveHour, 0) > 0
