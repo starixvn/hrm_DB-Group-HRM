@@ -1,6 +1,6 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE OR ALTER PROCEDURE dbo.[Report_HeadcountGetWFH] @Year INT
+ALTER PROCEDURE dbo.[Report_HeadcountGetWFH] @Year INT
 
 /*
 Created: 20250219@Mira

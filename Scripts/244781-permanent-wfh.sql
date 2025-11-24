@@ -36,7 +36,7 @@ WHERE EmployeeWorkFromHomeId IN
 662, 664, 666, 667, 668, 537, 651, 654, 517, 538, 539, 541, 542, 543, 544, 549, 568, 570, 571, 573, 574, 
 575, 576, 577, 579, 580, 581, 582, 583, 584, 585, 586, 587, 589, 590, 605, 606, 608, 610, 611, 613, 615, 
 616, 618, 641, 642, 643, 646, 853, 854, 858, 859, 855)
-
+GO
 
 
 --- Time: Permanent && Count Headcount: No ---
@@ -44,10 +44,11 @@ UPDATE EmployeeWorkFromHome
 SET IsCountInHeadcount = 0, ToDate = NULL
 WHERE EmployeeWorkFromHomeId IN
 (74)
+GO
 
 --- Time: Fixed && Count Headcount: No ---
 UPDATE EmployeeWorkFromHome
-SET IsCountInHeadcount = 1, ToDate = NULL
+SET IsCountInHeadcount = 0
 WHERE EmployeeWorkFromHomeId IN
 (503, 703, 707, 710, 732, 394, 426, 422, 402, 423, 421, 432, 403, 743, 742, 795, 871, 438, 762, 502, 466, 
 476, 465, 454, 455, 489, 490, 439, 479, 463, 453, 491, 488, 440, 477, 478, 501, 481, 499, 471, 467, 441, 
@@ -71,3 +72,4 @@ WHERE EmployeeWorkFromHomeId IN
 62, 59, 117, 85, 63, 216, 206, 118, 90, 77, 199, 383, 114, 89, 78, 101, 299, 87, 187, 88, 79, 102, 67, 
 75, 193, 185, 163, 275, 250, 289, 133, 267, 242, 76, 298, 91, 204, 115, 92, 68, 69, 384, 70, 189, 385, 
 108, 387, 388, 107, 93, 105, 386, 99, 97, 393, 192, 104, 203, 753, 755, 761, 751)
+GO
