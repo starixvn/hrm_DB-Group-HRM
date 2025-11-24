@@ -54,32 +54,17 @@ BEGIN
 		INNER JOIN #tmpTeam AS t WITH (NOLOCK) ON g.GroupId = t.GroupId
 		INNER JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId = g.DepartmentId
 		LEFT JOIN dbo.CompanyEmployee AS modifier WITH (NOLOCK) ON ew.ModifiedBy = modifier.EmpId
-	WHERE (
-			(
-				ew.FromDate BETWEEN @FromDate
-					AND @ToDate
-				)
-			OR (
-				ew.ToDate BETWEEN @FromDate
-					AND @ToDate
-				)
-			OR (
-				@FromDate BETWEEN ew.FromDate
-					AND ew.ToDate
-				)
-			OR (
-				@ToDate BETWEEN ew.FromDate
-					AND ew.ToDate
-				)
-			)
-		AND (
+	WHERE 
+		(
 			@IsLocal IS NULL
 			OR empsum.IsLocal = @IsLocal
-			)
+		)
+		AND ew.FromDate <= @ToDate
+		AND (ew.ToDate IS NULL OR ew.ToDate >= @FromDate)
 		AND (
 			@IsPermanent IS NULL
-			OR (@IsPermanent = 1 AND ew.ToDate IS NULL)
-			OR (@IsPermanent = 0 AND ew.ToDate IS NOT NULL)
+			 OR (@IsPermanent = 1 AND ew.ToDate IS NULL)
+			 OR (@IsPermanent = 0 AND ew.ToDate IS NOT NULL)
 		)
 	ORDER BY ew.FromDate DESC
 		,g.[Name] ASC

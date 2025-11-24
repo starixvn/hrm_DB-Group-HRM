@@ -20,9 +20,9 @@ BEGIN
 
 	SELECT e.EmpId,
 		e.FromDate,
-		e.ToDate
+		ISNULL(e.ToDate, @ToDate) 'ToDate'
 	FROM dbo.EmployeeWorkFromHome e WITH (NOLOCK)
-	WHERE e.FromDate <= @ToDate AND e.ToDate >= @FromDate AND e.IsCountInHeadcount = 1
+	WHERE e.FromDate <= @ToDate AND (e.ToDate IS NULL OR e.ToDate >= @FromDate) AND e.IsCountInHeadcount = 1
 	-- Nexcel
 	UNION 
 	SELECT e.EmpId,
