@@ -1,6 +1,6 @@
 /*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
-CREATE OR ALTER PROCEDURE dbo.[Report_HeadcountGetWFH] @Year INT
+ALTER PROCEDURE dbo.[Report_HeadcountGetWFH] @Year INT
 
 /*
 Created: 20250219@Mira
@@ -9,6 +9,7 @@ DB: bodb_HRM
 
 Revisions:
 	20250219@Mira: Get data for headcount report - [Redmine: #231008]
+	20251120@Mira: Only get CountInHeadcount WFH emp [Redmine: #244781]
 */
 AS 
 
@@ -19,9 +20,9 @@ BEGIN
 
 	SELECT e.EmpId,
 		e.FromDate,
-		e.ToDate
+		ISNULL(e.ToDate, @ToDate) 'ToDate'
 	FROM dbo.EmployeeWorkFromHome e WITH (NOLOCK)
-	WHERE e.FromDate <= @ToDate AND e.ToDate >= @FromDate
+	WHERE e.FromDate <= @ToDate AND (e.ToDate IS NULL OR e.ToDate >= @FromDate) AND e.IsCountInHeadcount = 1
 	-- Nexcel
 	UNION 
 	SELECT e.EmpId,

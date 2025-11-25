@@ -6,6 +6,7 @@ ALTER PROCEDURE [dbo].[EmployeeWorkFromHome_Get]
 	,@ToDate DATE
 	,@TeamIds VARCHAR(MAX) = ''
 	,@IsLocal BIT = NULL
+	,@IsPermanent BIT = NULL
 )
 AS
 /*
@@ -16,6 +17,7 @@ AS
     Revisions:
         - 20250409@Tim: remove section [Redmine: #222886]
 		- 20250812@Mira: tranfer employee [Redmine: #235678]
+		- 20251121@Lilac: add type IsPermanent WFH [Redmine: #244781]
     Param's Explanation:
 */
 BEGIN
@@ -43,6 +45,7 @@ BEGIN
 		,ew.ModifiedBy
 		,modifier.NickName AS Modifier
 		,ew.Remark
+		,ew.IsCountInHeadcount
 	FROM dbo.EmployeeWorkFromHome AS ew WITH (NOLOCK)
 		INNER JOIN dbo.CompanyEmployee AS e WITH (NOLOCK) ON ew.EmpId = e.EmpId
 		INNER JOIN dbo.Employee AS u WITH (NOLOCK) ON u.UserId = e.UserId
@@ -51,30 +54,20 @@ BEGIN
 		INNER JOIN #tmpTeam AS t WITH (NOLOCK) ON g.GroupId = t.GroupId
 		INNER JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId = g.DepartmentId
 		LEFT JOIN dbo.CompanyEmployee AS modifier WITH (NOLOCK) ON ew.ModifiedBy = modifier.EmpId
-	WHERE (
-			(
-				ew.FromDate BETWEEN @FromDate
-					AND @ToDate
-				)
-			OR (
-				ew.ToDate BETWEEN @FromDate
-					AND @ToDate
-				)
-			OR (
-				@FromDate BETWEEN ew.FromDate
-					AND ew.ToDate
-				)
-			OR (
-				@ToDate BETWEEN ew.FromDate
-					AND ew.ToDate
-				)
-			)
-		AND (
+	WHERE 
+		(
 			@IsLocal IS NULL
 			OR empsum.IsLocal = @IsLocal
-			)
-	ORDER BY ew.FromDate
-		,g.[Name]
+		)
+		AND ew.FromDate <= @ToDate
+		AND (ew.ToDate IS NULL OR ew.ToDate >= @FromDate)
+		AND (
+			@IsPermanent IS NULL
+			 OR (@IsPermanent = 1 AND ew.ToDate IS NULL)
+			 OR (@IsPermanent = 0 AND ew.ToDate IS NOT NULL)
+		)
+	ORDER BY ew.FromDate DESC
+		,g.[Name] ASC
 
     DROP TABLE #tmpTeam
 END

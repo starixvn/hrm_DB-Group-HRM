@@ -17,6 +17,7 @@ ALTER PROCEDURE [dbo].[Report_HeadcountGet] @Year INT
 	    20251014@Mira: exclude employee of deleted group [Redmine: #240215]
 		20251027@Mira: get employee transfer - [Redmine: #242668]
 		20251030@Mira: correct confirmDate [Redmine: #242636]
+		20251120@Mira: only get GroupDate [Redmine: #244781]
 */
 AS
     BEGIN
@@ -53,7 +54,6 @@ AS
 		    OUTER APPLY (
 			    SELECT
 				    JoinedDate = CASE 
-					    WHEN ce.CompanyDate >= '1900-01-01' AND ce.CompanyDate <= '2079-06-06' THEN ce.CompanyDate
 					    WHEN e.JoinedDate >= '1900-01-01' AND e.JoinedDate <= '2079-06-06' THEN e.JoinedDate
 					    ELSE '1990-01-01'
 				    END,

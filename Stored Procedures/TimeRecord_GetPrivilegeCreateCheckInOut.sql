@@ -1,4 +1,4 @@
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
 
 ALTER PROCEDURE [dbo].[TimeRecord_GetPrivilegeCreateCheckInOut] @EmpId INT,
 	@CurrentDate DATETIME
@@ -11,6 +11,7 @@ Original:
 
 Revisions:  
     - 20250716@Jay: Fix check by server timezone [Redmine: #228715]
+    - 20251121@Jay: WFH permanent [Redmine: #244781]
 Param's Explanation:
 
 */
@@ -19,15 +20,16 @@ BEGIN
 
 	DECLARE @IsPrivilegeCreateCheckInOut BIT = 0
 
-	IF (EXISTS(SELECT 1 FROM dbo.EmployeeWorkFromHome WITH (NOLOCK) 
+	IF EXISTS (
+		SELECT 1 FROM dbo.EmployeeWorkFromHome WITH (NOLOCK) 
 		WHERE EmpId = @EmpId 
 			AND @CurrentDate >= FromDate 
-			AND DATEADD (DD, -1, @CurrentDate) <= ToDate))
+			AND (ToDate IS NULL OR DATEADD (DD, -1, @CurrentDate) <= ToDate)
+	)
+		
 	BEGIN
 		SET @IsPrivilegeCreateCheckInOut = 1
 	END
 
 	SELECT @IsPrivilegeCreateCheckInOut
 END
-
-GO

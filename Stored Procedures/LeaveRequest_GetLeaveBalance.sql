@@ -13,6 +13,7 @@ AS
     DB: bodb_HRM
 
     Revisions:
+		20251120@Mira: get default balance from last year [Redmine: #244781]
     Param's Explanation:
 */
 BEGIN
@@ -31,7 +32,7 @@ BEGIN
 		,@HospitalizationLeaveBalance NUMERIC(18, 2)
 		,@SickLeaveBalance NUMERIC(18, 2)
 
-	SELECT @KIVBalance = dbo.fnc_GetKIVByDayBalance(@EmpId, @EffectedDay, @RequestId)
+	SELECT @KIVBalance = dbo.fnc_GetKIVByDayBalance(@EmpId, @EffectedDay, @RequestId, 1)
 		,@KIVByHourBalance = dbo.fnc_GetKIVByHourBalance(@EmpId, @EffectedDay, @RequestId)
 		,@LeaveBalanceDay = dbo.fnc_GetAnnualLeaveBalance(@EmpId, @EffectedDay, @RequestId)
 		,@CurrenLeaveDay = dbo.fnc_GetAnnualLeaveBalanceByDate(@EmpId, @EffectedDay, @RequestId)

@@ -1,13 +1,19 @@
-/*<info serverAlias="bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
-CREATE OR ALTER     PROCEDURE [dbo].[EmployeeBioInfo_Get]
+/*<info serverAlias="HRM-bodb_HRM" executers="wsv_hrm" isFunction="0"></info>*/
+
+ALTER PROCEDURE [dbo].[EmployeeBioInfo_Get]
+(
     @EmpId INT = NULL,
     @CompanyId INT,
     @CurrentDate DATETIME = NULL
+)
 AS
 /*
-Created: 2025-07-14 @Jay.Do  
-Task: Get employee bio info by ID  
-DB: HRM  
+	Created: 2025-07-14 @Jay.Do
+	Task: Get employee bio info by ID
+	DB: bodb_HRM
+
+    Revisions:
+    - 20251121@Jay: WFH permanent [Redmine: #244781]
 */
 BEGIN
     SET NOCOUNT ON;
@@ -28,7 +34,7 @@ BEGIN
                 FROM dbo.EmployeeWorkFromHome ewfh WITH (NOLOCK)
                 WHERE ewfh.EmpId = @EmpId
 				  AND @CurrentDate >= ewfh.FromDate 
-				  AND DATEADD(DD, -1, @CurrentDate) <= ewfh.ToDate
+				  AND (ewfh.ToDate IS NULL OR DATEADD(DD, -1, @CurrentDate) <= ewfh.ToDate)
             ), 0)
             ELSE 0
         END AS IsWorkFromHome,
