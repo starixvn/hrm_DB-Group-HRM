@@ -14,20 +14,21 @@ RETURNS NUMERIC(18, 2)
 
 	Revisions:
 		20251120@Mira: get default balance from last year [Redmine: #244781]
+		20251126@Mira: get default balance from last year [Redmine: #244781]
 */
 AS
 BEGIN
-	DECLARE @KIVBalance NUMERIC(18, 2) = 0
+	DECLARE @KIVBalance NUMERIC(18, 2) = 0;
 
 	SELECT @KIVBalance = SUM(ISNULL(CreditDays, 0)) - SUM(CASE 
 				WHEN @RequestId IS NULL THEN ISNULL(DeductDays, 0)
-				ELSE CASE 
+				ELSE CASE -- edit
 						WHEN trans.RequestId = @RequestId THEN 0
 						ELSE ISNULL(DeductDays, 0)
 						END
 				END)
 	FROM dbo.KeepInViewByDayTrans trans WITH (NOLOCK)
-	INNER JOIN dbo.WorkingTimeRequest AS req WITH (NOLOCK) ON trans.RequestId = req.RequestId
+	LEFT JOIN dbo.WorkingTimeRequest AS req WITH (NOLOCK) ON trans.RequestId = req.RequestId
 	WHERE trans.EmpId = @EmpID
 		AND (
 				InYear = YEAR(@Date)
@@ -36,10 +37,10 @@ BEGIN
 					AND InYear = YEAR(@Date) - 1
 				)
 			)
-		AND req.CurrentStatus NOT IN (3, 5, 7) -- NotVerified, Rejected, Void
+		AND (
+			req.CurrentStatus IS NULL -- transfer (KeepInViewByDayTrans.RequestId = -1) or init data (KeepInViewByDayTrans.RequestId < 0)
+			OR req.CurrentStatus NOT IN (3, 5, 7) -- NotVerified, Rejected, Void
+			)
 
 	RETURN ISNULL(@KIVBalance, 0)
 END
-
-
-
