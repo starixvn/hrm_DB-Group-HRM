@@ -19,6 +19,7 @@ Revisions:
 	- 20250404@Jay.Do: Remove section
 	- 20250714@Mira: get joblevel and mGrade [#Redmine: 232030]
 	- 20250812@Mira: tranfer employee [Redmine: #235678]
+	20251127@Lilac: get transfer in, out dates [Redmine: #245211]
 Param's Explanation:
 */
 BEGIN
@@ -113,6 +114,8 @@ BEGIN
 		,e.JoinedDate
 		,e.MilitaryFromDate
 		,e.MilitaryToDate
+		,etf.TransferOutDate AS DateTransferOut
+		,ett.TransferInDate	AS DateTransferIn
 		,jt.[Name] AS JobTitle
 		,jl.[Name] AS JobLevel
 		,ml.[Name] AS ManagementLevel
@@ -149,6 +152,18 @@ BEGIN
 		LEFT JOIN dbo.[Country] AS ctry WITH (NOLOCK) ON ctry.CountryCode = es.CountryCode
 		LEFT JOIN dbo.[JobLevel] AS jl WITH (NOLOCK) ON jl.JobLevelId = ce.JobLevelId AND jl.IsDeleted = 0
 		LEFT JOIN dbo.ManagementLevel ml WITH (NOLOCK) ON ce.ManagementLevelId = ml.ManagementLevelId
+		OUTER APPLY (
+			SELECT TOP 1 TransferOutDate
+			FROM dbo.EmployeeTransfer WITH (NOLOCK)
+			WHERE FromEmpId = ce.EmpId
+			ORDER BY TransferId DESC
+		) AS etf
+		OUTER APPLY (
+			SELECT TOP 1 TransferInDate
+			FROM dbo.EmployeeTransfer WITH (NOLOCK)
+			WHERE ToEmpId = ce.EmpId
+			ORDER BY TransferId DESC
+		) AS ett
 	ORDER BY ce.EmpId
 
 	INSERT INTO #tmpSupervisor(
