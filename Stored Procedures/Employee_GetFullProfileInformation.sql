@@ -19,7 +19,7 @@ Revisions:
 	- 20250404@Jay.Do: Remove section
 	- 20250714@Mira: get joblevel and mGrade [#Redmine: 232030]
 	- 20250812@Mira: tranfer employee [Redmine: #235678]
-	20251127@Lilac: get transfer in, out dates [Redmine: #245211]
+	- 20251127@Lilac: get transfer in, out dates [Redmine: #245211]
 Param's Explanation:
 */
 BEGIN
@@ -164,7 +164,7 @@ BEGIN
 			WHERE ToEmpId = ce.EmpId
 			ORDER BY TransferId DESC
 		) AS ett
-	ORDER BY ce.EmpId
+	ORDER BY ce.EmpId DESC
 
 	INSERT INTO #tmpSupervisor(
 		EmpId
@@ -183,7 +183,7 @@ BEGIN
 		AND empsu.isDeleted = 0
 		AND su.ActionType IN (2, 3, 4, 5, 8)
 		AND su.IsDeleted = 0
-	ORDER BY su.EmpId
+	ORDER BY su.EmpId DESC
 
 	SELECT tbl.EmpId
 		,tbl.ActionType

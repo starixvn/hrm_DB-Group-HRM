@@ -190,7 +190,7 @@ BEGIN
 		CASE WHEN @enable = 0 THEN e.ResignedDate END DESC,
 		JoinedDate DESC,
 		[Code] DESC,
-		[NickName]
+		[NickName] ASC
 	OFFSET (@pageNumber - 1) * @pageSize ROWS 
 	FETCH NEXT @pageSize ROWS ONLY;
 
