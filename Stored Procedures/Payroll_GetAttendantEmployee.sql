@@ -31,8 +31,8 @@ BEGIN
 		@CheckOutId INT = 2;
 
 	-- Calculate date range for the month to enable index usage
-	DECLARE @StartDate DATETIME = DATEFROMPARTS(YEAR(@Date), MONTH(@Date), 1);
-	DECLARE @EndDate DATETIME = DATEADD(MONTH, 1, @StartDate); -- Start of next month (exclusive)
+	DECLARE @StartDate DATE = DATEFROMPARTS(YEAR(@Date), MONTH(@Date), 1);
+	DECLARE @EndDate DATE = DATEADD(DAY, -1, DATEADD(MONTH, 1, @StartDate));
 
 	DECLARE @TempEmployeeWorkingCalendar TABLE(
 		EmpId INT,
@@ -117,8 +117,7 @@ BEGIN
 		LEFT JOIN EmployeeAttendance ea WITH(NOLOCK) ON ea.EmpId = tec.EmpId 
 			AND tec.WorkDate = ea.AttendanceDate
 		INNER JOIN EmployeeSummary es WITH (NOLOCK) ON tec.EmpId = es.EmpId
-	WHERE tec.WorkDate >= @StartDate
-		AND tec.WorkDate < @EndDate
+	WHERE tec.WorkDate BETWEEN @StartDate AND @EndDate
 		AND tec.IsOffDay = 0
 
 	-- Update CheckIn and CheckOut in a single pass
@@ -205,13 +204,12 @@ BEGIN
 		e.JoinedDate,
 		CASE 
             WHEN e.ResignedDate IS NOT NULL 
-                 AND e.ResignedDate >= @StartDate
-                 AND e.ResignedDate < @EndDate
+                 AND e.ResignedDate BETWEEN @StartDate AND @EndDate
             THEN 1 ELSE 0
 		END AS IsResigned,
 		e.ResignedDate,
 		CASE 
-            WHEN e.ConfirmedDate IS NULL OR e.ConfirmedDate > @StartDate THEN 1
+            WHEN e.ConfirmedDate IS NULL OR (e.ConfirmedDate BETWEEN @StartDate AND @EndDate) THEN 1
 			ELSE 0
 		END AS IsNewHire
 	FROM @TempWorkingSummary ws
