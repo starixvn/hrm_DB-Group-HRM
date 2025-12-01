@@ -12,7 +12,10 @@ USE bodb_HRM
 GO
 
 ALTER TABLE [dbo].[MonthlySalary]
-ADD ManagementAllowance VARCHAR(100) NULL,
+ADD JobLevelAddOn VARCHAR(100) NULL,
+	SpecialSubsidy VARCHAR(100) NULL,
+	ManagementAllowance VARCHAR(100) NULL,
     TransportationAllowance VARCHAR(100) NULL,
-    MobilephoneAllowance VARCHAR(100) NULL;
+    MobilephoneAllowance VARCHAR(100) NULL,
+	TotalIncome VARCHAR(100) NULL;
 GO
