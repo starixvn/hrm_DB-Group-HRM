@@ -18,6 +18,8 @@ AS
         - 20250409@Tim: remove section [Redmine: #222886]
 		- 20250812@Mira: tranfer employee [Redmine: #235678]
 		- 20251121@Lilac: add type IsPermanent WFH [Redmine: #244781]
+		- 20251127@Lilac: get BU [Redmine: #245211]
+
     Param's Explanation:
 */
 BEGIN
@@ -41,6 +43,7 @@ BEGIN
 		,u.FullName
 		,g.[Name] AS TeamName
 		,dep.[Name] AS DepartmentName
+		,unit.Code AS UnitCode
 		,ew.ModifiedDate
 		,ew.ModifiedBy
 		,modifier.NickName AS Modifier
@@ -53,6 +56,7 @@ BEGIN
 		INNER JOIN dbo.[Group] AS g WITH (NOLOCK) ON e.GroupId = g.GroupId
 		INNER JOIN #tmpTeam AS t WITH (NOLOCK) ON g.GroupId = t.GroupId
 		INNER JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId = g.DepartmentId
+	    INNER JOIN dbo.[Unit] AS unit WITH (NOLOCK) ON dep.UnitId = unit.UnitId
 		LEFT JOIN dbo.CompanyEmployee AS modifier WITH (NOLOCK) ON ew.ModifiedBy = modifier.EmpId
 	WHERE 
 		(

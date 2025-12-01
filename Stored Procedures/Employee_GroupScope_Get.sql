@@ -30,6 +30,7 @@ AS
 		20251020@Lilac: rename LocalSalary to BasicSalary [Redmine: #241810]
 		20251022@Mira: remove salary info  [Redmine: #241812]
 		20251106@Jay: group dashboard  [Redmine: #243640]
+		20251126@Mira: Get management allowance [Redmine: #245211]
 
 */
 BEGIN
@@ -116,7 +117,7 @@ BEGIN
         UnitId, GroupUnitId, UnitCode, UnitPIC, UnitPICEmpId, UnitSupporterEmpId,
         TeamId, TeamCode, TeamName, TeamPIC, AccountableArea,
         DepartmentId, DepartmentCode, DepartmentName, DepartmentPIC, DepartmentPICId, DepartmentSupporterEmpId,
-        ManagementLevelId, JobLevelId,
+		JobLevelId,
         [Location],
         Currency,
         CountryName,
@@ -144,7 +145,7 @@ BEGIN
 		u.UnitId, u.GroupUnitId, u.Code AS UnitCode, eu.Nickname AS UnitPIC, u.PICEmpId AS UnitPICEmpId, u.SupporterEmpId AS UnitSupporterEmpId,
 		g.GroupId, g.Code, g.[Name], eg.Nickname, g.AccountableArea,
 		d.DepartmentId, d.Code AS DepartmentCode, d.[Name], ed.Nickname, d.PICEmpId, d.SupporterEmpId,
-		ce.ManagementLevelId, ce.JobLevelId,
+		ce.JobLevelId,
 		ct.CountryCodeISO3,
 		tmpc.CurrencyCode,
 		ect.CountryName,
@@ -195,17 +196,12 @@ BEGIN
 
     -- management level
     UPDATE e
-    SET e.ManagementLevel = ml.[Name]
+    SET e.ManagementLevel = item.ItemName
     FROM #tmpEmployeeInfo AS e
-        INNER JOIN dbo.ManagementLevel AS ml WITH (NOLOCK) ON e.ManagementLevelId = ml.ManagementLevelId
-    WHERE e.CompanyId NOT IN (@NexcelId, @LumiId, @NexVisionId)
-
-    UPDATE e
-    SET e.ManagementLevel = mg.[Name]
-    FROM #tmpEmployeeInfo AS e
-        INNER JOIN HRM.dbo.EmployeeManagementGrade AS em WITH (NOLOCK) ON em.EmpId = e.EmpId AND em.IsCurrentUsed = 1 AND ISNULL(em.IsDeleted, 0) = 0
-        INNER JOIN HRM.dbo.ManagementGrade AS mg WITH (NOLOCK) ON mg.ManagementGradeId = em.ManagementGradeId AND ISNULL(mg.IsDeleted, 0) = 0
-    WHERE e.CompanyId IN (@NexcelId, @LumiId, @NexVisionId)
+        INNER JOIN dbo.EmployeePayrollAllowance AS epa WITH (NOLOCK) ON epa.EmpId = e.EmpId
+	    INNER JOIN dbo.AllowanceItemSetting AS item WITH (NOLOCK) ON item.AllowanceItemSettingId = epa.AllowanceItemSettingId
+	    INNER JOIN dbo.PayrollItemSetting AS p WITH (NOLOCK) ON p.PayrollItemSettingId = item.PayrollItemSettingId  AND p.Category = 2 -- Allowance
+    WHERE p.Type = 'Management Allowance'
 
     -- job level
     UPDATE e
@@ -260,7 +256,6 @@ BEGIN
         DepartmentPIC,
         DepartmentPICId,
         DepartmentSupporterEmpId,
-        ManagementLevelId,
         ManagementLevel,
         JobLevelId,
         JobLevel,

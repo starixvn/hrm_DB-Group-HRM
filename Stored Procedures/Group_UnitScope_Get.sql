@@ -2,8 +2,10 @@
 
 ALTER PROCEDURE [dbo].[Group_UnitScope_Get]
 (
-    @TeamIds varchar(MAX) = '',
-    @TeamId INT = NULL
+    @TeamIds VARCHAR(MAX) = '',
+    @TeamId INT = NULL,
+	@CompanyIds VARCHAR(MAX) = '',
+	@Outsources VARCHAR(10) = ''
 )
 AS
 /*
@@ -21,6 +23,7 @@ AS
         20250819@Tim: get PICEmpId [Redmine: #235678]
 		20250904@Jay: update role [Redmine: #237201]
 		20250926@Jay: count special [Redmine: #239089]
+		20251126@Jay: enhance [Redmine: #245211]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -33,6 +36,30 @@ BEGIN
 	CREATE TABLE #tmpGroup (GroupId INT PRIMARY KEY, NoOfMembers INT)
 
 	CREATE TABLE #tmpGroupEmployees (GroupId INT, EmpId INT)
+	
+	DECLARE @CompaniesList TABLE (CompanyId INT)
+
+    IF ISNULL(@CompanyIds, '') = ''
+    BEGIN
+        INSERT INTO @CompaniesList(CompanyId)
+        SELECT CompanyId
+        FROM dbo.Company WITH (NOLOCK)
+    END
+    ELSE
+    BEGIN
+        INSERT INTO @CompaniesList(CompanyId)
+	    SELECT DISTINCT c.value
+	    FROM STRING_SPLIT(@CompanyIds, ',') AS c
+    END
+
+	DECLARE @OutsourceOptions TABLE ([Option] INT)
+    IF ISNULL(@Outsources, '') != ''
+    BEGIN
+        INSERT INTO @OutsourceOptions([Option])
+	    SELECT DISTINCT o.value
+	    FROM STRING_SPLIT(@Outsources, ',') AS o
+    END
+	
 
 	DECLARE @NexcelId SMALLINT = 1, @LumiId SMALLINT = 2,  @NexVisionId SMALLINT = 34
 
@@ -118,6 +145,8 @@ BEGIN
 			)
 		AND g.isDeleted != 1
 		AND (ISNULL( @teamIds, '') = ''  OR g.GroupId IN (SELECT GroupId FROM @GroupsList))
+		AND (ISNULL( @CompanyIds, '') = ''  OR g.CompanyId IN (SELECT CompanyId FROM @CompaniesList))
+		AND (@Outsources IS NULL OR @Outsources = '' OR g.IsOutsource IN (SELECT [Option] FROM @OutsourceOptions))
 	ORDER BY d.Code
 
     DROP TABLE #tmpGroup

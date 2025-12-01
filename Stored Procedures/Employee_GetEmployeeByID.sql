@@ -22,6 +22,7 @@ AS
 		- 20251017@Henry: get sick leave balance [Redmine: #242668]
 		- 20251117@Jay: enhance salary [Redmine: #244343]
 		20251120@Mira: get default balance from last year [Redmine: #244781]
+		20251125@Lilac: get transfer in, out dates [Redmine: #245211]
 */
 BEGIN
 	SET NOCOUNT ON;
@@ -137,6 +138,8 @@ BEGIN
         ,ss.Name AS SalaryStructure
 		,ssd.BasicSalary
 		,ssd.JobLevelAddOn
+		,etf.TransferOutDate AS DateTransferOut
+		,ett.TransferInDate	AS DateTransferIn
         ,ce.AutoApproveRequest
 		,STUFF((
 			SELECT ',' + CAST(epa.AllowanceItemSettingId AS VARCHAR(10))
@@ -162,6 +165,18 @@ BEGIN
 		LEFT JOIN dbo.Currency AS ssc (NOLOCK) ON ssc.Id = ep.SpecialSubsidyCurrencyId
 		LEFT JOIN dbo.SalaryStructure AS ss WITH (NOLOCK) ON ss.SalaryStructureId = ep.SalaryStructureId
 		LEFT JOIN dbo.SalaryStructureDetail AS ssd WITH (NOLOCK) ON ssd.SalaryStructureId = ss.SalaryStructureId AND ssd.JobLevelId = ce.JobLevelId
+		OUTER APPLY (
+			SELECT TOP 1 TransferOutDate
+			FROM dbo.EmployeeTransfer WITH (NOLOCK)
+			WHERE FromEmpId = ce.EmpId
+			ORDER BY TransferId DESC
+		) AS etf
+		OUTER APPLY (
+			SELECT TOP 1 TransferInDate
+			FROM dbo.EmployeeTransfer WITH (NOLOCK)
+			WHERE ToEmpId = ce.EmpId
+			ORDER BY TransferId DESC
+		) AS ett
 	WHERE ce.EmpId = @EmpId
 		AND (@CompanyId IS NULL OR ce.CompanyId = @CompanyId)
 END
