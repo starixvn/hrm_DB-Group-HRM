@@ -16,6 +16,7 @@ AS
 		20250821@Jay: restructure for transfer [Redmine: #235678]
 		20251020@Lilac: rename LocalSalary to BasicSalary [Redmine: #241810]
 		20251128@Mira: calculate allowance [Redmine: #245214]
+		20251201@Lilac: get TotalCompanyEventDays [Redmine: #245214]
 
     Param's Explanation:
 */
@@ -26,6 +27,7 @@ BEGIN
         @InsuranceLeaveId INT = 41,
         @PaternityLeaveId INT = 14,
         @MaternityLeaveId INT = 12,
+		@CompanyEventLeaveId INT = 38,
 		@PendingStatusId INT = 1,
         @CheckInId INT = 1,
 		@CheckOutId INT = 2;
@@ -43,6 +45,8 @@ BEGIN
 		CheckOut DATETIME,
 		UnpaidLeaveDay DECIMAL(18, 2),
 		LeaveTypeId INT,
+		CompanyEventLeaveId INT,
+		CompanyEventLeaveDay DECIMAL(18, 2),
 		IsWorkDay BIT, -- Computed: IsHoliday = 1 OR (CheckIn IS NOT NULL AND CheckOut IS NOT NULL) OR LeaveTypeId IS NOT NULL
 		ConfirmedDate DATETIME, -- Cache for performance
 		ResignedDate DATETIME, -- Cache for performance
@@ -53,7 +57,8 @@ BEGIN
 		TotalWorkingDays DECIMAL(18,2),
 		TotalNewHireWorkingDays DECIMAL(18,2),
 		IsMaternity BIT,
-		TotalUnpaidLeaveDays DECIMAL(18,2)
+		TotalUnpaidLeaveDays DECIMAL(18,2),
+		TotalCompanyEventDays DECIMAL(18,2)
 	);
 	DECLARE @TempPendingCheckInOut TABLE(
 		EmpId INT,
@@ -84,7 +89,7 @@ BEGIN
 	WHERE cior.OnDate >= @StartDate
 		AND cior.OnDate < @EndDate
 
-	INSERT INTO @TempEmployeeWorkingCalendar (EmpId, WorkDate, IsHoliday, IsOffDay, CheckIn, CheckOut, UnpaidLeaveDay, LeaveTypeId, IsWorkDay, ConfirmedDate, ResignedDate)
+	INSERT INTO @TempEmployeeWorkingCalendar (EmpId, WorkDate, IsHoliday, IsOffDay, CheckIn, CheckOut, UnpaidLeaveDay, LeaveTypeId, CompanyEventLeaveDay, IsWorkDay, ConfirmedDate, ResignedDate)
 	SELECT tec.EmpId,
 		tec.WorkDate,
 		tec.IsHoliday,
@@ -97,6 +102,12 @@ BEGIN
 			ELSE 0
 		END AS UnpaidLeaveDay,
 		tec.LeaveTypeId,
+		CASE
+			WHEN tec.LeaveTypeId = @CompanyEventLeaveId
+				THEN ISNULL(tec.LeaveDay, 0)
+			ELSE 0
+		END AS CompanyEventLeaveDay,
+
 		-- Pre-compute IsWorkDay to avoid repeated calculations
 		CASE 
 			WHEN tec.IsHoliday = 1 
@@ -145,7 +156,8 @@ BEGIN
 		TotalWorkingDays,
 		TotalNewHireWorkingDays,
 		TotalUnpaidLeaveDays,
-		IsMaternity
+		IsMaternity,
+		TotalCompanyEventDays
 	)
 	SELECT 
 		tewc.EmpId,
@@ -175,7 +187,9 @@ BEGIN
 			ELSE 0
 		END) AS TotalNewHireWorkingDays,
 		SUM(tewc.UnpaidLeaveDay) AS TotalUnpaidLeaveDays,
-		MAX(CASE WHEN tewc.LeaveTypeId = @MaternityLeaveId THEN 1 ELSE 0 END) AS IsMaternity
+		MAX(CASE WHEN tewc.LeaveTypeId = @MaternityLeaveId THEN 1 ELSE 0 END) AS IsMaternity,
+		-- TotalCompanyEventDays: count days with Company Event leave type
+		SUM(tewc.CompanyEventLeaveDay) AS TotalCompanyEventDays
 	FROM @TempEmployeeWorkingCalendar tewc
 	GROUP BY tewc.EmpId
 	ORDER BY tewc.EmpId ASC
@@ -209,6 +223,7 @@ BEGIN
 		ws.TotalNewHireWorkingDays,
 		ws.IsMaternity,
 		ws.TotalUnpaidLeaveDays,
+		ws.TotalCompanyEventDays,
 		-- salary & currency
 		salary.BasicSalary AS EncryptBasicSalary,
 		salary.JobLevelAddOn AS EncryptJobLevelAddOn,
