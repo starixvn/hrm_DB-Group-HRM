@@ -18,6 +18,7 @@ ALTER PROCEDURE [dbo].[Report_HeadcountGet] @Year INT
 		20251027@Mira: get employee transfer - [Redmine: #242668]
 		20251030@Mira: correct confirmDate [Redmine: #242636]
 		20251120@Mira: only get GroupDate [Redmine: #244781]
+		20251202@Mira: only exclude deleted group of NEXHRM [Redmine: #244781]
 */
 AS
     BEGIN
@@ -34,7 +35,7 @@ AS
 			ce.CompanyId,
 			ce.SubCompanyId,
 			ce.CompanyDate,
-			d.GroupId,
+			ce.GroupId,
 			g.DepartmentId,
 			safeDates.JoinedDate,
 			safeDates.ConfirmedDate,
@@ -46,10 +47,7 @@ AS
 			END AS IsLocal
 		FROM dbo.Employee AS e WITH(NOLOCK)
 		    INNER JOIN dbo.CompanyEmployee AS ce WITH(NOLOCK) ON ce.UserId = e.UserId AND (ce.CompanyId NOT IN (@NexcelId, @LumiId, @NexVisionId) OR ce.IsSpecialUser = 0)
-		    OUTER APPLY (
-			    SELECT GroupId = ce.GroupId
-		    ) AS d
-		    INNER JOIN dbo.[Group] AS g WITH(NOLOCK) ON g.GroupId = d.GroupId AND g.IsOutsource = 0 AND g.IsDeleted = 0
+		    INNER JOIN dbo.[Group] AS g WITH(NOLOCK) ON g.GroupId = ce.GroupId AND g.IsOutsource = 0 AND g.GroupId NOT IN (568, 569) -- exclude init Other group of nexhrm (deleted group)
 		    LEFT JOIN dbo.EmployeeSummary AS es WITH(NOLOCK) ON es.EmpId = ce.EmpId
 		    OUTER APPLY (
 			    SELECT
@@ -57,7 +55,8 @@ AS
 					    WHEN e.JoinedDate >= '1900-01-01' AND e.JoinedDate <= '2079-06-06' THEN e.JoinedDate
 					    ELSE '1990-01-01'
 				    END,
-				    ConfirmedDate = CASE 
+				    CompanyDate = ISNULL(ce.CompanyDate, e.JoinedDate),
+					ConfirmedDate = CASE 
 					    WHEN e.ConfirmedDate >= '1900-01-01' AND e.ConfirmedDate <= '2079-06-06' THEN e.ConfirmedDate
 					    ELSE NULL
 				    END,
@@ -97,6 +96,7 @@ AS
 			ELSE ISNULL(CAST(ct.CountryCodeISO3 AS VARCHAR(10)), 'Other')
 		END AS CountryCode,
 		e.JoinedDate,
+		e.CompanyDate,
 		e.ConfirmedDate,
 		e.ResignedDate,
 		e.IsLocal,
