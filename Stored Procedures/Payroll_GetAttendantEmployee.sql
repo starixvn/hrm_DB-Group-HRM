@@ -180,6 +180,28 @@ BEGIN
 	GROUP BY tewc.EmpId
 	ORDER BY tewc.EmpId ASC
 
+	-- Delete records that no longer exist in current month
+	-- Delete from MonthlySalary first (due to foreign key relationship)
+	DELETE ms
+	FROM dbo.MonthlySalary ms
+	INNER JOIN dbo.MonthlyPayroll mp ON ms.PayrollId = mp.PayrollId
+	INNER JOIN dbo.CompanyEmployee ce ON mp.EmpId = ce.EmpId
+	LEFT JOIN @TempWorkingSummary ws ON mp.EmpId = ws.EmpId
+	WHERE ce.CompanyId = @CompanyId
+		AND MONTH(mp.[Month]) = MONTH(@Date)
+		AND YEAR(mp.[Month]) = YEAR(@Date)
+		AND ws.EmpId IS NULL;
+
+	-- Delete from MonthlyPayroll
+	DELETE mp
+	FROM dbo.MonthlyPayroll mp
+	INNER JOIN dbo.CompanyEmployee ce ON mp.EmpId = ce.EmpId
+	LEFT JOIN @TempWorkingSummary ws ON mp.EmpId = ws.EmpId
+	WHERE ce.CompanyId = @CompanyId
+		AND MONTH(mp.[Month]) = MONTH(@Date)
+		AND YEAR(mp.[Month]) = YEAR(@Date)
+		AND ws.EmpId IS NULL;
+
 	-- Select data
 	SELECT
 		ws.EmpId,
@@ -188,9 +210,9 @@ BEGIN
 		ws.IsMaternity,
 		ws.TotalUnpaidLeaveDays,
 		-- salary & currency
-		IIF(es.IsLocal = 1, salary.BasicSalary, salary.ExpatSalary) AS EncryptBasicSalary,
-		IIF(es.IsLocal = 1, salary.JobLevelAddOn, salary.ExpatJobLevelAddOn) AS EncryptJobLevelAddOn,
-		IIF(es.IsLocal = 1, currency.CurrencyCode, 'USD') AS CurrencyCode,
+		salary.BasicSalary AS EncryptBasicSalary,
+		salary.JobLevelAddOn AS EncryptJobLevelAddOn,
+		currency.CurrencyCode AS CurrencyCode,
 		payroll.SpecialSubsidy AS EncryptSpecialSubsidy,
 		ISNULL(subsidyCurrency.CurrencyCode, currency.CurrencyCode) AS SpecialSubsidyCurrencyCode,
 		-- working days config
@@ -221,5 +243,6 @@ BEGIN
 	LEFT JOIN SalaryStructureDetail salary WITH (NOLOCK) ON salary.SalaryStructureId = payroll.SalaryStructureId AND salary.JobLevelId = ce.JobLevelId
 	LEFT JOIN Currency subsidyCurrency WITH (NOLOCK) ON subsidyCurrency.Id = payroll.SpecialSubsidyCurrencyId
 	LEFT JOIN Currency currency WITH (NOLOCK) ON currency.Id = @CurrencyId
+	WHERE es.IsLocal = 1
 	ORDER BY ws.EmpId ASC;
 END

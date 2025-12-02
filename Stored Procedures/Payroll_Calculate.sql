@@ -41,20 +41,38 @@ BEGIN
 		EmploymentStatus INT
 	)
 
-	DECLARE @MergedPayroll TABLE (
-		PayrollId INT,
-		EmpId INT,
-		WorkingDays INT,
-		PaidDays DECIMAL(18, 2),
-		UnpaidLeave REAL,
-		BasicSalary VARCHAR(100),
-		GrossSalary VARCHAR(100),
-		JobLevelAddOn VARCHAR(100),
-		SpecialSubsidy VARCHAR(100),
-		ManagementAllowance VARCHAR(100),
-		TransportationAllowance VARCHAR(100),
-		MobilephoneAllowance VARCHAR(100),
-		TotalIncome VARCHAR(100)
+	DECLARE @MonthStart DATE = DATEFROMPARTS(YEAR(@Date), MONTH(@Date), 1);
+	DECLARE @MonthEnd DATE = EOMONTH(@Date);
+	DECLARE @PayrollObjectTypeId INT = 7;
+	DECLARE @PayrollLogActionId INT = 17;
+	DECLARE @LogObjectId VARCHAR(50) = CONCAT(@CompanyId, FORMAT(@Date, 'MM'), YEAR(@Date));
+
+	-- Query old data before deletion for logging
+	DECLARE @OldData NVARCHAR(MAX);
+	SELECT @OldData = (
+		SELECT 
+			mp.PayrollId,
+			mp.EmpId,
+			mp.[Month],
+			mp.EmploymentStatus,
+			ms.StandardWorkingDay,
+			ms.PaidDay,
+			ms.UnpaidLeave,
+			ms.BasicSalary,
+			ms.GrossSalary,
+			ms.JobLevelAddOn,
+			ms.SpecialSubsidy,
+			ms.ManagementAllowance,
+			ms.TransportationAllowance,
+			ms.MobilephoneAllowance,
+			ms.TotalIncome
+		FROM dbo.MonthlyPayroll mp
+		INNER JOIN dbo.CompanyEmployee ce ON mp.EmpId = ce.EmpId
+		LEFT JOIN dbo.MonthlySalary ms ON ms.PayrollId = mp.PayrollId
+		WHERE ce.CompanyId = @CompanyId
+			AND mp.[Month] >= @MonthStart
+			AND mp.[Month] <= @MonthEnd
+		FOR JSON PATH
 	);
 
 	INSERT INTO @TempPayroll(
@@ -109,66 +127,54 @@ BEGIN
 		EmploymentStatus INT
 	) AS j
 
-	MERGE INTO dbo.MonthlyPayroll AS target
-	USING @TempPayroll AS source
-	ON target.EmpId = source.EmpId
-		AND MONTH(target.[Month]) = MONTH(@Date)
-		AND YEAR(target.[Month]) = YEAR(@Date)
-	WHEN MATCHED THEN UPDATE SET
-		target.EmploymentStatus = source.EmploymentStatus,
-		target.ModifiedBy = @ModifiedBy,
-		target.ModifiedDate = @CurrentDateTime
-	WHEN NOT MATCHED BY TARGET THEN
-		INSERT(EmpId, [Month], EmploymentStatus, ModifiedBy, ModifiedDate)
-		VALUES(source.EmpId, @Date, source.EmploymentStatus, @ModifiedBy, @CurrentDateTime)
-	OUTPUT 
-		inserted.PayrollId,
-		source.EmpId,
-		source.WorkingDays,
-		source.PaidDays,
-		source.UnpaidLeave,
-		source.BasicSalary,
-		source.GrossSalary,
-		source.JobLevelAddOn,
-		source.SpecialSubsidy,
-		source.ManagementAllowance,
-		source.TransportationAllowance,
-		source.MobilephoneAllowance,
-		source.TotalIncome
-	INTO @MergedPayroll;
+	-- Delete all existing data for the month (delete MonthlySalary first due to foreign key)
+	DELETE ms
+	FROM dbo.MonthlySalary ms
+	INNER JOIN dbo.MonthlyPayroll mp ON ms.PayrollId = mp.PayrollId
+	INNER JOIN dbo.CompanyEmployee ce ON mp.EmpId = ce.EmpId
+	WHERE ce.CompanyId = @CompanyId
+		AND mp.[Month] >= @MonthStart
+		AND mp.[Month] <= @MonthEnd;
 
-	MERGE INTO dbo.MonthlySalary AS target
-	USING @MergedPayroll AS source
-	ON target.PayrollId = source.PayrollId
-	WHEN MATCHED THEN
-		UPDATE SET
-			target.StandardWorkingDay = source.WorkingDays,
-			target.PaidDay = source.PaidDays,
-			target.UnpaidLeave = source.UnpaidLeave,
-			target.BasicSalary = source.BasicSalary,
-			target.GrossSalary = source.GrossSalary,
-			target.JobLevelAddOn = source.JobLevelAddOn,
-			target.SpecialSubsidy = source.SpecialSubsidy,
-			target.ManagementAllowance = source.ManagementAllowance,
-			target.TransportationAllowance = source.TransportationAllowance,
-			target.MobilephoneAllowance = source.MobilephoneAllowance,
-			target.TotalIncome = source.TotalIncome
-	WHEN NOT MATCHED BY TARGET THEN
-		INSERT(PayrollId, StandardWorkingDay, PaidDay, UnpaidLeave, BasicSalary, GrossSalary, JobLevelAddOn, SpecialSubsidy, ManagementAllowance, TransportationAllowance, MobilephoneAllowance, TotalIncome)
-		VALUES(source.PayrollId, source.WorkingDays, source.PaidDays, source.UnpaidLeave, source.BasicSalary, source.GrossSalary, source.JobLevelAddOn, source.SpecialSubsidy, source.ManagementAllowance, source.TransportationAllowance, source.MobilephoneAllowance, source.TotalIncome);
+	DELETE mp
+	FROM dbo.MonthlyPayroll mp
+	INNER JOIN dbo.CompanyEmployee ce ON mp.EmpId = ce.EmpId
+	WHERE ce.CompanyId = @CompanyId
+		AND mp.[Month] >= @MonthStart
+		AND mp.[Month] <= @MonthEnd;
 
-	DECLARE @PayrollObjectTypeId INT = 7;
-	DECLARE @LogObjectId VARCHAR(MAX) = 
-		CAST(@CompanyId AS VARCHAR) + 
-		CAST(MONTH(@Date) AS VARCHAR) + 
-		CAST(YEAR(@Date) AS VARCHAR);
+	-- Insert new data
+	INSERT INTO dbo.MonthlyPayroll (EmpId, [Month], EmploymentStatus, CompanyDate, ConfirmedDate, ModifiedBy, ModifiedDate)
+	SELECT 
+		tp.EmpId,
+		@MonthStart,
+		tp.EmploymentStatus,
+		CAST(tp.JoinDate AS DATE),
+		CAST(tp.ConfirmedDate AS DATE),
+		@ModifiedBy,
+		@CurrentDateTime
+	FROM @TempPayroll tp;
 
-	DECLARE @OldData NVARCHAR(MAX) = 
-		(SELECT TOP 1 [Data] 
-			FROM ActivityLog 
-			WHERE ObjectTypeId = @PayrollObjectTypeId 
-				AND ObjectId = @LogObjectId); 
-	DECLARE @PayrollLogActionId INT = 17;
+	-- Insert MonthlySalary with PayrollId
+	INSERT INTO dbo.MonthlySalary (PayrollId, StandardWorkingDay, PaidDay, UnpaidLeave, BasicSalary, GrossSalary, JobLevelAddOn, SpecialSubsidy, ManagementAllowance, TransportationAllowance, MobilephoneAllowance, TotalIncome)
+	SELECT 
+		mp.PayrollId,
+		tp.WorkingDays,
+		tp.PaidDays,
+		CAST(tp.UnpaidLeave AS REAL),
+		tp.BasicSalary,
+		tp.GrossSalary,
+		tp.JobLevelAddOn,
+		tp.SpecialSubsidy,
+		tp.ManagementAllowance,
+		tp.TransportationAllowance,
+		tp.MobilephoneAllowance,
+		tp.TotalIncome
+	FROM @TempPayroll tp
+	INNER JOIN dbo.MonthlyPayroll mp ON tp.EmpId = mp.EmpId
+		AND mp.[Month] = @MonthStart;
+
+	-- Insert activity log
 	INSERT INTO dbo.ActivityLog (
 			LogDate,
 			UserId,
