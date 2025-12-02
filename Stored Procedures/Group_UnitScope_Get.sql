@@ -147,7 +147,7 @@ BEGIN
 		AND (ISNULL( @teamIds, '') = ''  OR g.GroupId IN (SELECT GroupId FROM @GroupsList))
 		AND (ISNULL( @CompanyIds, '') = ''  OR g.CompanyId IN (SELECT CompanyId FROM @CompaniesList))
 		AND (@Outsources IS NULL OR @Outsources = '' OR g.IsOutsource IN (SELECT [Option] FROM @OutsourceOptions))
-	ORDER BY d.Code
+	ORDER BY d.Code ASC
 
     DROP TABLE #tmpGroup
     DROP TABLE #tmpGroupEmployees
