@@ -5,6 +5,7 @@ ALTER PROCEDURE [dbo].[SickLeave_SummaryReport] @EmpId INT = NULL
 	,@Year INT
 	,@isLocal BIT = NULL
 	,@CompanyId INT
+	,@EmployeeStatusIds VARCHAR(10) = ''
 AS
 /*
 	Created: Tim.Trinh@2021-08-23
@@ -16,6 +17,7 @@ AS
 		- 20250408@Hank: remove section [Redmine: #222886]
 		20251001@Mira: Get employee by data permission [Redmine: #240215]
 		20251001@Mira: Get employee by data permission [Redmine: #240215]
+		20251203@Jay: enhance sick leave [Redmine: #245871]
 		
 	Param's Explanation:
 */
@@ -23,6 +25,10 @@ BEGIN
 	SET NOCOUNT ON;
 
 	CREATE TABLE #tblGroupId (GroupId INT)
+    DECLARE @tblStatus TABLE (Id TINYINT)
+	DECLARE @Enable TINYINT = 1
+		,@Disabled TINYINT = 2
+		,@Deleted TINYINT = 3
 
 	IF ISNULL(@TeamIds, '') <> ''
 	BEGIN
@@ -30,6 +36,13 @@ BEGIN
 		SELECT value
 		FROM STRING_SPLIT(@TeamIds, ',')
 	END
+
+    IF ISNULL(@EmployeeStatusIds, '') != ''
+    BEGIN
+        INSERT INTO @tblStatus (Id)
+	    SELECT value
+	    FROM STRING_SPLIT(@EmployeeStatusIds, ',')
+    END
 
 	DECLARE @fromdate DATETIME
 		,@todate DATETIME
@@ -118,10 +131,12 @@ BEGIN
 	GROUP BY emp.EmpId
 		,ISNULL(credit.CreditDays, 0)
 
-	SELECT emp.EmpId
-		,emp.Code
+	SELECT ce.EmpId
+		,ce.Code
 		,e.FullName
-		,emp.NickName
+		,ce.NickName
+        ,[Enabled]
+        ,ce.IsDeleted
 		,gr.[Name] AS Team
 		,dep.[Name] AS Department
 		,ISNULL(cb.CreditDays, 0) AS Balance
@@ -138,28 +153,32 @@ BEGIN
 		,cb.Nov
 		,cb.[Dec]
 		,ISNULL(cb.CreditDays, 0) - ISNULL(cb.DeductDays, 0) AS RemainingBalance
-	FROM dbo.CompanyEmployee AS emp WITH (NOLOCK)
-		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.UserId = emp.UserId
-		INNER JOIN #tblGroupId AS tblgr WITH (NOLOCK) ON emp.GroupId = tblgr.GroupId
-		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON emp.GroupId = gr.GroupId
+	FROM dbo.CompanyEmployee AS ce WITH (NOLOCK)
+		INNER JOIN dbo.Employee AS e WITH (NOLOCK) ON e.UserId = ce.UserId
+		INNER JOIN #tblGroupId AS tblgr WITH (NOLOCK) ON ce.GroupId = tblgr.GroupId
+		INNER JOIN dbo.[Group] AS gr WITH (NOLOCK) ON ce.GroupId = gr.GroupId
 		INNER JOIN dbo.Department AS dep WITH (NOLOCK) ON dep.DepartmentId = gr.DepartmentId
-		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON emp.EmpId = es.EmpId
-		LEFT JOIN #tblCurrenBalace AS cb WITH (NOLOCK) ON emp.EmpId = cb.EmpId
-	WHERE ISNULL(emp.[Enabled], 0) = 1
+		INNER JOIN dbo.EmployeeSummary AS es WITH (NOLOCK) ON ce.EmpId = es.EmpId
+		LEFT JOIN #tblCurrenBalace AS cb WITH (NOLOCK) ON ce.EmpId = cb.EmpId
+	WHERE (
+			ISNULL(@EmployeeStatusIds, '') = ''
+            OR EXISTS (
+                SELECT 1
+                FROM @tblStatus AS s
+                WHERE (s.Id = @Enable AND ce.[Enabled] = 1 AND ce.isDeleted = 0)
+                    OR (s.Id = @Disabled AND ce.[Enabled] = 0 AND ce.isDeleted = 0)
+                    OR (s.Id = @Deleted AND ce.isDeleted = 1)
+                )
+			)
 		AND (
 			@isLocal IS NULL
 			OR es.IsLocal = @isLocal
 			)
-		AND (@EmpId IS NULL OR emp.EmpId = @EmpId)
+		AND (@EmpId IS NULL OR ce.EmpId = @EmpId)
 	ORDER BY gr.[Name] ASC
-		,emp.Code ASC
+		,ce.Code ASC
 
 	DROP TABLE #tblGroupId
 
 	DROP TABLE #tblCurrenBalace
 END
-
-
-
-
-
